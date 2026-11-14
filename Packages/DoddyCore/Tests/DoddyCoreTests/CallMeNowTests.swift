@@ -33,9 +33,10 @@ final class CallMeNowTests: XCTestCase {
             .translatorRefused)
     }
 
-    func testItIsPartOfPhoneCallsAndHiddenWithThem() {
+    func testItIsPartOfPhoneCallsAndShownWithThem() {
         XCTAssertTrue(Feature.phoneCalls.tools.contains(VoiceToolName.callMeNow))
-        XCTAssertFalse(ReleaseScope.shipping.shows(.phoneCalls), "phone calls are hidden in the beta, and the tool with them")
+        XCTAssertTrue(ReleaseScope.shipping.shows(.phoneCalls), "phone calls are shown since 10 Nov 2026, and the tool with them")
+        XCTAssertTrue(ReleaseScope(hidden: [.phoneCalls]).hiddenTools.contains(VoiceToolName.callMeNow), "a scope that hides them takes the tool too")
     }
 
     func testTheLogSaysACallWasAskedForAndNothingElse() throws {

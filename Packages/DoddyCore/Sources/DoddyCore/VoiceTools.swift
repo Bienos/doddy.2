@@ -13,6 +13,8 @@ public enum VoiceToolName {
     public static let lookupContact = "lookup_contact"
     public static let setTimer = "set_timer"
     public static let openMap = "open_map"
+    /// Opens a food delivery app after a card (decision 2026-11-12-food-by-voice).
+    public static let openFoodApp = "open_food_app"
     public static let runShortcut = "run_shortcut"
     public static let draftMessage = "draft_message"
     /// Several changes on one card (`PlanProposal`, ADR-204).
@@ -248,6 +250,13 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case startStopwatch(label: String?)
     case stopStopwatch
     case checkStopwatch
+    /// The focus timer and the wind-down before bed (decision 2026-11-10-timers-by-voice, TimerVoice.swift): started
+    /// and stopped after a card, the focus timer read after a "yes". Minutes are whole and in range.
+    case startFocus(minutes: Int, label: String?)
+    case stopFocus
+    case checkFocus
+    case startWindDown(minutes: Int)
+    case stopWindDown
     /// One place, or a route to it when `from` or `mode` is given (owner, 10 Nov 2026).
     case openMap(place: String, from: String? = nil, mode: MapTravelMode? = nil)
     case runShortcut(name: String)
@@ -280,6 +289,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case findPhotos(PhotoSearchRequest)
     /// Doddy's camera, after a card (ADR-569). A kept photo goes into a new note the user saves.
     case openCamera
+    /// A food delivery app (`FoodApps.all`), after a card with what to search for there (decision
+    /// 2026-11-12-food-by-voice). Nothing is ordered; the person orders in the app.
+    case openFoodApp(FoodHandoff)
     /// One picture of the screen the person shares with Doddy, read by Claude for their question, after a yes
     /// (decision 2026-11-09-doddy-looks-at-the-screen).
     case lookAtScreen(question: String)
@@ -399,7 +411,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
         case VoiceToolName.cancelAlarm:
             return parseCancelAlarm(args, name: name)
         case VoiceToolName.followNews:
-            switch NewsFollowAsk.parse(topic: args.text("topic"), name: args.text("name"), words: args.texts("words")) {
+            switch NewsFollowAsk.parse(
+                topic: args.text("topic"), name: args.text("name"), words: args.texts("words"),
+                alertWords: args.texts("alert_words"), tellMe: args.text("tell_me"), dailyTime: args.text("daily_time")) {
             case .success(let ask): return .followNews(ask)
             case .failure(let refusal): return .invalid(name: name, reason: refusal.reason)
             }
@@ -409,6 +423,16 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .stopStopwatch
         case VoiceToolName.checkStopwatch:
             return .checkStopwatch
+        case VoiceToolName.startFocus:
+            return parseStartFocus(args, name: name)
+        case VoiceToolName.stopFocus:
+            return .stopFocus
+        case VoiceToolName.checkFocus:
+            return .checkFocus
+        case VoiceToolName.startWindDown:
+            return parseStartWindDown(args, name: name)
+        case VoiceToolName.stopWindDown:
+            return .stopWindDown
         case VoiceToolName.openMap:
             guard let place = args.text("place") else { return .invalid(name: name, reason: "missing place") }
             return .openMap(place: place, from: args.text("from"), mode: MapTravelMode.parse(args.text("mode")))
@@ -450,6 +474,11 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parsePhotoSearch(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.openCamera:
             return .openCamera
+        case VoiceToolName.openFoodApp:
+            switch FoodHandoff.parse(app: args.text("app"), search: args.text("search"), page: args.text("page")) {
+            case .success(let handoff): return .openFoodApp(handoff)
+            case .failure(let refusal): return .invalid(name: name, reason: refusal.reason)
+            }
         case VoiceToolName.lookAtScreen:
             guard let question = args.text("question") else { return .invalid(name: name, reason: "missing question") }
             return .lookAtScreen(question: question)
@@ -670,6 +699,23 @@ struct Arguments {
 
     func number(_ key: String) -> Double? {
         values[key] as? Double
+    }
+
+    /// A list that must hold only numbers; a single number counts as a list of one. Digit strings
+    /// ("2") count as numbers, because the voice agent's tool arrays hold strings only. Nil if absent or
+    /// if anything in it isn't a number (nothing is dropped).
+    func numbers(_ key: String) -> [Double]? {
+        guard let value = values[key], !(value is NSNull) else { return nil }
+        func number(_ item: Any) -> Double? {
+            if let d = item as? Double { return d }
+            if let s = item as? String { return Double(s.trimmingCharacters(in: .whitespaces)) }
+            return nil
+        }
+        if let list = value as? [Any] {
+            let doubles = list.compactMap(number)
+            return doubles.count == list.count ? doubles : nil
+        }
+        return number(value).map { [$0] }
     }
 
     /// The first text argument longer than its bound, if any (review C11). Too long is refused,

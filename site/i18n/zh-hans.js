@@ -1,5 +1,8 @@
 window.DODDY_I18N = {
   " Doddy starts on iPhone; we'll tell you if Android comes later.": "Doddy 先在 iPhone 上推出；如果 Android 版以后推出，我们会告诉你。",
+  "Allow": "允许",
+  "Analytics choice": "分析选项",
+  "Can we count your visit with Google Analytics? It sets cookies. Nothing loads from Google unless you say yes, and you can change your mind at the bottom of any page.": "我们可以用 Google Analytics 统计你的访问吗？它会设置 Cookie。除非你同意，否则不会从 Google 加载任何内容；你可以在任何页面底部改变主意。",
   "Close menu": "关闭菜单",
   "Copy the link from the address bar": "从地址栏复制链接",
   "Doddy isn't on this iPhone yet. Join early access above to hear when it's ready.": "这台 iPhone 上还没有 Doddy。加入上方的抢先体验，等它准备好时通知你。",
@@ -8,6 +11,7 @@ window.DODDY_I18N = {
   "Long day.": "漫长的一天。",
   "Menu": "菜单",
   "Nearly done for the day.": "快结束今天的事了。",
+  "No thanks": "不用了",
   "Pick one.": "选一个。",
   "Sending…": "正在发送…",
   "Still here.": "我还在。",

@@ -18,6 +18,7 @@
 // reach Deichmann. The pages to read come from a fixed map of shoe and gender words to Deichmann's sale categories
 // (each gender's "Wyprzedaż buty" menu of 30 Oct); at most three pages are read per search.
 import { decodeEntities, fetchOfficial, mapLimit, officialUrl } from "./common.js";
+import { elements, findFrom, firstElement, spanAt, startTags, stripTags } from "../../htmlScan.js";
 import { stickerCondition, zloty } from "./ccc.js";
 import { normalize } from "../match.js";
 import type { ChainAdapter, ChainRead, Condition, DataProduct, Money } from "../types.js";
@@ -102,7 +103,40 @@ export function deichmannCategories(queries: readonly string[]): DeichmannCatego
 const pageUrl = (c: DeichmannCategory, page: number) => (page > 1 ? `${c.url}?page=${page}` : c.url);
 
 /** Text of an HTML fragment: tags out, entities decoded, spaces collapsed. */
-const textOf = (html: string) => decodeEntities(html.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
+const textOf = (html: string) => decodeEntities(stripTags(html)).replace(/\s+/g, " ").trim();
+
+/** The href of the first link: what /<a\b[^>]*\bhref="([^"]*)"/ finds, in linear time. As there, the last href
+ * before the tag's first ">" wins, and its value runs to the next quote. */
+function firstHref(html: string): string | undefined {
+  for (let from = 0; ;) {
+    const open = findFrom(html, /<a\b/g, from);
+    if (!open) return undefined;
+    const gt = html.indexOf(">", open.end);
+    const starts = [...html.slice(open.end, gt < 0 ? undefined : gt).matchAll(/\bhref="/g)].map((m) => open.end + m.index + m[0].length);
+    for (let i = starts.length - 1; i >= 0; i--) {
+      const q = html.indexOf('"', starts[i]);
+      if (q >= 0) return html.slice(starts[i], q);
+    }
+    if (gt < 0) return undefined;
+    from = gt + 1; // a link inside this tag has a subset of its hrefs
+  }
+}
+
+/** The content of the elements whose start tag (`open`) holds `attr`, each up to the first `close`. */
+const withAttr = (html: string, open: RegExp, attr: RegExp, close: string) => elements(html, open, close, (tag) => attr.test(tag.text));
+
+/** The rest of the pagination after its first span: "Strona</span><span>2</span><span>od</span><span>5</span>". */
+const PAGINATION_REST = /\s*Strona\s*<\/span>\s*<span\b[^>]*>\s*\d{1,4}\s*<\/span>\s*<span\b[^>]*>\s*od\s*<\/span>\s*<span\b[^>]*>\s*(\d{1,4})\s*<\/span>/y;
+
+/** The page count the pagination prints: what /<span\b[^>]*>PAGINATION_REST/ finds, tried after each span tag in turn. */
+function pageCount(html: string): string | undefined {
+  for (const tag of startTags(html, /<span\b/g)) {
+    PAGINATION_REST.lastIndex = tag.end;
+    const m = PAGINATION_REST.exec(html);
+    if (m) return m[1];
+  }
+  return undefined;
+}
 
 const PRICE = String.raw`(\d[\d\s  ]{0,8}(?:[.,]\d{2})?)\s*zł`;
 /** "Cena regularna: 159,99 zł -20%" (and "Cena pierwsza", should Deichmann print it). */
@@ -120,25 +154,26 @@ function productUrl(href: string | undefined): string | undefined {
 /** One product tile as a data product, or undefined when it can't be read or shows no reduction. */
 function tileProduct(tile: string, label: string): DataProduct | undefined {
   // The tile's own link comes first; the colour links further down point at other products.
-  const url = productUrl(/<a\b[^>]*\bhref="([^"]*)"/.exec(tile)?.[1]);
-  const brand = textOf(/<h2\b[^>]*\bclass="brandname"[^>]*>([\s\S]*?)<\/h2>/.exec(tile)?.[1] ?? "");
-  const model = textOf(/<h3\b[^>]*\bclass="taglist"[^>]*>([\s\S]*?)<\/h3>/.exec(tile)?.[1] ?? "");
+  const url = productUrl(firstHref(tile));
+  const brand = textOf(firstElement(tile, /<h2\b/g, "</h2>", (tag) => /\bclass="brandname"/.test(tag.text))?.content ?? "");
+  const model = textOf(firstElement(tile, /<h3\b/g, "</h3>", (tag) => /\bclass="taglist"/.test(tag.text))?.content ?? "");
   if (!url || !(brand || model)) return undefined;
-  const shelf = [...tile.matchAll(/<span\b[^>]*\bdata-id="selling-price"[^>]*>([\s\S]*?)<\/span>/g)].map((m) => zloty(textOf(m[1]!)));
+  const shelf = [...withAttr(tile, /<span\b/g, /\bdata-id="selling-price"/, "</span>")].map((e) => zloty(textOf(e.content)));
   if (shelf.length !== 1 || !shelf[0]) return undefined; // no price, "od …", or two: which is paid isn't said, so nothing is guessed
   const price = shelf[0];
   let regular: Money | undefined;
   let lowest30d: Money | undefined;
-  for (const m of tile.matchAll(/<div\b[^>]*\bclass="lowest-prior"[^>]*>([\s\S]*?)<\/div>/g)) {
-    const t = textOf(m[1]!);
+  for (const e of withAttr(tile, /<div\b/g, /\bclass="lowest-prior"/, "</div>")) {
+    const t = textOf(e.content);
     regular ??= zloty(REGULAR.exec(t)?.[1]);
     lowest30d ??= zloty(LOWEST_30D.exec(t)?.[1]);
   }
   const discounts: Condition[] = [];
   let onlineOnly = false;
-  const tags = /<deich-lib-hydra-tag-list\b[\s\S]*?<\/deich-lib-hydra-tag-list>/.exec(tile)?.[0] ?? "";
-  for (const m of tags.matchAll(/<span\b[^>]*>([\s\S]*?)<\/span>/g)) {
-    const t = textOf(m[1]!);
+  const list = spanAt(tile, /<deich-lib-hydra-tag-list\b/g, "</deich-lib-hydra-tag-list>");
+  const tags = list ? tile.slice(list.index, list.end) : "";
+  for (const e of elements(tags, /<span\b/g, "</span>")) {
+    const t = textOf(e.content);
     if (/^tylko online$/i.test(t)) { onlineOnly = true; continue; }
     const c = stickerCondition(t);
     if (c && !discounts.some((x) => x.text === c.text)) discounts.push(c);
@@ -166,8 +201,7 @@ export function parseDeichmannPage(html: string, label: string): { products: Dat
     const p = tileProduct(t, label);
     if (p && !byUrl.has(p.url)) byUrl.set(p.url, p);
   }
-  const total = /<span\b[^>]*>\s*Strona\s*<\/span>\s*<span\b[^>]*>\s*\d{1,4}\s*<\/span>\s*<span\b[^>]*>\s*od\s*<\/span>\s*<span\b[^>]*>\s*(\d{1,4})\s*<\/span>/
-    .exec(html)?.[1];
+  const total = pageCount(html);
   const pages = total && Number(total) >= 1 ? Number(total) : undefined;
   return { products: [...byUrl.values()], tiles: tiles.length, ...(pages ? { pages } : {}) };
 }

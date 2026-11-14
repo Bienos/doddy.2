@@ -4,10 +4,16 @@ import SwiftUI
 /// The brief for a call (ADR-500, ADR-501): who, why, the one question, the facts Doddy may say
 /// (only ticked ones leave this iPhone), and how long. "Prepare the card" sends it; the server
 /// makes the card from exactly what it will send, and nothing is dialled until that card is
-/// approved. Not compiled or run on a device yet.
+/// approved. Opened from "who and why" (decision 2026-11-13-calls-one-field-brief) it starts with
+/// the details folded under one row; they open by themselves when one of them needs fixing.
+/// Not compiled or run on a device yet.
 struct CallBriefEditorView: View {
     let list: CallCasesModel
     let replacing: StoredCallCase?
+    /// What Doddy says about how it filled the brief in, shown first.
+    let notes: [String]
+    /// False when pushed from the first screen: Back goes there instead.
+    let showsCancel: Bool
     let onPrepared: (StoredCallCase) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -16,21 +22,50 @@ struct CallBriefEditorView: View {
     @State private var pickingContact = false
     /// The genitive follows the name until the user edits it.
     @State private var genitiveEdited = false
+    /// On whose behalf, where the number came from, the facts, what Doddy must not do and the length.
+    @State private var showDetails: Bool
 
-    init(list: CallCasesModel, draft: CallBriefDraft, replacing: StoredCallCase?, onPrepared: @escaping (StoredCallCase) -> Void) {
+    init(list: CallCasesModel, draft: CallBriefDraft, replacing: StoredCallCase?, detailsShown: Bool = true,
+         notes: [String] = [], showsCancel: Bool = true, onPrepared: @escaping (StoredCallCase) -> Void) {
         self.list = list
         self.replacing = replacing
+        self.notes = notes
+        self.showsCancel = showsCancel
         self.onPrepared = onPrepared
         _draft = State(initialValue: draft)
         _genitiveEdited = State(initialValue: draft.principalGenitive != PolishGenitive.suggest(draft.principalName))
+        _showDetails = State(initialValue: detailsShown || draft.problems.contains(where: Self.isDetailProblem))
     }
 
     private var maxMinutes: Int { max(1, min(5, (list.availability?.maxDurationSecs ?? 300) / 60)) }
 
+    /// A problem in a field under Details: those open, so the fix is in view.
+    private static func isDetailProblem(_ problem: CallBriefProblem) -> Bool {
+        switch problem {
+        case .missingPrincipal, .tooManyFacts, .sensitiveFactKind, .peselFactInvalid: true
+        default: false
+        }
+    }
+
+    /// One line under the folded Details row: what Doddy says it calls for, the length, the facts it may say.
+    private var detailsSummary: String {
+        var parts = [String(format: NSLocalizedString("Doddy says: w imieniu %@", comment: ""), draft.principalGenitive),
+                     String(format: NSLocalizedString("At most %lld min", comment: ""), draft.maxDurationSecs / 60)]
+        let ticked = draft.tickedFacts.count
+        if ticked > 0 { parts.append(String(format: NSLocalizedString("Facts Doddy may say: %lld", comment: ""), ticked)) }
+        return parts.joined(separator: " · ")
+    }
+
     var body: some View {
         Form {
+            if !notes.isEmpty {
+                Section {
+                    ForEach(Array(notes.enumerated()), id: \.offset) { _, note in
+                        Label(note, systemImage: "info.circle")
+                    }
+                }
+            }
             whoSection
-            behalfSection
             Section {
                 TextField("Goal, in one sentence", text: $draft.goal, axis: .vertical)
                     .accessibilityIdentifier("callBrief.goal")
@@ -41,24 +76,43 @@ struct CallBriefEditorView: View {
             } footer: {
                 Text("Doddy asks this question word for word, may ask one short follow-up, then thanks and ends. Ask, don't agree: \"Is the laptop ready?\", not \"Please book me in.\"")
             }
-            factsSection
             Section {
-                Label("Agree to anything, book, order or confirm", systemImage: "xmark.circle")
-                Label("Pay or give card or account numbers", systemImage: "xmark.circle")
-                Label("Give your PESEL or address, unless ticked above as one", systemImage: "xmark.circle")
-            } header: {
-                Text("Doddy must not")
-            } footer: {
-                Text("If they ask for anything outside the card, Doddy says it will check with you and call back.")
-            }
-            Section {
-                Stepper(value: Binding(get: { draft.maxDurationSecs / 60 }, set: { draft.maxDurationSecs = $0 * 60 }), in: 1...maxMinutes) {
-                    Text(String(format: NSLocalizedString("At most %lld min", comment: ""), draft.maxDurationSecs / 60))
+                Button {
+                    withAnimation { showDetails.toggle() }
+                } label: {
+                    HStack {
+                        Text("Details").foregroundStyle(Theme.ink)
+                        Spacer()
+                        Image(systemName: showDetails ? "chevron.up" : "chevron.down")
+                            .foregroundStyle(Theme.secondaryText)
+                            .accessibilityHidden(true)
+                    }
                 }
-            } header: {
-                Text("Length")
+                .accessibilityIdentifier("callBrief.details")
             } footer: {
-                Text("Doddy says goodbye when the time is up. Calls happen only between 8:00 and 23:00 Polish time, and the whole call must fit.")
+                if !showDetails { Text(detailsSummary) }
+            }
+            if showDetails {
+                behalfSection
+                factsSection
+                Section {
+                    Label("Agree to anything, book, order or confirm", systemImage: "xmark.circle")
+                    Label("Pay or give card or account numbers", systemImage: "xmark.circle")
+                    Label("Give your PESEL or address, unless ticked above as one", systemImage: "xmark.circle")
+                } header: {
+                    Text("Doddy must not")
+                } footer: {
+                    Text("If they ask for anything outside the card, Doddy says it will check with you and call back.")
+                }
+                Section {
+                    Stepper(value: Binding(get: { draft.maxDurationSecs / 60 }, set: { draft.maxDurationSecs = $0 * 60 }), in: 1...maxMinutes) {
+                        Text(String(format: NSLocalizedString("At most %lld min", comment: ""), draft.maxDurationSecs / 60))
+                    }
+                } header: {
+                    Text("Length")
+                } footer: {
+                    Text("Doddy says goodbye when the time is up. Calls happen only between 8:00 and 23:00 Polish time, and the whole call must fit.")
+                }
             }
 
             let problems = draft.problems
@@ -79,7 +133,9 @@ struct CallBriefEditorView: View {
         .navigationTitle(replacing == nil ? "New call" : "Change the brief")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            if showsCancel {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            }
             ToolbarItem(placement: .confirmationAction) {
                 Button("Prepare the card") {
                     Task {
@@ -120,14 +176,17 @@ struct CallBriefEditorView: View {
             } label: {
                 Label("Pick from Contacts", systemImage: "person.crop.circle")
             }
-            Picker("Where the number came from", selection: $draft.source) {
-                Text("Typed in").tag(CallNumberSource.typed)
-                Text("From a note").tag(CallNumberSource.note)
-                if draft.source == .contacts { Text("From Contacts").tag(CallNumberSource.contacts) }
-            }
-            if draft.source != .contacts {
-                TextField("Where exactly (optional, e.g. their website)", text: Binding(get: { draft.sourceLabel ?? "" },
-                                                                                       set: { draft.sourceLabel = $0.isEmpty ? nil : $0 }))
+            // Where the number came from is a detail: the card says it either way.
+            if showDetails {
+                Picker("Where the number came from", selection: $draft.source) {
+                    Text("Typed in").tag(CallNumberSource.typed)
+                    Text("From a note").tag(CallNumberSource.note)
+                    if draft.source == .contacts { Text("From Contacts").tag(CallNumberSource.contacts) }
+                }
+                if draft.source != .contacts {
+                    TextField("Where exactly (optional, e.g. their website)", text: Binding(get: { draft.sourceLabel ?? "" },
+                                                                                           set: { draft.sourceLabel = $0.isEmpty ? nil : $0 }))
+                }
             }
         } header: {
             Text("Who Doddy calls")

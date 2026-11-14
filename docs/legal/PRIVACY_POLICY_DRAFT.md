@@ -8,6 +8,7 @@
 > - Every statement is meant to match what the code does today. Where the app's own screens say something different, this is noted in Appendix B.
 > - Many features here are built but never run on a device or against a live service (`docs/implementation/GO_LIVE_STATUS_2026-10-11.md`). A published policy must describe what is really running at launch, so every section needs a re-check.
 > - **Updated 2026-10-23 for ADR-603** (notes and conversations kept on Doddy's server, Section 5.13). That feature is built and tested on the server and in DoddyCore, but the iPhone screens are **not compiled** and the server code is **not deployed**. Section 5.13 describes what the code does; it must not be published until the feature really runs and has been checked on a device.
+> - **Updated 2026-11-12 and 13** from `main` (`6ed38890`) for what changed since: the required Doddy account (5.0), Messages on by default, with photos and files and a copy for Doddy Web (5.4), calls Doddy places for you (5.7a), Logbook (5.16), errands and shopping (5.17), files Doddy makes and Studio (5.18), Doddy looking at the screen (5.19), the camera, photos and Apple Health (5.20), trips and flights (5.21), parcels and deliveries (5.22), what Doddy Web shows (5.23), the permissions (6), account deletion (8), retention (9.1), the processors (9.3) and Appendix C. Many of these are merged but switched off on the server, not deployed, or never seen working end to end (`STATUS.md`); each section says which. Sections not named here were not re-read against the code on that date. It is still a draft for the owner and a lawyer, not legal advice.
 > - It depends on these owner decisions: who the controller is; which servers are really deployed; ElevenLabs retention; which processor agreements exist; the age rating; whether the website keeps Google Fonts and Google Analytics. See Appendix B.
 
 Effective date: [DATE]
@@ -29,11 +30,12 @@ Languages: English. A Polish version is [CONFIRM: owner decision; the app has Po
 
 This policy covers:
 
-1. the Doddy iPhone app (with its widgets, Share extension and Apple Watch app);
-2. Doddy's servers that the app can talk to (Section 5);
-3. the Doddy website at [WEBSITE ADDRESS] (today `https://doddy-eight.vercel.app`, `site/README.md`) and its waitlist.
+1. the Doddy app for iPhone and iPad, with its widgets, Share extension ("Save to Doddy"), screen-sharing extension and notification view (the Apple Watch app is paused, ADR-572, and is not in the shipping build);
+2. your Doddy account and Doddy's servers that the app can talk to (Section 5);
+3. Doddy Web, the browser version of your account (Section 5.23), at [WEB APP ADDRESS] (today served by Doddy's server, `https://doddy-yaci.onrender.com`, `STATUS.md`);
+4. the Doddy website at [WEBSITE ADDRESS] (today `www.doddy.lol`, `STATUS.md`) and its waitlist.
 
-It does not cover the services you connect yourself (Google, Microsoft, Notion, Todoist, Apple, your mobile carrier) or the sites we link to (TikTok, Instagram, Telegram). They have their own policies.
+It does not cover the services you connect yourself (Google, Microsoft, Notion, Todoist, Apple, your mobile carrier), the shops and apps Doddy opens for you to finish something yourself (a food app, a shop's checkout page, a booking page), or the sites we link to (TikTok, Instagram, Telegram). They have their own policies.
 
 ## 2. What Doddy is, and the short version
 
@@ -41,25 +43,29 @@ Doddy is an AI character. Doddy is software, not a person. Doddy has no feelings
 
 In short:
 
-- **No account is needed to use the app.** (`PrivacyDefaults.v1Voice`, `accountRequired: false`.) Some optional features create an anonymous server account or ask for a phone number (Sections 5.5 to 5.9).
+- **Everyone signs in with a Doddy account,** with Apple or Google (email codes are built but hidden for now). The account holds your email address and how you sign in, and every Doddy server knows you by it (Section 5.0; decisions `2026-11-08-required-account`, `2026-11-09-email-sign-in-off-for-now`). `PrivacyDefaults.v1Voice` still says `accountRequired: false`; that line is out of date. Texts and calls also ask for your phone number (Sections 5.6, 5.7).
 - **Your notes, lists, About you answers, photos and voice memos are stored on your iPhone.** They leave it only through features you switch on, listed in Section 5.
 - **Doddy's server keeps your notes and conversations only if you switch that on** (Settings, Doddy on the web, Keep on Doddy's server). Then it keeps them as text, never audio, for 1 year, and you can read, search, download and delete them on the web or ask Doddy about them there (Section 5.13). Off by default.
+- **Messages is on by default** (decision `2026-11-09-messages-on-by-default`). What you type, and a photo or file you attach to one question, go to Doddy's messaging server and Anthropic when you tap Send; the photo or file is kept by neither. A text copy of the conversation is kept on Doddy's server so Doddy Web can show it (Section 5.4).
 - **A voice conversation sends a lot.** When you talk to Doddy, your voice, the conversation and your saved notes (except notes you mark Private) go to ElevenLabs. ElevenLabs keeps a recording and a transcript. **[CONFIRM: how long, see 5.1]**
-- **There are no ads, no sale of data and no tracking in the app.** (Sources: `DataFlowView.swift` intro text, `PrivacyInfo.xcprivacy` `NSPrivacyTracking` false, `DEPENDENCIES_AND_LICENSES.md` "No analytics, no crash reporting".) The website does use analytics (Section 5.12).
+- **Logbook counts how you use Doddy, and is on unless you turn it off** (decision `2026-11-09-usage-counts-on-by-default`). Counts only, never words. You see them on Doddy Web; Doddy's team sees every account's counts with the account (Section 5.16).
+- **There are no ads, no sale of data and no tracking in the app,** and no third-party analytics or crash-reporting code. Logbook is the app's own analytics. (Sources: `PrivacyInfo.xcprivacy` `NSPrivacyTracking` false, `DEPENDENCIES_AND_LICENSES.md`.) The website uses analytics too (Section 5.12).
 - **You can see where your data goes** in the app: Settings, Privacy, "What leaves this iPhone". It changes with your switches.
-- **You can export and delete** most of what is on your iPhone (Section 8). Data already held by a service (ElevenLabs and others) is not deleted by the app.
+- **You can export and delete** most of what is on your iPhone, and delete your Doddy account with what Doddy's servers keep for it (Section 8). Some data already held by a service (ElevenLabs' recordings of app conversations, and others) is not deleted by the app.
 - **Doddy makes no automated decisions** about you with legal or similar effects (Section 7).
 - **This is an early test build.** (`site/index.html` privacy note.)
 
 ## 3. Data that stays on the iPhone
 
-The app has no analytics, no crash reporter and no advertising code. (`DEPENDENCIES_AND_LICENSES.md`.) The following is kept on your iPhone. It is sent off the phone only as described in Section 5.
+The app has no third-party analytics, no crash reporter and no advertising code (`DEPENDENCIES_AND_LICENSES.md`); its own usage counts are Logbook (Section 5.16). The following is kept on your iPhone. It is sent off the phone only as described in Section 5.
 
 | Data | Where it is kept | Notes and source |
 |---|---|---|
 | Notes (text, original text, source, dates, type, corrections history) | SQLite database in Application Support, iOS Data Protection `completeUntilFirstUserAuthentication`, `secure_delete` on | ADR-028, ADR-252. Included in your iPhone backups (iCloud or computer) because it is ordinary app data. |
 | Lists and list items | Same database | ADR-216 |
-| Photos added to notes | `NotePhotos` folder next to the database, JPEG, same protection class | ADR-218. Chosen with Apple's photo picker. The app has no camera or photo-library permission. Text in the photo is read on the iPhone with Apple's Vision. |
+| Photos added to notes | `NotePhotos` folder next to the database, JPEG, same protection class | ADR-218, ADR-569. Chosen with Apple's photo picker, or taken with the camera when you tap Take a photo or Open camera. Text in the photo is read on the iPhone with Apple's Vision. A photo you send with a question in Messages is not kept here (Section 5.4). |
+| Messages (the conversation with Doddy) | Same database | ADR-585. Your messages and Doddy's answers, until you delete them. A photo you sent is not kept, only that the message had one (`v20_thread_photo`); a file Doddy made is kept as its name and link. A text copy is on Doddy's server for Doddy Web (Section 5.4). |
+| Logbook's counts waiting to be sent | UserDefaults | Decision `2026-11-09-usage-counts-on-by-default`. Each finished conversation's start, length, way in, ending and language (never words), for the 8 days that can still be sent, at most 500. Emptied when you turn Logbook off. |
 | Voice memos | `NoteAudio` folder, same protection class | ADR-230. Words are written out on the iPhone (on-device speech recognition is required). If the iPhone cannot do that for your language, nothing is written out and nothing is sent. |
 | About you answers (name, preferences) | Same database, separate table | ADR-085. Saved only after you review them. |
 | Personal settings, switches, pinned note IDs, private note IDs, parking spot | UserDefaults (app preferences) | ADR-019, ADR-043, ADR-187, ADR-301, ADR-310. The parking spot holds a position and your note (see Section 6, Location). |
@@ -67,7 +73,8 @@ The app has no analytics, no crash reporter and no advertising code. (`DEPENDENC
 | "What Doddy did" activity list (30 days, up to 300 entries) | JSON file, same protection class | ADR-135, ADR-169. Online-account entries keep the tool name only. |
 | Private notes (Face ID) | The note stays in the database. Its ID is on a "private" list. | ADR-310. Private notes are held back from voice, Siri, Ask Doddy, widgets, the watch and the call copy. They are not encrypted separately in the app. |
 | Widget snapshot (up to 4 pinned notes, 3 next reminders, 8 lists with 12 items each, parking time and note) | File in the App Group, `completeUntilFirstUserAuthentication` | ADR-219, ADR-315. Reminder text is hidden by default. Note text is marked privacy sensitive for the Lock Screen. |
-| Apple Watch sync | The iPhone sends the same snapshot to the watch by WatchConnectivity. The watch app has no database or networking. | ADR-232. On by default. A switch exists in Settings, Apple Watch. |
+| Apple Watch sync | Paused: the watch app is not in the shipping build (ADR-572). When it was, the iPhone sent the same snapshot to the watch by WatchConnectivity; the watch app has no database or networking. | ADR-232, ADR-572 |
+| The shared screen picture | One JPEG of the screen in the App Group, replaced about once a second, only while you share the screen with Doddy; deleted when sharing pauses or ends | Decision `2026-11-09-doddy-looks-at-the-screen`. Sent only as in Section 5.19. |
 | Share extension inbox ("Save to Doddy") | `share-inbox.json` in the App Group, complete file protection, removed when read | ADR-311 |
 | iPhone search index (CoreSpotlight) | Doddy's own index domain | ADR-330. Off by default. Private notes are never indexed. |
 | Access codes and tokens (voice token server code, Doddy server token, Ask Doddy token) | iOS Keychain | The server token is `AfterFirstUnlockThisDeviceOnly` (ADR-149). **[CONFIRM: accessibility class of each other secret]** |
@@ -81,7 +88,7 @@ Face ID: iOS checks your face. Doddy learns only whether it matched. (`NSFaceIDU
 Stated only where the code or docs show it:
 
 - No advertising, no data sale, no cross-app tracking in the app (`PrivacyInfo.xcprivacy`: `NSPrivacyTracking` false, no tracking domains).
-- No analytics or crash-reporting SDK in the app (`DEPENDENCIES_AND_LICENSES.md`). The Settings row reads "Analytics and telemetry: Off (not built)". **[CONFIRM: the final build is checked for third-party SDK privacy manifests, see Appendix B]**
+- No third-party analytics or crash-reporting SDK in the app (`DEPENDENCIES_AND_LICENSES.md`). The app's own usage counts, Logbook, are on by default (Section 5.16). On `main` the Settings row still reads "Analytics and telemetry: Off (not built)"; it must follow Logbook's switch before release (Appendix B). **[CONFIRM: the final build is checked for third-party SDK privacy manifests, see Appendix B]**
 - No location tracking. Location is read once when you ask (Section 6). Place reminders are watched by iOS, not by Doddy (ADR-196).
 - "Always" location and background location are not used (ADR-196, enforced by the guard script).
 
@@ -94,19 +101,32 @@ Common points:
 - The app's own list of destinations is `DataFlow.rows` (`Packages/DoddyCore/Sources/DoddyCore/DataFlow.swift`). This section starts from it and adds what the code and docs show beyond it. Differences are listed in Appendix B.
 - "Pause all connections" (Settings) switches off Doddy's use of calendar, reminders, contacts and online accounts in conversations (`DataFlow`, `pauseAll`).
 
+### 5.0 Your Doddy account (Supabase)
+
+Status: required in the app since decision `2026-11-08-required-account`; Google sign-in fails until an owner setting is fixed (`STATUS.md`, owner queue 25).
+
+| Item | Detail |
+|---|---|
+| Who | Supabase Auth (project `doddy-gateway`), which runs Doddy's sign-in. The app talks to it directly with the project's public key (`DoddyAccount.swift`). Apple (Sign in with Apple) and Google (Google sign-in) prove who you are to it. **[CONFIRM: Supabase entity, region of the project, processor agreement; Google's and Apple's roles]** |
+| What is sent | With Apple or Google: their proof of who you are, which gives the account your email address (with Apple, possibly a private relay address that Apple forwards) and whatever else they include, such as the name on a Google account. With an email code (built, hidden for now): the email address you type. Then the account's session, which the iPhone renews about every hour. |
+| What is kept | The account's id, email address, sign-in method and dates, at Supabase. Every Doddy server (5.2, 5.4 to 5.10, 5.13, 5.16 to 5.23) knows you by that id. Doddy's team can see each account's email address, sign-in method and dates on an owner-only page (`/admin`, `backend/src/web/owner.ts`, decision `2026-11-09-usage-counts-on-by-default`). |
+| Linking earlier data | An iPhone used before the account can bring its data on Doddy's servers into the account only with a code it asks for, with a 24-hour undo (#383, `DoddyAccount.swift`). |
+| Deletion | Settings › About › Your Doddy account › Delete (Section 8). The backend deletes the sign-in at Supabase with the account, and retries until it is gone (#384, ADR-818). |
+| Legal basis | **[CONFIRM: proposed: performance of the service; the account is required to use Doddy]** |
+
 ### 5.1 ElevenLabs: voice conversations
 
 | Item | Detail |
 |---|---|
 | Who | ElevenLabs (runs the voice agent: speech to text, the language model, text to speech). **[CONFIRM: ElevenLabs legal entity, location and processor terms]** |
 | What is sent | Your voice. The conversation. Your saved notes, newest first, up to 6,000 characters (never notes marked Private). List names (a list's items only when Doddy reads or changes a list). Your personality settings. If on: your last few conversations (up to 4,000 characters) and your About you answers. Your nickname or first name appears in the profile when About you is shared. A random install ID is sent as the conversation user ID. In a morning check-in conversation: today's Doddy reminders and lists with things left. |
-| Also sent when you use the matching switch | Calendar entries, reminders, contact names with birthday day and month (never the year or an age), message drafts, results from your online accounts (for example email previews, file names, Notion page titles, Todoist tasks, and one whole email or page if "Read an email" or "Read a Notion page" is on) |
+| Also sent when you use the matching switch | Calendar entries, reminders, contact names with birthday day and month (never the year or an age), message drafts, results from your online accounts (for example email previews, file names, Notion page titles, Todoist tasks, and one whole email or page if "Read an email" or "Read a Notion page" is on). When you ask: one day's steps, distance and floors (Motion & Fitness); how many photos and videos you took and when (never the pictures); the week's Apple Health summary, only after its own consent and your yes in that conversation (Section 5.20); the name of a light, outlet, fan or scene and whether it worked (HomeKit); what Doddy's server found for a search, task, file or call. |
 | When | Only while a conversation is open (maximum 10 minutes per conversation, `voice-agent/session.json`). The microphone is used only while you talk, or from app open if you turned that on. |
 | Opt-in? | Starting a conversation is your action. Using the voice feature sends the data above. The extra items depend on your switches (Settings, Connections). |
-| Language model behind the agent | The agent is configured to use Google's `gemini-3.5-flash` model (`voice-agent/session.json`, `V1_VOICE_STATUS.md`). So your conversation is also processed by Google through ElevenLabs. **[CONFIRM: ElevenLabs' sub-processors, Google's terms for this route, and whether Google keeps or trains on it. The app's own screens do not mention Google]** |
+| Language model behind the agent | The live agent uses OpenAI's `gpt-6-luna`, with backup models, as read on the live agent between 24 Oct and 10 Nov 2026 (`voice-agent/README.md`); `voice-agent/session.json` still says Google's `gemini-3.5-flash`. So your conversation is also processed by OpenAI (or the backup model's provider) through ElevenLabs. The Apple Health consent names "ElevenLabs, with an OpenAI model"; the other screens name ElevenLabs only. **[CONFIRM: which model runs at launch; ElevenLabs' sub-processors; OpenAI's (and any backup provider's) terms for this route, and whether they keep or train on it]** |
 | Weather and facts | ElevenLabs makes the request for Doddy. The place name and coordinates go to Open-Meteo. Search words go to Wikipedia. The app makes no such request itself. (`DataFlow` row `lookups`.) |
 | Recording and transcript | ElevenLabs keeps a recording and a transcript of each conversation (`DataFlow` note). The dev agent setting is: audio recording on, retention unlimited, no auto-delete, zero-retention off (`V1_VOICE_STATUS.md`, ADR-057). The transcript can include your first name. ADR-057 says this was accepted only for the owner's own phone and "revisit before any other user". **[CONFIRM: retention period for launch; whether recording is turned off; zero-retention mode (the status doc says it and EU residency are Enterprise-only); deletion of existing recordings; ElevenLabs data location]** |
-| Who can start a conversation | With a token server set, the app sends your access code to it and gets a one-conversation token (5.2). Without one, the app uses the public development agent ID. Agent authentication is off today (ADR-034, `GO_LIVE_STATUS` "Live services"). **[CONFIRM: authentication on before any other person uses it]** |
+| Who can start a conversation | Only a signed-in Doddy account: the app asks the token server (5.2) for a one-conversation token. Agent authentication is on, with a daily limit (`STATUS.md` "Live services", owner queue 4). **[CONFIRM: authentication and limits as set at launch]** |
 | Private conversation | The Private switch on the Talk screen means nothing of the conversation is kept on the iPhone. ElevenLabs still runs it and keeps its own recording (ADR-170). |
 | Translator mode | The other person's voice and everything said while translating also go to ElevenLabs. Opened from Translate on Home, your notes, conversations and profile are not sent. Started inside a conversation, what Doddy already had stays there, and Doddy is told never to repeat it. Nothing is kept on the iPhone unless you tap Copy or Save within 5 minutes of the end. (`DataFlow` row `translator`, ADR-215.) The other person has not agreed to anything. **[CONFIRM: what you tell people you record, and the lawful basis for their voices]** |
 | Phone-call agent | Separate agent for phone calls, see 5.7. |
@@ -118,8 +138,8 @@ Common points:
 | Item | Detail |
 |---|---|
 | Who | Doddy's own small server (`server/voice-token`) on Vercel Functions: project `doddy-voice-token`, team `doddyyyy`, address `doddy-voice-token-beta.vercel.app` (ADR-521). It keeps its records in Upstash Redis. **[CONFIRM: Vercel and Upstash regions, and the processor agreements with both]** |
-| What is sent | **Signing in (once):** Apple's identity token from Sign in with Apple, a one-time number (nonce) that ties it to this request, and Apple's one-time authorization code (used only so the link can be revoked later; ADR-524). **Each conversation:** a short-lived Doddy access token and ElevenLabs (the only voice). No audio, transcripts, notes or profile. (ADR-522, `server/voice-token/README.md`.) |
-| What it does | Checks the Apple token with Apple's published keys. If Doddy's Sign in with Apple key is set up, it also swaps the authorization code with Apple for a token that lets it end the Sign in with Apple link when you delete your voice account. Then it swaps your Doddy session for a one-conversation ElevenLabs token or a short-lived OpenAI client secret, so the provider API keys stay on the server. It limits each account to 30 conversations an hour by default. |
+| What is sent | **Each conversation:** your Doddy account's access token (Section 5.0), which the server checks (`server/voice-token/src/doddy-account.js`), and the provider, ElevenLabs (the only voice; other values are refused, decision `2026-11-09-elevenlabs-only-voice`). **Older voice accounts:** Apple's identity token from Sign in with Apple, a one-time number (nonce) that ties it to this request, and Apple's one-time authorization code (used only so the link can be revoked later; ADR-524). No audio, transcripts, notes or profile. (ADR-522, `server/voice-token/README.md`.) |
+| What it does | Checks the Apple token with Apple's published keys. If Doddy's Sign in with Apple key is set up, it also swaps the authorization code with Apple for a token that lets it end the Sign in with Apple link when you delete your voice account. Then it swaps your session for a one-conversation ElevenLabs token, so the provider API key stays on the server. It limits each account to 30 conversations an hour by default. |
 | What it keeps | A keyed pseudonym of your Apple account ID (not the ID itself), your session records, hashes of your refresh tokens (not the tokens), and short-lived counters for one-time numbers and rate limits. If Doddy's Sign in with Apple key is set up, also Apple's refresh token for you, encrypted, kept only to revoke the link and deleted with your account. Refresh tokens last 30 days and rotate on use; access tokens last 10 minutes and stay on the iPhone. **[CONFIRM: whether Apple's identity token carries your email and whether the server reads it; the code keeps only the subject]** |
 | Logged | One line per request: action or provider, outcome, status and duration. No content, credentials, Apple account ID or user identifier (`server/voice-token/README.md`). The hosting platform may keep its own request logs. **[CONFIRM: Vercel log retention and IP logging]** |
 | Opt-in? | Required for voice; nothing else in the app needs it. Settings, Voice has Sign out of voice and Delete voice account. Deleting removes your sessions on the server. Once Doddy's Sign in with Apple key is set up, it first asks Apple to revoke the Sign in with Apple link (ADR-524); the account is deleted even if Apple doesn't answer. Until then, and for accounts made before it, the app tells you to remove it in your Apple ID settings (go-live checklist C8). **[CONFIRM: the key is set and a revoke was seen to work, before this sentence is published]** |
@@ -129,23 +149,26 @@ Common points:
 
 OpenAI Realtime, and the voice picker that chose it, were removed from the app and the token server (decision `2026-11-09-elevenlabs-only-voice`). Nothing goes to OpenAI for voice. OpenAI still appears as the language model behind the ElevenLabs agent (section 5.1, checked 24 Oct 2026), for Ask Doddy's fallback and for the news writer (5.x below). Conversations kept on a phone from before this date may be marked as run by OpenAI; they stay on the phone.
 
-### 5.4 Ask Doddy (typed questions): Doddy's server and Anthropic
+### 5.4 Messages (typed questions, photos and files): Doddy's messaging server and Anthropic
 
 | Item | Detail |
 |---|---|
-| Who | Doddy's own server (`backend/`, the Render service `doddy`, region Frankfurt), which passes the question to Anthropic's Messages API (Claude) with Doddy's key (ADR-587). It replaced a separate OpenAI gateway (`gateway/`) that was never deployed. **[CONFIRM: Anthropic entity, terms, region; Render's processor terms]** |
-| What is sent | Your typed question and up to 6 earlier messages from that screen. If "Use relevant saved notes" is on: up to 5 notes that match your question (never Private notes). Every call carries a session token the iPhone made for itself; there is no account, invite code or address to enter. Notes are given to Claude under short aliases (n1, n2), not their IDs. |
-| When | Only when you send a typed question. |
-| Opt-in? | Yes. Off until you confirm a dialog that names Anthropic. |
-| Limits | 50 questions per iPhone and 500 for everyone per UTC day (ADR-587). Any iPhone beyond the first gets a guest session that can ask questions and nothing else. |
-| Retention | Doddy's server does not store the question, notes or answer, and its logs keep only counts, token numbers and timings (`backend/test/assist.test.ts` checks that no text is logged). The server keeps a per-day question count per iPhone for the limit. How long Anthropic keeps requests is not verified. The host's own request logs (IP, path, status) are kept by Render. Chat history is in memory only and never saved as notes. **[CONFIRM: Anthropic retention terms for the API key's organisation; host log retention]** |
+| Who | Doddy's messaging server (`server/messaging`, Render service `doddy-messaging`, region Frankfurt, `render.yaml`), which passes the question to Anthropic's Messages API (Claude) with Doddy's key (`POST /v1/assistant/ask`, ADR-587). **[CONFIRM: Anthropic entity, terms, region; Render's processor terms]** |
+| What is sent | Your typed question and the last few messages of the conversation. If "Use relevant saved notes" is on (it is by default): the notes that match your question (never Private notes), under short aliases. **A photo** you attach (Choose a photo, or Home's + › Take a photo): made smaller on the iPhone (at most 1,600 px, JPEG) and drawn again, so its location and camera details are not sent; it goes with that one question only (`docs/implementation/MESSAGES_PHOTOS.md`). **A file** you attach (a PDF or a text file, ADR-732): with that one question only. Every request carries your account's session. |
+| When | Only when you tap Send. |
+| Opt-in? | **On by default** since decision `2026-11-09-messages-on-by-default`: nothing is sent until you send a message; Settings › Ask Doddy › "Turn on Ask Doddy" turns it off, and turning it on again shows the disclosure. **[CONFIRM: an opt-out model is acceptable for this; the legal basis]** |
+| Limits | 100 questions an account and 1,000 for the server a UTC day by default (`ASSISTANT_DAILY_PER_ACCOUNT`, `ASSISTANT_DAILY_PER_SERVER` in `server/messaging/src/config.ts`); a smaller shared pool for accounts under a day old (`server/messaging/README.md`). |
+| Retention at Doddy | The messaging server does not store the question, notes, photo, file or answer, and its logs keep counts and whether a photo was attached, never words (`MESSAGES_PHOTOS.md`). The conversation is kept in Messages on the iPhone until you delete it (Section 3). |
+| Copy for Doddy Web | After every change, the iPhone sends the text of the newest 200 messages (yours and Doddy's) to Doddy's server (`backend/`, Render service `doddy`), which keeps them encrypted at rest and readable by the server so Doddy Web can show them (`ThreadSync.swift`, `backend/src/messages/`). A photo is never sent there, only that a message had one; a file is its name and kind, never the file or its link. There is no switch for this copy. "Delete conversation" in Messages deletes it and says so only when the server confirms; a copy the iPhone stops sending is deleted after 365 days. **[CONFIRM: the copy needs its own notice or consent; it now holds an Apple Health summary you send in Messages, Section 5.20]** |
+| Retention at Anthropic | Not verified. **[CONFIRM: Anthropic retention terms for the API key's organisation; host log retention]** |
+| Also through this route | Doddy looking at your screen (5.19) and recaps (5.14) use the same server, key and daily caps. |
 
 ### 5.5 Doddy messaging server: anonymous account and notifications
 
 | Item | Detail |
 |---|---|
-| Who | Doddy's own server (`server/messaging`): a web service and a worker with a Postgres database on Render, region Frankfurt (`render.yaml`, ADR-139). `render.yaml` says it was "not deployed"; the app's built-in server address is empty, so a shipped build reaches no messaging server until one is set (`ServerConfig.swift`). **[CONFIRM: what is deployed at launch; Render's processor terms]** |
-| What is created | An anonymous account (random IDs, no name, no email). A device token, stored only as a SHA-256 hash. The date the account was made and last used. |
+| Who | Doddy's own server (`server/messaging`): a web service with the worker inside it and a Postgres database on Render, region Frankfurt (`render.yaml`, ADR-139). It is deployed (`doddy-messaging`, `STATUS.md` "Live services") and the app has its address built in. **[CONFIRM: what is deployed at launch; Render's processor terms]** |
+| What is created | An account on this server tied to your Doddy account, made when the iPhone signs in there (`POST /v1/accounts/sign-in`). Anonymous accounts are made only with `ANONYMOUS_ACCOUNTS=1`; the default is off (#375; the live service runs an older version until it is deployed, `STATUS.md`). A device token, stored only as a SHA-256 hash. The date the account was made and last used. |
 | Push notifications | If you turn notifications on: this iPhone's APNs notification token and its environment. The server sends through Apple (APNs). The push never contains a note. |
 | Opt-in? | Yes. The server token is kept in the Keychain and is not backed up, so a restored iPhone starts a new anonymous account (ADR-149). |
 | Retention | Until you delete your messaging data or an operator deletes the account. Sent-message rows lose their text when they reach a final state, but metadata rows (state, channel, times, provider ID) are not pruned in the code reviewed for this draft. **[CONFIRM: retention period for these rows]** |
@@ -175,6 +198,21 @@ OpenAI Realtime, and the voice picker that chose it, were removed from the app a
 | Limits | Outbound calls: 3 per hour, 10 per day; at most 10 booked calls waiting, from 1 minute to 7 days ahead. |
 | Opt-in? | Yes: calls are off until turned on; outbound calls need separate consent (`calls-v1`). Turning "Doddy may call me" off cancels booked calls and erases their reasons. |
 | Export | Settings → Phone calls → "Export phone and text history" gives a JSON file of your calls, text statuses and waiting notes (`GET /v1/phone/history`). |
+
+### 5.7a Calls Doddy places for you (to a business or a person)
+
+Status: built; the server switch is on in code by default (`TASK_CALLS_KILL_SWITCH=0`) but calls need the server's calling line set up and your verified number; `call_places` (calling places found in a conversation) is not on the live voice agent yet; **no real call has been seen end to end** (`STATUS.md`). Sources: `server/messaging/src/taskCalls/`, `server/messaging/README.md` "What is kept", `DataFlow` row `callCases`, ADR-500 to 507, decision `2026-11-12-book-agent`.
+
+| Item | Detail |
+|---|---|
+| What you set up | A card (Settings › Phone calls › Calls for you, or in a conversation, up to three places Doddy found): the name and Polish phone number of whom Doddy calls (typed, or one number picked with Apple's contact picker), who the call is for (your first name from About you), the goal, the one question, and only the facts you tick (a PESEL or an address only if you tick it as that kind). Nothing is dialled until you approve the card. |
+| Who | Twilio places the call from Doddy's calling number (on a Twilio account of its own where one is set up) with **recording off** (`record: false`). Twilio transcribes both sides live, using its Google engine (`twiml.ts`). ElevenLabs speaks as Doddy (a separate task agent with no recording, `agentSafety.ts`) and so hears the other person. Anthropic (Claude) reads the transcript, with your goal and question, to write the answer card. A booking call uses a separate booking agent that may accept only the booking on the card. |
+| What the other person hears | The opening line is fixed: Doddy says he is an AI assistant calling on your behalf, then asks the question (`opening.ts`). A spoken recording notice is off by default (`CALL_RECORDING_NOTICE=off`). **[CONFIRM: whether the other person must be told the call is transcribed and read by an AI; the lawful basis for their voice and words; Polish rules on recording and transcribing calls]** |
+| When | Between 8:00 and 23:00 Warsaw time, at most 5 minutes a call. For several places, one at a time after your one tap, stopping at the first clear yes. If the card says so, the answer is texted to your own verified number. "Take over" rings your own number. |
+| Limits | 3 calls an hour and 10 a day per account, 2 a day to the same number per account, 3 a day to one number in all, 50 a day for the server (`config.ts`); an operator do-not-call list. |
+| Kept | The brief until the case is done; the live transcript lines, encrypted, until the answer card is built (24 hours at most); the answer card (with the quoted transcript), encrypted, until the app saves it (7 days at most); each with a receipt. The task agent's conversation at ElevenLabs is deleted once the answer card is built and checked gone. Twilio's call records are deleted 24 hours after the call by default. A dial log of keyed hashes for the limits, 2 days. On the iPhone the answer is kept with the case until you delete it. |
+| Opt-in? | Yes: each call is your own tap on its card. |
+| Legal basis | **[CONFIRM: for you, performance of the service you asked for; for the person called, legitimate interests or another basis, and how they can object or ask for deletion]** |
 
 ### 5.8 Doddy messaging server: "Memory on calls" (copy of your notes)
 
@@ -207,8 +245,8 @@ OpenAI Realtime, and the voice picker that chose it, were removed from the app a
 | Stored by Composio and the providers | Composio holds the sign-in tokens and its own run logs. Google and the others hold your data. Doddy never sees your Google password or tokens. **[CONFIRM: per Composio's policy]** |
 | Access scope | Gmail: read, compose, send and modify (labels, archive, read/unread, Trash), ADR-485. Sending, forwarding, label changes and Trash each run only after a tap on a card with the exact email; Doddy never deletes email for good, and full Gmail access (`https://mail.google.com/`) is refused as too broad. Before 2026-10-18: drafting only (ADR-099). Google Calendar (ADR-486): `calendar.events` (events only). Outlook (ADR-486/487): Mail.Read, Mail.ReadWrite, Mail.Send, Calendars.Read, Calendars.ReadWrite; an event change or deletion notifies its guests, and the card says so. Gmail read, Drive (metadata) and Calendar are read-only scopes. Outlook scopes: **[CONFIRM: see `backend/src/tools/catalog.ts`]**. **[CONFIRM: owner accepts the wider Gmail scope or drops drafting]** |
 | Opt-in? | Yes. Every account and every tool is off until you connect and switch it on. Anything that adds or creates asks you first. You can disconnect: this deletes the connection record and asks Composio to revoke and delete. If that fails the screen says so. |
-| Identity today | Sign-in is by a token the owner mints. Real app sign-in is not built. Live production mode is refused until it is (ADR-077). **[CONFIRM: how users will sign in before public launch]** |
-| Retention | Backend records have no retention policy; the free-plan database file resets on restart or deploy (`render.yaml`, `SECURITY_AND_PERMISSIONS.md` gate 2). Account deletion and export for backend data are "not built". **[CONFIRM]** |
+| Identity | Your Doddy account (Section 5.0), since decision `2026-11-08-required-account`; before it, the iPhone's own device session. **[CONFIRM: ADR-077's live-mode gate as deployed; `STATUS.md` says the live `doddy` service runs with `env: development`]** |
+| Retention | The backend's database is Postgres (Supabase, `STATUS.md`). Receipts and usage counters have no time limit in the code; deleting your Doddy account erases every table that holds your rows (`ERASED_TABLES` in `backend/src/store.ts`, ADR-674) and disconnects the online accounts at Composio. Export of backend data, apart from kept notes and conversations, is not built. **[CONFIRM: a retention period for receipts and usage counters]** |
 
 ### 5.11 Other services the app reaches
 
@@ -220,6 +258,11 @@ OpenAI Realtime, and the voice picker that chose it, were removed from the app a
 | **iCloud (Apple CloudKit)** and the people you share with | For each list you share or join: the list name and items, and every change; a reminder's place only if you tap Share this place. Silent notifications from iCloud tell Doddy a list changed. | While a list is shared | Yes: you confirm each share. **Off unless the build has an iCloud container; the default build has none and never touches CloudKit** (`project.yml`, ADR-263). | `DataFlow` row `iCloudSharing`, ADR-263, ADR-284, ADR-307. People you invite see what you share. |
 | **Apple Push (APNs)** | The notification token goes to Doddy's messaging server (5.5). For shared lists the token goes only to Apple. | See 5.5 | Yes | ADR-142, ADR-284 |
 | **Where you save a backup file** | Your notes, lists, photos, voice memos, time reminders and About you answers, sealed with your passphrase. | When you make a backup and choose where to save it | You do it | `DataFlow` row `backup`, ADR-222. Doddy keeps no copy of the file or the passphrase. |
+| **Open Food Facts** | Only the barcode number of a product you scan on a list. The photo stays on the iPhone and isn't kept. | When you scan a barcode, at most 10 a minute | You do it | `DataFlow` row `openFoodFacts`, ADR-631 |
+| **InPost** | Only a parcel number you add or refresh; InPost sees the iPhone's internet address | When you add a parcel or tap Refresh | You do it | `DataFlow` row `inPost`, ADR-641; Section 5.22 |
+| **Ministry of Finance VAT register; CEIDG through the messaging server** | Only a buyer's NIP you say for an invoice | When you dictate an invoice | You do it | `DataFlow` rows `vatRegister`, `ceidg`, ADR-685 |
+| **inFakt** | An invoice you confirm, with your own inFakt key, from the iPhone. **Not switched on in this build** (`InFaktAPI.createVerified`) | Only on Confirm | You do it | `DataFlow` row `inFakt`, ADR-640 |
+| **Shopify's Shop service** | See Section 5.17 | | | |
 | **TikTok, Instagram** | Nothing from the app. Plain links that open outside Doddy. | When you tap | You do it | ADR-130 |
 
 ### 5.12 The website and its waitlist
@@ -234,7 +277,7 @@ OpenAI Realtime, and the voice picker that chose it, were removed from the app a
 | Retention | No fixed period in the code. **[CONFIRM: delete after launch, after [N] months, or on request only]** Deletion on request is possible through the admin page. The form promises it but names no contact address. |
 | Legal basis | **[CONFIRM: consent]** |
 | Vercel Web Analytics | Counts page views and visitors on the landing page. No cookies. Vercel identifies a visitor by a hash of the request that it discards after 24 hours and keeps page, referrer, country, device and browser class (`site/README.md`, Vercel's documentation). It runs without asking. **[CONFIRM: lawful basis and notice in the EU]** |
-| Google Analytics 4 | Loaded on every page view, with no consent banner. It sets cookies (`_ga`, `_ga_*`). Google signals and ad settings are whatever the GA property is set to; the site code does not change them. Measurement ID `G-MRF40685L1` (property "doddy"). (`site/analytics.js`, ADR-245, amended 15 October.) **[CONFIRM: Google as processor or controller; GA data location and retention setting; transfers; the lawful basis for setting these cookies on EU visitors without consent]** |
+| Google Analytics 4 | Loaded only after the visitor taps Allow in the site's banner; No thanks, or no choice yet, loads nothing from Google and removes any `_ga` cookies left from an earlier visit. The choice is kept in the browser's localStorage (`doddy-analytics-consent`), and "Analytics choices" in every footer changes it. Once allowed, it sets cookies (`_ga`, `_ga_*`); the site turns Google signals and ad personalisation off and sends ad consent as denied. Measurement ID `G-MRF40685L1` (property "doddy"). (`site/analytics.js`, decision `2026-11-12-site-analytics-after-consent`, which replaces ADR-245 as amended on 15 October.) **[CONFIRM: Google as processor or controller; GA data location and retention setting; transfers; that the banner's wording is enough for consent from EU visitors]** |
 | Google Fonts | The page loads two fonts from `fonts.googleapis.com` and `fonts.gstatic.com` as soon as it opens, before any choice. That sends your IP address to Google. (`site/index.html`, `site/README.md` "Needs the owner" 4.) **[CONFIRM: self-host the fonts, or give notice and a basis]** |
 | Links | Telegram group, TikTok, Instagram. They open in a new tab. We send them nothing. |
 | Cookies and storage | Only GA cookies (if you allow) and one localStorage entry for your analytics choice. The site has no other cookies. |
@@ -276,26 +319,117 @@ A recap is a short note of what was discussed, agreed and left to do after a con
 | Legal basis | **[CONFIRM: consent, by the two switches; withdrawn by switching off]** |
 | **[CONFIRM]** | Anthropic entity, terms, region and retention for the API key's organisation; whether telling the caller that a recap is made is required for phone calls (the phone agent says it is an AI in its first sentence; it does not say a recap is made); Apple's terms for the on-device model; the effect on the retention table in Section 9. |
 
+### 5.15 On my radar (Following) and its alerts (ADR-656; decision 2026-11-10-radar-alerts)
+
+What you follow is kept on the iPhone. Each time you open or refresh the screen, the follows (topic ids, your own words, your own feed's address) go to Doddy's messaging server, which fetches the publishers' public feeds through a shared cache and keeps nothing of yours. **Alerts are off until you turn on "Let Doddy's server check this for you" for one follow**, and the server feature is off until the owner switches it on (`RADAR_ALERTS_ENABLED`).
+
+| Item | Detail |
+|---|---|
+| What is sent and kept | Only for a follow with that switch on: its name, its words or feed address, the words to look out for, how to tell you (as it happens or once a day, and at what time), your time zone and language (`radar_alerts`). The stories found for it: the publisher's headline, summary, link and name, and which of your words they mention (`radar_hits`). |
+| What the server does | Reads the follow's feeds about every 20 minutes (a daily alert every 2 hours) and, for a new story that mentions your words, queues a notification through Apple: the publisher's headline and name. As it happens: not in quiet hours (21:00–08:00 in your time zone), at most 8 a day. Once a day: a count and up to three lines; if the server has a news writer, Anthropic (Claude) or OpenAI gets those public headlines and summaries, with your follow's name, to write the lines, and the notification says so. |
+| Your own feed | Fetched by the server from its address (https, public addresses only). The address is kept only while the alert is on. |
+| Retention | Found stories: 14 days. Alerts: until you turn the switch off, remove the follow or delete the account (all deleted with it). Notifications queued: as other notifications (section 5.5). Logs: counts only. |
+| Opt-in? | Yes, per follow, off by default. |
+| **[CONFIRM]** | The live privacy page and App Store answers before the switch goes on; the news writer's terms and retention (as section 5.9). |
+
+### 5.16 Logbook: counts of how you use Doddy (decision 2026-11-09-usage-counts-on-by-default)
+
+| Item | Detail |
+|---|---|
+| What is sent | For each day, counts only (`LogbookDay`, schema `doddy.logbook.day.v1`, checked by the server's allow-list in `backend/src/web/logbook.ts`): how many conversations and how long, in which hours, how they started (app, Action Button, widget, Siri, island) and ended, and in which languages; how often each of Doddy's tools ran and how it ended; notes saved by type and source, edits; list items added and ticked; tasks handed over; translator sessions and minutes. Never a word anyone said, a note's text, a name, a place, an email or audio. Private notes and private conversations are not counted. |
+| Where | Doddy's server (`backend/`, Render service `doddy`), with your account. |
+| When | **On unless you turn it off** (Settings › Doddy on the web › Logbook). The first time, the last 7 days and today; then today at most once an hour, and each day once more after it ends. |
+| Who sees it | You, on Doddy Web's Logbook page. **Doddy's team sees every account's counts and totals with the account** (email address, sign-in method, dates) on an owner-only page (`/admin`). When you ask Doddy a question on Doddy Web, the counts added up go with it to Anthropic (Section 5.13 "Chat"). |
+| Retention | 365 days. Turning Logbook off stops counting at once and asks the server to delete the days it holds; the app says "deleted" only after the server confirmed, and asks again at the next sync if it couldn't reach it. |
+| Purpose | Showing you your own use, and the owner's view of what people use and what works and fails (product analytics). |
+| Legal basis | **[CONFIRM: on by default with an off switch; whether this needs consent (and the ePrivacy rules on reading from the device) or can rest on legitimate interests; the hour-by-hour pattern shows when someone is awake]** |
+
+### 5.17 Errands, shopping and food
+
+Sources: `DataFlow` rows `errands`, `deals`, `watches`, `shopify`; `server/messaging/src/errands/`, `shopping/`, `deals/`, `watches/`; `backend/src/shopify/ucp.ts`; `docs/implementation/ERRANDS.md`, `SHOPPING.md`, `SHOPPING_WATCH.md`.
+
+| Feature | What is sent, and to whom | Kept |
+|---|---|---|
+| **A task you hand over** (Tasks; ADR-570) | After your tap on its card: the task's words, Doddy's one-line note, its language and, for shopping, what matters most to you, to Doddy's messaging server. Anthropic (Claude) searches the web and reads pages for it, so search words made from the task go to Anthropic's search provider; for shopping, search words Claude writes also go to Serper (Google Shopping results), and the server opens shops' pages. Never your notes, lists, profile or earlier conversations. | Encrypted on the server until the result is saved on the iPhone, then deleted; a result never fetched, 30 days. The notification has no words from the task. |
+| **This week's leaflets** | The names of the items you ask about and which shops to check. The server reads the shops' leaflet pages itself (a shared catalog it reads once for everyone, decision `2026-11-12-leaflet-catalog`); leaflets that are only pictures go with the item names to Anthropic to read; for Rossmann, the item names go to rossmann.pl as a search from the server. Nothing that identifies you goes to a shop. | Only daily counts of checks. |
+| **A price you watch** (`WATCHES_ENABLED=1` on the live server, `STATUS.md`) | The shop's name and page address, the product's title and your price. The server reads that page a few times a day for 30 days and notifies you once if the price reaches yours. No model is involved. | Encrypted while the watch runs and 30 days after it ends; Delete removes it at once. |
+| **Shopify shops** (#369) | The words you search for; on Prepare checkout, that offer's variant id, the shop's domain and the quantity, to Shopify's Shop service from Doddy's server, with a fixed country and currency and nothing about you. A prepared checkout is a cart at the shop; you finish and pay on the shop's page. | Search words are not logged. |
+| **Food** (decisions `2026-11-11-food-button`, `2026-11-12-food-restaurant-pages`) | Doddy opens a food app, or a restaurant's own order page that a search found, after your tap. Nothing is ordered or paid by Doddy, and nothing about you goes to the app from Doddy. | Nothing. |
+| **Deliveries by Uber Direct** (decision `2026-11-12-uber-direct-deliveries`) | **Off** (`UBER_DIRECT_ENABLED=0`, test mode). When on: after a quote and your tap, the sender's and recipient's names, addresses and phone numbers (yours is your verified number), the items and a note go to Uber. | Encrypted per row on the server and erased when the delivery ends or the quote lapses. **[CONFIRM: Uber's role and terms before it is switched on]** |
+
+**[CONFIRM: Serper's and the search provider's terms and retention; Shopify's terms; whether shops' pages read by the server need a notice]**
+
+### 5.18 Files Doddy makes, and Studio
+
+| Item | Detail |
+|---|---|
+| Files (decks, documents, spreadsheets, PDFs, text) | What you ask for in a conversation or in Messages goes to Doddy's server (`backend/`), which researches it (web search through Monid, Wikipedia) and has Anthropic (Claude) write and design it (`backend/src/decks/`). The file is kept on Doddy's server for 7 days, then deleted (`DOCUMENT_KEPT_DAYS`); the iPhone keeps a link in Messages and Files. If you ask to be told when it is ready, the messaging server keeps the file's private link, encrypted, for at most a day, and sends one notification with fixed words. **No deck has come out of the live pipeline yet** (`STATUS.md`). |
+| Studio (ADR-740) | **Off on the server** (`STUDIO_ENABLED=0`, `STATUS.md`). When on, after your tap on a job's card: the topic, your words about it, who it's for, its length, style and language, and pages you picked, to Doddy's messaging server; Anthropic's Claude searches the web, reads pages and makes the files in Anthropic's code-execution container. Web research and code execution at Anthropic are not zero-retention. The server keeps the job and its files, encrypted, until you delete them in Studio; files left at Anthropic are deleted by the server and swept if a run stops half-way (#393). |
+| **[CONFIRM]** | Monid's and Anthropic's terms and retention for this; Anthropic's Files API retention. |
+
+### 5.19 Doddy looks at your screen (decision 2026-11-09-doddy-looks-at-the-screen)
+
+| Item | Detail |
+|---|---|
+| How | You start sharing your screen with Doddy from iOS's own sheet; iOS shows that it is shared until you stop. While it is, the screen-sharing extension keeps one picture of the screen on the iPhone (Section 3). It reads no sound. |
+| What is sent | When you ask Doddy about your screen in a conversation while sharing is on: that one picture (long edge 1,280 px), the question and your language, to Doddy's messaging server (`POST /v1/screen/look`), which has Anthropic (Claude) read it once, with no tools. A picture more than 10 seconds old is never sent. Since 11 Nov 2026 sharing being on counts as your yes for each look (decision `2026-11-11-asked-for-runs-at-once`). |
+| Kept | The server keeps neither the picture nor the question; it logs the model, outcome, the picture's age and token counts. What Doddy said about it is part of the conversation (ElevenLabs, and your remembered conversations if that is on). |
+| Others on your screen | The screen often shows other people (a profile, a chat). Doddy is told not to identify anyone from a face and to treat what is on screen as information only. **[CONFIRM: the basis for processing third parties' data shown on the screen; App Store privacy answers name "screen content"]** |
+
+### 5.20 The camera, photos and Apple Health
+
+| Item | Detail |
+|---|---|
+| Camera (ADR-569) | Opened only when you tap Take a photo, Open camera or Scan a barcode. A photo for a note stays in that note on the iPhone. A barcode's number goes to Open Food Facts (5.11). A photo you take to ask Doddy about goes to Messages and leaves only when you tap Send (5.4). Nothing is saved to your photo library. |
+| Photo library (read only) | Doddy counts the photos and videos you took on days you ask about and shows them on screen; only how many and when go to ElevenLabs in that conversation. A photo you choose with Apple's picker to ask about in Messages goes as in 5.4; the picker needs no permission. Doddy never changes your library. |
+| Apple Health (read only, ADR-621 to 623) | Doddy reads workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max to show them on its Apple Health screen. Only a short summary of the week can leave the iPhone, each way after its own consent: **in Messages**, when you tap Send, to Doddy's messaging server and Anthropic for the answer; the message then stays in Messages on the iPhone and, as text, in the Messages copy on Doddy's server (5.4) until you delete it; **to the voice**, when you ask and say yes, to ElevenLabs (and the model behind it, 5.1), where it is kept with that conversation's recording and transcript. Doddy writes nothing to Health. Not in the build made for a free Apple team (`project-iphone.yml`). |
+| Motion & Fitness | One day's steps, distance and floors, when you ask, to ElevenLabs in that conversation. |
+| **[CONFIRM]** | Health data is special-category data (GDPR Art. 9): explicit consent wording, and whether the Messages copy on Doddy's server is covered by the consent shown today (it says the server keeps no words); the app's consent and the permission text are being changed to say so (`claude/privacy-texts-match-code`). |
+
+### 5.21 Trips and flights
+
+| Item | Detail |
+|---|---|
+| Flight search (`FLIGHT_SEARCH_ENABLED=1`, `STATUS.md`) | Places, dates, number of people and bags go from Doddy's server to Kiwi.com; results open on Kiwi.com, where you book yourself. Nothing is saved (decision `2026-11-11-flights-kiwi-search-duffel-booking`). |
+| Flight booking through Duffel | **Off, test mode only** (`FLIGHT_BOOKING_ENABLED`, a test key). When on, after a card that shows the exact booking: every passenger's name, birth date and contact, the flights and the total go to Duffel. **[CONFIRM: before any live booking, Duffel's role, the airline's, and a policy line]** |
+| Trips from Gmail (Trips, with Read an email on) | On your tap, the server reads up to 25 booking emails from Gmail through Composio, removes links, PINs and card numbers, and sends the rest of each to Anthropic to read the booking; it keeps none of it, and trips are saved on the iPhone only (`DataFlow` row `doddyServer`). |
+| Trip planner | The words you type go to Doddy's server and Anthropic to become a brief; then only places, dates, people and bags go to Kiwi.com. Nothing is saved, booked or paid. |
+
+### 5.22 Parcels and deliveries
+
+| Item | Detail |
+|---|---|
+| Parcels (Przesyłki, ADR-641) | The parcel number you add or refresh goes from the iPhone to InPost's public tracking address; no account or key. A number in a message or email is never looked up by itself. Your list of parcels stays on the iPhone. |
+| Deliveries | Uber Direct is off (5.17). |
+
+### 5.23 Doddy Web: what your account shows in a browser
+
+Doddy Web (ADR-600, decision `2026-11-09-web-sign-in-same-account`) opens with the same Doddy account (Apple or Google). It shows only what Doddy's server already keeps for the account: files Doddy made (7 days), online accounts and their tools, Doddy's receipts, Logbook (5.16), the Messages copy (5.4) and, if you switched them on, kept notes and conversations (5.13). A browser stays signed in for 30 days at most; Settings › Doddy on the web signs it out. The web chat (5.13) sends what it uses to Anthropic. **[CONFIRM: the web pages' own notice and cookies, `web/`]**
+
 ## 6. Permissions the app asks for
 
-The app asks for these only. Each text below is the app's own wording (`project.yml` and `Config/Doddy-Info.plist`). Not listed means the app does not ask: no camera, no photo library, no motion, no Bluetooth, no health data, no advertising ID, no "Always" location.
+The app asks for these only, each when you first use the matching feature (`project.yml` `INFOPLIST_KEY_*`, `Config/Doddy-Info.plist`; the forbidden-capability guard, `scripts/check_forbidden_capabilities.sh`, fails on any other). It does not ask for Bluetooth, the advertising ID, tracking or "Always" location. The app's own permission texts are in those files and, translated, in `l10n/*_infoplist.json`; this table says what the code does, and the texts must say the same (Appendix B, item 25).
 
-| Permission | Why (the app's own words) |
+| Permission | What Doddy uses it for, and what leaves the iPhone |
 |---|---|
-| **Microphone** | "Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it. A voice memo you record on a note stays on this iPhone." |
-| **Speech recognition** | "Doddy writes out a voice memo on this iPhone when you record one, so you can check its words before saving. The recording and its words are not sent anywhere." |
-| **Contacts** | "Doddy looks up a contact by name, or whose birthday is coming up, when you ask, and reads birthdays for the people you pick to be reminded of. In a voice conversation, the names it finds and their birthday's day and month go to ElevenLabs, which runs Doddy's voice; numbers, email addresses and birth years stay on this iPhone. Turn this off in Settings, Connections." |
-| **Calendar (full access)** | "Doddy reads your events for the days you ask about, and adds, changes or deletes an event only after you tap Add, Change or Delete. Turn this off in Settings, Connections." |
-| **Reminders (full access)** | "Doddy adds, changes, completes or deletes a reminder only after you tap Add, Change, Mark done or Delete. Turn this off in Settings, Connections." |
-| **Location, while using** | "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, and to work out with Apple Maps when to leave for somewhere. Doddy doesn't keep it or track where you go." **This sentence is not fully accurate: "Where did I park?" keeps the saved position on the iPhone until you clear it (ADR-301). The text and this policy must be made to agree. [CONFIRM]** |
-| **Face ID** | "Doddy uses Face ID to open the app or a private note when you turn the lock on. iOS checks your face; Doddy only learns whether it matched." |
-| **Alarms (AlarmKit, iOS 26+)** | "Doddy sets an alarm only when you ask and tap Set alarm. Its alarms ring even in Silent mode or a Focus. Turn them off in Doddy's Settings, Alarms." |
+| **Microphone** | Talking to Doddy: your voice goes to ElevenLabs, which keeps a recording and transcript (5.1); in translator mode the other person's voice too. Voice memos and Recordings stay on the iPhone; Doddy shows a recording the whole time it runs. |
+| **Speech recognition** | On the iPhone only: voice memos, Recordings and the mic in Messages are written out here and not sent. Words you dictate into Messages leave only if you send them (5.4). |
+| **Contacts** | Finding a contact by name, birthdays coming up, and birthdays of people you pick. In a conversation, names and birthday day and month go to ElevenLabs; numbers, email addresses and birth years stay on the iPhone (they are used only to open a message or email draft on the iPhone). A number for a call Doddy places for you is picked with Apple's contact picker, which needs no permission (5.7a). |
+| **Calendar (full access), Reminders (full access)** | Reading the days you ask about; adding, changing or deleting only after you tap the card. What Doddy uses in a conversation goes to ElevenLabs. |
+| **Location, while using** | Place reminders (iOS watches the place), where you parked, and when to leave (Apple Maps). Where you parked is kept on the iPhone until you clear it (ADR-301). **[CONFIRM: the permission text says "Doddy doesn't keep it"; it and this policy must agree]** |
+| **Face ID** | The app lock and private notes. iOS checks your face; Doddy only learns whether it matched. |
+| **Motion & Fitness** | One day's steps, distance and floors, when you ask; to ElevenLabs in that conversation (5.20). |
+| **Apple Health (read only)** | The Apple Health screen; a week's summary only as in 5.20. Doddy writes nothing to Health (`NSHealthUpdateUsageDescription` exists only because iOS's permission screen covers both). |
+| **Camera** | A photo for a note, a barcode on a list, or a photo to ask about in Messages (5.20, 5.4). |
+| **Photo library (read only)** | Counting and showing the photos and videos you took on days you ask about (5.20). Choosing one photo to send uses Apple's picker, which needs no permission. |
+| **Home (HomeKit)** | Turning a light, outlet or fan on or off, or running a scene, after a tap on a card that names it; never locks, garage doors, alarms or cameras. The name and whether it worked go to the voice in that conversation. Only in builds with the HomeKit entitlement. |
+| **Alarms (AlarmKit, iOS 26+)** | Alarms and timers you ask for, after a tap; they ring in Silent mode or a Focus. |
 | **Notifications** | Asked when you turn on timers, reminders, check-ins or push. No usage-description text is needed. Reminder text is hidden by default (ADR-190). |
-| **Live Activities and Dynamic Island** | Shows the state of a conversation, focus timer or shopping list on the Lock Screen. Shopping mode asks you to confirm that its items will be readable on the Lock Screen (ADR-257). |
-| **Background audio** | Keeps a conversation you started running after you leave the app (ADR-053). |
-| **Background remote notifications** | Used only for iCloud's "a shared list changed" wake-up (ADR-284). |
+| **Live Activities and Dynamic Island** | Shows the state of a conversation, a call Doddy places, a focus timer or a shopping list on the Lock Screen. Shopping mode asks you to confirm that its items will be readable on the Lock Screen (ADR-257). |
+| **Background audio** | Keeps a conversation you started running after you leave the app, mixing with other apps' audio (ADR-053, decision `2026-11-12-action-button-audio-and-island`). |
+| **Background remote notifications** | iCloud's "a shared list changed" wake-up (ADR-284), and a finished task's push waking the app to put the result in Messages (decision `2026-11-12-results-reach-messages`). |
 
-The Share extension and the widgets ask for nothing (ADR-311). The Apple Watch app has no permissions of its own in `project.yml`. **[CONFIRM after the first build]**
+Screen sharing is not a permission: you start it from iOS's own sheet each time, and iOS shows that the screen is shared (5.19). The Share extension, the widgets, the notification view and the screen-sharing extension ask for nothing. The Apple Watch app is paused (ADR-572). **[CONFIRM after the first build]**
 
 ## 7. Children, AI transparency, automated decisions, sale of data
 
@@ -305,8 +439,8 @@ The Share extension and the widgets ask for nothing (ADR-311). The Apple Watch a
 - Doddy is an AI system. When you talk to Doddy, you are talking to software and not to a person.
 - Doddy's voice is generated by a speech system (ElevenLabs; OpenAI Realtime was removed on 9 Nov 2026).
 - Doddy's answers can be wrong. Check anything that matters.
-- The app says "Doddy is an AI, not a person" on Home and on the Ask screen (`HomeView.swift`, `AskView.swift`). The voice prompt tells Doddy to say plainly that it is an AI when asked. The phone agent says it in its first sentence (`voice-agent/instructions.md`, `voice-agent/phone/instructions.md`, ADR-191, ADR-194).
-- The voice agent's own greeting ("Hey, it's Doddy. what's up?") does not say it is an AI. The disclosure on the voice screen is by text on screen and by answer when asked. **[CONFIRM: with a specialist whether Article 50 needs more, and from what date; whether synthetic audio must be marked; ElevenLabs' and OpenAI's role as provider and ours as deployer]**
+- Since 11 Nov 2026 the app's own screens do not call Doddy an AI, and the website's footer says "Doddy is a digital companion, not a person" (decision `2026-11-09-companion-not-ai-label`). The voice prompt tells Doddy to say plainly that he is an AI when asked (checked by `scripts/voice_agent_spec.py`). The phone line's fixed sentence for callers it doesn't let through, and the opening line of every call Doddy places for you, say it first (`voice-agent/phone/instructions.md`, `server/messaging/src/taskCalls/opening.ts`, ADR-191, ADR-194, ADR-502).
+- The voice agent's own greeting does not say it is an AI, and there is no on-screen disclosure in the app any more; the disclosure is Doddy's answer when asked. **[CONFIRM: whether that meets Article 50 and the companion-chatbot laws the decision names (California SB 243, New York)]** **[CONFIRM: with a specialist whether Article 50 needs more, and from what date; whether synthetic audio must be marked; ElevenLabs' and OpenAI's role as provider and ours as deployer]**
 - Doddy is not meant to claim feelings of a person, to flatter, or to make you feel guilt or dependence. This is a design rule (`docs/trust/`), enforced in part by a prompt check (`voice_agent_spec.py check`), not by code in every case.
 
 **Automated decisions.** Doddy makes no decision about you with legal or similarly significant effects. It proposes; you confirm. Anything that changes your calendar, reminders, drafts, tasks or lists by voice shows a card and needs your tap, except small list edits that you ask for by voice, which are shown in "What Doddy did" with Undo (ADR-216, ADR-258, ADR-268). Doddy has no profiling for ads or scoring. **[CONFIRM: lawyer agrees there is no Article 22 issue]**
@@ -322,6 +456,10 @@ What the app lets you do today:
 | You want to | What the app does | Source |
 |---|---|---|
 | See where data goes | Settings, Privacy, "What leaves this iPhone" | `DataFlowView.swift` |
+| Delete your Doddy account | Settings › About › Your Doddy account › Delete. In order: the messaging server deletes the account and everything it keeps that names it, and queues for deletion what it left at Twilio and the phone line's and task calls' conversations at ElevenLabs, checked gone; Sign in with Apple is ended where it can be; Doddy's server deletes what it keeps (kept notes and conversations, the Messages copy, Logbook, files, receipts, online-account connections at Composio, and the sign-in at Supabase), retrying clean-ups until they are done; this iPhone's older voice account, if any, is deleted; then the iPhone signs out. It says the account was deleted only after each server confirmed; if one doesn't, nothing after it runs and you stay signed in. With no messaging token on this iPhone (after a reinstall, say), it signs in to the messaging server with the account first, so that account is found and deleted too (decision `2026-11-12-account-deletion-truth`, proposed, owner approval pending). Notes on the iPhone stay. | `DoddyAccountApp.swift` (`DoddyAccountServers.deleteAccount`), `ServerAccountErasure`, `AccountErasurePlan` (DoddyCore), `DELETE /v1/account` on both servers, `backend/src/store.ts`, `server/messaging/README.md` "What is kept", #384, #391, ADR-818 |
+| Turn Logbook off | Counting stops at once; the server deletes the days it holds; "deleted" is said only after it confirmed | `LogbookModel.setOn` (DoddyCore) |
+| Delete the Messages conversation | "Delete conversation": deleted on the iPhone, then the copy on Doddy's server, said only when the server confirms | `MessagesModel.deleteConversation` |
+| Delete a Studio job, stop a price watch | In Studio and in Shopping; the server deletes it | `DataFlow` rows `studio`, `watches` |
 | Export notes and lists | Export as JSON, plain text, or Markdown (share sheet). JSON can be restored. | ADR-030, ADR-203, `SettingsView.swift` |
 | Export About you and settings | JSON or text | ADR-176 |
 | Export remembered conversations | Plain text | ADR-177 |
@@ -342,9 +480,9 @@ What the app lets you do today:
 
 What the app **cannot** delete:
 
-- Recordings and transcripts already at ElevenLabs, and anything its model providers keep. No app function deletes them. **[CONFIRM: how a user can have them deleted; whether you can delete through the ElevenLabs API by conversation or install ID]**
-- Data already at OpenAI (voice test, Ask Doddy, news writer), Anthropic, GNews, Twilio (SMS and call records, Verify), Apple (APNs, Siri, iCloud, Maps), Composio, Monid, Google, Microsoft, Notion, Todoist, Vercel and Render logs. **[CONFIRM for each]**
-- Backend records for online accounts. Backend account deletion and export "are not built" (`SECURITY_AND_PERMISSIONS.md`). **[CONFIRM]**
+- Recordings and transcripts of conversations in the app at ElevenLabs, and anything its model providers keep. Deleting the Doddy account does not delete them (`STATUS.md`, security review of 12 Nov 2026); the phone line's and task calls' conversations are deleted as in 5.7a. **[CONFIRM: how a user can have them deleted; whether you can delete through the ElevenLabs API by conversation or install ID]**
+- Data already at OpenAI (the model behind the voice, the news writer), Anthropic, GNews, Twilio (Verify; message and call records are deleted as in 5.6), Apple (APNs, Siri, iCloud, Maps), Composio, Monid, Serper, Kiwi.com, Shopify, Google, Microsoft, Notion, Todoist, Vercel, Supabase and Render logs. **[CONFIRM for each]**
+- An export of what Doddy's server keeps, apart from kept notes and conversations (5.13): not built. **[CONFIRM]**
 - Your own exported files, backup files and iPhone or iCloud device backups. Your device backups contain Doddy's database because it is ordinary app data (ADR-028).
 - A note you put into a list someone else shares, once the other person has copied it.
 - "Delete all memories" does not clear: About you, remembered conversations, the activity list, the parking spot, or settings (each has its own control). **[CONFIRM: widget snapshot, Apple Watch copy and iPhone search index refresh after Delete all; the code read for this draft does not show it]**
@@ -360,7 +498,17 @@ What the app **cannot** delete:
 | Activity list | 30 days or 300 entries | ADR-135 |
 | Parking spot | Until replaced or cleared | ADR-301 |
 | Voice conversations at ElevenLabs | **[CONFIRM: unlimited today]** | ADR-057, `V1_VOICE_STATUS.md` |
-| Phone-call transcripts at ElevenLabs | 30 days, no audio, when the agent is created | ADR-158 |
+| Phone-line conversations at ElevenLabs | 30 days, no audio (live agent read 10 Nov 2026); deleted with the account, checked gone | ADR-158, `server/messaging/README.md` |
+| Doddy account (Supabase) | Until you delete the account | Section 5.0 |
+| Messages copy on Doddy's server | Until "Delete conversation" or account deletion; 365 days without a send | `backend/src/app.ts` (`pruneMessageThreads`) |
+| Logbook days | 365 days; deleted when Logbook is turned off | `backend/src/web/logbook.ts` (`LOGBOOK_KEPT_DAYS`) |
+| Files Doddy made | 7 days on Doddy's server | `backend/src/web/routes.ts` (`DOCUMENT_KEPT_DAYS`) |
+| Calls Doddy places: live transcript lines / answer card / task-agent conversation at ElevenLabs / dial log | 24 hours at most / until saved, 7 days at most / until the answer card is built / 2 days | `server/messaging/README.md` "What is kept" |
+| Tasks you hand over | Until the result is saved on the iPhone; 30 days if never fetched | `DataFlow` row `errands` |
+| Price watches | While the watch runs and 30 days after | `DataFlow` row `watches` |
+| Studio jobs and files | Until you delete them | `DataFlow` row `studio` |
+| The shared screen picture | Never kept by the server; on the iPhone until sharing stops | Section 5.19 |
+| Uber Direct delivery details (off) | Until the delivery ends or the quote lapses | decision `2026-11-12-uber-direct-deliveries` |
 | Messaging server account, phone number, news settings | Until deleted | `001_init.sql`, `003_news.sql` |
 | Queued message text | Until the message reaches a final state | `001_init.sql` |
 | Memory copy | Until Memory on calls is turned off | ADR-153 |
@@ -373,6 +521,7 @@ What the app **cannot** delete:
 | Message and call records at Twilio | Deleted by Doddy 24 hours after final by default; Twilio backups up to 30 days | `providerRecords.ts`, ADR-753 |
 | Verification-start records | 2 days (hash of number only) | `routes/phone.ts` |
 | News sent records / digests / feed cache | 14 days / 30 days / 24 hours | `news/digest.ts`, `news/sources.ts` |
+| On my radar: alerts / stories found | Until turned off / 14 days | `026_radar_alerts.sql`, `news/radar.ts` |
 | Backend receipts and usage counters | **[CONFIRM: no pruning today]** | `SECURITY_AND_PERMISSIONS.md` |
 | Waitlist | **[CONFIRM]** | `site/README.md` |
 | Web server logs | **[CONFIRM: Vercel and Render]** | |
@@ -389,9 +538,32 @@ What the app **cannot** delete:
 - Website: Content-Security-Policy, `X-Content-Type-Options`, strict referrer policy and a permissions policy that turns off camera, microphone and geolocation (`site/vercel.json`). Waitlist inputs are checked; admin routes use one password.
 - **No security measure above is a guarantee.** Independent review, the threat model rerun and device tests are still open (`THREAT_MODEL.md`, `GO_LIVE_STATUS`). Do not say "secure" or "GDPR compliant" in the final policy without that review.
 
-### 9.3 International transfers
+### 9.3 Processors and international transfers
 
-Servers named in the code: Render, Frankfurt, EU; Vercel Blob, Frankfurt. The location of Vercel Functions, ElevenLabs, OpenAI, Google (Gemini), Anthropic, GNews, Twilio, Composio, Monid, Upstash and Google Analytics is not shown in the repository. **[CONFIRM: for each, the data location, the transfer mechanism (adequacy, standard contractual clauses, data privacy framework) and sub-processors]**
+Services that receive personal data from Doddy, as the code on `main` shows them (12 Nov 2026). "Off" means built but switched off on the server or in the build. **[CONFIRM for every row: the processor agreement (DPA) or the service's role as controller, its sub-processors, the data location and the transfer mechanism (adequacy, standard contractual clauses, the EU-US Data Privacy Framework)]**
+
+| Service | What for | In the code | Region shown in the repository |
+|---|---|---|---|
+| Anthropic (Claude) | Messages, the screen look, recaps, tasks, leaflets that are pictures, call answer cards, trips from Gmail and the trip planner, files, Studio, the web chat | In use (`server/messaging`, `backend`) | Not shown |
+| ElevenLabs | Voice conversations, translator mode, the phone line, calls Doddy places | In use | Not shown (EU residency is Enterprise-only, `V1_VOICE_STATUS.md`) |
+| OpenAI | The model behind the live voice agent (5.1); the news writer when the messaging server has its key (`news/writer.ts`) | In use through ElevenLabs; the news writer as set up | Not shown |
+| Twilio | Verify, texts, calls to and from Doddy's number, calls Doddy places and their live transcription (Twilio's Google engine) | In use; calls Doddy places need the calling line set up | Not shown |
+| Supabase | Doddy accounts (Auth, project `doddy-gateway`); the database of Doddy's server `doddy` (`STATUS.md`) | In use | Not shown |
+| Render | Doddy's server `doddy` and the messaging server `doddy-messaging` with its Postgres | In use | Frankfurt (`render.yaml`) |
+| Vercel | The website and its waitlist (Blob), Web Analytics, the voice token server (Functions) | In use | Blob: Frankfurt (fra1); Functions: not shown |
+| Upstash | Redis for the voice token server's sessions and limits (`server/voice-token/src/voice-auth.js`) | In use | Not shown |
+| Composio | Your connected Google, Microsoft, Notion and Todoist accounts (tokens held by Composio) | In use when you connect an account | Not shown |
+| Apple | Sign in with Apple, push (APNs), Maps, Siri, iCloud (off in the default build), the on-device model for recaps | In use | Apple's |
+| Google | Google sign-in (through Supabase); Gmail, Calendar and Drive through Composio; Twilio's transcription engine; Google Analytics and Google Fonts on the website. Gemini is named in `voice-agent/session.json` but is not the live voice model (5.1) | In use | Not shown |
+| Monid | Web, news and places search; research for files | In use | Not shown |
+| Serper | Google Shopping results for shopping tasks | In use when a key is set | Not shown |
+| GNews | Your own news keywords | In use when daily news or Following uses it | Not shown |
+| Kiwi.com | Flight search | On (`FLIGHT_SEARCH_ENABLED=1`) | Not shown |
+| Shopify | Search and prepared checkouts at Shopify shops | In use | Not shown |
+| Duffel | Flight booking | Off, test only | Not shown |
+| Uber (Uber Direct) | Deliveries | Off, test mode | Not shown |
+| Coinbase | Paying for web pages (x402) | Off, test network only (`STATUS.md`) | Not shown |
+| Public data, nothing about you beyond a request | ECB rates, Open-Meteo and Wikipedia (through ElevenLabs), Open Food Facts (a barcode), InPost (a parcel number), the Ministry of Finance VAT register and CEIDG (a buyer's NIP), IMGW, GIOŚ and NBP (Poland Pack, `STATUS.md`) | In use | Not applicable |
 
 ### 9.4 Changes to this policy
 
@@ -409,21 +581,21 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 
 | # | Claim in this draft | Source |
 |---|---|---|
-| A1 | No account is required | `Packages/DoddyCore/Sources/DoddyCore/PrivacyDefaults.swift` (`v1Voice`) |
-| A2 | App has no analytics or crash SDK | `DEPENDENCIES_AND_LICENSES.md`; `project.yml` packages; `PrivacyInfo.xcprivacy` |
+| A1 | ~~No account is required~~ replaced 8 Nov 2026: a Doddy account is required (see A53) | `PrivacyDefaults.swift` (`v1Voice`, out of date) |
+| A2 | App has no third-party analytics or crash SDK; Logbook is its own analytics (A56) | `DEPENDENCIES_AND_LICENSES.md`; `project.yml` packages; `PrivacyInfo.xcprivacy` |
 | A3 | Voice data list sent to ElevenLabs | `DataFlow.swift` (`rows`, row `elevenlabs`); `DoddyApp/Features/Settings/SettingsView.swift` privacy paragraph |
 | A4 | Notes budget 6,000 chars, conversations 4,000 | `Packages/DoddyCore/Sources/DoddyCore/VoiceContext.swift` |
-| A5 | Max 10 minutes per conversation, agent LLM Gemini | `voice-agent/session.json` (`max_duration_secs`, `elevenlabs.llm`); `docs/implementation/V1_VOICE_STATUS.md` |
+| A5 | Max 10 minutes per conversation; live agent model OpenAI `gpt-6-luna`, `session.json` says Gemini | `voice-agent/session.json` (`max_duration_secs`, `elevenlabs.llm`); `voice-agent/README.md` (live reads, 24 Oct to 10 Nov 2026) |
 | A6 | ElevenLabs recording on, unlimited retention, zero-retention off, EU residency Enterprise-only | `V1_VOICE_STATUS.md`; ADR-057 |
-| A7 | Agent auth off, public development agent | ADR-034 (cited in `GO_LIVE_STATUS_2026-10-11.md`); `DoddyApp/Features/Voice/VoiceConfig.swift` |
+| A7 | Agent authentication on, with a daily limit; a Doddy account session for every voice token | `STATUS.md` "Live services"; `server/voice-token/src/doddy-account.js`; decision `2026-11-09-elevenlabs-only-voice` |
 | A8 | Private conversation is on-device only | ADR-170 |
 | A9 | Translator mode data | `DataFlow.swift` row `translator`; ADR-215 |
 | A10 | Token server behaviour and logs | `server/voice-token/README.md`; `docs/implementation/VOICE_TOKEN_SERVER_STATUS.md` |
 | A11 | ~~OpenAI voice, direct from the phone~~ removed 9 Nov 2026 | decision `2026-11-09-elevenlabs-only-voice` |
-| A12 | Ask Doddy data, limits, no storage, not yet run against Anthropic | `backend/src/assist.ts`; `backend/test/assist.test.ts`; ADR-587 (the old OpenAI gateway: `docs/architecture/ASSISTANT_GATEWAY.md`, ADR-113) |
+| A12 | Messages data, limits, no storage at the messaging server, photos and files with one question, on by default | `server/messaging/src/assistant/` (`request.ts`, `responder.ts`), `server/messaging/src/config.ts`; `docs/implementation/MESSAGES_PHOTOS.md`; ADR-587, ADR-732; decision `2026-11-09-messages-on-by-default` |
 | A13 | Messaging server tables, anonymous account, phone number plain, hash-only token | `server/messaging/migrations/001_init.sql` to `007`; `server/messaging/src/routes/account.ts` |
-| A14 | Built-in messaging address empty | `DoddyApp/Infrastructure/Server/ServerConfig.swift` |
-| A15 | Render Frankfurt, Postgres, not deployed | `render.yaml`; ADR-139 |
+| A14 | ~~Built-in messaging address empty~~ the app has the messaging server's address built in, and it is deployed | `STATUS.md` "Live services" |
+| A15 | Render Frankfurt, Postgres; both services deployed | `render.yaml`; ADR-139; `STATUS.md` |
 | A16 | SMS consent, STOP, outbox erase | `server/messaging/README.md`; `001_init.sql` |
 | A17 | Phone calls, PIN, notes, limits | `server/messaging/README.md`; `002_calls.sql`; `SECURITY_REVIEW_MESSAGING.md` |
 | A18 | Phone agent: no recording, 30-day transcripts, Gemini 2.5 | `voice-agent/phone/session.json`; ADR-158 |
@@ -445,13 +617,13 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 | A34 | Face ID lock, private notes filter | ADR-310 |
 | A35 | Watch sync | ADR-232 |
 | A36 | Permission texts | `project.yml` (`INFOPLIST_KEY_NS*`); `Config/Doddy-Info.plist` (`NSAlarmKitUsageDescription`) |
-| A37 | No other permission keys | `project.yml`; `Config/*.plist` (searched for camera, photo library, motion, Bluetooth, tracking keys) |
+| A37 | The permission list in Section 6, and no others | `project.yml`; `Config/Doddy-Info.plist`; `scripts/check_forbidden_capabilities.sh` (its passing line lists the permissions) |
 | A38 | Delete all, forget profile, delete account | `SettingsView.swift`; `MemoryStore.swift`; `SQLiteMemoryRepository.swift`; `SQLiteProfileRepository.swift`; `UpdatesModel.swift`; `ServerClient.swift` |
 | A39 | Export formats | ADR-030, ADR-176, ADR-177, ADR-203 |
 | A40 | Website data, waitlist storage, admin | `site/api/*.js`; `site/README.md`; `site/index.html` |
 | A41 | Analytics: Vercel Web Analytics and GA4 on every page, no consent banner | `site/analytics.js`; `site/README.md`; ADR-245 |
 | A42 | Google Fonts load without consent | `site/index.html` lines 21 to 23; `site/vercel.json` CSP; `site/README.md` "Needs the owner" 4 |
-| A43 | AI disclosure texts | `voice-agent/instructions.md`; `voice-agent/phone/instructions.md`; `HomeView.swift`; `AskView.swift`; ADR-191, ADR-194 |
+| A43 | AI disclosure: answered when asked; said first on the phone line and on calls Doddy places; no on-screen label since 11 Nov 2026 | `voice-agent/instructions.md`; `voice-agent/phone/instructions.md`; `server/messaging/src/taskCalls/opening.ts`; `HomeView.swift` (comment where the header was); decision `2026-11-09-companion-not-ai-label`; ADR-191, ADR-194 |
 | A44 | No age gate | Searched `DoddyApp` and `Packages` for age gate, parental terms; none found |
 | A45 | Privacy manifest content | `DoddyApp/Resources/PrivacyInfo.xcprivacy`; ADR-118 |
 | A46 | Legal review not done, no privacy policy yet | `docs/security/PRIVACY_GDPR_AI_ACT.md`; `GO_LIVE_STATUS_2026-10-11.md` |
@@ -460,27 +632,38 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 | A49 | Browser can read, search, export and delete, never switch keeping on | `backend/src/memory/routes.ts`; `backend/test/memory.test.ts` |
 | A50 | Logs hold no note, turn, question or answer | `backend/test/memory.test.ts` (planted strings) |
 | A51 | The switch follows the server's answer; a delete is only reported when the server confirmed | `Packages/DoddyCore/Sources/DoddyCore/OnlineAccounts/WebMemoryModel.swift`; `WebMemoryModelTests.swift` |
+| A53 | A Doddy account is required: Apple or Google through Supabase Auth; email codes hidden; email and method kept; owner page shows them | `Packages/DoddyCore/Sources/DoddyCore/Account/DoddyAccount.swift`; `DoddyApp/Features/Account/`; `backend/src/web/owner.ts`; decisions `2026-11-08-required-account`, `2026-11-09-email-sign-in-off-for-now` |
+| A54 | The Messages copy for Doddy Web: newest 200 messages, text only, no photo, file name and kind, encrypted at rest, deleted with Delete conversation, 365 days without a send | `Packages/DoddyCore/Sources/DoddyCore/Messages/ThreadSync.swift`; `DoddyApp/Features/Messages/MessagesModel.swift`; `backend/src/messages/`; `backend/src/app.ts` |
+| A55 | Calls Doddy places: brief, Twilio with recording off, live transcription (Google engine), ElevenLabs task agent, Anthropic answer card, opening line, hours, limits, retention | `server/messaging/src/taskCalls/` (`payload.ts`, `twiml.ts`, `opening.ts`, `worker.ts`, `agentSafety.ts`); `server/messaging/src/config.ts`; `server/messaging/README.md` "What is kept"; `DataFlow` row `callCases` |
+| A56 | Logbook: counts only, allow-list, on by default, owner sees every account, 365 days, deletion confirmed by the server | `Packages/DoddyCore/Sources/DoddyCore/Logbook/`; `backend/src/web/logbook.ts`; `backend/src/web/owner.ts`; decision `2026-11-09-usage-counts-on-by-default` |
+| A57 | Errands, leaflets, price watches, Shopify, food, Uber Direct (off) | `DataFlow` rows `errands`, `deals`, `watches`, `shopify`; `backend/src/shopify/ucp.ts`; `backend/src/tools/foodPages.ts`; decisions `2026-11-12-leaflet-catalog`, `2026-11-12-uber-direct-deliveries` |
+| A58 | Files Doddy makes (7 days) and Studio (off on the server) | `backend/src/decks/`; `backend/src/web/routes.ts` (`DOCUMENT_KEPT_DAYS`); `server/messaging/src/studio/`; `server/messaging/src/config.ts` (`STUDIO_ENABLED`); `DataFlow` rows `studio`, `fileReady` |
+| A59 | The screen look: one picture, fresh, read once by Claude, kept by neither server | `Shared/Screen/ScreenShareFiles.swift`; `DoddyScreen/`; `POST /v1/screen/look` in `server/messaging`; decision `2026-11-09-doddy-looks-at-the-screen` |
+| A60 | Camera, photo library, Apple Health and Motion & Fitness | `DoddyApp/Features/Photos/`; `DoddyApp/Infrastructure/Connections/PhotoLibrarySearch.swift`; `DoddyApp/Features/Health/HealthConnectionView.swift`; `Packages/DoddyCore/Sources/DoddyCore/HealthVoice.swift`, `HealthShare.swift`; ADR-569, ADR-621 to 623 |
+| A61 | Flights (Kiwi.com on, Duffel off), trips from Gmail, trip planner | `backend/src/flights/`; `DataFlow` row `doddyServer`; decisions `2026-11-11-flights-kiwi-search-duffel-booking`, `2026-11-11-travel-agent-plan` |
+| A62 | Account deletion order and what each server deletes | `DoddyApp/Features/Account/DoddyAccountApp.swift`; `backend/src/store.ts` (the erased tables); `server/messaging/README.md`; #384; ADR-818 |
+| A63 | Processors and where they are used | Section 9.3; a search of `backend/src`, `server/messaging/src`, `server/voice-token/src` for each service's name |
 | A52 | Recaps: off by default, never Private, no words kept on the server, the phone-call recap keeps only three encrypted lists until saved or 30 days, the iPhone and the server use the same instructions, a tap is not a yes to the server | `Packages/DoddyCore/Sources/DoddyCore/Recap/`; `DoddyApp/Features/Recaps/`; `server/messaging/src/assistant/recap.ts`, `phoneRecaps.ts`, `routes/phoneRecaps.ts`; `server/messaging/migrations/025_phone_recaps.sql`; decision 2026-11-09-conversation-recaps |
 
 ## Appendix B. Open questions for the owner and the lawyer
 
 ### B1. Where the app's own statements and the code disagree, or are silent
 
-1. **Google (Gemini) is not named.** The ElevenLabs agent runs on Gemini (`session.json`), and so does the phone agent. `DataFlow`, the Settings privacy paragraph, `DataFlowView`, the Home text and the website never name Google. The "Cloud AI" row says "ElevenLabs (voice); OpenAI if Ask Doddy is on".
+1. **The model behind the voice is not named consistently.** The live agent runs on OpenAI's `gpt-6-luna` (read 24 Oct to 10 Nov 2026), `session.json` says Gemini, and the phone agent's spec says Gemini 2.5. Only the Apple Health consent names "ElevenLabs, with an OpenAI model"; `DataFlow`, the Settings privacy paragraph and the website name ElevenLabs only.
 2. **ElevenLabs retention is not stated.** The app says ElevenLabs "keeps a recording and transcript". The live setting is unlimited retention, recording on, zero-retention off. ADR-057 allowed it for the owner's own phone only.
 3. **Whole notes go to voice in every conversation** (up to 6,000 characters). The Settings paragraph does say this. The website privacy panel says notes "leave it only for things you switch on". Starting a conversation is the switch. Make sure users see it before the first conversation.
-4. **Web search (Monid) has no row in `DataFlow`.** It is in the Settings paragraph and in `ONLINE_ACCOUNTS.md`. Monid is also not in the "Network" status row, and `PrivacyInfo.xcprivacy` does not list search queries.
-5. **Settings "Account required: No"** is true for using the app. The messaging server creates an anonymous account, and the phone feature stores a phone number. The website says "No account. No sign-up, no email, no password." Say "no account to use Doddy; optional features create an anonymous server account".
-6. **The "Network" status row** (`SettingsView`) lists ElevenLabs, token server, Connected Apps and Ask Doddy only. It omits the messaging server, Apple Maps, ECB, CloudKit and OpenAI voice.
+4. **Web search (Monid) has no row of its own in `DataFlow`;** it is named in the `doddyServer` row and in the Settings paragraph. `PrivacyInfo.xcprivacy` does not list search queries (Appendix C, "Search history").
+5. **A Doddy account is now required** (decision `2026-11-08-required-account`), but `PrivacyDefaults.v1Voice` still says `accountRequired: false`, and Settings › Privacy says "Voice sign-in: Optional for notes; required for voice". Check the website's "No account" lines too.
+6. ~~The "Network" status row omits services.~~ It is built from `DataFlow.rows` since ADR-447, so it lists what "What leaves this iPhone" lists.
 7. **Location text says "Doddy doesn't keep it"** but the parking spot is kept in UserDefaults (ADR-301).
 8. **Siri note readback default.** `DataFlowView` defaults `siriReadsNotes` to true. The Settings text says "it can be turned off".
-9. **"What leaves" for the voice token server** shows only "Your access code". The OpenAI token mint also goes through it.
+9. **"What leaves" for the voice token server** still says "the selected voice provider/model"; since 9 Nov 2026 there is one voice and no model choice.
 10. **Outlook** is in the Settings paragraph and the code (`backend/src/tools/catalog.ts`) but not in `ONLINE_ACCOUNTS.md`'s tool table.
-11. **Deployment status is unclear.** `render.yaml` says neither Render service is deployed. `ONLINE_ACCOUNTS.md` says web search ran on a Render service. `GO_LIVE_STATUS` says the token server is deployed. The privacy policy must describe only what runs.
-12. **Backend data deletion.** Both servers now have `DELETE /v1/account`: the messaging server's (ADR-143, "Delete my Doddy messaging data") and the backend's (ADR-674, run before the voice account is deleted by Settings’ "Delete Doddy voice account"). They are still two buttons. Exporting backend data is not built.
+11. **Deployment:** both Render services and the token server are deployed (`STATUS.md` "Live services"), each a few pull requests behind `main`, and several features are merged but off on the server (Section 5 says which). The privacy policy must describe only what runs at launch.
+12. **Account deletion** is one button since the Doddy account (Settings › About › Your Doddy account › Delete), which runs both servers' `DELETE /v1/account` (Section 8). Exporting backend data, apart from kept notes and conversations, is not built.
 13. **Website promises deletion on request** but lists no contact address.
 14. **Google Fonts** load before consent; the footer says so, but a notice and a basis are needed.
-15. **`PrivacyInfo.xcprivacy` exists only for the main app** (`GO_LIVE_STATUS`). Widgets, share extension and watch have none.
+15. **`PrivacyInfo.xcprivacy` exists only for the main app on `main`,** and declares six collected types, three as "not linked". A separate change in review (branch `claude/privacy-texts-match-code`) gives the widgets, Share and screen extensions their own manifests and makes the app's types the list in Appendix C, all linked, checked against `DataFlow` by a test. The Watch is paused.
 16. **Voice greeting does not say "AI".** On-screen text and the answer when asked do.
 17. **The Settings privacy paragraph, "What leaves this iPhone" (`DataFlow.rows`) and the website say notes stay on the iPhone.** With "Keep on Doddy's server" on they do not. `DataFlow` now has rows for it, but the Settings paragraph and the website text must be checked against Section 5.13 before launch.
 18. **"Remember recent conversations" is about this iPhone.** Sending a conversation to the server is a separate switch, and does not need that setting. A person who turns the first off but the second on will have conversations on the server and none on the iPhone. Check that the consent text makes this clear.
@@ -488,6 +671,14 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 20. **Production code and settings differ.** The key is set on Render, but the memory code is not deployed, so nothing is kept today.
 21. **Anthropic reads the best matches when you ask on the web.** The in-app consent says so; confirm the Anthropic terms for the API key's organisation (retention, training).
 22. **The web chat sends account details to Anthropic (ADR-604):** document names, receipt summaries, account names and status, Logbook's counts. Check that this is covered by the Anthropic terms and the consent wording, and that "chats are kept in your browser" is acceptable on shared computers.
+23. **Settings › Privacy says "Analytics and telemetry: Off (not built)"** and "What leaves this iPhone" says "no ads or analytics", while Logbook is on by default. The separate change above words the intro by Logbook's switch and adds `DataFlow.analyticsSummary`; `SettingsScreens.swift` still has to show it.
+24. **The Apple Health consent for Messages says Doddy's server doesn't keep what you write.** The messaging server doesn't, but the Messages copy on Doddy's server does (5.4, 5.20). The separate change rewords it and asks again (consent version 2).
+25. **The camera and photo-library permission texts say a photo never leaves the iPhone,** the Health text says Doddy keeps none of it, and the microphone, Motion and photo texts still offer OpenAI as a voice. The separate change rewrites them in all ten languages; Section 6 here is written from the code.
+26. **Deleting the Doddy account does not delete the app's conversations at ElevenLabs** (security review, 12 Nov 2026). The phone line's and task calls' conversations are deleted. A proposal waits for the owner: record each conversation under the account when its token is issued, delete them with the account, and keep them 30 days at most (decision `2026-11-12-voice-conversations-per-account`).
+27. **Messages and Logbook moved from opt-in to on by default** (9 Nov 2026), and the Messages copy on Doddy's server has no switch. Each is a change of consent model; the legal basis must be settled before outside testers. A proposal waits for the owner to start with less leaving the phone, item by item (decision `2026-11-12-privacy-defaults`); this draft describes today's defaults and must follow whatever is chosen.
+28. **Calls Doddy places for you process a third party's voice and words** (Twilio transcription, ElevenLabs, Anthropic). The opening line says Doddy is an AI assistant; it does not say the call is transcribed or read by an AI.
+29. **"What leaves this iPhone" on `main` has no rows** for the Doddy account, the Messages copy, Logbook or the screen look. The separate change adds them.
+30. **The app has no on-screen AI disclosure** since 11 Nov 2026 (Section 7).
 
 ### B2. Checklist
 
@@ -503,7 +694,8 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 - [ ] Google (Gemini via ElevenLabs; Google Analytics; Google Fonts; Calendar, Gmail and Drive APIs). Google OAuth verification and the wider Gmail compose scope (ADR-099).
 - [ ] Anthropic (news writer). GNews. Twilio (Verify, SMS, calls). Apple (APNs, Maps, Siri, CloudKit).
 - [ ] Composio and Monid: terms, regions, sub-processors, retention, agreement.
-- [ ] Render (Frankfurt), Vercel (site, Blob, Functions), Upstash: agreements, log retention, IP logging, transfers.
+- [ ] Render (Frankfurt), Vercel (site, Blob, Functions), Upstash, Supabase (accounts and the backend database): agreements, log retention, IP logging, transfers.
+- [ ] Serper, Kiwi.com, Shopify; before they are switched on, Duffel, Uber Direct and Coinbase (Section 9.3).
 
 **Legal basis and consent**
 - [ ] Basis per purpose: service you ask for, consent for microphone and optional items, consent for SMS and calls, consent for GA, legitimate interests for security logs.
@@ -525,9 +717,9 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 **App Store**
 - [ ] Review and answer Appendix C.
 - [ ] Privacy manifests for widgets, share extension, watch and the third-party SDKs (ElevenLabs, LiveKit, Porcupine).
-- [ ] Required-reason API audit (only UserDefaults CA92.1 is declared).
+- [ ] Required-reason API audit: the app declares UserDefaults, system boot time, file timestamps and disk space (`scripts/check_privacy_manifest.sh`); the extensions' manifests are in the separate change (Appendix B, item 15).
 - [ ] Privacy policy URL and support URL in App Store Connect.
-- [ ] Account deletion rule (5.1.1(v)): the app has no sign-in account, but the messaging server has an anonymous account with a delete function. Is that enough?
+- [ ] Account deletion rule (5.1.1(v)): the app requires a Doddy account and has Delete in Settings › About (Section 8). Check that it deletes enough, given item 26.
 
 **Product changes the policy depends on**
 - [ ] Turn on ElevenLabs agent authentication and limits; set retention before any outside tester (ADR-034, ADR-057, ADR-068).
@@ -535,31 +727,35 @@ Paths are relative to the repository root. "ADR" means a row in `DECISIONS.md`.
 - [ ] Waitlist: retention, contact address, rate limit, shared password.
 - [ ] Self-host fonts, or notice; decide on Vercel Web Analytics notice.
 - [ ] Fix the location text and the other mismatches in B1.
-- [ ] Add Monid and Google (Gemini) to `DataFlow`.
+- [ ] Add Monid and the model behind the voice to `DataFlow`; `DataFlow` names Monid in the `doddyServer` row since then.
 
 ## Appendix C. Draft App Store Connect "App Privacy" answers
 
-Based on the code and `PrivacyInfo.xcprivacy`. Apple counts data that leaves the device and is collected by you or your third-party partners. Data processed only on the device is not "collected". "Linked to you" means tied to your identity (account, device or other ID). Every row is **[CONFIRM]** until the owner and a lawyer review it. The text on this page is for the review; do not copy it into App Store Connect unchecked.
+Based on the code (12 Nov 2026) and on the app manifest proposed in the separate change (`claude/privacy-texts-match-code`, whose `DataFlow.collectedData` names the rows of "What leaves this iPhone" behind each type and is checked against the manifest by a test). On `main` the manifest still declares six types, three as "not linked". Apple counts data that leaves the device and is kept by you or your partners longer than it takes to answer the request; data processed only on the device is not "collected". "Linked to you" means tied to your identity; since everyone has a Doddy account, every type below is answered as linked. Every row is **[CONFIRM]** until the owner and a lawyer review it. The text on this page is for the review; do not copy it into App Store Connect unchecked.
 
 **Tracking: No.** The app does not track (`NSPrivacyTracking` false, no tracking domains, no advertising ID, no ATT prompt).
 
 | Apple data type | Collected? | Linked to user? | Used for tracking? | Purpose | What and why | Status |
 |---|---|---|---|---|---|---|
-| Audio data (Voice or sound recordings) | Yes | Declared "not linked" in `PrivacyInfo.xcprivacy`. A random install ID is sent as the conversation user ID. | No | App functionality | Your voice goes to ElevenLabs. | **[CONFIRM: linked or not; ElevenLabs keeps it]** |
-| Other user content | Yes | Declared "linked" | No | App functionality | Notes, list names and items, conversations, drafts, calendar and reminder text, email previews and other results sent to ElevenLabs or the server (which passes Ask Doddy questions to Anthropic). Since U4, the reason of a call you book (kept until the call is over). **With "Keep on Doddy's server" on: the text of your notes and conversations, kept on Doddy's server for a year, and read by Claude (Anthropic) to answer a question on the web.** | **[CONFIRM]** |
-| Name | Yes | Declared "not linked" | No | App functionality | Your first name or nickname when About you is shared with voice. | **[CONFIRM]** |
-| Phone number | Yes, only if you use texts or calls | Declared "linked" | No | App functionality | Your verified number goes to the messaging server and Twilio. Doddy texts and calls only that number. | **[CONFIRM]** |
-| User ID | Yes | Declared "linked" | No | App functionality | Anonymous account ID and device token (messaging), session token (backend; also what Ask Doddy uses). | **[CONFIRM]** |
-| Device ID | Yes | Declared "not linked" | No | App functionality | Random install ID (not the advertising ID). Notification token. | **[CONFIRM: a notification token may be a device ID]** |
-| Contacts | Yes, when asked in a voice conversation | Not declared. Probably linked to the voice conversation. | No | App functionality | Contact names and birthday day and month go to ElevenLabs. | **[CONFIRM: missing from the manifest]** |
-| Precise or coarse location | Mostly no. Where you are is sent to Apple Maps, which is Apple. A parking spot stays on the iPhone. Since U4, the iPhone's time zone (such as `Europe/Warsaw`) goes to the server to check quiet hours for booked calls. | Not declared | No | App functionality | Place reminders, leave-by, parking, quiet hours. | **[CONFIRM: does Apple Maps use count as collection by the app? Does a time zone count as coarse location? The lawyer decides.]** |
-| Emails or text messages | **Draft answer: Yes**, for texts. Since U2 to U4: the text of an SMS you approve leaves the app for the server and Twilio; texts you send Doddy's number with "Texts to Doddy" on are kept on the server as notes (no model reads them and nothing is sent back). Email previews and one whole email also reach ElevenLabs through a connected account. | **Draft answer: linked** (tied to the messaging account and your number). Not declared in `PrivacyInfo.xcprivacy` yet. | No | App functionality | Only when you switch the matching feature on. Apple's category covers the content, sender and recipients of messages. | **[CONFIRM: the owner and the lawyer decide (ADR-752, ADR-753, ADR-754). If yes, `PrivacyInfo.xcprivacy` gains `NSPrivacyCollectedDataTypeEmailsOrTextMessages`, linked, app functionality.]** |
-| Search history | Possibly: web search words go to the backend and Monid; Ask Doddy questions go to Doddy's server and Anthropic. | Not declared | No | App functionality | | **[CONFIRM]** |
-| Photos or videos | No. Photos stay on the iPhone and are chosen with the picker. | | | | | **[CONFIRM]** |
-| Health, fitness, financial info, browsing history, purchases | No | | | | | |
-| Usage data, diagnostics, advertising data | No for the app. The server has request logs. **[CONFIRM: whether server logs count as "diagnostics" or "performance data"]** | | | | | **[CONFIRM]** |
-| Sensitive info | The app does not ask for it, but notes and voice may contain it. | | | | | **[CONFIRM]** |
+| Audio data | Yes | Linked | No | App functionality | Your voice to ElevenLabs, which keeps recordings of app conversations; calls Doddy places and the phone line run on ElevenLabs and are tied to the account (5.1, 5.7, 5.7a). The conversation user id sent to ElevenLabs by the app is a random install id. | **[CONFIRM: linked or not; ElevenLabs keeps it]** |
+| Other user content | Yes | Linked | No | App functionality | Notes, lists, conversations, what you type in Messages and its copy for Doddy Web, tasks, Studio topics, files you ask for, a shared screen's picture, recaps, a call's brief and answer, results from your accounts (5.1, 5.4, 5.7a, 5.13, 5.17 to 5.19). | **[CONFIRM]** |
+| Name | Yes | Linked | No | App functionality | Your first name on a call's brief and in About you shared with the voice; the name Apple or Google gives the account. | **[CONFIRM]** |
+| Email address | Yes | Linked | No | App functionality | The Doddy account's email address at Supabase; Doddy's team sees it with the account (5.0). | **[CONFIRM]** |
+| Phone number | Yes, if you use texts or calls | Linked | No | App functionality | Your verified number, at the messaging server and Twilio (5.6, 5.7). | **[CONFIRM]** |
+| Contacts | Yes, when used | Linked | No | App functionality | Contact names and birthday day and month to ElevenLabs; the name and number of whom Doddy calls for you (5.1, 5.7a). | **[CONFIRM: missing from the manifest]** on `main`; added in the separate change |
+| Photos or videos | Yes, when you send one | Linked | No | App functionality | A photo you send with a question in Messages, to the messaging server and Anthropic; kept by neither Doddy server; how long Anthropic keeps it is not verified (5.4). | **[CONFIRM: "collected" given Anthropic's retention]** |
+| Health | Yes, when you send it | Linked | No | App functionality | The week's Apple Health summary: in Messages (Anthropic, and the Messages copy on Doddy's server) or to the voice (ElevenLabs) (5.20). | **[CONFIRM]** |
+| Fitness | Yes, when you ask | Linked | No | App functionality | One day's steps, distance and floors (Motion & Fitness) to ElevenLabs; workouts in the Health summary (5.20). | **[CONFIRM]** |
+| User ID | Yes | Linked | No | App functionality | The Doddy account's id on every Doddy server (5.0). | **[CONFIRM]** |
+| Device ID | Yes | Linked | No | App functionality | The random device id that signs the iPhone in to Doddy's server, and the notification token (not the advertising id). | **[CONFIRM: a notification token may be a device ID]** |
+| Product interaction | Yes, unless Logbook is off | Linked | No | Analytics; App functionality | Logbook's counts of how you use Doddy, for you on Doddy Web and for Doddy's team (5.16). | **[CONFIRM: on by default]** |
+| Emails or text messages | **Open.** Texts you approve and texts you send Doddy's number (kept as notes); one email read through a connected account reaches ElevenLabs; trips read booking emails and send them to Anthropic (5.6, 5.10, 5.21). | Would be linked | No | App functionality | | **[CONFIRM: the owner and the lawyer decide (ADR-752, ADR-753, ADR-754). If yes, `PrivacyInfo.xcprivacy` gains `NSPrivacyCollectedDataTypeEmailsOrTextMessages`, linked, app functionality.]** With the separate change, `DataFlow.collectedData` must gain it in the same commit, or its test fails. |
+| Search history | **Open.** Web, news and places searches go to Doddy's server and Monid, shopping searches to Serper, Shopify searches to Shopify; Doddy's server doesn't keep the words. | | No | App functionality | | **[CONFIRM]** |
+| Precise or coarse location | Mostly no. Apple Maps is Apple. The time zone goes to the messaging server for quiet hours. A delivery's addresses would go to Uber (off). | | No | App functionality | | **[CONFIRM: does Apple Maps use count as collection by the app? Does a time zone count as coarse location? The lawyer decides.]** **[CONFIRM: Uber Direct before it is on]** |
+| Purchases, financial info | No today. Flight booking (Duffel) and paying for web pages (Coinbase) are off; invoices to inFakt are not switched on. | | | | | **[CONFIRM before any is switched on]** |
+| Diagnostics | No for the app. The servers keep request logs (IP, path, status). | | | | | **[CONFIRM: whether server logs count as "diagnostics" or "performance data"]** |
+| Sensitive info | The app does not ask for it, but notes, voice, Messages and a shared screen may contain it. | | | | | **[CONFIRM]** |
 
-Declared accessed API: UserDefaults, reason `CA92.1` (`PrivacyInfo.xcprivacy`). **[CONFIRM: other required-reason APIs, such as file timestamp or disk space, are used by the app or its SDKs]**
+Declared accessed APIs (app): UserDefaults `CA92.1`, system boot time `35F9.1`, file timestamp `C617.1`, disk space `E174.1` (`PrivacyInfo.xcprivacy`, `scripts/check_privacy_manifest.sh`). **[CONFIRM: the third-party SDKs' own manifests (ElevenLabs, LiveKit) in the archive]**
 
 The website's analytics (Vercel Web Analytics, Google Analytics) are not part of the App Store label. They belong in the web privacy notice.

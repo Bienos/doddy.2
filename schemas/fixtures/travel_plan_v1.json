@@ -1,0 +1,172 @@
+{
+  "brief": {
+    "from": "Gdańsk",
+    "to": "Lisbon",
+    "departFrom": "2027-02-12",
+    "departTo": "2027-02-12",
+    "nightsMin": 4,
+    "nightsMax": 4,
+    "adults": 2,
+    "children": null,
+    "checkedBagPerAdult": true,
+    "directOnly": null,
+    "package": true,
+    "budget": null
+  },
+  "options": [
+    {
+      "pick": "cheapest",
+      "price": 742,
+      "currency": "PLN",
+      "overBudget": false,
+      "checkedBagsIncluded": 0,
+      "outbound": {
+        "from": "GDN",
+        "to": "LIS",
+        "fromCity": "Gdańsk",
+        "toCity": "Lisbon",
+        "toCountry": "Portugal",
+        "departs": "2027-02-12T14:15:00",
+        "arrives": "2027-02-12T23:05:00",
+        "minutes": 530,
+        "stops": 1,
+        "flights": [
+          "FR3279",
+          "U27698"
+        ],
+        "airlines": [
+          "Ryanair",
+          "easyJet"
+        ]
+      },
+      "inbound": {
+        "from": "LIS",
+        "to": "GDN",
+        "fromCity": "Lisbon",
+        "toCity": "Gdańsk",
+        "toCountry": "Poland",
+        "departs": "2027-02-16T10:20:00",
+        "arrives": "2027-02-16T15:55:00",
+        "minutes": 335,
+        "stops": 0,
+        "flights": [
+          "FR1235"
+        ],
+        "airlines": [
+          "Ryanair"
+        ]
+      },
+      "traps": [
+        "airport_change",
+        "different_airlines",
+        "late_arrival"
+      ],
+      "bookingUrl": "https://kiwi.com/u/demo1",
+      "links": {
+        "booking": "https://www.booking.com/searchresults.html?ss=Lisbon&checkin=2027-02-12&checkout=2027-02-16&group_adults=2&group_children=0&no_rooms=1",
+        "airbnb": "https://www.airbnb.com/s/Lisbon/homes?checkin=2027-02-12&checkout=2027-02-16&adults=2",
+        "packages": "https://www.wakacje.pl/wczasy/portugalia/?od-2027-02-12,do-2027-02-16,2dorosle"
+      }
+    },
+    {
+      "pick": "fastest",
+      "price": 901,
+      "currency": "PLN",
+      "overBudget": false,
+      "checkedBagsIncluded": 0,
+      "outbound": {
+        "from": "GDN",
+        "to": "LIS",
+        "fromCity": "Gdańsk",
+        "toCity": "Lisbon",
+        "toCountry": "Portugal",
+        "departs": "2027-02-12T05:20:00",
+        "arrives": "2027-02-12T08:45:00",
+        "minutes": 205,
+        "stops": 0,
+        "flights": [
+          "W61702"
+        ],
+        "airlines": [
+          "Wizz Air"
+        ]
+      },
+      "inbound": {
+        "from": "LIS",
+        "to": "GDN",
+        "fromCity": "Lisbon",
+        "toCity": "Gdańsk",
+        "toCountry": "Poland",
+        "departs": "2027-02-16T10:20:00",
+        "arrives": "2027-02-16T15:55:00",
+        "minutes": 335,
+        "stops": 0,
+        "flights": [
+          "FR1235"
+        ],
+        "airlines": [
+          "Ryanair"
+        ]
+      },
+      "traps": [
+        "early_departure"
+      ],
+      "bookingUrl": "https://kiwi.com/u/demo3",
+      "links": {
+        "booking": "https://www.booking.com/searchresults.html?ss=Lisbon&checkin=2027-02-12&checkout=2027-02-16&group_adults=2&group_children=0&no_rooms=1",
+        "airbnb": "https://www.airbnb.com/s/Lisbon/homes?checkin=2027-02-12&checkout=2027-02-16&adults=2",
+        "packages": "https://www.wakacje.pl/wczasy/portugalia/?od-2027-02-12,do-2027-02-16,2dorosle"
+      }
+    },
+    {
+      "pick": "easiest",
+      "price": 958,
+      "currency": "PLN",
+      "overBudget": false,
+      "checkedBagsIncluded": 0,
+      "outbound": {
+        "from": "GDN",
+        "to": "LIS",
+        "fromCity": "Gdańsk",
+        "toCity": "Lisbon",
+        "toCountry": "Portugal",
+        "departs": "2027-02-12T06:10:00",
+        "arrives": "2027-02-12T09:35:00",
+        "minutes": 205,
+        "stops": 0,
+        "flights": [
+          "FR1234"
+        ],
+        "airlines": [
+          "Ryanair"
+        ]
+      },
+      "inbound": {
+        "from": "LIS",
+        "to": "GDN",
+        "fromCity": "Lisbon",
+        "toCity": "Gdańsk",
+        "toCountry": "Poland",
+        "departs": "2027-02-16T10:20:00",
+        "arrives": "2027-02-16T15:55:00",
+        "minutes": 335,
+        "stops": 0,
+        "flights": [
+          "FR1235"
+        ],
+        "airlines": [
+          "Ryanair"
+        ]
+      },
+      "traps": [],
+      "bookingUrl": "https://kiwi.com/u/demo2",
+      "links": {
+        "booking": "https://www.booking.com/searchresults.html?ss=Lisbon&checkin=2027-02-12&checkout=2027-02-16&group_adults=2&group_children=0&no_rooms=1",
+        "airbnb": "https://www.airbnb.com/s/Lisbon/homes?checkin=2027-02-12&checkout=2027-02-16&adults=2",
+        "packages": "https://www.wakacje.pl/wczasy/portugalia/?od-2027-02-12,do-2027-02-16,2dorosle"
+      }
+    }
+  ],
+  "source": "Kiwi.com",
+  "checkedAt": "2026-10-10T10:00:00.000Z"
+}

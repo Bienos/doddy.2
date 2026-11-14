@@ -21,6 +21,7 @@ const HTTP_STATUS: Record<ErrorCode, number> = {
   live_not_configured: 503,
   refused: 422,
   account_conflict: 409,
+  need_details: 422,
   internal: 500,
 };
 
@@ -44,6 +45,7 @@ const MESSAGES: Record<ErrorCode, string> = {
   live_not_configured: "Live connections are not set up on this server.",
   refused: "Doddy can't help with that one.",
   account_conflict: "This sign-in and this iPhone's data belong to different Doddy accounts, so nothing was linked.",
+  need_details: "Doddy needs a bit more detail to make that file.",
   internal: "Something went wrong on Doddy's server.",
 };
 

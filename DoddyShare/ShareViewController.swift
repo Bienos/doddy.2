@@ -39,6 +39,8 @@ final class ShareModel {
         case nothing
         case notSetUp
         case sent
+        /// A product link was left for the Shopping screen's "Check this" card (docs/implementation/SHOPPING.md).
+        case sentForPriceCheck
         case failed
     }
 
@@ -66,6 +68,24 @@ final class ShareModel {
         guard ShareInboxFile.isAvailable else { phase = .notSetUp; return }
         replacesWaiting = ShareInboxFile.hasWaitingItem
         phase = ShareInboxItem.compose(text: text, link: link, sharedAt: .now).map(Phase.ready) ?? .nothing
+    }
+
+    /// True when what was shared holds a web address the Shopping screen can take as a product link.
+    var canCheckPrice: Bool {
+        guard case .ready(let item) = phase else { return false }
+        return SharedShopPage.parse(item.text) != nil
+    }
+
+    /// Leaves the shared text and link for the Shopping screen's "Check this" card, in a file of its own. Nothing is
+    /// read from the shop and nothing is sent from here: this extension has no network.
+    func sendForPriceCheck() {
+        guard canCheckPrice, case .ready(let item) = phase else { return }
+        do {
+            try ShareInboxFile.write(item, slot: .priceCheck)
+            phase = .sentForPriceCheck
+        } catch {
+            phase = .failed
+        }
     }
 
     func send() {
@@ -103,6 +123,11 @@ struct ShareView: View {
                 } else if model.phase != .loading {
                     ToolbarItem(placement: .confirmationAction) { Button("Done", action: close) }
                 }
+                if model.canCheckPrice {
+                    ToolbarItem(placement: .bottomBar) {
+                        Button("Check the price") { model.sendForPriceCheck() }.accessibilityIdentifier("share.checkPrice")
+                    }
+                }
             }
         }
     }
@@ -129,6 +154,10 @@ struct ShareView: View {
         case .sent:
             Label("Ready in Doddy", systemImage: "checkmark.circle").font(.headline)
             Text("Open Doddy to check it and tap Save. It isn't saved yet.")
+                .foregroundStyle(.secondary)
+        case .sentForPriceCheck:
+            Label("Ready to check in Doddy", systemImage: "checkmark.circle").font(.headline)
+            Text("Open Doddy: the Shopping screen has this link ready. Nothing is read or sent until you tap the buttons there.")
                 .foregroundStyle(.secondary)
         case .failed:
             Text("That couldn't be handed to Doddy. Nothing was saved. Try again.")

@@ -222,6 +222,7 @@ final class VoiceSessionController {
             // The same phase again (the SDK repeats states) changes nothing; skip the work (ADR-604).
             guard phase != oldValue else { return }
             Self.conversationInProgress = isLive
+            if !isLive { turnFeedback.reset() }
             if isLive { Self.current = self } else if Self.current === self { Self.current = nil }
             ListeningIndicatorModel.shared.refresh()
             switch phase {
@@ -232,6 +233,12 @@ final class VoiceSessionController {
             updateVoiceMeter()
             // Doddy started speaking: the island may open up for a moment (ADR-577).
             if phase == .speaking, oldValue != .speaking { expandIslandIfDue() }
+            if phase == .speaking, let began = firstSpeechRequestedAt {
+                firstSpeechRequestedAt = nil
+                let took = VoiceStartTimeline.text(ProcessInfo.processInfo.systemUptime - began)
+                let source = tokenSource?.rawValue ?? "no token"
+                Self.audioLog.notice("voice first speaking event after start: \(took, privacy: .public), \(source, privacy: .public)")
+            }
             // Listening comes only from the provider's own event: this conversation really
             // connected. Counted once per conversation, for when the "Open Doddy faster" card
             // returns after "Later" (ADR-559; it was the Hey Doddy card's, ADR-328).
@@ -353,6 +360,22 @@ final class VoiceSessionController {
     private(set) var accountMessage: String?
     /// ADR-564: files Claude is making in this conversation, newest first. Each opens by its link.
     private(set) var documents: [RunDocument] = []
+    /// What each file in `documents` is about, by its link: the request the agent gave `make_document`
+    /// (`ThreadDelivery.madeFileBrief`). In memory only, like `documents`.
+    private(set) var documentBriefs: [URL: String] = [:]
+    /// A file still being made (owner, 13 Nov 2026, decision 2026-11-13-file-being-made-island-note): instead of the
+    /// pop-up card, Home's island drops a small note saying what Doddy is making, for `MadeFileStart.noteSeconds`.
+    /// Nothing on it needs a tap; the file arrives in Messages when the server says it is ready.
+    struct MadeFileNote: Equatable, Identifiable {
+        let id = UUID()
+        let document: RunDocument
+        /// False in a private conversation: nothing from it reaches Messages, so the file opens from the transcript.
+        let keptInMessages: Bool
+    }
+    private(set) var madeFileNote: MadeFileNote?
+    @ObservationIgnored private var madeFileNoteClear: Task<Void, Never>?
+    /// find_flights: the latest search's flights on Kiwi.com, as buttons (never read out by the agent).
+    private(set) var flightLinks: [RunLink] = []
     private(set) var isMuted = false {
         didSet {
             syncIsland()
@@ -483,6 +506,22 @@ final class VoiceSessionController {
     /// The last start without opening Doddy failed because iOS refused the island or the
     /// microphone in the background, not because of the conversation: opening Doddy fixes it (ADR-579).
     private(set) var backgroundStartRefused = false
+    /// A start without opening Doddy has its Live Activity and audio session up: what the Action
+    /// Button's intent waits for before it returns (decision 2026-11-10-action-button-start).
+    private(set) var backgroundStartReady = false
+    /// A start without opening Doddy took the audio session itself, so LiveKit leaves it alone until
+    /// this conversation is over (`ConversationAudioSession`, decision 2026-11-12-action-button-audio-and-island).
+    @ObservationIgnored private var audioHold: ConversationAudioHolds.Hold?
+    /// Where this start's voice token came from, for the timing line only.
+    private(set) var tokenSource: VoiceTokenSource?
+    /// Monotonic, from Home's tap (including its access check), or start() for other entry points.
+    /// Cleared at the first real SDK speaking event; no transcript or credential enters the log.
+    @ObservationIgnored private var firstSpeechRequestedAt: Double?
+    /// The words under Doddy while he works, the tap when the person's words arrive and the time of
+    /// each turn in the log (decision `2026-11-12-voice-turn-feedback`).
+    let turnFeedback = VoiceTurnFeedback()
+    /// The last state the provider reported, which a held "Working on it…" can differ from.
+    @ObservationIgnored private var providerState: ElevenLabs.AgentState?
     /// Private conversation (PRD item 6, ADR-170): when on at the end, nothing of it is kept on the
     /// phone, so it never comes back as "recent conversations". Explicit saves still need a tap.
     var isPrivate = false {
@@ -596,7 +635,7 @@ final class VoiceSessionController {
     func start(
         _ mode: VoiceConnectionMode, profile: ApprovedProfile, translator preset: TranslatorSetup? = nil,
         checkIn: MorningBriefing? = nil, wakeGreeting: String? = nil, aboutNote: UUID? = nil,
-        withoutOpeningApp: Bool = false
+        withoutOpeningApp: Bool = false, requestedAt: Double? = nil
     ) async {
         guard !isLive else { return }
         // One owner of the audio session (ADR-695): while a Capture recording (ADR-588), a voice memo,
@@ -615,6 +654,7 @@ final class VoiceSessionController {
         }
         startsInProgress += 1
         defer { startsInProgress -= 1 }
+        firstSpeechRequestedAt = requestedAt ?? ProcessInfo.processInfo.systemUptime
         // The previous conversation's lines and unanswered cards are kept before they're cleared,
         // even when it ended in a failure nothing else recorded (ADR-360).
         keepLog()
@@ -689,6 +729,9 @@ final class VoiceSessionController {
         islandExpansion = IslandExpansion(isOn: LaunchPreferencesMigration.islandExpands(
             UserDefaults.standard.object(forKey: LaunchPreferencesMigration.islandExpandsKey) as? Bool))
         backgroundStartRefused = false
+        backgroundStartReady = false
+        ConversationAudioSession.release(takeAudioHold())
+        tokenSource = nil
         proposedNoteTexts = []
         saveSuggestions = nil
         suggestionsOffered = false
@@ -741,6 +784,8 @@ final class VoiceSessionController {
                 fail(problem)
                 return
             }
+            audioHold = ConversationAudioSession.takenByDoddy()
+            backgroundStartReady = true
         }
 
         // The Dynamic Island / Lock Screen buttons reach this conversation through these.
@@ -754,11 +799,24 @@ final class VoiceSessionController {
         // The voice token is asked for now and used below (ADR-686), so the wait for the notes and
         // the rest of the context below overlaps with the wait for the server instead of adding to
         // it. Only ElevenLabs through the token server, after consent and the microphone check.
+        // Translating talks to its own agent, which has no tools at all (owner, 12 Nov 2026: the agent must not
+        // use any function while translating; decision 2026-11-12-translator-agent).
+        let agentKind = VoiceAgentKind.forTranslatorStart(preset != nil)
         var earlyToken: Task<Result<String, VoiceTokenError>, Never>?
         if case .tokenServer(let endpoint) = mode {
+            // One fetched ahead (VoiceTokenWarmer) is used once; it is gone from the shelf either way, so a
+            // start that fails to connect with it fetches a fresh one next time, never the same again. A
+            // translator start never uses it: it is for the main agent, so a translator token is fetched now.
             earlyToken = Task { () -> Result<String, VoiceTokenError> in
                 do throws(VoiceTokenError) {
-                    return .success(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
+                    if agentKind == .translator {
+                        let value = try await VoiceTokenWarmer.shared.translatorToken(endpoint: endpoint)
+                        if attempt == startAttempt { tokenSource = .fetched }
+                        return .success(value)
+                    }
+                    let token = try await VoiceTokenWarmer.shared.token(endpoint: endpoint)
+                    if attempt == startAttempt { tokenSource = token.source }
+                    return .success(token.value)
                 } catch {
                     return .failure(error)
                 }
@@ -844,6 +902,19 @@ final class VoiceSessionController {
                 firstConversation: isFirstConversation),
         ]
         var config = ConversationConfig(dynamicVariables: variables, userId: Self.userID())
+        config.onStartupStateChange = { state in
+            let metrics: ConversationStartupMetrics
+            switch state {
+            case .active(_, let value), .failed(_, let value): metrics = value
+            default: return
+            }
+            let timing = VoiceTransportTiming(room: metrics.roomConnect, agent: metrics.agentReady,
+                                               initialization: metrics.conversationInit, total: metrics.total)
+            Task { @MainActor in
+                guard ref.value != nil else { return }
+                Self.audioLog.notice("voice transport timing: \(timing.line, privacy: .public)")
+            }
+        }
         // Voice, speed and expressiveness (Settings → Voice and personality). Only changed values
         // are sent; the agent must allow these TTS overrides (ADR-105).
         if let tts = VoiceStyle.stored().override {
@@ -859,12 +930,35 @@ final class VoiceSessionController {
         // setupAgentStateManager` returns early) the callback never fires, so the island, Home's
         // waves and his talking pose stayed on "Listening" while he spoke. The defaults use the
         // agent's own events and the room's speaking detection; no `vad_score` events are needed.
-        config.agentStateConfiguration = AgentStateConfiguration()
+        // 1 s instead of the SDK's 0.5 s before a quiet Doddy counts as listening (12 Nov 2026): the room
+        // reports him quiet in the pauses between his sentences, so each answer flipped speaking and
+        // listening several times, and Home's strip and the island grew and shrank with every flip. The
+        // user speaking or interrupting still switches at once (their own SDK signals).
+        config.agentStateConfiguration = AgentStateConfiguration(speakingToListeningDelay: 1.0)
         config.onAgentStateChange = { state in
             Task { @MainActor in ref.value?.apply(state) }
         }
         config.onUserTranscript = { text, _ in
-            Task { @MainActor in ref.value?.append(text, fromUser: true) }
+            Task { @MainActor in
+                // The person's words arrived: the turn starts here (decision 2026-11-12-voice-turn-feedback).
+                if let controller = ref.value, controller.isLive {
+                    controller.turnFeedback.userFinished(tap: controller.phase != .speaking && controller.translator == nil)
+                }
+                ref.value?.append(text, fromUser: true)
+            }
+        }
+        // Tools the agent runs itself (web tools) reach the app only as these two events; the app's
+        // own tools are also counted in `handle` and `reply`, once per call id.
+        config.onAgentToolRequest = { event in
+            let id = event.toolCallId, name = event.toolName
+            Task { @MainActor in ref.value?.turnFeedback.toolStarted(id: id, name: name) }
+        }
+        config.onAgentToolResponse = { event in
+            let id = event.toolCallId
+            Task { @MainActor in ref.value?.turnFeedback.toolAnswered(id: id) }
+        }
+        config.onInterruption = { _ in
+            Task { @MainActor in ref.value?.turnInterrupted() }
         }
         config.onAgentResponse = { text, _ in
             Task { @MainActor in ref.value?.append(text, fromUser: false) }
@@ -909,7 +1003,7 @@ final class VoiceSessionController {
             Task { @MainActor in ref.value?.disconnected(kind) }
         }
 
-        await connectElevenLabs(mode, config: config, attempt: attempt, earlyToken: earlyToken)
+        await connectElevenLabs(mode, agent: agentKind, config: config, attempt: attempt, earlyToken: earlyToken)
     }
 
     /// Gets the credential for `mode` and opens the ElevenLabs conversation. When the agent refuses a
@@ -917,7 +1011,7 @@ final class VoiceSessionController {
     /// start carries on through the token server if this iPhone has a voice session, and otherwise
     /// asks for sign-in, instead of showing the SDK's English text.
     private func connectElevenLabs(
-        _ mode: VoiceConnectionMode, config: ConversationConfig, attempt: Int,
+        _ mode: VoiceConnectionMode, agent: VoiceAgentKind, config: ConversationConfig, attempt: Int,
         earlyToken: Task<Result<String, VoiceTokenError>, Never>?
     ) async {
         let auth: ElevenLabsConfiguration
@@ -928,7 +1022,13 @@ final class VoiceSessionController {
                 fetched = await earlyToken.value
             } else {
                 do throws(VoiceTokenError) {
-                    fetched = .success(try await VoiceTokenClient(endpoint: endpoint).fetchToken())
+                    if agent == .translator {
+                        fetched = .success(try await VoiceTokenWarmer.shared.translatorToken(endpoint: endpoint))
+                    } else {
+                        let token = try await VoiceTokenWarmer.shared.token(endpoint: endpoint)
+                        if attempt == startAttempt { tokenSource = token.source }
+                        fetched = .success(token.value)
+                    }
                 } catch {
                     fetched = .failure(error)
                 }
@@ -945,8 +1045,8 @@ final class VoiceSessionController {
                 return
             }
         case .directAgent(let agentID):
-            // Debug builds only (ADR-551): no token, no DODDY voice account.
-            auth = .publicAgent(id: agentID)
+            // Debug builds only (ADR-551): no token, no DODDY voice account. Translating has its own agent here too.
+            auth = .publicAgent(id: agent == .translator ? VoiceConfig.translatorDirectAgentID : agentID)
         case .notSetUp(let reason):
             fail(reason)
             return
@@ -956,7 +1056,10 @@ final class VoiceSessionController {
         guard attempt == startAttempt, phase == .connecting else { return }
 
         Self.allowOtherAppsAudio()
-        let connectNote = "connecting to ElevenLabs: attempt \(attempt)"
+        // Before LiveKit's engine starts: it sets the session up itself unless a start without opening holds it.
+        ConversationAudioSession.beforeConnect(audioHold)
+        let sessionNote = audioHold == nil ? "set up by LiveKit" : "held by Doddy: \(Self.describeAudioSession())"
+        let connectNote = "connecting to ElevenLabs: attempt \(attempt), audio session \(sessionNote)"
         Self.audioLog.notice("\(connectNote, privacy: .public)")
         let startConfig = config
         do {
@@ -1000,14 +1103,16 @@ final class VoiceSessionController {
                 return
             }
             if case .directAgent = mode, DeveloperVoiceConnection.isRefusal(error.localizedDescription) {
-                await developerConnectionRefused(config: config, attempt: attempt)
+                await developerConnectionRefused(config: config, attempt: attempt, agent: agent)
                 return
             }
             // Translated before it reaches the card, which shows its text as given.
             var message = NSLocalizedString("Couldn't connect to Doddy's voice. Check your internet connection and try again.", comment: "")
             // An agent that doesn't allow the voice overrides refuses the conversation.
             if config.ttsOverrides != nil || config.agentOverrides != nil {
-                message += " " + NSLocalizedString("If it keeps failing, choose \"Use Doddy's own voice\" and language \"Automatic\" in Settings → Voice and personality.", comment: "")
+                // The choice of voice and its "Use Doddy's own voice" button are gone (decision 2026-11-12-one-voice): what is
+                // still sent is the speed, the expressiveness and the language.
+                message += " " + NSLocalizedString("If it keeps failing, set Speed to Normal, Expressiveness to Natural and Starts in to Automatic in Settings → Voice and personality.", comment: "")
             }
             #if DEBUG
             // The SDK's own words, in English, for the developer; Release builds keep them in the log only.
@@ -1020,7 +1125,7 @@ final class VoiceSessionController {
     /// The agent refused the developer connection (Debug builds, ADR-551): its authentication is on.
     /// The Debug switch goes off so later starts use the token server too, and this start carries on
     /// through it when there is a voice session to ask with.
-    private func developerConnectionRefused(config: ConversationConfig, attempt: Int) async {
+    private func developerConnectionRefused(config: ConversationConfig, attempt: Int, agent: VoiceAgentKind) async {
         Self.audioLog.notice("the agent refused the developer connection: attempt \(attempt, privacy: .public)")
         VoiceConfig.directAgentRefused()
         let auth = VoiceAuthSession.shared
@@ -1031,7 +1136,7 @@ final class VoiceSessionController {
         case .retry(let next):
             // A translator restarted later uses the connection that worked.
             startedMode = next
-            await connectElevenLabs(next, config: config, attempt: attempt, earlyToken: nil)
+            await connectElevenLabs(next, agent: agent, config: config, attempt: attempt, earlyToken: nil)
         case .signInNeeded:
             fail(NSLocalizedString("Doddy's voice now needs you to be signed in. Close this screen and tap Talk to Doddy to sign in.", comment: ""))
         case .notSetUp(let reason):
@@ -1060,6 +1165,9 @@ final class VoiceSessionController {
     /// paused that way. Cost: the other app's sound plays along with Doddy's, and the microphone
     /// can hear it (headphones avoid that). Same options as the SDK's own speaker preset plus
     /// `.mixWithOthers`. Not verified on a device.
+    /// LiveKit 2.19 doesn't read `sessionConfiguration` when it sets the session up (and since 2.17 its
+    /// own preset no longer mixes), so this changes nothing today; a start without opening Doddy keeps
+    /// its mixable session through `ConversationAudioSession` (decision 2026-11-12-action-button-audio-and-island).
     private static func allowOtherAppsAudio() {
         AudioManager.shared.sessionConfiguration = AudioSessionConfiguration(
             category: .playAndRecord,
@@ -1095,6 +1203,12 @@ final class VoiceSessionController {
             audioLog.notice("\(refused, privacy: .public)")
             return NSLocalizedString("iOS didn't let Doddy start the microphone without opening him. Open Doddy to talk.", comment: "")
         }
+    }
+
+    /// This conversation's hold on the audio session, handed over once (decision 2026-11-12-action-button-audio-and-island).
+    private func takeAudioHold() -> ConversationAudioHolds.Hold? {
+        defer { audioHold = nil }
+        return audioHold
     }
 
     /// Watches iOS audio interruptions (a phone call, an alarm, Siri, another app's audio) and
@@ -1222,6 +1336,8 @@ final class VoiceSessionController {
         // are dropped (review H1).
         startAttempt += 1
         userAskedToEnd = true
+        // Taken now, before the await below: a start during it must keep its own hold.
+        let hold = takeAudioHold()
         if sessionEnd == nil { sessionEnd = reason }
         dropLongTurn()
         endTranslator()
@@ -1251,6 +1367,9 @@ final class VoiceSessionController {
             activity.sessionID = nil
         }
         await active?.endConversation()
+        ConversationAudioSession.release(hold)
+        // Prepare the next tap while Home is idle; never open another room or microphone here.
+        VoiceTokenWarmer.shared.warmIfDue()
     }
 
     /// Stop listening from Siri or the indicator (OP-024, ADR-361): ends the conversation like End,
@@ -2491,11 +2610,28 @@ final class VoiceSessionController {
 
     // MARK: Events
 
+    /// The person spoke over Doddy: nothing is waited on, and a held "Working on it…" goes back to
+    /// what the provider said (it may have said listening before this ran).
+    private func turnInterrupted() {
+        turnFeedback.reset()
+        if isLive, phase == .thinking, providerState == .listening { phase = .listening }
+    }
+
     private func apply(_ state: ElevenLabs.AgentState) {
         guard isLive else { return }
+        providerState = state
         switch state {
-        case .listening: phase = .listening
+        case .listening:
+            // The SDK says listening as soon as a tool answers, while the model is still writing the
+            // answer to it: keep "Working on it…" for a few seconds unless Doddy speaks first
+            // (decision 2026-11-12-voice-turn-feedback).
+            let held = turnFeedback.holdsThinking { [weak self] in
+                guard let self, self.isLive, self.phase == .thinking, self.providerState == .listening else { return }
+                self.phase = .listening
+            }
+            phase = held ? .thinking : .listening
         case .speaking:
+            turnFeedback.agentStartedSpeaking()
             phase = .speaking
             if !readsAloud { applyReadAloud() }
         case .thinking: phase = .thinking
@@ -2582,10 +2718,16 @@ final class VoiceSessionController {
         keepLog()
         // After an error the SDK may keep the microphone (review H2), so the conversation is
         // ended here as stop() does, instead of waiting for a disconnect that may not come.
+        let hold = takeAudioHold()
         if let active = conversation {
             conversation = nil
             endTranslator()
-            Task { await active.endConversation() }
+            Task {
+                await active.endConversation()
+                ConversationAudioSession.release(hold)
+            }
+        } else {
+            ConversationAudioSession.release(hold)
         }
         // As after a drop by disconnect: "Worth keeping?" once Doddy had been listening.
         if wasLive { offerSaveSuggestions() }
@@ -2598,6 +2740,7 @@ final class VoiceSessionController {
         endTranslator()
         stopWatchingAudioInterruptions()
         conversation = nil
+        ConversationAudioSession.release(takeAudioHold())
         if wasLive { keepRecoveryDraft() }
         pendingAction = nil
         keepLog()
@@ -2745,6 +2888,7 @@ final class VoiceSessionController {
         guard isLive, attempt == startAttempt else { return }
         callOwners.record(call.toolCallId, attempt: attempt)
         callsAsReceived[call.toolCallId] = (call.toolName, call.parametersData)
+        turnFeedback.toolStarted(id: call.toolCallId, name: call.toolName)
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
         // The release scope (decision 2026-11-07-release-scope), translator (ADR-215), plan, Pause all, then the tool's switch,
         // in that order (ToolGate).
@@ -2790,8 +2934,9 @@ final class VoiceSessionController {
                 return
             }
         }
-        // ASK-01 (ADR-483): nothing below runs before the user's yes for exactly this call. Tools
-        // with a payload card of their own (and the server's tools) ask through that card.
+        // ASK-01 (ADR-483) as it stands since 11 Nov 2026: a change with no card of its own waits here for the
+        // user's tap for exactly this call. Tools with a payload card of their own (and the server's writes)
+        // ask through that card. What the user asked to see or start of their own runs at once (`.runsNow`).
         switch AskFirst.need(for: request, polish: Self.cardsInPolish) {
         case .yesFirst(let card), .tapFirst(let card):
             guard askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
@@ -2802,7 +2947,8 @@ final class VoiceSessionController {
                 return
             }
         case .nothingRuns, .ownPayloadCard, .serverCard, .runsNow:
-            // .runsNow (ADR-575): a public lookup (a sum, a conversion, the web) runs at once.
+            // .runsNow: a public lookup (ADR-575), a look at the user's own things or one of Doddy's own small
+            // actions (decision 2026-11-11-asked-for-runs-at-once) runs at once.
             break
         }
         switch request {
@@ -2943,11 +3089,25 @@ final class VoiceSessionController {
             guard await mayTryAgain(call.toolCallId, app: .timers) else { return }
             propose(.timer(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
         case .followNews(let ask):
-            // The user already tapped Follow on the ask card (ASK-01). Said from the list as it is
+            // At once since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once). Said from the list as it is
             // kept on this iPhone after the write, never assumed (ADR-657).
-            await reply(call.toolCallId, VoiceToolReply.newsFollow(FollowingModel.shared.follow(ask)))
+            let outcome = FollowingModel.shared.follow(ask.base)
+            var alertResult: NewsFollowAlertResult?
+            if let alertAsk = ask.alertAsk {
+                // The alert applies to a follow that was just added or that the person already had; the radar's own
+                // sync says whether Doddy's server kept it.
+                switch outcome {
+                case .added(let follow), .alreadyFollowing(let follow):
+                    let kept = await FollowingModel.shared.apply(alertAsk.alert(followID: follow.id), to: follow)
+                    alertResult = kept
+                        ? .kept(FollowingModel.shared.alert(for: follow))
+                        : .hereOnly(reason: FollowingModel.shared.radarProblem ?? "")
+                case .full, .notKept: break
+                }
+            }
+            await reply(call.toolCallId, VoiceToolReply.newsFollow(outcome, alert: alertResult))
         case .startStopwatch(let label):
-            // The user already tapped Start on the ask card (ASK-01). One stopwatch at a time: a
+            // At once since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once). One stopwatch at a time: a
             // second start reports the one running and changes nothing (ADR-652).
             switch StopwatchController.shared.start(label: label) {
             case .started(let watch):
@@ -2968,6 +3128,44 @@ final class VoiceSessionController {
         case .checkStopwatch:
             StopwatchController.shared.refresh()
             await reply(call.toolCallId, VoiceToolReply.stopwatchReading(StopwatchController.shared.watch, now: Date()))
+        // The focus timer and the wind-down (decision 2026-11-10-timers-by-voice), at once since 11 Nov 2026
+        // (decision 2026-11-11-asked-for-runs-at-once). One of each at a time: a running one is never replaced. Every reply is read back from the
+        // controller after the change, so Doddy never says one runs or stopped when it didn't.
+        case .startFocus(let minutes, let label):
+            let focus = FocusController.shared
+            focus.refresh()
+            if let running = focus.session, !running.isOver {
+                await reply(call.toolCallId, VoiceToolReply.countdownAlreadyThere(.focus, running, now: Date()))
+                return
+            }
+            await focus.start(minutes: minutes, label: label)
+            await reply(call.toolCallId, VoiceToolReply.countdownStarted(
+                .focus, focus.session, alertConfirmed: focus.notificationConfirmed, calendar: .current))
+        case .stopFocus:
+            let focus = FocusController.shared
+            focus.refresh()
+            let before = focus.session
+            if before.map({ !$0.isOver }) == true { focus.stop() }
+            await reply(call.toolCallId, VoiceToolReply.countdownStopped(.focus, before: before, after: focus.session, now: Date()))
+        case .checkFocus:
+            FocusController.shared.refresh()
+            await reply(call.toolCallId, VoiceToolReply.focusReading(FocusController.shared.session, now: Date(), calendar: .current))
+        case .startWindDown(let minutes):
+            let countdowns = CountdownController.shared
+            countdowns.refresh()
+            if let running = countdowns.session(.windDown), !running.isOver {
+                await reply(call.toolCallId, VoiceToolReply.countdownAlreadyThere(.windDown, running, now: Date()))
+                return
+            }
+            let outcome = await countdowns.start(seconds: minutes * 60, purpose: .windDown, label: nil)
+            await reply(call.toolCallId, VoiceToolReply.countdownStarted(
+                .windDown, countdowns.session(.windDown), alertConfirmed: outcome == .verified, calendar: .current))
+        case .stopWindDown:
+            let countdowns = CountdownController.shared
+            countdowns.refresh()
+            let before = countdowns.session(.windDown)
+            if before.map({ !$0.isOver }) == true { countdowns.stop(.windDown) }
+            await reply(call.toolCallId, VoiceToolReply.countdownStopped(.windDown, before: before, after: countdowns.session(.windDown), now: Date()))
         case .listAlarms:
             // Read on the phone (ADR-283): times and labels Doddy set, nothing else. An unreadable
             // list is said as such, never as "none" (voice-agent review 2).
@@ -3123,7 +3321,7 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.stepsFailed(UserFacingError.message(for: error)), isError: true)
             }
         case .openTrainingPlan(let ask):
-            // ADR-626: the user already tapped Open on the ask card. The screen asks the safety questions and makes the
+            // ADR-626, at once since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once). The screen asks the safety questions and makes the
             // plan; the agent hears only that it is open, never the answers or the plan.
             if isCurrent(call.toolCallId) { planRequest = PlanAskRequest(ask: ask) }
             await reply(call.toolCallId, VoiceToolReply.trainingPlanOpened(ask))
@@ -3165,8 +3363,14 @@ final class VoiceSessionController {
                 return
             }
             propose(.camera(toolCallID: call.toolCallId), toolCallID: call.toolCallId)
+        case .openFoodApp(let handoff):
+            // Decision 2026-11-12-food-by-voice: the card's tap (AskFirst.tapFirst, checked above) was the yes.
+            // The app's front page opens (its app when installed, else the website); nothing is ordered or sent.
+            let opened = await open(handoff.openURL)
+            await reply(call.toolCallId, opened ? handoff.openedReply : handoff.notOpenedReply, isError: !opened)
         case .lookAtScreen(let question):
-            // After the yes: the picture as it is now, fresh or nothing (sharing may have stopped meanwhile).
+            // Sharing is on (checked above) and that is the person's yes since 11 Nov 2026 (decision
+            // 2026-11-11-asked-for-runs-at-once): the picture as it is now, fresh or nothing.
             // It goes to Doddy's server for this one answer and is never kept (decision 2026-11-09-doddy-looks-at-the-screen).
             let current = ScreenShareFiles.current()
             guard case .ready(let age) = current.readiness, let jpeg = current.jpeg else {
@@ -3183,6 +3387,10 @@ final class VoiceSessionController {
             let result = ScreenLookSpeech.result(outcome)
             await reply(call.toolCallId, result.text, isError: result.isError)
         case .controlHome(let proposal):
+            guard devices.homeAvailable else {
+                await reply(call.toolCallId, VoiceToolReply.homeUnavailable)
+                return
+            }
             guard devices.access(for: .home) == .granted else {
                 await notConnected(call.toolCallId, .home)
                 return
@@ -3276,7 +3484,7 @@ final class VoiceSessionController {
             }
             await reply(call.toolCallId, await StudioModel.shared.make(job))
         case .findDeals(let request):
-            // SHOPPING.md 2: after the ask card's yes, one request to Doddy's server, which reads the
+            // SHOPPING.md 2: at once since 11 Nov 2026, one request to Doddy's server, which reads the
             // chains' leaflets for it and keeps nothing. The answer also stays on the leaflets screen.
             await reply(call.toolCallId, await DealsModel.shared.searchForAgent(request))
         case .lostWallet(let situation):
@@ -3611,12 +3819,14 @@ final class VoiceSessionController {
                     .cloud(toolCallID: toolCallID, call: cloud, preview: prepared.preview, approvalID: prepared.approvalId, mode: prepared.mode),
                     toolCallID: toolCallID)
             } else if AskFirst.need(for: .cloudTool(cloud)) == .runsNow {
-                // ADR-575: web search, news and places read nothing of the user's, so they run at
-                // once. The server's single-use approval is still made for exactly these words and
-                // used straight away.
+                // ADR-575, and since 11 Nov 2026 every read through Doddy's server (decision
+                // 2026-11-11-asked-for-runs-at-once): the user asked, so it runs at once. The server's
+                // single-use approval is still made for exactly these words and used straight away.
                 let prepared = try await client.prepare(cloud)
                 let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: prepared.approvalId)
-                await reply(toolCallID, VoiceToolReply.cloudResult(result))
+                await keepMadeDocument(result, from: cloud)
+                keepFlightLinks(result)
+                await reply(toolCallID, madeFileReply(result))
             } else {
                 // ASK-01: the server makes the card from the arguments alone (nothing is read) and a
                 // single-use approval; the read runs only after the user's yes (runAskedCloudRead).
@@ -3643,26 +3853,64 @@ final class VoiceSessionController {
         }
         do {
             let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: approvalID)
-            // ADR-564: a file Claude is making gets a button on screen; the agent never gets its link.
-            if let document = result.document {
-                documents.insert(document, at: 0)
-                // ADR-616: "ready" only when the server says the file is ready.
-                switch document.status {
-                case .ready: flashIsland(.resultReady(.document))
-                case .working:
-                    flashIsland(.resultReady(.documentStarted))
-                    // One notification when it is done, if the messaging server is set up for it.
-                    FileReadyPush.watch(document)
-                case .failed: break
-                }
-                // Also Doddy's own message in Messages, with the file to open and share from (owner, 10 Nov 2026).
-                // A private conversation keeps nothing on this iPhone, so it adds nothing there either.
-                if !isPrivate { await ThreadInbox.deliver(document: document, polish: Self.cardsInPolish) }
-            }
-            await reply(toolCallID, VoiceToolReply.cloudResult(result))
+            await keepMadeDocument(result, from: cloud)
+            await reply(toolCallID, madeFileReply(result))
         } catch {
             await reply(toolCallID, await cloudFailureReply(error, tool: cloud.name), isError: true)
         }
+    }
+
+    /// find_flights: the flights' Kiwi.com pages become buttons; a new search replaces the old ones.
+    private func keepFlightLinks(_ result: RunResult) {
+        guard result.tool == CloudToolName.findFlights else { return }
+        flightLinks = (result.links ?? []).filter(\.isKiwi)
+    }
+
+    /// ADR-564: a file Claude is making gets a button on screen; the agent never gets its link. Its card and its
+    /// message in Messages say what it is about: what the agent asked the server for (owner review, 13 Nov 2026).
+    private func keepMadeDocument(_ result: RunResult, from call: CloudToolCall) async {
+        guard let document = result.document else { return }
+        let about = ThreadDelivery.madeFileBrief(of: call)
+        if let about { documentBriefs[document.url] = about }
+        documents.insert(document, at: 0)
+        // ADR-616: "ready" only when the server says the file is ready.
+        switch document.status {
+        case .ready: flashIsland(.resultReady(.document))
+        case .working:
+            flashIsland(.resultReady(.documentStarted))
+            // In the app: the island's small note, not the pop-up card (MadeFileStart.popsUpCard).
+            showMadeFileNote(document)
+            // One notification when it is done, if the messaging server is set up for it.
+            FileReadyPush.watch(document)
+        case .failed: break
+        }
+        // Also Doddy's own message in Messages, with the file to open and share from (owner, 10 Nov 2026).
+        // A private conversation keeps nothing on this iPhone, so it adds nothing there either.
+        if !isPrivate { await ThreadInbox.deliver(document: document, about: about, polish: Self.cardsInPolish) }
+    }
+
+    /// Home's island note for a file being made: up for a few seconds, then gone by itself.
+    private func showMadeFileNote(_ document: RunDocument) {
+        guard MadeFileStart.showsNote(document) else { return }
+        madeFileNote = MadeFileNote(document: document, keptInMessages: !isPrivate)
+        madeFileNoteClear?.cancel()
+        madeFileNoteClear = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(MadeFileStart.noteSeconds))
+            guard !Task.isCancelled else { return }
+            self?.madeFileNote = nil
+        }
+    }
+
+    /// What the agent hears for a server tool's result. A file still being made gets the phone's own words, with no
+    /// card or tap in them, and no promise of Messages in a private conversation (`MadeFileStart.voiceReply`).
+    private func madeFileReply(_ result: RunResult) -> String {
+        MadeFileStart.voiceReply(result, keptInMessages: !isPrivate) ?? VoiceToolReply.cloudResult(result)
+    }
+
+    /// A tap on the island note puts it away sooner. Nothing else happens.
+    func dismissMadeFileNote() {
+        madeFileNoteClear?.cancel()
+        madeFileNote = nil
     }
 
     /// ADR-563: what the agent hears when a server tool fails. An account that isn't connected gets
@@ -4000,6 +4248,16 @@ final class VoiceSessionController {
             await reply(toolCallID, VoiceToolReply.callTaskNotReady(availability))
             return
         }
+        // Booking needs the booking agent on the server (decision 2026-11-12-book-agent); asking works without it.
+        if draft.booking != nil, availability.booking != true {
+            await reply(toolCallID, VoiceToolReply.callTaskBookingOff)
+            return
+        }
+        // Ordering food needs the order agent on the server (decision 2026-11-12-food-by-phone).
+        if draft.order != nil, availability.order != true {
+            await reply(toolCallID, VoiceToolReply.callTaskOrderOff)
+            return
+        }
         guard !callerFirstName.isEmpty else {
             await reply(toolCallID, VoiceToolReply.callTaskNoName)
             return
@@ -4026,7 +4284,8 @@ final class VoiceSessionController {
         }
         guard approval.state != "unknown" else { return (VoiceToolReply.callTaskUnknown, true) }
         let first = preview.places.first?.callee.name ?? ""
-        return (VoiceToolReply.callTaskStarted(first: first, count: preview.places.count, textResult: preview.textResult), true)
+        return (VoiceToolReply.callTaskStarted(first: first, count: preview.places.count, textResult: preview.textResult,
+                                               booking: preview.isBooking, order: preview.isOrder), true)
     }
 
     // MARK: Calls from Doddy's number later (ADR-754)
@@ -4653,6 +4912,10 @@ final class VoiceSessionController {
             await reply(toolCallID, VoiceToolReply.stepsUnavailable)
             return
         }
+        if connection == .home, !devices.homeAvailable {
+            await reply(toolCallID, VoiceToolReply.homeUnavailable)
+            return
+        }
         if connection == .camera, !devices.cameraAvailable {
             await reply(toolCallID, VoiceToolReply.cameraUnavailable)
             return
@@ -4871,6 +5134,7 @@ final class VoiceSessionController {
     /// receipt, attempt and undo through `writeResults` instead (ADR-319).
     private func reply(_ toolCallID: String, _ text: String, isError: Bool = false, undo: ActivityUndo? = nil) async {
         callsAsReceived[toolCallID] = nil
+        turnFeedback.toolAnswered(id: toolCallID)
         let write = writeResults.removeValue(forKey: toolCallID)
         retryChecks[toolCallID] = nil
         let undo = undo ?? write?.undo

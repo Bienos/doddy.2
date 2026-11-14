@@ -142,6 +142,10 @@ export function sampleBrief(over: Partial<BriefInput> = {}): BriefInput {
 export const TASK_ACCOUNT_SID = "AC" + "a".repeat(32);
 export const TASK_AUTH_TOKEN = "task-auth-token";
 export const TASK_AGENT_ID = "agent_task_test";
+/** The booking agent's id in tests (decision 2026-11-12-book-agent). */
+export const TASK_BOOK_AGENT_ID = "agent_task_book_test";
+/** The order agent's id in tests (decision 2026-11-12-food-by-phone). */
+export const TASK_ORDER_AGENT_ID = "agent_task_order_test";
 export const EL_WEBHOOK_SECRET = "el-webhook-secret-0123456789";
 export const DODDY_FROM = "+48221112233";
 export const sidFor = (n: number) => "CA" + n.toString(16).padStart(32, "0");
@@ -174,12 +178,14 @@ export const EL_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response><Connec
   + '<Stream url="wss://api.elevenlabs.io/v1/convai/conversation/twilio?agent_id=agent_task_test">'
   + '<Parameter name="conversation_id" value="conv_live_1"/></Stream></Connect></Response>';
 
-const TASK_PROMPT = readFileSync(new URL("../../../../voice-agent/task-call/instructions.md", import.meta.url), "utf8").trim();
+export const TASK_PROMPT = readFileSync(new URL("../../../../voice-agent/task-call/instructions.md", import.meta.url), "utf8").trim();
+export const ORDER_PROMPT = readFileSync(new URL("../../../../voice-agent/task-call-order/instructions.md", import.meta.url), "utf8").trim();
+export const BOOK_PROMPT = readFileSync(new URL("../../../../voice-agent/task-call-book/instructions.md", import.meta.url), "utf8").trim();
 
 /** The live agent as the spec says it must be (shape read from a real agent on 2026-10-18). */
-export function compliantAgent(): Record<string, unknown> {
+export function compliantAgent(prompt = TASK_PROMPT, agentId = TASK_AGENT_ID): Record<string, unknown> {
   return {
-    agent_id: TASK_AGENT_ID,
+    agent_id: agentId,
     conversation_config: {
       asr: { user_input_audio_format: "ulaw_8000" },
       tts: { agent_output_audio_format: "ulaw_8000", model_id: "eleven_flash_v2_5" },
@@ -187,7 +193,7 @@ export function compliantAgent(): Record<string, unknown> {
       agent: {
         first_message: "{{doddy_opening_line}}", language: "pl", disable_first_message_interruptions: true,
         prompt: {
-          prompt: TASK_PROMPT, tool_ids: [], knowledge_base: [], mcp_server_ids: [], native_mcp_server_ids: [],
+          prompt, tool_ids: [], knowledge_base: [], mcp_server_ids: [], native_mcp_server_ids: [],
           built_in_tools: {
             end_call: { type: "system", name: "end_call", params: { system_tool_type: "end_call" } },
             voicemail_detection: { type: "system", name: "voicemail_detection", params: { system_tool_type: "voicemail_detection" } },
@@ -233,18 +239,28 @@ export class FakeVoice implements TaskVoice {
       .filter((c) => (c.metadata.start_time_unix_secs ?? 0) < before)
       .map((c) => ({ id: c.conversation_id, startUnix: c.metadata.start_time_unix_secs ?? 0 }));
   }
-  async getAgent(): Promise<unknown> {
+  /** Per-agent answers (the booking agent); any other id gets `agent`. */
+  agentsById = new Map<string, unknown>();
+  async getAgent(agentId?: string): Promise<unknown> {
     this.agentReads++;
-    return this.agent;
+    return (agentId && this.agentsById.get(agentId)) ?? this.agent;
   }
 }
 
-export interface TaskTestOptions { settings?: Partial<TaskCallSettings>; writer?: ResultWriter; start?: string }
+export interface TaskTestOptions {
+  settings?: Partial<TaskCallSettings>; writer?: ResultWriter; start?: string;
+  /** Sets up the booking agent too, answering with this prompt (decision 2026-11-12-book-agent). */
+  bookAgentPrompt?: string;
+  /** Sets up the order agent too, answering with this prompt (decision 2026-11-12-food-by-phone). */
+  orderAgentPrompt?: string;
+}
 
 /** The real app with task calls on, fake providers and a clock the test moves. */
 export async function taskTestApp(db: Db, opts: TaskTestOptions = {}) {
   const telephony = new FakeTelephony();
   const voice = new FakeVoice();
+  if (opts.bookAgentPrompt !== undefined) voice.agentsById.set(TASK_BOOK_AGENT_ID, compliantAgent(opts.bookAgentPrompt, TASK_BOOK_AGENT_ID));
+  if (opts.orderAgentPrompt !== undefined) voice.agentsById.set(TASK_ORDER_AGENT_ID, compliantAgent(opts.orderAgentPrompt, TASK_ORDER_AGENT_ID));
   // Monday 19 Oct 2026, 11:00 in Warsaw.
   const clock = { now: new Date(opts.start ?? "2026-10-19T09:00:00Z") };
   const settings: TaskCallSettings = {
@@ -259,9 +275,13 @@ export async function taskTestApp(db: Db, opts: TaskTestOptions = {}) {
       config: {
         twilioAccountSid: TASK_ACCOUNT_SID, twilioAuthToken: TASK_AUTH_TOKEN, fromNumber: DODDY_FROM,
         elevenLabsApiKey: "test", agentId: TASK_AGENT_ID, webhookSecret: EL_WEBHOOK_SECRET,
+        ...(opts.bookAgentPrompt !== undefined ? { bookAgentId: TASK_BOOK_AGENT_ID } : {}),
+        ...(opts.orderAgentPrompt !== undefined ? { orderAgentId: TASK_ORDER_AGENT_ID } : {}),
       },
     },
     taskCallLog: (msg, extra) => logs.push({ msg, extra }),
+    // Call-back routes are dated by the dial's clock, so the call-back that follows reads the same clock.
+    now: () => clock.now,
   });
   return { ...base, telephony, voice, clock, settings, logs };
 }
@@ -279,6 +299,10 @@ export async function testApp(db: Db, extra: Partial<Deps> = {}) {
     // daily account cap per address (50 in production, ADR-702) would be a hidden limit on how many tests a file may
     // have. The tests of that cap pass their own `limits`.
     limits: { accountsPerIpDay: 100_000 },
+    // Anonymous accounts are off by default (ANONYMOUS_ACCOUNTS, decision 2026-11-08-required-account). The tests of other
+    // features make their accounts with `POST /v1/accounts`, so they keep the switch on; the tests of the switch itself
+    // pass `anonymousAccounts: false` (test/accountQuotas.test.ts).
+    anonymousAccounts: true,
     ...extra,
   });
   return { app, push, sms, verifier, outbound, registrar };

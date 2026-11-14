@@ -253,6 +253,33 @@ final class MessagesModelTests: XCTestCase {
         XCTAssertTrue(saved.isEmpty)
     }
 
+    /// Decision 2026-11-12-deleted-files-stay-gone: a deletion that really happened hides the files made until then;
+    /// one the store refused hides nothing.
+    @MainActor
+    func testOnlyARealDeletionHidesTheFilesMadeUntilThen() async {
+        let key = FilesShownSinceStore.conversationDeletedKey
+        let earlier = UserDefaults.standard.object(forKey: key)
+        defer { UserDefaults.standard.set(earlier, forKey: key) }
+        UserDefaults.standard.removeObject(forKey: key)
+
+        let (model, repository, _, service) = await loaded(client: ScriptedClient([.reply("Ok.")]))
+        model.draft = "Cześć"
+        model.send(using: service, policy: on, locale: "pl")
+        await settle(model)
+
+        await repository.setFailing(true)
+        await model.deleteConversation()
+        XCTAssertNil(UserDefaults.standard.object(forKey: key), "nothing was deleted, so nothing is hidden")
+
+        await repository.setFailing(false)
+        let before = Date()
+        await model.deleteConversation()
+        let deletedAt = UserDefaults.standard.object(forKey: key) as? Date
+        XCTAssertNotNil(deletedAt)
+        XCTAssertGreaterThanOrEqual(deletedAt ?? .distantPast, before)
+        XCTAssertGreaterThanOrEqual(FilesShownSinceStore.since ?? .distantPast, before)
+    }
+
     @MainActor
     func testDeletingWaitsWhileAMessageIsOnItsWay() async {
         let (model, _, _, service) = await loaded(client: ScriptedClient([.hang]))

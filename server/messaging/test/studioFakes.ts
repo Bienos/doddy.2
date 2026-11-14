@@ -124,17 +124,30 @@ export class FakeStudioApi implements StudioModelApi {
   stubborn = new Set<string>();
   private nextId = 1;
   onCall?: (step: string) => Promise<void> | void;
+  /** Steps whose request runs (and bills) until it is aborted, then fails as an aborted request does. */
+  hang = new Set<string>();
+  /** Steps whose request fails at the provider after it started (a stream cut off mid-way). */
+  failing = new Set<string>();
+  /** Called as each file is downloaded, after make returned its id. */
+  onDownload?: (id: string) => Promise<void> | void;
 
-  private async step(name: string) {
+  private async step(name: string, signal?: AbortSignal) {
     this.calls.push(name);
     await this.onCall?.(name);
+    if (this.failing.has(name)) throw Object.assign(new Error("stream cut off"), { name: "APIConnectionError" });
+    if (this.hang.has(name)) {
+      await new Promise<never>((_, reject) => {
+        if (signal?.aborted) return reject(Object.assign(new Error("aborted"), { name: "AbortError" }));
+        signal?.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })), { once: true });
+      });
+    }
   }
   async plan(): Promise<Structured<PlanOutput>> {
     await this.step("plan");
     return this.plans.shift() ?? { kind: "ok", value: plan, usage: usage() };
   }
-  async research(messages: ResearchTurn[]): Promise<ResearchMessage> {
-    await this.step("research");
+  async research(messages: ResearchTurn[], signal?: AbortSignal): Promise<ResearchMessage> {
+    await this.step("research", signal);
     this.researchInputs.push(structuredClone(messages));
     return this.researches.shift() ?? researchMessage();
   }
@@ -166,7 +179,10 @@ export class FakeStudioApi implements StudioModelApi {
     };
   }
   async fileName(id: string) { return this.stored.get(id)?.name ?? "unknown"; }
-  async download(id: string) { return this.stored.get(id)!.bytes; }
+  async download(id: string) {
+    await this.onDownload?.(id);
+    return this.stored.get(id)!.bytes;
+  }
   async deleteFile(id: string) { if (!this.stubborn.has(id)) this.deleted.add(id); }
   async fileGone(id: string) { return this.deleted.has(id); }
 }

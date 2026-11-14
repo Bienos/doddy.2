@@ -1,2 +1,0 @@
-Voice: agreeing to send voice to ElevenLabs/OpenAI moves into first-run "Let Doddy get ready" (an unticked box). The first Talk no longer stops at the long "Before Doddy listens" page; anyone who skipped the box sees one sentence and "Agree and talk". Decision `2026-11-09-voice-consent-in-setup`.
-Ran: make test-core; scripts/ci.sh --only checks. Not run: the app build and UI tests (no Xcode here; hosted ios-build compiles it); not on a device.

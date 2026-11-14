@@ -28,15 +28,18 @@ export const SECTIONS: { path: string; label: MessageKey; example?: boolean; soo
   { path: "/settings", label: "nav.settings" },
 ];
 
-/** Whether the server runs on demo data (mock mode); the page then says so on every screen. */
+/**
+ * Whether the server runs on demo data (mock mode); the page then says so on every screen. Asked with the
+ * browser's session at GET /v1/server (the open health check says only its status); anything else: no banner.
+ */
 function useDemoMode(): boolean {
   const [demo, setDemo] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/v1/health", { signal: controller.signal, cache: "no-store" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((body: unknown) => {
-        if (body && typeof body === "object" && (body as { mode?: unknown }).mode === "mock") setDemo(true);
+    api
+      .server(controller.signal)
+      .then((info) => {
+        if (!controller.signal.aborted && info.mode === "mock") setDemo(true);
       })
       .catch(() => {});
     return () => controller.abort();

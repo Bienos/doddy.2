@@ -26,7 +26,7 @@ const claudeRuns = (r: Rig, token = USER_A) => r.store.usage(`user:${idOf(token)
 const serviceRuns = (r: Rig) => r.store.usage("service:claude", DAY);
 const prepare = (r: Rig, tool: string, args: Record<string, unknown>, token = USER_A) =>
   r.call("POST", "/v1/tools/prepare", { token, body: { tool, arguments: args } });
-const doc = (title: string) => ({ kind: "text", title, request: "Write it" });
+const doc = (title: string) => ({ kind: "text", title, request: "Write it for the team" });
 
 /** A Claude whose documents wait until `release()`, to hold jobs open. */
 function slowClaude() {

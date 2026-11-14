@@ -193,7 +193,7 @@ final class ScreenLookTests: XCTestCase {
 
     // MARK: The voice tool
 
-    func testTheToolIsParsedAsksFirstAndIsLoggedWithoutTheQuestion() {
+    func testTheToolIsParsedRunsAtOnceAndIsLoggedWithoutTheQuestion() {
         XCTAssertEqual(VoiceToolName.lookAtScreen, "look_at_screen")
         let request = VoiceToolRequest.parse(name: "look_at_screen", parametersJSON: Data(#"{"question":"Co mam jej odpisać?"}"#.utf8))
         XCTAssertEqual(request, .lookAtScreen(question: "Co mam jej odpisać?"))
@@ -201,9 +201,10 @@ final class ScreenLookTests: XCTestCase {
         let long = String(repeating: "a", count: ScreenLookRequest.maxQuestionScalars + 1)
         if case .invalid = VoiceToolRequest.parse(name: "look_at_screen", parametersJSON: Data(#"{"question":"\#(long)"}"#.utf8)) {} else { XCTFail("too long") }
 
-        // ASK-01: a read of the person's own screen waits for a spoken yes or a tap, never runs at once.
-        guard case .yesFirst(let card) = AskFirst.need(for: request, polish: true) else { return XCTFail("asks first") }
-        XCTAssertEqual(card, ScreenLookSpeech.askCard(polish: true))
+        // Decision 2026-11-11-asked-for-runs-at-once: the person started screen sharing in iOS's own sheet,
+        // and iOS shows it is on the whole time; that is the yes for Doddy to look while it stays on.
+        XCTAssertEqual(AskFirst.need(for: request, polish: true), .runsNow)
+        XCTAssertEqual(AskFirst.need(for: request), .runsNow)
         XCTAssertFalse(AskFirst.needsTap(AskFirst.need(for: request)))
 
         let logged = ActivityRequest.describe(request, calendar: .current)
@@ -213,12 +214,33 @@ final class ScreenLookTests: XCTestCase {
 
         XCTAssertTrue(ConnectionPause.applies(to: request), "Pause all stops it: the picture goes to a server")
         XCTAssertEqual(CarProfile.decision(for: request), .run, "a look changes nothing")
-        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.lookAtScreen)?.approval, .askFirst)
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.lookAtScreen)?.approval, .runsNow)
         XCTAssertTrue(Feature.messages.tools.contains(VoiceToolName.lookAtScreen), "it comes and goes with Messages")
     }
 
     func testTheSheetLineTellsThemToTapAndAskAgain() {
         XCTAssertTrue(ScreenLookSpeech.sheetOpened.contains("Start Broadcast"))
         XCTAssertTrue(ScreenLookSpeech.sheetOpened.contains("ask again"))
+    }
+
+    func testHomeSaysSharedOnlyWhileTheStateFileIsLiveAndRecent() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        XCTAssertFalse(ScreenShareIndicator.isSharing(nil, now: start), "no file: not shared")
+        XCTAssertFalse(ScreenShareIndicator.isSharing(ScreenShareState(live: false, startedAt: start), now: start))
+
+        // Just started, no picture yet: shared (iOS's sheet said so a moment ago).
+        let started = ScreenShareState(live: true, startedAt: start)
+        XCTAssertTrue(ScreenShareIndicator.isSharing(started, now: start.addingTimeInterval(5)))
+
+        // A still screen sends no new picture: a minute after the last one it still counts as shared…
+        let framed = ScreenShareState(live: true, startedAt: start, frameAt: start.addingTimeInterval(10), frameBytes: 1_000)
+        XCTAssertTrue(ScreenShareIndicator.isSharing(framed, now: start.addingTimeInterval(70)))
+        XCTAssertTrue(ScreenShareIndicator.isSharing(framed, now: start.addingTimeInterval(10 + ScreenShareIndicator.shownFor)))
+        // …but an extension iOS stopped without clearing its file is not shown as sharing for long.
+        XCTAssertFalse(ScreenShareIndicator.isSharing(framed, now: start.addingTimeInterval(11 + ScreenShareIndicator.shownFor)))
+        XCTAssertGreaterThan(ScreenShareIndicator.shownFor, ScreenShare.freshFor)
+
+        // A clock far behind the file is not trusted.
+        XCTAssertFalse(ScreenShareIndicator.isSharing(framed, now: start.addingTimeInterval(-60)))
     }
 }

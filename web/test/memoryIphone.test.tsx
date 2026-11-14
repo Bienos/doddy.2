@@ -13,7 +13,7 @@ describe("Memory once the iPhone can send it", () => {
   test("the menu loses its Soon marker, and the off card tells where the switch is", async () => {
     fakeServer({
       "GET /v1/web/session": { body: fixture("web/session-current") },
-      "GET /v1/health": { body: { status: "ok", mode: "live", api: "v1", capabilities: [] } },
+      "GET /v1/server": { body: { mode: "live" } },
       "GET /v1/web/memory": { body: fixture("web/memory-off") },
     });
     render(

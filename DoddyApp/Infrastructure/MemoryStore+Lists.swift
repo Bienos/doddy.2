@@ -263,7 +263,13 @@ extension MemoryStore {
     @discardableResult
     func attachRecording(m4a: Data, durationMilliseconds: Int, to memoryID: UUID) async throws -> MemoryAudio {
         let temporary = FileManager.default.temporaryDirectory.appendingPathComponent("DoddyRestore-\(UUID().uuidString).m4a")
-        try m4a.write(to: temporary, options: [.atomic])
+        // Restoring happens with the iPhone in the person's hand: the temporary copy can't be read while it is locked.
+        #if os(iOS)
+        let options: Data.WritingOptions = [.atomic, .completeFileProtection]
+        #else
+        let options: Data.WritingOptions = [.atomic]
+        #endif
+        try m4a.write(to: temporary, options: options)
         defer { try? FileManager.default.removeItem(at: temporary) }
         return try await attachRecording(from: temporary, durationMilliseconds: durationMilliseconds, to: memoryID)
     }

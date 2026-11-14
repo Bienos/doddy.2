@@ -5,7 +5,7 @@ import { AppError, ProviderError } from "../errors.js";
 import { argumentDigest, UsageLimiter } from "../policy.js";
 import { AccessRequestSchema, type AppAccess, isAppsTool, toolsForAccess, translateAppsCall } from "./apps.js";
 import { AskGate, type AskBinding, WEB_ACCOUNT } from "./askFirst.js";
-import { CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store } from "../store.js";
+import { type ApprovalRun, CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store, stuckCleanupLine } from "../store.js";
 import { isSupportedTimeZone } from "../time.js";
 import {
   bindsTimeZone,
@@ -17,12 +17,16 @@ import {
   type GrantVerdict,
   type ResolvedTarget,
   TOOL_COPY,
+  type ToolOutcome,
   TOOLKIT_IDS,
   TOOLKITS,
   type ToolkitId,
   toolHasGrant,
+  READ_EMAIL,
+  TRAVEL_GMAIL_FETCH,
 } from "./catalog.js";
 import {
+  FLIGHTS_SECTION_ID,
   PrepareRequestSchema,
   type PrepareResult,
   RunRequestSchema,
@@ -50,8 +54,25 @@ import {
   type MakeDocumentArgs,
   MODEL_TEXT_LABEL,
 } from "./claude.js";
+import { judgeDocumentRequest, needDetailsMessage } from "./documentDetails.js";
 import type { DocumentLinks } from "../documents.js";
+import { MockWikimedia } from "../decks/demo.js";
+import { DeckMaker } from "../decks/maker.js";
+import { type Wikimedia, WikimediaClient } from "../decks/research.js";
 import { MockToolsProvider, type ToolsMockScenario } from "./mock.js";
+import { z } from "zod";
+import { ClaudeTravelReader } from "../travel/claudeReader.js";
+import { mergeBookings, type ReadEmail } from "../travel/merge.js";
+import { MAX_TRAVEL_EMAILS, readTravelEmail, senderDomain, TRAVEL_GMAIL_QUERY, type TravelReader } from "../travel/reader.js";
+import type { TravelBooking } from "../travel/schema.js";
+import { FlightSearchError, type FlightSearch, MockFlightSearch } from "../travel/kiwi.js";
+import {
+  assumptions, BRIEF_JSON_SCHEMA, cleanBrief, EMPTY_BRIEF, missing, pickOptions, stayLinks, toQuery, TripBrief,
+  UNDERSTAND_STEP, UNDERSTAND_SYSTEM, type Assumption, type Needed, type PlanLinks, type PlanOption,
+} from "../travel/plan.js";
+import type { DuffelClient } from "../flights/duffel.js";
+import { type KiwiClient, KiwiTripSearch, KIWI_TIMEOUT_MS } from "../flights/kiwi.js";
+import { FlightsService, isFlightTool } from "../flights/service.js";
 import type { ToolsProvider } from "./provider.js";
 import {
   normalizeWebSearch,
@@ -82,7 +103,7 @@ const isWebTool = (name: string): name is WebTool => name === WEB_SEARCH_TOOL ||
 const WEB_TOOLS_ON_BY_DEFAULT: ReadonlySet<WebTool> = new Set<WebTool>([WEB_SEARCH_TOOL, ...MONID_TOOL_NAMES]);
 const webTitle = (tool: WebTool) => (tool === WEB_SEARCH_TOOL ? WEB_SEARCH_COPY.title : MONID_TOOLS[tool].title);
 
-type SectionId = ToolkitId | typeof WEB_SECTION_ID | typeof CLAUDE_SECTION_ID;
+type SectionId = ToolkitId | typeof WEB_SECTION_ID | typeof CLAUDE_SECTION_ID | typeof FLIGHTS_SECTION_ID;
 /** Claude runs have no account either; the approval is bound to this fixed account name. */
 const CLAUDE_ACCOUNT = "claude";
 
@@ -96,8 +117,18 @@ export interface ToolsServiceDeps {
   webSearch?: WebSearchProvider | null;
   /** Claude (ADR-564). Null or absent: ask_claude and make_document say "not set up". */
   claude?: ClaudeProvider | null;
+  /** The small model that reads booking emails for the trip screen. Absent: `claude`; null: "not set up". */
+  travelClaude?: ClaudeProvider | null;
+  /** Tests only: a reader instead of the model. */
+  travelReader?: TravelReader;
+  /** The trip planner's flights. Absent: Kiwi.com in live mode, the mock in mock mode. */
+  flightSearch?: FlightSearch;
   /** Signed links for documents (ADR-564). Null: make_document says "not set up". */
   documentLinks?: DocumentLinks | null;
+  /** Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking). Absent: every flight tool says "not set up". */
+  flights?: { kiwi: KiwiClient | null; duffel: DuffelClient | null; bookingEnabled: boolean; bookingWaitMs?: number } | null;
+  /** Wikipedia and Commons for a deck's research (decision 2026-11-10-better-presentations). Absent: live in live mode, offline demo in mock mode. */
+  wikimedia?: Wikimedia;
   limits: Limits;
   publicBaseUrl: string;
   appReturnUrl: string;
@@ -131,6 +162,10 @@ export class CloudToolsService {
   /** Document jobs running now, per user and in all (ADR-710). Per process, like the provider slots in `UsageLimiter`. */
   private readonly documentJobs = new Map<string, number>();
   private documentJobsTotal = 0;
+  /** Wikipedia and Commons for decks: live in live mode, offline in mock mode. */
+  private readonly wikimedia: Wikimedia;
+  /** Kiwi.com search and Duffel booking, on the same ASK-01 gate (flights/service.ts). */
+  private readonly flights: FlightsService;
 
   constructor(private readonly deps: ToolsServiceDeps) {
     this.mode = deps.provider.mode;
@@ -141,11 +176,25 @@ export class CloudToolsService {
     this.provider = deps.provider;
     this.webSearch = deps.webSearch ?? null;
     if (this.webSearch && this.webSearch.mode !== this.mode) throw new Error("web search and online accounts must both be mock or both live");
+    this.wikimedia = deps.wikimedia ?? (this.mode === "live" ? new WikimediaClient() : new MockWikimedia());
+    if (this.wikimedia.mode !== this.mode) throw new Error("Wikimedia and online accounts must both be mock or both live");
     this.limits = deps.limits;
     this.limiter = new UsageLimiter(deps.store, deps.limits);
     this.now = deps.now ?? Date.now;
     this.ask = new AskGate(deps.store, this.now);
     this.sleep = deps.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+    this.flights = new FlightsService({
+      store: deps.store, ask: this.ask, limiter: this.limiter, mode: this.mode, now: this.now,
+      kiwi: deps.flights?.kiwi ?? null, duffel: deps.flights?.duffel ?? null, bookingEnabled: deps.flights?.bookingEnabled ?? false,
+      background: this.background, ...(deps.log ? { log: deps.log } : {}),
+      ...(deps.flights?.bookingWaitMs !== undefined ? { bookingWaitMs: deps.flights.bookingWaitMs } : {}),
+    });
+  }
+
+  /** A flight tool's receipts go under the "flights" section. */
+  private flightReceipt(userId: string) {
+    return (operation: "read" | "write", tool: string, status: ReceiptStatus, summary: string, errorCode: string | null, providerReference: string | null) =>
+      this.receipt(userId, FLIGHTS_SECTION_ID, operation, tool, status, summary, errorCode, providerReference);
   }
 
   /** Demo scenarios exist only with the mock provider. */
@@ -451,8 +500,14 @@ export class CloudToolsService {
     const now = this.now();
     const toolkits = Object.keys(TOOLKITS);
     const ended = await this.store.expireAttempts(now, toolkits);
-    const retry = await this.store.cleanupsToRetry(toolkits, now - CLEANUP_RETRY.afterMs, CLEANUP_RETRY.maxTries, CLEANUP_RETRY.perSweep);
+    const retry = await this.store.cleanupsToRetry(toolkits, now, CLEANUP_RETRY.perSweep);
     await this.removeQueued([...ended, ...retry]);
+  }
+
+  /** Kept queued for the sweep, put off a little longer each time; reported once when it is stuck. */
+  private async failedCleanup(connectionId: string): Promise<void> {
+    const failure = await this.store.failCleanup(connectionId, "remote_cleanup_failed", this.now());
+    if (failure?.stuckNow) this.deps.log?.(stuckCleanupLine(failure));
   }
 
   /** Removes connections a failed completion left at the provider; a failure stays queued and visible. */
@@ -475,7 +530,7 @@ export class CloudToolsService {
         result = "failed";
       }
       if (result === "removed") await this.store.finishCleanup(connectionId);
-      else await this.store.failCleanup(connectionId, "remote_cleanup_failed");
+      else await this.failedCleanup(connectionId);
     }
   }
 
@@ -491,7 +546,7 @@ export class CloudToolsService {
       result = "failed";
     }
     if (result === "removed") await this.store.finishCleanup(connectionId);
-    else await this.store.failCleanup(connectionId, "remote_cleanup_failed");
+    else await this.failedCleanup(connectionId);
     return result;
   }
 
@@ -582,6 +637,7 @@ export class CloudToolsService {
       return { ...(await this.prepare(userId, { ...request, tool: call.tool, arguments: call.arguments })), tool: request.tool };
     }
     if (isWebTool(request.tool)) return this.prepareWebSearch(userId, request.tool, request.arguments);
+    if (isFlightTool(request.tool)) return this.flights.prepare(userId, request.tool, request.arguments, this.flightReceipt(userId));
     if (isClaudeTool(request.tool)) return this.prepareClaude(userId, request.tool, request.arguments);
     const tool = this.requireTool(request.tool);
     const args = parse(tool.input, request.arguments);
@@ -629,6 +685,163 @@ export class CloudToolsService {
     return { ...result, earlier: { status: "outcome_unknown", at }, preview: withLine(`An earlier try in the last day may have gone through. Check ${title} before doing it again.`) };
   }
 
+  // ---------------------------------------------------------------- travel: trips from booking emails
+
+  /**
+   * The trip screen's "find my trips" (decision 2026-11-11-travel-agent-plan; TRAVEL_EMAILS.md). Owner:
+   * Gmail is read only on request ("Tylko na żądanie"). Same gates as read_email, whose switch it uses:
+   * Gmail connected, grants fine, the switch on; then its own ask-first card, bound to this search.
+   */
+  async prepareTravelScan(userId: string, body: unknown): Promise<PrepareResult> {
+    parse(TravelScanPrepare, body);
+    const tool = this.requireTool(READ_EMAIL.name);
+    await this.limiter.reserveRequest(userId, this.now());
+    const row = await this.checkUsable(userId, tool, "read");
+    this.travelReaderOrRefuse();
+    const { approvalId, expiresAt } = await this.ask.issue({ userId, tool: TRAVEL_SCAN, accountId: row.connection_id, argsDigest: TRAVEL_SCAN_DIGEST });
+    return {
+      mode: this.mode,
+      tool: TRAVEL_SCAN,
+      preview: {
+        title: "Find your trips in Gmail?",
+        lines: [
+          `Doddy searches Gmail for booking emails from the last 400 days (airlines, Booking.com, Airbnb, travel agents, trains) and reads up to ${MAX_TRAVEL_EMAILS}.`,
+          "Links, PINs and card numbers are removed first. The rest of each email goes to Anthropic to be read, then nothing is kept on Doddy's server.",
+        ],
+        confirmLabel: "Search Gmail",
+      },
+      approvalId,
+      expiresAt: new Date(expiresAt).toISOString(),
+    };
+  }
+
+  async runTravelScan(userId: string, body: unknown): Promise<TravelScanResult> {
+    const request = parse(TravelScanRun, body);
+    const tool = this.requireTool(READ_EMAIL.name);
+    const now = this.now();
+    await this.limiter.reserveRequest(userId, now);
+    const row = await this.checkUsable(userId, tool, "read");
+    const reader = this.travelReaderOrRefuse();
+    const binding: AskBinding = { userId, tool: TRAVEL_SCAN, accountId: row.connection_id, argsDigest: TRAVEL_SCAN_DIGEST };
+    const unasked = async () =>
+      askFirstRefusal(await this.receipt(userId, tool.toolkit, "read", TRAVEL_SCAN, "blocked", "Not done: Doddy didn't have a yes for this.", "ask_first_required", null));
+    if (!(await this.ask.allows(binding, request.approvalId, "check"))) throw await unasked();
+    await this.reserveRuns(userId, tool, now, 1);
+    const composioUserId = await this.store.composioUserId(userId, now);
+    try {
+      return await this.limiter.withSlot(userId, async () => {
+        if (!(await this.ask.allows(binding, request.approvalId, "use"))) throw await unasked();
+        const result = await this.withRetry(TRAVEL_GMAIL_FETCH.maxRetries, (signal) =>
+          this.provider.execute({
+            toolkit: TRAVEL_GMAIL_FETCH.toolkit, slug: TRAVEL_GMAIL_FETCH.slug, composioUserId, connectionId: row.connection_id,
+            arguments: TRAVEL_GMAIL_FETCH.toArguments(TRAVEL_GMAIL_QUERY, MAX_TRAVEL_EMAILS), signal,
+          }),
+        );
+        const emails = TRAVEL_GMAIL_FETCH.emails(result.raw).slice(0, MAX_TRAVEL_EMAILS);
+        // One Claude unit per five emails read, against the same daily Claude limit as ask_claude.
+        if (emails.length > 0) await this.limiter.reserveClaude(userId, this.now(), Math.ceil(emails.length / 5));
+        const read: ReadEmail[] = [];
+        let unreadable = 0, notTravel = 0, removedSecrets = 0;
+        for (let i = 0; i < emails.length; i += TRAVEL_READ_PARALLEL) {
+          const batch = emails.slice(i, i + TRAVEL_READ_PARALLEL);
+          const outcomes = await Promise.all(batch.map((email) => readTravelEmail(email, reader)));
+          outcomes.forEach((outcome, j) => {
+            if (outcome.kind !== "read") { unreadable++; return; }
+            removedSecrets += outcome.removedSecrets;
+            if (outcome.reading.kind === "not_travel") notTravel++;
+            const email = batch[j]!;
+            read.push({ messageId: email.messageId, receivedAt: email.receivedAt, senderDomain: senderDomain(email.sender), reading: outcome.reading });
+          });
+        }
+        const bookings = mergeBookings(read);
+        if (row.status === "error") await this.store.updateConnectionStatus(userId, tool.toolkit, "connected", null, this.now());
+        const summary = `Read ${emails.length} email${emails.length === 1 ? "" : "s"}; found ${bookings.length} booking${bookings.length === 1 ? "" : "s"}.`;
+        const receipt = await this.receipt(userId, tool.toolkit, "read", TRAVEL_SCAN, "succeeded", summary, null, result.providerReference);
+        // Counts only: no subject, sender, place or reference reaches the log.
+        this.deps.log?.({ event: "travel_scan", emails: emails.length, unreadable, notTravel, bookings: bookings.length, removedSecrets,
+          ...(reader instanceof ClaudeTravelReader ? { inputTokens: reader.usage.inputTokens, outputTokens: reader.usage.outputTokens } : {}) });
+        return { mode: this.mode, emailsFound: emails.length, emailsUnreadable: unreadable, emailsNotTravel: notTravel, bookings, receipt };
+      });
+    } catch (error) {
+      throw await this.failure(userId, tool, error, false);
+    }
+  }
+
+  // ---------------------------------------------------------------- travel: the trip planner
+
+  /**
+   * The planner's first step (decision 2026-11-11-travel-agent-plan, stage 2): the person's words, and the
+   * brief so far, become a brief. The model only fills fields; code drops what can't be right, then says
+   * what is still needed (the app asks for the first) and what it assumes. One Claude unit.
+   */
+  async understandTrip(userId: string, body: unknown): Promise<PlanUnderstood> {
+    const request = parse(PlanUnderstandRequest, body);
+    const claude = this.deps.travelClaude !== undefined ? this.deps.travelClaude : (this.deps.claude ?? null);
+    if (!claude || !claude.isConfigured()) throw new AppError("live_not_configured", { message: "The trip planner isn't set up on this server." });
+    const now = this.now();
+    await this.limiter.reserveRequest(userId, now);
+    await this.limiter.reserveClaude(userId, now, 1);
+    const before = request.brief ?? EMPTY_BRIEF;
+    let proposed: unknown;
+    try {
+      const result = await claude.structured(
+        {
+          system: UNDERSTAND_SYSTEM,
+          user: JSON.stringify({ today: request.today, briefSoFar: before, newWords: request.words }),
+          schema: BRIEF_JSON_SCHEMA,
+          maxTokens: 800,
+          effort: "low",
+          name: UNDERSTAND_STEP,
+        },
+        AbortSignal.timeout(15_000),
+      );
+      proposed = result.value;
+    } catch (error) {
+      throw toAppError(error, "Claude");
+    }
+    const parsed = TripBrief.safeParse(proposed);
+    // An answer of the wrong shape changes nothing: the brief stays as it was.
+    const brief = cleanBrief(parsed.success ? parsed.data : before, request.today);
+    return { brief, missing: missing(brief), assumptions: assumptions(brief) };
+  }
+
+  /** The planner's search: Kiwi.com's flights for a complete brief, three options chosen by code, links out. */
+  async searchTrip(userId: string, body: unknown): Promise<PlanResult> {
+    const request = parse(PlanSearchRequest, body);
+    const brief = cleanBrief(request.brief, request.today);
+    const query = toQuery(brief);
+    if (!query) throw new AppError("invalid_request", { message: `The trip isn't complete yet: ${missing(brief).join(", ")}.` });
+    const now = this.now();
+    await this.limiter.reserveRequest(userId, now);
+    await this.limiter.reserveToolRun(userId, now);
+    const flights = this.deps.flightSearch ?? (this.mode === "live" ? new KiwiTripSearch() : new MockFlightSearch());
+    let answer: Awaited<ReturnType<FlightSearch["search"]>>;
+    try {
+      answer = await flights.search(query, AbortSignal.timeout(KIWI_TIMEOUT_MS));
+    } catch (error) {
+      const reason = error instanceof FlightSearchError ? error.reason : "unavailable";
+      throw new AppError("provider_unavailable", { message: reason === "refused" ? "Kiwi.com didn't answer this search." : "Kiwi.com couldn't be reached. Try again in a moment." });
+    }
+    const options = pickOptions(answer.itineraries, answer.currency, brief.budget);
+    this.deps.log?.({ event: "trip_search", results: answer.itineraries.length, options: options.length });
+    return {
+      brief,
+      options: options.map((option) => ({ ...option, links: stayLinks(option, brief) })),
+      source: "Kiwi.com",
+      checkedAt: new Date(this.now()).toISOString(),
+    };
+  }
+
+  private travelReaderOrRefuse(): TravelReader {
+    if (this.deps.travelReader) return this.deps.travelReader;
+    const claude = this.deps.travelClaude !== undefined ? this.deps.travelClaude : (this.deps.claude ?? null);
+    if (!claude || !claude.isConfigured()) {
+      throw new AppError("live_not_configured", { message: "Reading booking emails isn't set up on this server." });
+    }
+    // A new reader per run, so its token count is this run's.
+    return new ClaudeTravelReader(claude);
+  }
+
   /**
    * After a try whose outcome is unknown: looks for the write with the tool's own read, only if
    * the user has that read switched on. True only when it is found; any failure or "not listed"
@@ -663,39 +876,49 @@ export class CloudToolsService {
   }
 
   /**
-   * A repeated run of an approval that was already used (the phone lost the answer): what happened
-   * the first time answers it, and nothing runs again (ADR-322). Null when it was never used.
+   * A repeated run of an approval that a run already took (the phone lost the answer, or asked again
+   * while the first try was still running): what happened the first time answers it, and nothing runs
+   * again (ADR-322). Null when no run has it. A repeat must ask for exactly what the first try asked
+   * for (`requestDigest`: the arguments and the time zone, also for a write with a lookup); otherwise
+   * it is refused before anything about the first try is said.
    */
-  private async repeatOfUsedApproval(userId: string, tool: CloudToolDefinition, args: Record<string, unknown>, approvalId: string, accountId: string, boundZone: string | null): Promise<RunResult | null> {
-    // A tool with a lookup bound its approval to the target as it was then, which can't be read
-    // again (a completed task is gone), so it is matched without the digest and its answer uses
-    // no words from this request.
-    const earlier = await this.store.approvalOutcome({
-      approvalId, userId, capability: tool.name, accountId, argsDigest: tool.resolve ? null : approvalDigest(args, null, boundZone),
-    });
-    if (!earlier) return null;
+  private async repeatOfStartedApproval(
+    userId: string, tool: CloudToolDefinition, args: Record<string, unknown>, approvalId: string, accountId: string, requestDigest: string,
+    unconfirmed: () => Promise<AppError>,
+  ): Promise<RunResult | null> {
+    const first = await this.store.approvalRun({ approvalId, userId, capability: tool.name, accountId });
+    if (!first) return null;
+    // Runs from before the request was kept: a write without a lookup is bound to its arguments by the approval itself.
+    const asked = first.requestDigest ?? (tool.resolve ? null : first.argsDigest);
+    if (asked !== null && asked !== requestDigest) throw await unconfirmed();
     const title = TOOLKITS[tool.toolkit].title;
-    if (earlier.outcome === "succeeded" && tool.replay) {
-      const outcome = tool.replay(args, earlier.externalId);
-      const receipt = await this.receipt(userId, tool.toolkit, "write", tool.name, "succeeded", `${outcome.summary} Answer from the first try; nothing ran again.`, null, null);
+    const replay = first.outcome === "succeeded" ? replayOf(tool, args, first) : null;
+    if (replay) {
+      const receipt = await this.receipt(userId, tool.toolkit, "write", tool.name, "succeeded", `${replay.summary} Answer from the first try; nothing ran again.`, null, null);
       return {
-        mode: this.mode, tool: tool.name, text: outcome.text, count: outcome.count, truncated: outcome.truncated,
-        ...(outcome.externalId ? { externalId: outcome.externalId } : {}),
+        mode: this.mode, tool: tool.name, text: replay.text, count: replay.count, truncated: replay.truncated,
+        ...(replay.externalId ? { externalId: replay.externalId } : {}),
         replayed: true,
         receipt,
       };
     }
-    if (earlier.outcome === "failed") {
+    if (first.outcome === "failed") {
+      // The first try provably never ran at the provider. The receipt is `failed` (the first try's own
+      // status), so the app can tell it from a refusal of this request (`blocked`); the code is the
+      // one older apps already read as "nothing was done".
       throw new AppError("capability_disabled", {
-        message: "This action needs a fresh confirmation.",
-        receipt: await this.receipt(userId, tool.toolkit, "write", tool.name, "blocked", "Not done: it wasn't confirmed.", "confirmation_required", null),
+        message: "The first try with this confirmation didn't go through. It needs a fresh confirmation.",
+        receipt: await this.receipt(userId, tool.toolkit, "write", tool.name, "failed", "Not done: the first try with this confirmation didn't go through.", "confirmation_required", null),
       });
     }
-    // Unknown, or used but not finished (still running, or the server stopped mid-run).
+    // Unknown; still running (its lookup, or the write itself); or the server stopped mid-run. Never "busy" or
+    // "needs a confirmation": the first try may still go through.
+    const summary = first.outcome === null
+      ? `The first try at ${title} hasn't finished yet; it may or may not go through. Check there before trying again.`
+      : `${title} didn't confirm the first try; it may or may not have gone through. Check there before trying again.`;
     throw new AppError("capability_disabled", {
       message: "The first try with this confirmation may or may not have gone through.",
-      receipt: await this.receipt(userId, tool.toolkit, "write", tool.name, "outcome_unknown",
-        `${title} didn't confirm the first try; it may or may not have gone through. Check there before trying again.`, "earlier_outcome_unknown", null),
+      receipt: await this.receipt(userId, tool.toolkit, "write", tool.name, "outcome_unknown", summary, "earlier_outcome_unknown", null),
     });
   }
 
@@ -791,6 +1014,7 @@ export class CloudToolsService {
       return { ...(await this.run(userId, { ...request, tool: call.tool, arguments: call.arguments })), tool: request.tool };
     }
     if (isWebTool(request.tool)) return this.runWebSearch(userId, request.tool, request);
+    if (isFlightTool(request.tool)) return this.flights.run(userId, request.tool, request, this.flightReceipt(userId));
     if (isClaudeTool(request.tool)) return this.runClaude(userId, request.tool, request);
     const tool = this.requireTool(request.tool);
     const args = parse(tool.input, request.arguments);
@@ -802,9 +1026,9 @@ export class CloudToolsService {
     await this.limiter.reserveRequest(userId, now);
     const row = await this.checkUsable(userId, tool, op);
 
-    // A write's approval is checked here but only used up right before the provider call, so a
-    // limit or "busy" refusal in between doesn't cost the user their confirmation. For a tool with
-    // a lookup the approval is bound to the target too, so before the lookup only its presence is checked.
+    // A write's approval is taken here but only used up right before the provider call; a limit or
+    // "busy" refusal in between gives it back, so it doesn't cost the user their confirmation. For a tool
+    // with a lookup the approval is bound to the target too, so it can only be matched in full after the lookup.
     // ASK-01: reads are bound to their arguments only (nothing was looked up before the yes).
     // ADR-710: a write that reads the zone runs only in the zone its approval was made for. The digest
     // below includes the zone this request names, so an approval from another zone doesn't match.
@@ -820,28 +1044,45 @@ export class CloudToolsService {
             receipt: await this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: it wasn't confirmed.", "confirmation_required", null),
           })
         : askFirstRefusal(await this.receipt(userId, tool.toolkit, op, tool.name, "blocked", "Not done: Doddy didn't have a yes for this.", "ask_first_required", null));
-    if (tool.risk === "write" && request.approvalId !== undefined) {
-      const repeat = await this.repeatOfUsedApproval(userId, tool, args, request.approvalId, row.connection_id, boundZone);
-      if (repeat) return repeat;
-    }
-    // A write with a lookup can only match its approval in full after the lookup, so before it the
-    // approval must at least be one `prepare` issued to this user for this tool and account (ADR-708):
-    // a run with no card, or a made-up approval, looks nothing up.
-    if (
-      tool.risk === "write" &&
-      (tool.resolve ? !(await this.ask.issuedFor({ userId, tool: tool.name, accountId: row.connection_id }, request.approvalId)) : !(await approval(null, true)))
-    ) {
-      throw await unconfirmed();
+    // A write takes its approval first, before its lookup (which can take seconds): a repeat that comes
+    // meanwhile (the phone lost the answer and asks again) finds it taken and hears that the first try
+    // may still go through, never "busy" or "needs a confirmation". Taking it checks only that `prepare`
+    // issued it to this user for this tool and account, and, for a write without a lookup, these
+    // arguments: a write with a lookup can only match its approval in full after the lookup (ADR-708),
+    // so a run with no card, or a made-up approval, looks nothing up.
+    let held: { approvalId: string; startedAt: number } | null = null;
+    if (tool.risk === "write") {
+      const requestDigest = approvalDigest(args, null, boundZone);
+      const approvalId = request.approvalId;
+      if (approvalId === undefined) throw await unconfirmed();
+      const took = await this.ask.take({ userId, tool: tool.name, accountId: row.connection_id, argsDigest: tool.resolve ? null : requestDigest }, approvalId, requestDigest);
+      if (!took) {
+        const repeat = await this.repeatOfStartedApproval(userId, tool, args, approvalId, row.connection_id, requestDigest, unconfirmed);
+        if (repeat) return repeat;
+        throw await unconfirmed();
+      }
+      held = { approvalId, startedAt: took.startedAt };
     }
     if (tool.risk === "read" && !(await approval(null, true))) throw await unconfirmed();
 
-    // A lookup (before a write, or the search before a read) counts as one more run, reserved together with the main call.
-    await this.reserveRuns(userId, tool, now, tool.resolve ? 2 : 1);
-
-    const composioUserId = await this.store.composioUserId(userId, now);
     let writeSent = false;
     // Set once this run used up its approval, so its outcome is recorded against it (ADR-322).
     let used: string | null = null;
+    // Taken but not used: the write was never sent (a limit, busy, the lookup), so the yes is given back.
+    // If the server stops first, it stays taken: a repeat hears "may or may not", and nothing runs it again (DOD-08).
+    const giveBack = async () => {
+      if (held && !used) await this.ask.giveBack(held.approvalId, held.startedAt).catch(() => {});
+    };
+
+    // A lookup (before a write, or the search before a read) counts as one more run, reserved together with the main call.
+    try {
+      await this.reserveRuns(userId, tool, now, tool.resolve ? 2 : 1);
+    } catch (error) {
+      await giveBack();
+      throw error;
+    }
+
+    const composioUserId = await this.store.composioUserId(userId, now);
     try {
       return await this.limiter.withSlot(userId, async () => {
         // A read's yes is used up before anything is read, its lookup included: one yes, one read.
@@ -873,7 +1114,8 @@ export class CloudToolsService {
         const outcome = tool.normalize(result.raw, args, { timeZone: request.timeZone }, target);
         if (row.status === "error") await this.store.updateConnectionStatus(userId, tool.toolkit, "connected", null, this.now());
         const receipt = await this.receipt(userId, tool.toolkit, op, tool.name, "succeeded", outcome.summary, null, result.providerReference);
-        if (used) await this.store.finishApproval(used, "succeeded", outcome.externalId ?? null, this.now());
+        // What a repeat answers with: the result word and the receipt's summary, never names or text.
+        if (used) await this.store.finishApproval(used, "succeeded", outcome.externalId ?? null, this.now(), { word: resultWord(outcome.text), summary: receipt.summary });
         return {
           mode: this.mode, tool: tool.name, text: outcome.text, count: outcome.count, truncated: outcome.truncated,
           ...(outcome.items ? { items: outcome.items } : {}),
@@ -888,6 +1130,8 @@ export class CloudToolsService {
       if (used) {
         const code = error instanceof AppError ? error.code : toAppError(error, TOOLKITS[tool.toolkit].title).code;
         await this.store.finishApproval(used, WRITE_NOT_RUN.has(code) ? "failed" : "outcome_unknown", null, this.now());
+      } else {
+        await giveBack();
       }
       throw await this.failure(userId, tool, error, writeSent);
     }
@@ -988,6 +1232,11 @@ export class CloudToolsService {
   /** ASK-01: a card from the arguments alone and a single-use approval. Nothing goes to Anthropic yet. */
   private async prepareClaude(userId: string, tool: ClaudeToolName, raw: Record<string, unknown>): Promise<PrepareResult> {
     const args = this.claudeArgs(tool, raw);
+    // A too-thin file request is turned away first: no approval, no daily cap, no Claude (decision 2026-11-10-files-ask-for-details).
+    if (tool === MAKE_DOCUMENT_TOOL) {
+      const verdict = judgeDocumentRequest(args as MakeDocumentArgs);
+      if (!verdict.ok) throw new AppError("need_details", { message: needDetailsMessage(verdict.missing) });
+    }
     await this.limiter.reserveRequest(userId, this.now());
     const missing = this.claudeReady(tool);
     if (missing) {
@@ -1063,7 +1312,7 @@ export class CloudToolsService {
       const name = fileName(doc.title, info.ext);
       const id = await this.store.startDocument(userId, name, info.mime, now);
       const url = this.deps.documentLinks!.link(id, new Date(now));
-      const job = this.makeDocumentInBackground(id, doc, claude).finally(() => {
+      const job = this.makeDocumentInBackground(userId, id, doc, claude).finally(() => {
         slot?.();
         this.background.delete(job);
       });
@@ -1075,8 +1324,11 @@ export class CloudToolsService {
         tool,
         text:
           `started: Claude is making the ${info.label} "${doc.title}". It takes one to three minutes. ` +
-          "A card to open it is on the user's screen now, and it also arrives as Doddy's message in Messages in the app, where Share saves it to Files or sends it on. " +
-          "Tell the user that in one sentence. Don't read out any link. " +
+          // Owner, 13 Nov 2026: Doddy told the person to tap a card while they were talking. Nothing needs a tap now; the
+          // iPhone (from the build with MadeFileStart) answers the agent with its own words and this line is for older builds.
+          "When it's ready it arrives as Doddy's message in Messages in the app, with a notification; there Share saves it to Files or sends it on. " +
+          "The user doesn't need to tap anything now. Tell the user in one short sentence what you're making and that it will be in Messages; " +
+          "don't ask them to tap, open or look at anything, and don't read out any link. " +
           MODEL_TEXT_LABEL,
         count: 1,
         truncated: false,
@@ -1085,6 +1337,21 @@ export class CloudToolsService {
       };
     } finally {
       if (!jobOwnsSlot) slot?.();
+    }
+  }
+
+  /**
+   * One web search for a deck's research (decision 2026-11-10-better-presentations): only when web search is set up, the
+   * user's own web search switch is on, and it fits the same daily caps as a web search asked for by voice. Otherwise
+   * the deck is researched from Wikipedia and the material alone.
+   */
+  private async deckSearchAllowed(userId: string): Promise<boolean> {
+    if (!this.webSearch?.isConfigured() || !(await this.webToolOn(userId, WEB_SEARCH_TOOL))) return false;
+    try {
+      await this.limiter.reserveWebSearch(userId, this.now());
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -1105,9 +1372,19 @@ export class CloudToolsService {
     };
   }
 
-  private async makeDocumentInBackground(id: string, args: MakeDocumentArgs, claude: ClaudeProvider): Promise<void> {
+  private async makeDocumentInBackground(userId: string, id: string, args: MakeDocumentArgs, claude: ClaudeProvider): Promise<void> {
     try {
-      const file = await claude.makeDocument(args, AbortSignal.timeout(DOCUMENT_TIMEOUT_MS));
+      const signal = AbortSignal.timeout(DOCUMENT_TIMEOUT_MS);
+      // A deck is researched, outlined, checked and laid out here (decision 2026-11-10-better-presentations);
+      // the other kinds are made by Claude's own skills as before.
+      const file =
+        args.kind === "deck"
+          ? await new DeckMaker({ claude, wikimedia: this.wikimedia, webSearch: this.webSearch, now: () => new Date(this.now()), ...(this.deps.log ? { log: this.deps.log } : {}) }).make(
+              args,
+              () => this.deckSearchAllowed(userId),
+              signal,
+            )
+          : await claude.makeDocument(args, signal);
       await this.store.finishDocument(id, file.name, file.mime, file.bytes);
       this.deps.log?.({ level: "info", event: "document_ready", kind: args.kind, bytes: file.bytes.length });
     } catch (error) {
@@ -1240,6 +1517,34 @@ function approvalDigest(args: Record<string, unknown>, target: ResolvedTarget | 
   return target === null ? argumentDigest(args) : argumentDigest({ arguments: args, target });
 }
 
+/**
+ * The answer for a repeat of a write that went through (ADR-322), or null when it can't be given. A write
+ * without a lookup is bound to its arguments by its approval (a repeat with other words never gets here),
+ * so its own `replay` may name them. A write with a lookup says only what its first run recorded: the
+ * result word and the receipt summary, never a word of this request. A first run from before that was
+ * recorded gives null, and the repeat hears that it may or may not have gone through.
+ */
+function replayOf(tool: CloudToolDefinition, args: Record<string, unknown>, first: ApprovalRun): ToolOutcome | null {
+  if (!tool.resolve) {
+    if (!tool.replay) return null;
+    const outcome = tool.replay(args, first.externalId);
+    return first.resultSummary === null ? outcome : { ...outcome, summary: first.resultSummary };
+  }
+  if (first.resultSummary === null) return null;
+  return {
+    text: `${first.resultWord === null ? "" : `${first.resultWord}: `}${first.resultSummary} Done on the first try; nothing ran again.`,
+    count: 1,
+    truncated: false,
+    summary: first.resultSummary,
+    ...(first.externalId ? { externalId: first.externalId } : {}),
+  };
+}
+
+/** The fixed word a write's answer starts with ("sent", "changed", …), or null. Nothing else of the answer is kept. */
+function resultWord(text: string): string | null {
+  return /^([a-z]{2,16}):/.exec(text)?.[1] ?? null;
+}
+
 /** ASK-01: a run that came without the user's yes for exactly this. Nothing was looked up or sent. */
 function askFirstRefusal(receipt: ToolReceipt): AppError {
   return new AppError("capability_disabled", { message: "Doddy has to ask first: this needs the user's yes on the card.", receipt });
@@ -1326,4 +1631,42 @@ function providerLog(error: unknown): Record<string, unknown> {
   return error instanceof ProviderError && error.detail
     ? { providerStatus: error.detail.status, providerError: error.detail.type, providerHint: error.detail.hint }
     : {};
+}
+
+// ---------------------------------------------------------------- travel
+
+/** The ask-first and receipt name of the trip screen's Gmail search. Not a voice tool. */
+export const TRAVEL_SCAN = "find_trips_in_gmail";
+/** The search is fixed, so the approval is bound to its query and size. */
+const TRAVEL_SCAN_DIGEST = argumentDigest({ query: TRAVEL_GMAIL_QUERY, max: MAX_TRAVEL_EMAILS });
+/**
+ * Emails read at once: all of them, so the whole search fits in the app's 20-second request
+ * (Gmail's answer, then one round of reads, each cut at TRAVEL_READ_TIMEOUT_MS). Each is one small,
+ * low-effort model call.
+ */
+const TRAVEL_READ_PARALLEL = MAX_TRAVEL_EMAILS;
+const TravelScanPrepare = z.object({ timeZone: z.string().max(64).optional() }).strict();
+const TravelScanRun = z.object({ approvalId: z.string().uuid(), timeZone: z.string().max(64).optional() }).strict();
+
+export interface TravelScanResult {
+  mode: "mock" | "live";
+  emailsFound: number;
+  emailsUnreadable: number;
+  emailsNotTravel: number;
+  bookings: TravelBooking[];
+  receipt: ToolReceipt;
+}
+
+// ---------------------------------------------------------------- trip planner
+
+const PlanDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const PlanUnderstandRequest = z.object({ words: z.string().trim().min(1).max(600), brief: TripBrief.optional(), today: PlanDay }).strict();
+const PlanSearchRequest = z.object({ brief: TripBrief, today: PlanDay }).strict();
+
+export interface PlanUnderstood { brief: TripBrief; missing: Needed[]; assumptions: Assumption[] }
+export interface PlanResult {
+  brief: TripBrief;
+  options: (PlanOption & { links: PlanLinks })[];
+  source: "Kiwi.com";
+  checkedAt: string;
 }

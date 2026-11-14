@@ -6,7 +6,7 @@ import { describe, test } from "node:test";
 import { DEFAULT_ABUSE_LIMITS, loadConfig } from "../src/config.js";
 import { TextCipher } from "../src/crypto.js";
 import { clientBucket, counterKey } from "../src/dailyCounters.js";
-import { budgetLeft, DEFAULT_RESEARCH_BUDGET, MIN_REQUEST_TOKENS, requestTokens, withMaxUses, type ResearchBudget } from "../src/errands/budget.js";
+import { budgetLeft, DEFAULT_RESEARCH_BUDGET, MIN_REQUEST_TOKENS, requestTokens, WEB_USES_PER_REQUEST, withMaxUses, type ResearchBudget } from "../src/errands/budget.js";
 import { foldForLinks, hasLink, linkFields } from "../src/errands/links.js";
 import { DEFAULT_ALLOWED_COUNTRY_CODES, isAllowedNumber, parseCountryCodes } from "../src/phoneCountries.js";
 
@@ -97,6 +97,19 @@ describe("abuse settings (ADR-702, ADR-704, ADR-705)", () => {
     assert.equal(c.assistantSettings.dailyForNewAccounts, 8);
     for (const bad of [{ ACCOUNTS_DAILY_PER_IP: "0" }, { SMS_DAILY_PER_ACCOUNT: "0" }, { OUTBOUND_CALLS_DAILY_PER_SERVER: "-1" },
       { NEW_ACCOUNT_HOURS: "-1" }, { NEW_ACCOUNT_HOURS: "8761" }, { VERIFY_DAILY_PER_ACCOUNT: "1.5" }, { ERRANDS_DAILY_NEW_ACCOUNTS: "-1" }]) {
+      assert.throws(() => loadConfig({ ...ENV, ...bad }), JSON.stringify(bad));
+    }
+  });
+
+  test("calls to Doddy's number and call-backs: safe defaults, each can be set, values out of range are refused", () => {
+    const pick = (c: ReturnType<typeof loadConfig>) => [c.limits.inboundCallsPerAccountDay, c.limits.inboundCallsPerServerDay,
+      c.limits.callbackRouteDays, c.limits.callbackForwardsPerRouteDay];
+    assert.deepEqual(pick(loadConfig(ENV)), [20, 200, 7, 3]);
+    assert.deepEqual(pick(loadConfig({
+      ...ENV, INBOUND_CALLS_DAILY_PER_ACCOUNT: "5", INBOUND_CALLS_DAILY_PER_SERVER: "50", CALLBACK_ROUTE_DAYS: "2", CALLBACK_FORWARDS_PER_ROUTE_DAY: "1",
+    })), [5, 50, 2, 1]);
+    for (const bad of [{ INBOUND_CALLS_DAILY_PER_ACCOUNT: "0" }, { INBOUND_CALLS_DAILY_PER_SERVER: "0" }, { INBOUND_CALLS_DAILY_PER_ACCOUNT: "2.5" },
+      { CALLBACK_ROUTE_DAYS: "0" }, { CALLBACK_ROUTE_DAYS: "91" }, { CALLBACK_FORWARDS_PER_ROUTE_DAY: "0" }, { CALLBACK_FORWARDS_PER_ROUTE_DAY: "21" }]) {
       assert.throws(() => loadConfig({ ...ENV, ...bad }), JSON.stringify(bad));
     }
   });
@@ -222,15 +235,16 @@ describe("research budget (ADR-702)", () => {
   test("0 means no limit on that count, and leaves it out of what is handed on", () => {
     const none: ResearchBudget = { maxSearches: 0, maxFetches: 0, maxRequests: 0, maxOutputTokens: 0 };
     assert.deepEqual(budgetLeft(none, used({ requests: 999, searches: 999, fetches: 999, outputTokens: 9_999_999 })), { left: {} });
-    assert.deepEqual(withMaxUses([{ type: "web_search_20260209", name: "web_search" }, { type: "web_fetch_20260209", name: "web_fetch" }], undefined, none),
+    assert.deepEqual(withMaxUses([{ type: "web_search_20260209", name: "web_search" }, { type: "web_fetch_20260209", name: "web_fetch" }], none),
       [{ type: "web_search_20260209", name: "web_search" }, { type: "web_fetch_20260209", name: "web_fetch" }]);
     assert.equal(requestTokens({}, none), 64_000);
   });
 
-  test("max_uses is the room left, or the whole limit before anything is counted; other tools are left alone", () => {
+  test("max_uses is the errand's limit, at most WEB_USES_PER_REQUEST, the same on every request; other tools are left alone", () => {
     const tools = [{ type: "web_search_20260209", name: "web_search" }, { type: "web_fetch_20260209", name: "web_fetch" }, { type: "custom", name: "other" }];
-    assert.deepEqual(withMaxUses(tools, { searches: 2, fetches: 1 }, b).map((t) => (t as { max_uses?: number }).max_uses), [2, 1, undefined]);
-    assert.deepEqual(withMaxUses(tools, undefined, b).map((t) => (t as { max_uses?: number }).max_uses), [5, 3, undefined]);
+    assert.deepEqual(withMaxUses(tools, b).map((t) => (t as { max_uses?: number }).max_uses), [5, 3, undefined]);
+    const big: ResearchBudget = { maxSearches: 100, maxFetches: 21, maxRequests: 30, maxOutputTokens: 0 };
+    assert.deepEqual(withMaxUses(tools, big).map((t) => (t as { max_uses?: number }).max_uses), [WEB_USES_PER_REQUEST, WEB_USES_PER_REQUEST, undefined]);
     assert.deepEqual(tools.map((t) => (t as { max_uses?: number }).max_uses), [undefined, undefined, undefined], "the shared definitions are not changed");
   });
 

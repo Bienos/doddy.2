@@ -14,6 +14,18 @@ enum OpeningPreferences {
     }
 }
 
+/// Whether a link opened the app (`doddy://…`, a widget's link, the island's Show button): the scene delegate
+/// notes it (`ShareAcceptSceneDelegate`) before the app becomes active, and the next opening decision uses it
+/// up. The rule is `LinkOpenNote` in DoddyCore: a link goes where it points and never also starts listening.
+@MainActor
+enum OpeningLinks {
+    private static var note = LinkOpenNote()
+
+    static func linkOpened(now: Date = .now) { note.linkOpened(at: now) }
+
+    static func take(for trigger: OpeningTrigger, now: Date = .now) -> Bool { note.take(for: trigger, now: now) }
+}
+
 /// Owns the two facts `OpeningPolicy` needs about this process: whether this is the launch, and
 /// how long the app was in the background. The rules are in `OpeningPolicy` (DoddyCore, tested).
 /// The first-launch basketball opening this model also played was removed with its v1.3 art
@@ -31,7 +43,7 @@ final class OpeningModel {
     func homeReady(_ conditions: OpeningConditions, isActive: Bool) {
         guard isActive, !consideredLaunch else { return }
         consideredLaunch = true
-        act(on: OpeningPolicy.decide(conditions, trigger: .coldLaunch))
+        act(on: decide(conditions, trigger: .coldLaunch))
     }
 
     func appWentToBackground(now: Date = .now) {
@@ -44,12 +56,21 @@ final class OpeningModel {
     func appBecameActive(_ conditions: OpeningConditions, now: Date = .now) {
         if !consideredLaunch {
             consideredLaunch = true
-            act(on: OpeningPolicy.decide(conditions, trigger: .coldLaunch))
+            act(on: decide(conditions, trigger: .coldLaunch, now: now))
             return
         }
         guard let since = backgroundedAt else { return }
         backgroundedAt = nil
-        act(on: OpeningPolicy.decide(conditions, trigger: .returned(after: now.timeIntervalSince(since))))
+        act(on: decide(conditions, trigger: .returned(after: now.timeIntervalSince(since)), now: now))
+    }
+
+    /// `OpeningPolicy`'s answer, with "a link opened the app" filled in from the scene's note. The note is used up
+    /// by every real decision, so it can't outlive the opening it belongs to.
+    private func decide(_ conditions: OpeningConditions, trigger: OpeningTrigger, now: Date = .now) -> OpeningDecision {
+        var conditions = conditions
+        let byLink = OpeningLinks.take(for: trigger, now: now)
+        conditions.openedByURL = conditions.openedByURL || byLink
+        return OpeningPolicy.decide(conditions, trigger: trigger)
     }
 
     private func act(on decision: OpeningDecision) {

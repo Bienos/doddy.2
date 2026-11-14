@@ -7,9 +7,11 @@ import type { AddressInfo } from "node:net";
 import { after, before, describe, test } from "node:test";
 import { DEFAULT_ERRAND_SETTINGS } from "../src/config.js";
 import type { Db } from "../src/db.js";
-import { DEFAULT_RESEARCH_BUDGET, type BudgetLeft, type ResearchBudget } from "../src/errands/budget.js";
+import { DEFAULT_RESEARCH_BUDGET, WEB_FETCH_MAX_CONTENT_TOKENS, WEB_USES_PER_REQUEST, type BudgetLeft, type ResearchBudget } from "../src/errands/budget.js";
+import { AnthropicStudioApi } from "../src/studio/model.js";
+import { MODEL_MIXES } from "../src/studio/models.js";
 import {
-  AnthropicErrandApi, runResearch, type CardReply, type ErrandModelApi, type ErrandResearcher, type ResearchControl, type ResearchMessage, type ResearchTurn,
+  AnthropicErrandApi, apiErrorDetail, runResearch, type CardReply, type ErrandModelApi, type ErrandResearcher, type ResearchControl, type ResearchMessage, type ResearchTurn,
 } from "../src/errands/researcher.js";
 import { createBody } from "../src/errands/schema.js";
 import {
@@ -139,20 +141,20 @@ const maxUses = (b: { tools?: Array<Record<string, unknown>> }) => tools(b).map(
 const turn: ResearchTurn[] = [{ role: "user", content: "x" }];
 
 describe("the request to Anthropic carries the budget (ADR-702)", () => {
-  test("errand research: max_uses on both tools and max_tokens from the budget; what is left lowers them", async () => {
+  test("errand research: max_uses on both tools from the budget, fixed for the errand; what is left lowers only max_tokens", async () => {
     const own = budget({ maxSearches: 7, maxFetches: 5, maxOutputTokens: 50_000 });
     const [first] = await sentBodies((baseURL) => new AnthropicErrandApi("test-key", { baseURL, budget: own }).research(turn, new AbortController().signal));
     assert.deepEqual(maxUses(first!), [["web_search", 7], ["web_fetch", 5]]);
     assert.equal(first!.max_tokens, 50_000);
     const [resumed] = await sentBodies((baseURL) => new AnthropicErrandApi("test-key", { baseURL, budget: own })
       .research(turn, new AbortController().signal, { searches: 2, fetches: 1, outputTokens: 20_000 }));
-    assert.deepEqual(maxUses(resumed!), [["web_search", 2], ["web_fetch", 1]]);
+    assert.deepEqual(resumed!.tools, first!.tools, "the same tools on a resumed request: a changed tools list invalidates the thinking sent back");
     assert.equal(resumed!.max_tokens, 20_000);
   });
 
-  test("with no budget given the defaults apply (40 and 40), and 0 on purpose leaves max_uses out", async () => {
+  test("with no budget given the defaults apply (40 and 40, at most 20 a request), and 0 on purpose leaves max_uses out", async () => {
     const [byDefault] = await sentBodies((baseURL) => new AnthropicErrandApi("test-key", { baseURL }).research(turn, new AbortController().signal));
-    assert.deepEqual(maxUses(byDefault!), [["web_search", 40], ["web_fetch", 40]]);
+    assert.deepEqual(maxUses(byDefault!), [["web_search", WEB_USES_PER_REQUEST], ["web_fetch", WEB_USES_PER_REQUEST]]);
     assert.equal(byDefault!.max_tokens, 64_000);
     const [unlimited] = await sentBodies((baseURL) => new AnthropicErrandApi("test-key", { baseURL, budget: budget() }).research(turn, new AbortController().signal));
     assert.deepEqual(maxUses(unlimited!), [["web_search", undefined], ["web_fetch", undefined]]);
@@ -173,7 +175,39 @@ describe("the request to Anthropic carries the budget (ADR-702)", () => {
     const [lowered] = await sentBodies((baseURL) => new AnthropicShoppingApi("test-key", { baseURL, budget: budget({ maxOutputTokens: 100_000 }) })
       .research([{ role: "user", content: "x" }], new AbortController().signal, { searches: 3, outputTokens: 12_000 }));
     assert.equal(lowered!.max_tokens, 12_000);
-    assert.deepEqual(webToolsFor("claude-haiku-5-5", { searches: 3, fetches: 2 }).map((t) => [t.name, (t as { max_uses?: number }).max_uses]), [["web_search", 3], ["web_fetch", 2]]);
+    assert.deepEqual(webToolsFor("claude-haiku-5-5", budget({ maxSearches: 3, maxFetches: 2 })).map((t) => [t.name, (t as { max_uses?: number }).max_uses]), [["web_search", 3], ["web_fetch", 2]]);
+  });
+
+  test("every web fetch the servers send caps how much of a page it brings in (max_content_tokens), on every model", async () => {
+    const fetchTool = (b: { tools?: Array<Record<string, unknown>> }) => tools(b).find((t) => t.name === "web_fetch")!;
+    const [errand] = await sentBodies((baseURL) => new AnthropicErrandApi("test-key", { baseURL }).research(turn, new AbortController().signal));
+    const [unlimited] = await sentBodies((baseURL) => new AnthropicErrandApi("test-key", { baseURL, budget: budget() }).research(turn, new AbortController().signal));
+    const shopping = [];
+    for (const model of ["claude-haiku-5-5", "claude-sonnet-5-5"]) {
+      const [r] = await sentBodies((baseURL) => new AnthropicShoppingApi("test-key", { baseURL, model }).research([{ role: "user", content: "x" }], new AbortController().signal));
+      shopping.push(r!);
+    }
+    const studio = new AnthropicStudioApi("test-key", {
+      models: MODEL_MIXES.cheap!, modelLabel: "x", skills: [], maxSearches: 5, maxFetches: 5, blockedDomains: [], taskBudgetTokens: 20_000,
+    }).researchTools().find((t) => t.name === "web_fetch")!;
+    for (const t of [fetchTool(errand!), fetchTool(unlimited!), ...shopping.map(fetchTool), studio as Record<string, unknown>]) {
+      assert.equal(t.max_content_tokens, WEB_FETCH_MAX_CONTENT_TOKENS, String(t.type));
+    }
+    assert.ok(WEB_FETCH_MAX_CONTENT_TOKENS >= 5_000 && WEB_FETCH_MAX_CONTENT_TOKENS <= 50_000);
+    for (const b of [errand!, ...shopping]) assert.equal(tools(b).find((t) => t.name === "web_search")!.max_content_tokens, undefined, "search has no such field");
+  });
+
+  // Regression, 12 Nov 2026: the live shopping errand of 11 Nov (Haiku 5.5) failed with a 400 on its second request.
+  // Haiku 5.5 and Opus 5.5 refuse thinking blocks sent back after `tools` changed, and max_uses was lowered to what
+  // was left after the first request's searches. Every request of one errand now sends the same tools and system.
+  test("shopping research: a resumed request after searches sends the same tools and system as the first", async () => {
+    const own = budget({ maxSearches: 40, maxFetches: 40, maxOutputTokens: 300_000 });
+    const api = (baseURL: string) => new AnthropicShoppingApi("test-key", { baseURL, model: "claude-haiku-5-5", budget: own });
+    const [first] = await sentBodies((baseURL) => api(baseURL).research([{ role: "user", content: "x" }], new AbortController().signal));
+    const [second] = await sentBodies((baseURL) => api(baseURL).research([{ role: "user", content: "x" }], new AbortController().signal,
+      { searches: 37, fetches: 39, outputTokens: 299_000 }));
+    assert.equal(JSON.stringify(second!.tools), JSON.stringify(first!.tools));
+    assert.equal(JSON.stringify(second!.system), JSON.stringify(first!.system));
   });
 });
 
@@ -281,5 +315,29 @@ describe("a create request with a link in its text is refused (ADR-703)", { skip
   test("a request that was already stored with a link can still be read: only new requests are checked", () => {
     // decryptContent and the worker read stored content with createBody, which is unchanged (existing rows keep working).
     assert.ok(createBody.safeParse({ ...good, words: "https://old.example/x" }).success);
+  });
+});
+
+describe("an API refusal is logged by its type and parameter path, never its words (12 Nov 2026)", () => {
+  test("the type and the leading path are kept; the rest of the message is not", async () => {
+    const server = http.createServer((req, res) => {
+      req.resume();
+      req.on("end", () => {
+        res.writeHead(400, { "content-type": "application/json" });
+        res.end(JSON.stringify({ type: "error", error: { type: "invalid_request_error", message: "messages.1.content.0.thinking: the block for 'słuchawki Apple' is not valid" } }));
+      });
+    });
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+    let caught: unknown;
+    try {
+      const baseURL = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+      await new AnthropicShoppingApi("test-key", { baseURL }).research([{ role: "user", content: "x" }], new AbortController().signal).catch((e: unknown) => { caught = e; });
+    } finally {
+      server.close();
+    }
+    const detail = apiErrorDetail(caught);
+    assert.deepEqual(detail, { errorType: "invalid_request_error", at: "messages.1.content.0.thinking" });
+    assert.equal(JSON.stringify(detail).includes("Apple"), false);
+    assert.deepEqual(apiErrorDetail(new Error("plain")), {});
   });
 });

@@ -8,6 +8,10 @@ enum VoiceConfig {
     /// belonged to a previous team's project and now answers 402 DEPLOYMENT_DISABLED.
     static let tokenEndpointAddress = "https://doddy-voice-token-beta.vercel.app/api/voice-token"
 
+    /// The media host used by the pinned ElevenLabs SDK 3.3.1's ConnectionConstants.
+    /// Only its public network route is warmed: no token, room join, microphone or conversation.
+    static let mediaEndpointAddress = "wss://livekit.rtc.elevenlabs.io"
+
     static var tokenEndpoint: URL? { VoiceTokenServer.endpoint(from: tokenEndpointAddress) }
 
     // MARK: Developer connection (ADR-551)
@@ -22,6 +26,8 @@ enum VoiceConfig {
     /// since then ElevenLabs refuses this connection (`directAgentRefused`). On by default in Debug;
     /// Release and TestFlight builds compile this to `false` and always need a DODDY voice account.
     static let directAgentID = "agent_0501m4et27vyeawrwqfdxxfszfa6"
+    /// The translator-only agent's id (decision 2026-11-12-translator-agent), for the same Debug connection.
+    static let translatorDirectAgentID = "agent_8901m787fgppedy9kkvg7memny34"
     static var directVoiceEnabled: Bool { UserDefaults.standard.object(forKey: directVoiceKey) as? Bool ?? true }
 
     /// The agent refused the developer connection (its authentication is on): the Debug switch
@@ -31,6 +37,7 @@ enum VoiceConfig {
     static func directAgentRefused() { UserDefaults.standard.set(false, forKey: directVoiceKey) }
     #else
     static let directAgentID = ""
+    static let translatorDirectAgentID = ""
     static var directVoiceEnabled: Bool { false }
     static func directAgentRefused() {}
     #endif

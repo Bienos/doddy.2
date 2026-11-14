@@ -7,15 +7,18 @@ import Foundation
 //
 // Platforms: iPhone and iPad.
 
-/// One thing the person follows: a curated topic from the server's catalog, or their own words.
+/// One thing the person follows: a curated topic from the server's catalog, their own words, or
+/// (On my radar, 10 Nov 2026) their own RSS or Atom feed, optionally narrowed by words.
 public enum NewsFollow: Equatable, Hashable, Sendable, Codable, Identifiable {
     case topic(id: String, label: String)
     case words(label: String, keywords: [String])
+    case feed(label: String, url: String, keywords: [String])
 
     public var id: String {
         switch self {
         case .topic(let id, _): "topic:\(id)"
         case .words(let label, _): "words:\(label.lowercased())"
+        case .feed(let label, _, _): "feed:\(label.lowercased())"
         }
     }
 
@@ -23,19 +26,35 @@ public enum NewsFollow: Equatable, Hashable, Sendable, Codable, Identifiable {
         switch self {
         case .topic(_, let label): label
         case .words(let label, _): label
+        case .feed(let label, _, _): label
         }
     }
 
     public var keywords: [String] {
-        if case .words(_, let keywords) = self { return keywords }
-        return []
+        switch self {
+        case .topic: []
+        case .words(_, let keywords), .feed(_, _, let keywords): keywords
+        }
     }
 
-    /// The shape the server takes (the same as the daily digest's topics).
-    public var topic: NewsTopic {
+    /// The catalog topic's id, for a topic follow.
+    public var catalogID: String? {
+        if case .topic(let id, _) = self { return id }
+        return nil
+    }
+
+    /// The person's own feed address, for a feed follow.
+    public var feedURL: String? {
+        if case .feed(_, let url, _) = self { return url }
+        return nil
+    }
+
+    /// The shape `POST /v1/news/feed` takes: `{catalogId}`, `{label, keywords}` or `{label, feedUrl, keywords}`.
+    public var payload: NewsFollowPayload {
         switch self {
-        case .topic(let id, let label): NewsTopic(catalogId: id, label: label)
-        case .words(let label, let keywords): NewsTopic(label: label, keywords: keywords)
+        case .topic(let id, _): NewsFollowPayload(catalogId: id)
+        case .words(let label, let keywords): NewsFollowPayload(label: label, keywords: keywords)
+        case .feed(let label, let url, let keywords): NewsFollowPayload(label: label, feedUrl: url, keywords: keywords)
         }
     }
 
@@ -46,6 +65,39 @@ public enum NewsFollow: Equatable, Hashable, Sendable, Codable, Identifiable {
     public static func defaultFollow(polish: Bool) -> NewsFollow {
         .topic(id: polandTopicID, label: polish ? "Co się dzieje w Polsce" : "What's happening in Poland")
     }
+}
+
+/// One follow as `POST /v1/news/feed` takes it.
+public struct NewsFollowPayload: Equatable, Sendable, Encodable {
+    public var catalogId: String?
+    public var label: String?
+    public var feedUrl: String?
+    public var keywords: [String]?
+
+    public init(catalogId: String) {
+        self.catalogId = catalogId
+    }
+
+    public init(label: String, keywords: [String]) {
+        self.label = label
+        self.keywords = keywords
+    }
+
+    public init(label: String, feedUrl: String, keywords: [String]) {
+        self.label = label
+        self.feedUrl = feedUrl
+        self.keywords = keywords
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encodeIfPresent(catalogId, forKey: .catalogId)
+        try c.encodeIfPresent(label, forKey: .label)
+        try c.encodeIfPresent(feedUrl, forKey: .feedUrl)
+        try c.encodeIfPresent(keywords, forKey: .keywords)
+    }
+
+    private enum CodingKeys: String, CodingKey { case catalogId, label, feedUrl, keywords }
 }
 
 /// The follows kept on this iPhone. At most ten, like the digest's topics; the same thing never twice.
@@ -84,6 +136,14 @@ public struct NewsFollowList: Equatable, Sendable, Codable {
         return .words(label: name, keywords: keywords)
     }
 
+    /// The person's own feed as a follow: a name, an https address (Doddy's server checks again that it is a
+    /// public address and really a feed) and, if they like, words to narrow it. Nil for anything else.
+    public static func feed(name rawName: String, url rawURL: String, keywordsText: String = "") -> NewsFollow? {
+        let name = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard (1...60).contains(name.count), let url = RadarFeedAddress.normalized(rawURL) else { return nil }
+        return .feed(label: name, url: url, keywords: NewsTopic.keywords(from: keywordsText))
+    }
+
     public mutating func remove(id: String) {
         follows.removeAll { $0.id == id }
     }
@@ -100,7 +160,7 @@ public struct NewsFollowList: Equatable, Sendable, Codable {
     /// What is sent with a request. Empty follows send nothing: the server answers 400 to an empty list.
     public func request(language: String, limit: Int = NewsFeedRequest.maxCards) -> NewsFeedRequest? {
         guard !follows.isEmpty else { return nil }
-        return NewsFeedRequest(language: language == "pl" ? "pl" : "en", follows: follows.map(\.topic), limit: limit)
+        return NewsFeedRequest(language: language == "pl" ? "pl" : "en", follows: follows.map(\.payload), limit: limit)
     }
 
     // Stored as JSON in the app's defaults; an unreadable value falls back to the initial list.
@@ -117,10 +177,10 @@ public struct NewsFollowList: Equatable, Sendable, Codable {
 public struct NewsFeedRequest: Equatable, Sendable, Encodable {
     public static let maxCards = 40
     public let language: String
-    public let follows: [NewsTopic]
+    public let follows: [NewsFollowPayload]
     public let limit: Int
 
-    public init(language: String, follows: [NewsTopic], limit: Int = NewsFeedRequest.maxCards) {
+    public init(language: String, follows: [NewsFollowPayload], limit: Int = NewsFeedRequest.maxCards) {
         self.language = language
         self.follows = follows
         self.limit = min(max(limit, 1), Self.maxCards)
@@ -138,9 +198,23 @@ public struct NewsCard: Equatable, Sendable, Decodable, Identifiable, Hashable {
     public let imageUrl: String?
     /// The follows this story belongs to, by label.
     public let follows: [String]
+    /// The same story from other publishers, as the server grouped them (13 Nov 2026, decision
+    /// 2026-11-13-news-more-sources). Empty when no one else carried it, or from an older server.
+    public let alsoFrom: [OtherPublisher]
+
+    /// Another publisher's copy of the story: its name and its own link.
+    public struct OtherPublisher: Equatable, Sendable, Decodable, Hashable {
+        public let source: String
+        public let url: String
+
+        public init(source: String, url: String) {
+            self.source = source
+            self.url = url
+        }
+    }
 
     public init(id: String, title: String, summary: String, url: String, source: String, publishedAt: String,
-                imageUrl: String? = nil, follows: [String]) {
+                imageUrl: String? = nil, follows: [String], alsoFrom: [OtherPublisher] = []) {
         self.id = id
         self.title = title
         self.summary = summary
@@ -149,6 +223,37 @@ public struct NewsCard: Equatable, Sendable, Decodable, Identifiable, Hashable {
         self.publishedAt = publishedAt
         self.imageUrl = imageUrl
         self.follows = follows
+        self.alsoFrom = alsoFrom
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, title, summary, url, source, publishedAt, imageUrl, follows, alsoFrom
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            id: try c.decode(String.self, forKey: .id),
+            title: try c.decode(String.self, forKey: .title),
+            summary: try c.decode(String.self, forKey: .summary),
+            url: try c.decode(String.self, forKey: .url),
+            source: try c.decode(String.self, forKey: .source),
+            publishedAt: try c.decode(String.self, forKey: .publishedAt),
+            imageUrl: try c.decodeIfPresent(String.self, forKey: .imageUrl),
+            follows: try c.decode([String].self, forKey: .follows),
+            alsoFrom: (try? c.decodeIfPresent([OtherPublisher].self, forKey: .alsoFrom)) ?? []
+        )
+    }
+
+    /// "Also: Onet and RMF24" / "Też: Onet i RMF24", or nil when no other publisher carried the story. The names are
+    /// the publishers' own, as the server sent them; a publisher named twice, or this card's own, is said once.
+    public func alsoFromLine(polish: Bool) -> String? {
+        var names: [String] = []
+        for other in alsoFrom where !other.source.isEmpty && other.source != source && !names.contains(other.source) {
+            names.append(other.source)
+        }
+        guard !names.isEmpty else { return nil }
+        return (polish ? "Też: " : "Also: ") + RadarText.list(names, polish: polish)
     }
 
     public var publishedDate: Date? { ServerDates.parse(publishedAt) }
@@ -192,10 +297,67 @@ public struct NewsCard: Equatable, Sendable, Decodable, Identifiable, Hashable {
 
 public struct NewsFeedPage: Equatable, Sendable, Decodable {
     public let fetchedAt: String
-    /// The server searches news sources for the person's own words; otherwise it looks for them only
-    /// in the stories of their other follows.
+    /// The server asks a news search service for the person's own words; otherwise it looks for them in the
+    /// publishers' feeds it reads (since 10 Nov 2026 every catalog feed, not only the other follows).
     public let keywordSearch: Bool
     public let cards: [NewsCard]
+    /// Per follow: where its stories come from (10 Nov 2026). Older servers leave it out.
+    public let follows: [NewsFollowReport]?
+
+    public init(fetchedAt: String, keywordSearch: Bool, cards: [NewsCard], follows: [NewsFollowReport]? = nil) {
+        self.fetchedAt = fetchedAt
+        self.keywordSearch = keywordSearch
+        self.cards = cards
+        self.follows = follows
+    }
+
+    /// The report for one follow, by its label.
+    public func report(for follow: NewsFollow) -> NewsFollowReport? {
+        follows?.first { $0.label == follow.label }
+    }
+}
+
+/// What the server read for one follow: its publishers and whether each answered, or for the person's own
+/// words how many publishers' feeds it looked through, and how many cards the follow has in this page.
+public struct NewsFollowReport: Equatable, Sendable, Decodable {
+    public struct Source: Equatable, Sendable, Decodable, Hashable {
+        public let name: String
+        public let ok: Bool
+
+        public init(name: String, ok: Bool) {
+            self.name = name
+            self.ok = ok
+        }
+    }
+
+    public let label: String
+    public let sources: [Source]
+    public let searchedFeeds: Int?
+    public let cards: Int
+
+    public init(label: String, sources: [Source], searchedFeeds: Int? = nil, cards: Int) {
+        self.label = label
+        self.sources = sources
+        self.searchedFeeds = searchedFeeds
+        self.cards = cards
+    }
+
+    /// "From CoinDesk, Decrypt and Bitcoin.pl" or "Looking for these words in the 31 publishers' feeds Doddy
+    /// reads"; a publisher that didn't answer this time is named apart, so its silence never reads as "no news".
+    public func sourcesLine(polish: Bool) -> String {
+        if sources.isEmpty {
+            let n = searchedFeeds ?? 0
+            return polish ? "Szukam tych słów w \(n) źródłach, które czyta Doddy" : "Looking for these words in the \(n) publishers' feeds Doddy reads"
+        }
+        let working = sources.filter(\.ok).map(\.name)
+        let failing = sources.filter { !$0.ok }.map(\.name)
+        var line = working.isEmpty ? "" : (polish ? "Źródła: " : "From ") + RadarText.list(working, polish: polish)
+        if !failing.isEmpty {
+            let silent = RadarText.list(failing, polish: polish)
+            line += (line.isEmpty ? "" : ". ") + (polish ? "Teraz nie odpowiada: \(silent)" : "Not answering right now: \(silent)")
+        }
+        return line
+    }
 }
 
 /// The feed in the order it is read: by day, newest first, so a day's heading can sit between cards.
@@ -247,5 +409,29 @@ extension DoddyServerClient {
         guard response.status == 200, let page = try? JSONDecoder().decode(NewsFeedPage.self, from: response.body)
         else { throw Self.error(from: response) }
         return page
+    }
+}
+
+/// Which label Doddy's server gave each follow in one feed answer (11 Nov 2026). The server names a catalog topic in
+/// the request's language ("Polska"), while the follow keeps the words it was added with ("Co się dzieje w Polsce"), so
+/// matching stories by the follow's own label found nothing: tapping the default follow showed an empty list. The
+/// server answers one report per requested follow, in the request's order, so the order is the link.
+public enum NewsFeedLabels {
+    /// Follow id → the label the server used. A follow with no report keeps its own label.
+    public static func byFollow(requested: [NewsFollow], reports: [NewsFollowReport]) -> [String: String] {
+        var labels: [String: String] = [:]
+        guard requested.count == reports.count else {
+            // An answer for another list (a follow was added meanwhile): only labels that match as they are.
+            for follow in requested where reports.contains(where: { $0.label == follow.label }) { labels[follow.id] = follow.label }
+            return labels
+        }
+        for (follow, report) in zip(requested, reports) { labels[follow.id] = report.label }
+        return labels
+    }
+
+    /// The stories of one follow.
+    public static func cards(of follow: NewsFollow, in cards: [NewsCard], labels: [String: String]) -> [NewsCard] {
+        let label = labels[follow.id] ?? follow.label
+        return cards.filter { $0.follows.contains(label) }
     }
 }

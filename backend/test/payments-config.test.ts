@@ -28,6 +28,8 @@ function cdpEnv() {
     CDP_API_KEY_SECRET: Buffer.concat([der.subarray(der.length - 32), publicRaw]).toString("base64"),
     CDP_WALLET_SECRET: ec.privateKey.export({ format: "der", type: "pkcs8" }).toString("base64"),
     CDP_PAYMENT_ACCOUNT_ADDRESS: "0x1111111111111111111111111111111111111111",
+    // Live mode with a wallet needs the list of sites Doddy may pay (tested on its own below).
+    DODDY_PAYMENTS_ALLOWED_HOSTS: "shop.example",
   };
 }
 
@@ -101,6 +103,22 @@ test("the allow-list is parsed and validated", () => {
   assert.deepEqual(loadConfig({ DODDY_PAYMENTS_ALLOWED_HOSTS: " Shop.Example , api.other.test " }).payments.allowedHosts, ["shop.example", "api.other.test"]);
   assert.match(problems({ DODDY_PAYMENTS_ALLOWED_HOSTS: "https://shop.example/x" })!.message, /ALLOWED_HOSTS must be comma-separated host names/);
   assert.match(problems({ DODDY_PAYMENTS_ALLOWED_HOSTS: "localhost" })!.message, /ALLOWED_HOSTS/);
+});
+
+test("live mode with a wallet refuses to start without a list of sites; mock mode and live without a wallet don't need one", () => {
+  const env: Record<string, string> = { ...live, ...cdpEnv() };
+  delete env.DODDY_PAYMENTS_ALLOWED_HOSTS;
+  assert.match(problems(env)!.message, /DODDY_PAYMENTS_ALLOWED_HOSTS must list the sites Doddy may pay when DODDY_MODE=live and DODDY_PAYMENTS_WALLET is set/);
+  assert.match(problems({ ...env, DODDY_PAYMENTS_ALLOWED_HOSTS: " , " })!.message, /must list the sites/);
+  assert.deepEqual(loadConfig({ ...env, DODDY_PAYMENTS_ALLOWED_HOSTS: "shop.example" }).payments.allowedHosts, ["shop.example"]);
+  assert.deepEqual(loadConfig(live).payments.allowedHosts, [], "no wallet, no payments, no list needed");
+  assert.deepEqual(loadConfig({}).payments.allowedHosts, [], "mock mode: any public site, with the demo seller only");
+});
+
+test("sites that may keep a query string are parsed and validated; by default none may", () => {
+  assert.deepEqual(loadConfig({}).payments.queryHosts, []);
+  assert.deepEqual(loadConfig({ DODDY_PAYMENTS_QUERY_HOSTS: " Shop.Example " }).payments.queryHosts, ["shop.example"]);
+  assert.match(problems({ DODDY_PAYMENTS_QUERY_HOSTS: "https://shop.example/?q=1" })!.message, /DODDY_PAYMENTS_QUERY_HOSTS must be comma-separated host names/);
 });
 
 test("the composition root: mock mode wires the demo wallet, live without a wallet wires none", async () => {

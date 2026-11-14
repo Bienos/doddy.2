@@ -47,8 +47,8 @@ enum UITestLaunch {
         // "Before we start" (ADR-581) would cover every first screen; Debug builds skip it with
         // this. `LegalAcceptanceUITests` turns it off to test the step itself.
         if legalAccepted { arguments += ["-legalAcceptanceSkippedForUITests", "YES"] }
-        // The release scope (decision 2026-11-07-release-scope) hides most features in the shipping build; the UI tests cover
-        // every screen, so they run with everything shown (a Debug build honours this key). The UI test
+        // Every feature is shown in every build since 10 Nov 2026 (decision 2026-11-10-no-beta-scope); this key is
+        // kept so the UI tests keep asking for everything explicitly (a Debug build honours it). The UI test
         // target doesn't link DoddyCore, so this is `ReleaseScope.previewEverythingKey` spelled out;
         // `ReleaseScopeTests.testPreviewKeyIsTheOneTheUITestsPass` keeps the two the same.
         arguments += ["-releaseScope.previewEverything", "YES"]
@@ -156,6 +156,18 @@ extension XCUIApplication {
         let item = buttons[identifier]
         _ = item.waitForExistence(timeout: 5)
         item.tap()
+    }
+
+    /// Find (search saved notes): on the notes screen, reached from Settings › Doddy's memory. It left Home's
+    /// ••• menu on 10 Nov 2026 (owner: the menu row wasn't clear). Returns whether the search field showed.
+    @MainActor
+    @discardableResult
+    func openFind() -> Bool {
+        goToTab("memories")
+        let find = buttons["memories.find"]
+        guard find.waitForExistence(timeout: 5) else { return false }
+        find.tap()
+        return textFields["memories.query"].waitForExistence(timeout: 5)
     }
 
     /// Home's + is a menu since 5 Nov 2026 (Take a photo, Choose a photo, New note): opens the new-note screen.
