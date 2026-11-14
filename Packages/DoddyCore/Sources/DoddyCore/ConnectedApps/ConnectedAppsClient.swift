@@ -7,14 +7,18 @@ public struct HTTPRequest: Equatable, Sendable {
     public let url: URL
     public let headers: [String: String]
     public let body: Data?
+    /// How long to wait for the answer, in seconds, when one request needs longer than the transport's usual wait
+    /// (`research_now`, `BackendOnlineAccountsClient.timeout(for:)`). Nil: the transport's own (20 s in the app).
+    public let timeout: TimeInterval?
 
     /// Used by app adapters to call only their known Doddy backend routes.
     /// The core package's memberwise initializer is internal across modules.
-    public init(method: String, url: URL, headers: [String: String], body: Data?) {
+    public init(method: String, url: URL, headers: [String: String], body: Data?, timeout: TimeInterval? = nil) {
         self.method = method
         self.url = url
         self.headers = headers
         self.body = body
+        self.timeout = timeout
     }
 }
 

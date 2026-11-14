@@ -71,6 +71,7 @@ final class AskFirstTests: XCTestCase {
             .cloudTool(CloudToolCall(name: CloudToolName.readEmail, arguments: ["query": .string("from:anna")])),
             .cloudTool(CloudToolCall(name: CloudToolName.askClaude, arguments: [:])),
             .cloudTool(CloudToolCall(name: CloudToolName.makeDocument, arguments: [:])),
+            .cloudTool(CloudToolCall(name: CloudToolName.researchNow, arguments: ["question": .string("Weekend near Warsaw")])),
             addMilk,
             .checkOff(list),
             .noteCapabilityGap(.music),
