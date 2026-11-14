@@ -390,6 +390,33 @@ export class AnyOfSessionVerifier implements SessionVerifier {
   }
 }
 
+/**
+ * The two kinds of sign-in a server under production rules takes (decision 2026-11-14-production-rules): the Doddy account's own
+ * Supabase token, and the backend's session for that account on an iPhone (`POST /v1/session/account`, an `acc` token). A `ds1`
+ * token is looked at only to see whether it is an account session: an owner-minted token, a device session and a guest's session
+ * are all `ds1` tokens made with the same key, and every one of them that is not an account session is refused here, so this
+ * verifier can't be the way one of them signs in. Not an `AnyOfSessionVerifier`: nothing here falls through from a refused
+ * session to another verifier.
+ */
+export class AccountSessionOrSupabaseVerifier implements SessionVerifier {
+  /**
+   * `sessions`: checks `ds1` tokens (a `SignedSessionVerifier` of the keys of account sessions). `supabase`: checks the
+   * account's own token.
+   */
+  constructor(
+    private readonly sessions: SessionVerifier,
+    private readonly supabase: SessionVerifier,
+  ) {}
+
+  async verify(header: string | undefined, now: Date): Promise<AuthenticatedUser | null> {
+    if (bearer(header)?.startsWith("ds1.")) {
+      const user = await this.sessions.verify(header, now);
+      return user?.account !== undefined ? user : null;
+    }
+    return this.supabase.verify(header, now);
+  }
+}
+
 // ------------------------------------------------------------------ cutting off a person's tokens (ADR-709)
 
 /**

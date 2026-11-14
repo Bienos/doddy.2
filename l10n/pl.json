@@ -1,4 +1,5 @@
 {
+  "This card ran out, so here it is again with what's true now. Nothing was done. Check it, then tap once more.": "Ta karta wygasła, więc pokazuję ją jeszcze raz z aktualnymi danymi. Nic nie zostało zrobione. Sprawdź ją i stuknij jeszcze raz.",
   "Flights on Kiwi.com": "Loty na Kiwi.com",
   "Prices from Kiwi.com just now; they can change. You book and pay on Kiwi.com.": "Ceny z Kiwi.com sprzed chwili; mogą się zmienić. Rezerwujesz i płacisz na Kiwi.com.",
   "What's sent": "Co jest wysyłane",
@@ -3700,5 +3701,8 @@
   "This price came from a list, not the shop's page, so Doddy can't watch it.": "Ta cena pochodzi z listy, a nie ze strony sklepu, więc Doddy nie może jej pilnować.",
   "Say yes, or tap": "Powiedz „tak” albo stuknij",
   "Say yes, or tap. Nothing happens before that.": "Powiedz „tak” albo stuknij. Wcześniej nic się nie dzieje.",
-  "This card ran out, so here it is again with what's true now. Nothing was done. Check it, then tap once more.": "Ta karta wygasła, więc pokazuję ją jeszcze raz z aktualnymi danymi. Nic nie zostało zrobione. Sprawdź ją i stuknij jeszcze raz."
+  "Start timing": "Czas startu",
+  "Nothing yet. Press the Action Button once, then pull down here to refresh.": "Na razie nic. Naciśnij raz Action Button, a potem pociągnij tutaj w dół, żeby odświeżyć.",
+  "The timing of Doddy's last starts, as he measured it. Only seconds and fixed words are kept, and only on this iPhone. Erase everything removes them.": "Czas ostatnich uruchomień Doddy’ego, tak jak go zmierzył. Zapisywane są tylko sekundy i stałe słowa, i tylko na tym iPhonie. „Wymaż wszystko” je usuwa.",
+  "Copied. It leaves the clipboard after two minutes.": "Skopiowano. Za dwie minuty zniknie ze schowka."
 }

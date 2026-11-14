@@ -15817,6 +15817,17 @@
         }
       }
     },
+    "Copied. It leaves the clipboard after two minutes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skopiowano. Za dwie minuty zniknie ze schowka."
+          }
+        }
+      }
+    },
     "Copies “%@” to paste into the app's search.": {
       "extractionState": "manual",
       "localizations": {
@@ -53382,6 +53393,17 @@
         }
       }
     },
+    "Nothing yet. Press the Action Button once, then pull down here to refresh.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Na razie nic. Naciśnij raz Action Button, a potem pociągnij tutaj w dół, żeby odświeżyć."
+          }
+        }
+      }
+    },
     "Nothing yet. When Doddy looks something up or adds something for you, it shows here.": {
       "extractionState": "manual",
       "localizations": {
@@ -79341,6 +79363,17 @@
         }
       }
     },
+    "Start timing": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czas startu"
+          }
+        }
+      }
+    },
     "Start translating": {
       "extractionState": "manual",
       "localizations": {
@@ -89441,6 +89474,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "Czas na cofnięcie minął, więc zostaje usunięte."
+          }
+        }
+      }
+    },
+    "The timing of Doddy's last starts, as he measured it. Only seconds and fixed words are kept, and only on this iPhone. Erase everything removes them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The timing of Doddy's last starts, as he measured it. Only seconds and fixed words are kept, and only on this iPad. Erase everything removes them."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "The timing of Doddy's last starts, as he measured it. Only seconds and fixed words are kept, and only on this iPhone. Erase everything removes them."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Czas ostatnich uruchomień Doddy’ego, tak jak go zmierzył. Zapisywane są tylko sekundy i stałe słowa, i tylko na tym iPadzie. „Wymaż wszystko” je usuwa."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Czas ostatnich uruchomień Doddy’ego, tak jak go zmierzył. Zapisywane są tylko sekundy i stałe słowa, i tylko na tym iPhonie. „Wymaż wszystko” je usuwa."
+                }
+              }
+            }
           }
         }
       }
