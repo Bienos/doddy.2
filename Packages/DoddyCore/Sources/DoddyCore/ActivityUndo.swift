@@ -28,15 +28,35 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
     case listRemoved(listID: UUID, list: String, items: [ListItem])
     /// A note saved by voice (ADR-277): deleted only if nothing about it changed since.
     case savedNote(id: UUID, text: String)
+    /// A timer Doddy started (ADR-320; step 2c of decision `2026-11-14-spoken-yes-and-fewer-cards`), found again by the
+    /// identifier the iPhone listed it under. Stopped only while it is still counting down, and only until it rings.
+    case startedTimer(identifier: String, firesAt: Date, seconds: Int, label: String?)
+    /// An alarm Doddy set (ADR-320), found again by AlarmKit's id. Turned off only while the iPhone still has it.
+    /// `ringsAt` is when a one-off alarm rings; nil for one that repeats.
+    case setAlarm(id: UUID, clock: String, repeats: AlarmRepeat?, label: String?, ringsAt: Date?)
 
     /// Undo is offered for this long after the change.
     public static let window: TimeInterval = 24 * 3_600
+
+    /// Why a timer or alarm Undo didn't run when the iPhone's list couldn't be read (nothing was written).
+    public static let timersUnreadable = "Doddy couldn't read its timers and alarms."
 
     public var app: ActivityApp {
         switch self {
         case .addedEvent, .changedEvent: .calendar
         case .addedReminder, .changedReminder: .reminders
         case .listAdded, .listTicked, .listRemoved, .savedNote: .memories
+        case .startedTimer, .setAlarm: .timers
+        }
+    }
+
+    /// After this moment Undo isn't offered any more: the timer has rung, or the one-off alarm has. Nil when only
+    /// the day's window applies.
+    public var until: Date? {
+        switch self {
+        case .startedTimer(_, let firesAt, _, _): firesAt
+        case .setAlarm(_, _, _, _, let ringsAt): ringsAt
+        case .addedEvent, .addedReminder, .changedEvent, .changedReminder, .listAdded, .listTicked, .listRemoved, .savedNote: nil
         }
     }
 
@@ -45,7 +65,7 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         switch self {
         case .savedNote(let id, _): id
         case .listAdded(let listID, _, _), .listTicked(let listID, _, _), .listRemoved(let listID, _, _): listID
-        case .addedEvent, .addedReminder, .changedEvent, .changedReminder: nil
+        case .addedEvent, .addedReminder, .changedEvent, .changedReminder, .startedTimer, .setAlarm: nil
         }
     }
 
@@ -56,6 +76,7 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         case .addedReminder, .changedReminder: "Reminders"
         case .listAdded, .listTicked, .listRemoved: "the list"
         case .savedNote: "your notes"
+        case .startedTimer, .setAlarm: "Timers"
         }
     }
 
@@ -66,6 +87,7 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         case .addedEvent, .changedEvent: .calendar
         case .addedReminder, .changedReminder: .reminders
         case .listAdded, .listTicked, .listRemoved, .savedNote: nil
+        case .startedTimer, .setAlarm: .timers
         }
     }
 
@@ -98,7 +120,33 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         case (.listRemoved(_, let list, let items), .polish): "Przywrócić \(Self.names(items, .polish)) na listę „\(list)”?"
         case (.savedNote(_, let text), .english): "Delete the note “\(Self.short(text))”?"
         case (.savedNote(_, let text), .polish): "Usunąć notatkę „\(Self.short(text))”?"
+        case (.startedTimer(_, _, let seconds, let label), .english):
+            label.map { "Stop the timer “\($0)” (\(TimerCopy.shortDuration(seconds, .english)))?" }
+                ?? "Stop the \(TimerCopy.shortDuration(seconds, .english)) timer?"
+        case (.startedTimer(_, _, let seconds, let label), .polish):
+            label.map { "Zatrzymać minutnik „\($0)” (\(TimerCopy.shortDuration(seconds, .polish)))?" }
+                ?? "Zatrzymać minutnik na \(TimerCopy.shortDuration(seconds, .polish))?"
+        case (.setAlarm(_, let clock, _, let label, _), .english):
+            label.map { "Turn off the alarm “\($0)” at \(clock)?" } ?? "Turn off the \(clock) alarm?"
+        case (.setAlarm(_, let clock, _, let label, _), .polish):
+            label.map { "Wyłączyć budzik „\($0)” o \(clock)?" } ?? "Wyłączyć budzik o \(clock)?"
         }
+    }
+
+    /// "every day", "on weekdays", "at weekends", in the sheet's language.
+    static func repeatText(_ repeats: AlarmRepeat, _ language: NotificationLanguage) -> String {
+        guard language == .polish else { return repeats.text }
+        switch repeats {
+        case .everyDay: return "codziennie"
+        case .weekdays: return "w dni robocze"
+        case .weekends: return "w weekendy"
+        }
+    }
+
+    /// "14:35", on this iPhone's clock.
+    static func clock(_ date: Date, calendar: Calendar) -> String {
+        let parts = calendar.dateComponents([.hour, .minute], from: date)
+        return String(format: "%02d:%02d", parts.hour ?? 0, parts.minute ?? 0)
     }
 
     /// A note's words, cut for the sheet's question.
@@ -168,6 +216,21 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
             return polish
                 ? "Doddy zapisał tę notatkę głosem. Zostanie usunięta tylko wtedy, gdy nic się w niej nie zmieniło: te same słowa, bez poprawek, zdjęcia, nagrania ani przypomnienia."
                 : "Doddy saved this note by voice. It is deleted only if nothing about it changed since: the same words, and no edits, photo, recording or reminder."
+        case .startedTimer(_, let firesAt, _, _):
+            let at = Self.clock(firesAt, calendar: calendar)
+            return polish
+                ? "Doddy uruchomił ten minutnik; zadzwoni o \(at). Zostanie zatrzymany tylko ten minutnik i tylko wtedy, gdy nadal odlicza, nie jest wstrzymany i jeszcze nie zadzwonił."
+                : "Doddy started this timer; it rings at \(at). Only this timer is stopped, and only if it is still counting down, isn't paused and hasn't rung."
+        case .setAlarm(_, _, let repeats, _, _):
+            if let repeats {
+                let days = Self.repeatText(repeats, language)
+                return polish
+                    ? "Doddy ustawił ten budzik (\(days)). Wyłączony zostanie tylko ten budzik, w każdy dzień, i tylko wtedy, gdy iPhone nadal go ma."
+                    : "Doddy set this alarm (\(days)). Only this alarm is turned off, on every day, and only if the iPhone still has it."
+            }
+            return polish
+                ? "Doddy ustawił ten budzik. Wyłączony zostanie tylko ten budzik i tylko wtedy, gdy iPhone nadal go ma i jeszcze nie zadzwonił."
+                : "Doddy set this alarm. Only this alarm is turned off, and only if the iPhone still has it and it hasn't rung."
         }
     }
 
@@ -184,6 +247,8 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
         case .listTicked: return polish ? "Odznacz" : "Untick"
         case .listRemoved: return polish ? "Przywróć" : "Put back"
         case .savedNote: return polish ? "Usuń" : "Delete"
+        case .startedTimer: return polish ? "Zatrzymaj" : "Stop timer"
+        case .setAlarm: return polish ? "Wyłącz" : "Turn off"
         }
     }
 
@@ -200,6 +265,22 @@ public enum ActivityUndo: Codable, Equatable, Sendable {
     public static func addedReminder(_ outcome: ReminderOutcome, draft: ReminderDraft) -> ActivityUndo? {
         guard case .added = outcome else { return nil }
         return .addedReminder(key: ReminderWrite(draft).key, title: draft.title, due: draft.due)
+    }
+
+    /// Undo for a timer Doddy just started: only one the iPhone listed afterwards, never the one an earlier try
+    /// already had running (that row has its own) or one Doddy isn't sure about.
+    public static func startedTimer(_ outcome: TimerStartOutcome, draft: TimerDraft) -> ActivityUndo? {
+        guard case .started(let timer) = outcome else { return nil }
+        return .startedTimer(identifier: timer.identifier, firesAt: timer.firesAt, seconds: draft.seconds, label: draft.label)
+    }
+
+    /// Undo for an alarm Doddy just set: only one AlarmKit listed afterwards, never one that was already set.
+    public static func setAlarm(_ outcome: AlarmSetOutcome, draft: AlarmDraft, calendar: Calendar) -> ActivityUndo? {
+        guard case .set(let alarm) = outcome else { return nil }
+        let ringsAt = draft.repeats == nil ? EventChange.moment(draft.first, local: calendar) : nil
+        // A one-off alarm with no time to ring at can't be shown honestly as "until it rings": no Undo.
+        if draft.repeats == nil, ringsAt == nil { return nil }
+        return .setAlarm(id: alarm.id, clock: alarm.clock, repeats: draft.repeats, label: alarm.label, ringsAt: ringsAt)
     }
 
     /// The plan that moves an event back. The event is found by its current occurrence (Doddy's
@@ -352,6 +433,8 @@ extension ActivityEntry {
         case nil, .notDone?: break
         case .undone?, .leftAlone?, .notSure?: return false
         }
+        // A timer that has rung, or a one-off alarm that has, has nothing left to undo.
+        if let until = undo?.until, now >= until { return false }
         let age = now.timeIntervalSince(at)
         return age >= 0 && age < ActivityUndo.window
     }
@@ -397,8 +480,12 @@ extension ActivityUndo {
     /// earlier conversation: "undo that" means what was just done.
     public static func latest(in entries: [ActivityEntry], since start: Date, now: Date) -> ActivityEntry? {
         // "Undo that" is for Calendar and Reminders only; list changes have their own receipt
-        // and What Doddy did (ADR-276), and the agent is told so.
-        entries.filter { $0.at >= start && $0.canUndo(now: now) && $0.undo?.connection != nil }.max { $0.at < $1.at }
+        // and What Doddy did (ADR-276), and the agent is told so. Timers and alarms are undone
+        // there too (step 2c), not by "undo that", which still says Calendar or Reminders.
+        entries.filter { entry in
+            guard entry.at >= start, entry.canUndo(now: now), let connection = entry.undo?.connection else { return false }
+            return connection == .calendar || connection == .reminders
+        }.max { $0.at < $1.at }
     }
 }
 
@@ -412,6 +499,7 @@ extension VoiceToolReply {
         let place = undo.placeName
         func title(_ text: String) -> String { " Its title:\n" + ToolData.block(["Title: \"\(ToolData.clean(text))\""]) }
         func name(_ text: String) -> String { " Its name:\n" + ToolData.block(["Name: \"\(ToolData.clean(text))\""]) }
+        func label(_ text: String?) -> String { text.map { " Its label:\n" + ToolData.block(["Label: \"\(ToolData.clean($0))\""]) } ?? "" }
         switch result {
         case .undone:
             switch undo {
@@ -426,6 +514,8 @@ extension VoiceToolReply {
             case .listTicked(_, let list, _): return "undone: the items are unticked on the list. Checked." + name(list)
             case .listRemoved(_, let list, _): return "undone: the items are back on the list. Checked." + name(list)
             case .savedNote: return "undone: the note was deleted. Checked."
+            case .startedTimer(_, _, _, let timer): return "undone: the timer was stopped. Checked." + label(timer)
+            case .setAlarm(_, _, _, let alarm, _): return "undone: the alarm was turned off. Checked." + label(alarm)
             }
         case .leftAlone:
             return "not undone: it changed in \(place) since Doddy did it, so Doddy left it alone. Nothing changed."
@@ -446,7 +536,7 @@ extension ActivityUndo {
         switch self {
         case .changedEvent(let mine): return plan == mine
         case .changedReminder(let id, _, _, _, _): return reminderID == id
-        case .addedEvent, .addedReminder, .listAdded, .listTicked, .listRemoved, .savedNote: return false
+        case .addedEvent, .addedReminder, .listAdded, .listTicked, .listRemoved, .savedNote, .startedTimer, .setAlarm: return false
         }
     }
 }

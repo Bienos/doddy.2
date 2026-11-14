@@ -61,6 +61,34 @@ enum TimerRinger {
         return []
     }
 
+    /// What stopping a timer AlarmKit runs did (Undo in What Doddy did, step 2c of decision
+    /// `2026-11-14-spoken-yes-and-fewer-cards`).
+    enum Stop: Equatable {
+        /// Cancelled, and AlarmKit's list read back no longer has it.
+        case stopped
+        /// Cancelled, or maybe, but the list couldn't be read back or still has it.
+        case notConfirmed
+        /// AlarmKit refused, and the list still has it: nothing changed.
+        case notStopped(String)
+        /// Listed, but paused or ringing: the person has it in hand now, so it is left alone.
+        case notCountingDown
+        /// AlarmKit doesn't have it: a notification timer, or one that is gone.
+        case notListed
+        /// AlarmKit's list couldn't be read.
+        case unreadable
+    }
+
+    /// Stops the timer named by `identifier` only while AlarmKit still counts it down as Doddy started it, then
+    /// reads the list back. A timer AlarmKit doesn't have is `notListed`, for the caller to look among notifications.
+    static func stop(_ identifier: String) -> Stop {
+        #if canImport(AlarmKit)
+        if #available(iOS 26.0, *), let id = TimerIdempotency.alarmID(fromIdentifier: identifier) {
+            return TimerKitBackend.stop(id)
+        }
+        #endif
+        return .notListed
+    }
+
     /// True when AlarmKit lists the timer named by `identifier`.
     static func isListed(_ identifier: String) -> Bool {
         #if canImport(AlarmKit)
@@ -146,6 +174,24 @@ private enum TimerKitBackend {
     /// Nil when AlarmKit's list can't be read; an empty set only when it really is empty.
     static func listedIDs() -> Set<UUID>? {
         (try? AlarmManager.shared.alarms).map { Set($0.map(\.id)) }
+    }
+
+    /// Cancels the timer only while it is counting down; paused or ringing, the person has it. Read back after.
+    static func stop(_ id: UUID) -> TimerRinger.Stop {
+        let manager = AlarmManager.shared
+        guard let alarms = try? manager.alarms else { return .unreadable }
+        guard let mine = alarms.first(where: { $0.id == id }) else { return .notListed }
+        guard case .countdown = mine.state else { return .notCountingDown }
+        do {
+            try manager.cancel(id: id)
+        } catch {
+            // A throw doesn't prove nothing changed: a fresh look decides.
+            guard let after = listedIDs() else { return .notConfirmed }
+            return after.contains(id) ? .notStopped(UserFacingError.message(for: error)) : .stopped
+        }
+        guard let after = listedIDs(), !after.contains(id) else { return .notConfirmed }
+        TimerBook.forget(id)
+        return .stopped
     }
 }
 #endif

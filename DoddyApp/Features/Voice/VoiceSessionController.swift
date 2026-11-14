@@ -5014,6 +5014,8 @@ final class VoiceSessionController {
         switch outcome {
         case .started(let timer):
             result.receipt = ActivityReceipt(timer: timer, draft: draft, calendar: .current, readAt: Date())
+            // Undo in What Doddy did stops it while it still counts down (step 2c), so it needs no card.
+            result.undo = ActivityUndo.startedTimer(outcome, draft: draft)
             if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .timers) }
         case .alreadyRunning(let timer):
             result.receipt = ActivityReceipt(timer: timer, draft: draft, calendar: .current, readAt: Date())
@@ -5035,6 +5037,8 @@ final class VoiceSessionController {
         switch outcome {
         case .set(let alarm), .alreadySet(let alarm):
             result.receipt = ActivityReceipt(alarm: alarm, readAt: Date())
+            // Only one Doddy set just now gets Undo, which turns it off while the iPhone has it (step 2c).
+            result.undo = ActivityUndo.setAlarm(outcome, draft: draft, calendar: .current)
             if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .timers) }
         default:
             break

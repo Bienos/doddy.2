@@ -358,6 +358,15 @@ final class DeviceConnections {
             // never here. Nothing is written.
             return .notDone("That isn't a Calendar or Reminders change.")
 
+        case .startedTimer(let identifier, _, _, _):
+            return await stopTimer(identifier)
+
+        case .setAlarm(let id, _, _, _, _):
+            // AlarmKit is the truth about whether it is still set (ADR-283); only this one id is turned off.
+            guard let listed = AlarmScheduler.scheduledIDs() else { return .notDone(ActivityUndo.timersUnreadable) }
+            guard listed.contains(id) else { return .leftAlone }
+            return AlarmScheduler.cancel(id) ? .undone : .notSure
+
         case .addedEvent(let eventID, let added):
             guard access(for: .calendar) == .granted else { return .notDone("Calendar isn't connected.") }
             guard let event = eventStore.event(withIdentifier: eventID), !event.hasRecurrenceRules,
@@ -742,6 +751,27 @@ final class DeviceConnections {
         content.userInfo = ["firesAt": Date().addingTimeInterval(TimeInterval(draft.seconds)).timeIntervalSince1970]
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(draft.seconds), repeats: false)
         try await center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: trigger))
+    }
+
+    /// Undo of a timer Doddy started (step 2c): AlarmKit's first (ADR-650), only while it still counts down; else the
+    /// notification timer with this exact identifier, only while iOS still has it waiting. Read back after either.
+    private func stopTimer(_ identifier: String) async -> UndoResult {
+        let rung = TimerRinger.stop(identifier)
+        switch rung {
+        case .stopped: return .undone
+        case .notConfirmed: return .notSure
+        case .notStopped(let reason): return .notDone(reason)
+        case .notCountingDown: return .leftAlone
+        case .notListed, .unreadable: break
+        }
+        let center = UNUserNotificationCenter.current()
+        guard await center.pendingNotificationRequests().contains(where: { $0.identifier == identifier }) else {
+            // Neither has it: gone (it rang, or the person stopped it), unless AlarmKit couldn't be read.
+            return rung == .unreadable ? .notDone(ActivityUndo.timersUnreadable) : .leftAlone
+        }
+        center.removePendingNotificationRequests(withIdentifiers: [identifier])
+        let still = await center.pendingNotificationRequests().contains { $0.identifier == identifier }
+        return still ? .notSure : .undone
     }
 
     // MARK: Contacts

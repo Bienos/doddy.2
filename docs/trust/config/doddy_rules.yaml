@@ -65,7 +65,9 @@ action_policy:
     # that have Undo in "What Doddy did", and the drafts and hand-overs that change nothing anywhere, run when asked with no
     # card (AskFirst.ownChangesAtOnce). Those that open another app or the camera do so only while Doddy is on screen;
     # otherwise their card stays. undo_last keeps its card: nothing undoes an undo.
-    own_changes_run_at_once: [save_memory, create_reminder, add_ingredients, open_map, open_camera, open_food_app, lost_wallet, draft_message, draft_blik_transfer, draft_invoice, make_presentation]
+    # Step 2c (same decision): set_timer and set_alarm joined them once they had Undo in What Doddy did (a timer is
+    # stopped only while it counts down; an alarm turned off only while AlarmKit has it).
+    own_changes_run_at_once: [save_memory, create_reminder, add_ingredients, open_map, open_camera, open_food_app, lost_wallet, draft_message, draft_blik_transfer, draft_invoice, make_presentation, set_timer, set_alarm]
     opens_another_app_only_on_screen: [open_map, open_camera, draft_message, open_food_app]
     server_reads_run_at_once: every_online_account_read_and_ask_claude_and_make_document
     # Change (2026-11-14; decision docs/decisions/2026-11-14-untrusted-content-needs-a-tap.md; DOD-07, and
@@ -87,8 +89,9 @@ action_policy:
     # payload once, and a changed card needs a new one. Money and bookings, a tool nobody classified, a card that waits
     # for the person to choose something, and every change once outside text has been seen take a tap only. Replaces
     # "changes: tap_on_card_with_exact_payload" and the tap only for hand_over_errand and make_something below.
-    # Since step 2b the ones with Undo, and the drafts and hand-overs, run at once (own_changes_run_at_once above); timers,
-    # alarms, new lists, note and leave-by reminders and the parking spot keep their card until they have an Undo.
+    # Since step 2b the ones with Undo, and the drafts and hand-overs, run at once (own_changes_run_at_once above), and
+    # since step 2c timers and alarms too; new lists, note and leave-by reminders and the parking spot keep their card
+    # until they have an Undo.
     changes: card_with_exact_payload_then_a_tap_or_the_users_spoken_yes
     tap_only: [pay_for_page, book_flight, call_places, unclassified_tool, card_waiting_for_a_choice, any_change_after_outside_text]
     spoken_yes_counts: {said_by: the_user, earliest_after_card_seconds: 1, latest_after_card_seconds: 120, strict_phrases_with_vetoes: true}

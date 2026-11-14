@@ -208,8 +208,12 @@ public enum ActivityText {
         for connection in VoiceConnection.allCases {
             notes["\(connection.title) isn't connected."] = "Brak połączenia: \(Self.polish(connection))."
         }
-        // Where Undo checked (ActivityUndo.placeName): Calendar, Reminders or the list (ADR-276).
-        let places = [("Calendar", "w Kalendarzu", "Kalendarz"), ("Reminders", "w Przypomnieniach", "Przypomnienia"), ("the list", "na liście", "listę"), ("your notes", "w notatkach", "notatki")]
+        // Where Undo checked (ActivityUndo.placeName): Calendar, Reminders, the list (ADR-276), notes, or timers and
+        // alarms (step 2c).
+        let places = [
+            ("Calendar", "w Kalendarzu", "Kalendarz"), ("Reminders", "w Przypomnieniach", "Przypomnienia"), ("the list", "na liście", "listę"),
+            ("your notes", "w notatkach", "notatki"), ("Timers", "w Minutnikach", "Minutniki"),
+        ]
         for (place, locative, accusative) in places {
             notes["You undid this. Checked in \(place)."] = "Cofnięto. Sprawdzone \(locative)."
             notes["Not undone: it changed in \(place) since Doddy did this, so Doddy left it alone."] =
@@ -225,8 +229,9 @@ public enum ActivityText {
         var reasons: [String: String] = [
             "Connections are paused in Settings.": "Połączenia są wstrzymane w Ustawieniach.",
             "Doddy couldn't read Reminders.": "Doddy nie mógł odczytać Przypomnień.",
+            ActivityUndo.timersUnreadable: "Doddy nie mógł odczytać swoich minutników i budzików.",
         ]
-        for connection in [VoiceConnection.calendar, .reminders] {
+        for connection in [VoiceConnection.calendar, .reminders, .timers] {
             reasons["\(connection.title) is off in Settings, Connections."] = "\(Self.polish(connection)): wyłączone w Ustawieniach, Połączenia."
             reasons["\(connection.title) isn't connected."] = "Brak połączenia: \(Self.polish(connection))."
         }

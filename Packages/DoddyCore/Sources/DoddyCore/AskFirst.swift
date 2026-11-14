@@ -123,8 +123,8 @@ public enum AskFirst {
         VoiceToolName.checkFocus, VoiceToolName.checkErrands, VoiceToolName.findDeals,
     ]
 
-    /// Doddy's own changes on this iPhone that have Undo in "What Doddy did" (a note, a reminder, ingredients on a list),
-    /// and the drafts and hand-overs that change nothing anywhere (a message or BLIK transfer the person sends
+    /// Doddy's own changes on this iPhone that have Undo in "What Doddy did" (a note, a reminder, ingredients on a list,
+    /// and since step 2c a timer and an alarm), and the drafts and hand-overs that change nothing anywhere (a message or BLIK transfer the person sends
     /// themselves, an invoice draft, a presentation file, the lost-wallet checklist, Maps, the camera, a food app). They
     /// run when asked, with no card, since 14 Nov 2026 (decision 2026-11-14-spoken-yes-and-fewer-cards, step 2b), and
     /// Doddy says what it did. `ConfirmationTiers.ownUndoableAtOnce` names the rest of the at-once tier, which keeps its
@@ -133,6 +133,8 @@ public enum AskFirst {
         VoiceToolName.saveMemory, VoiceToolName.createReminder, VoiceToolName.addIngredients, VoiceToolName.openMap,
         VoiceToolName.openCamera, VoiceToolName.openFoodApp, VoiceToolName.lostWallet, VoiceToolName.draftMessage,
         VoiceToolName.draftBlikTransfer, VoiceToolName.draftInvoice, VoiceToolName.makePresentation,
+        // Step 2c: Undo stops the timer while it counts down, and turns the alarm off while the iPhone has it.
+        VoiceToolName.setTimer, VoiceToolName.setAlarm,
     ]
 
     /// Of those, the ones that open another app or the camera. The voice controller runs them at once only while Doddy
@@ -227,9 +229,10 @@ public enum AskFirst {
             return .ownPayloadCard
         // Doddy's own changes with Undo, and the drafts and hand-overs that change nothing (`ownChangesAtOnce`, step 2b):
         // no card. The tool's own flow still makes its payload; the controller runs it as the card's button would.
-        case .saveMemory, .createReminder, .addIngredients, .openMap, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera:
+        case .saveMemory, .createReminder, .addIngredients, .openMap, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera,
+             .setTimer, .setAlarm:
             return .runsNow
-        case .createCalendarEvent, .remindAboutNote, .undoLast, .setTimer, .setAlarm, .cancelAlarm,
+        case .createCalendarEvent, .remindAboutNote, .undoLast, .cancelAlarm,
              .runShortcut, .controlHome, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .parkingSpot(.save),
              // The card shows the time and the exact reason; the tap approves exactly that (ADR-754).
