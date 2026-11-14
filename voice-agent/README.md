@@ -62,7 +62,15 @@ adding one adapter, not rewriting the app or the agent.
 
 Every tool asks first (ASK-01, `x_doddy.ask`). `runs_now`: looks, reads, public lookups, the translator and Doddy's own small actions run at once (ADR-575, ADR-619, decision `2026-11-11-asked-for-runs-at-once`). `yes_or_tap` (53 tools since 14 Nov 2026, decision `2026-11-14-spoken-yes-and-fewer-cards`; 64 before its step 2b moved 11 to `runs_now`): a card with the exact payload that the person's own spoken yes or a tap answers; the app asks for a tap instead once outside text is in the conversation. `tap` (3 tools): money and bookings, `pay_for_page`, `book_flight`, `call_places`.
 
-**Not applied to the live agent (14 Nov 2026):** only `x_doddy.ask` (and, for the 11 tools step 2b runs at once, `confirm_on_screen`) changed in `tools.json` (Doddy's own field, never sent to ElevenLabs). The tool descriptions' "Ask: tap only." tags, the forced pre-tool speech and the prompt's "A spoken yes is not enough there" are unchanged here and on the live agent; changing them is step 3 of the decision, after a TestFlight build with the app's half, and only on the owner's word. Until then the agent still asks people to tap, and the app also runs a card on their spoken yes.
+**Not applied to the live agent (14 Nov 2026):** two changes are in this folder but not on the live agent.
+- Steps 2a and 2b changed `x_doddy.ask`, and for the 11 tools step 2b runs at once also `confirm_on_screen`. These are Doddy's own fields and are never sent to ElevenLabs.
+- Step 3 of decision `2026-11-14-spoken-yes-and-fewer-cards` rewrote what the agent is told:
+  - **`instructions.md`**: the ASK-01 section now says what runs at once with no card, that a card's question is the only question and the user's short yes or a tap runs it, that money and bookings need a tap, and that every change needs a tap once an email, a page, a document, an account or the screen has been read. 34 per-tool lines replace "Confirm on screen if I should …" with a short question ("Dodać dentystę we wtorek o 10?") or with "don't ask first".
+  - **`tools.json`**: 69 descriptions say the same. Only `book_flight` keeps the "Ask: tap only." tag; `pay_for_page` and `call_places` keep their own tap wording. The other cards say "Ask: yes/tap." The stopwatch, focus, wind-down and follow tools, which run at once since 11 Nov, no longer tell the agent to ask for a confirmation on screen that never appears.
+
+  Names, parameters, `speak_before`, timeouts and ids are unchanged.
+- **Until the sync:** the live agent still asks people to tap, even for things that now run at once, while the app also takes their spoken yes.
+- **The sync waits for a TestFlight build with #470 and #477** and the owner's word (`docs/OWNER_QUEUE.md` 114). It is best done together with row 111, the same kind of change for the tap cards after outside text. Render each changed tool with `python3 -I scripts/voice_agent_spec.py elevenlabs`, update it and the prompt, read both back, and log the versions and the rollback here.
 
 | What | Tools | Who does the work |
 |---|---|---|
