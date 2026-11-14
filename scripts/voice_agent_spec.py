@@ -76,7 +76,14 @@ RUNS_NOW_SERVER_READS = {"check_email", "read_email", "find_drive_file", "search
                          # Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking): searches and the booking check.
                          # book_flight is not here: it waits for a tap on the card with the exact booking.
                          "find_flights", "find_bookable_flights", "check_flight_booking"}
-RUNS_NOW = PUBLIC_LOOKUPS | RUNS_NOW_MODES | RUNS_NOW_OWN_TEXT | RUNS_NOW_OWN_LOOKS | RUNS_NOW_SMALL_ACTIONS | RUNS_NOW_SERVER_READS
+# Since 14 Nov 2026 (decision docs/decisions/2026-11-14-spoken-yes-and-fewer-cards.md, step 2b): Doddy's own changes
+# that have Undo, and the drafts and hand-overs that change nothing anywhere, run when asked with no card. The same list
+# is `AskFirst.ownChangesAtOnce` in DoddyCore; the app keeps the card of the four that open another app or the camera
+# while Doddy isn't on screen.
+RUNS_NOW_OWN_CHANGES = {"save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app",
+                        "lost_wallet", "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation"}
+RUNS_NOW = (PUBLIC_LOOKUPS | RUNS_NOW_MODES | RUNS_NOW_OWN_TEXT | RUNS_NOW_OWN_LOOKS | RUNS_NOW_SMALL_ACTIONS
+            | RUNS_NOW_SERVER_READS | RUNS_NOW_OWN_CHANGES)
 APP_INSTRUCTIONS = SPEC / "instructions.md"
 
 

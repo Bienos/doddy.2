@@ -307,13 +307,14 @@ final class InvoiceVoiceTests: XCTestCase {
 
     func testItAsksThroughItsOwnCardAndNeverRunsWhileDriving() {
         let request = VoiceToolRequest.draftInvoice(update(#"{"item":"x"}"#))
-        XCTAssertEqual(AskFirst.need(for: request), .ownPayloadCard)
-        XCTAssertTrue(AskFirst.needsTap(.ownPayloadCard), "issuing would need a tap")
+        // The draft is shown when asked (step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards); issuing stays the
+        // card's own tap, which is no pending card and so no spoken yes reaches it.
+        XCTAssertEqual(AskFirst.need(for: request), .runsNow)
         if case .refuse = CarProfile.decision(for: request) {} else { XCTFail("an invoice is checked on screen, not while driving") }
         XCTAssertFalse(ConnectionPause.applies(to: request), "no other app or account is used")
         XCTAssertNil(ActivityRequest.describe(request, calendar: .current), "a draft on screen is not an action")
         XCTAssertNil(VoiceConnection.serving(VoiceToolName.draftInvoice))
-        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.draftInvoice)?.approval, .card)
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.draftInvoice)?.approval, .runsNow)
     }
 
     func testTheReplyNeverClaimsAnythingWasSentAndQuotesDataAsData() throws {

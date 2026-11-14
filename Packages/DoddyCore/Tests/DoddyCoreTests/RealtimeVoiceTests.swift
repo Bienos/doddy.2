@@ -57,7 +57,7 @@ final class RealtimeVoiceTests: XCTestCase {
         XCTAssertEqual(Set(tools.filter { $0.ask != .runsNow }.map(\.name)), Set(tools.filter(\.confirmOnScreen).map(\.name)))
         let save = try XCTUnwrap(tools.first { $0.name == VoiceToolName.saveMemory })
         XCTAssertEqual(save.runsOn, .phone)
-        XCTAssertTrue(save.confirmOnScreen)
+        XCTAssertFalse(save.confirmOnScreen, "a note is saved when asked, with Undo (step 2b)")
         XCTAssertEqual(save.requiredParameters, ["text"])
         // ASK-01: every tool that shows a card runs on the phone. The web tools are ADR-575's public
         // lookups (weather, Wikipedia), which run at once on ElevenLabs.

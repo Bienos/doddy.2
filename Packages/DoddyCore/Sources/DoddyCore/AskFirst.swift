@@ -123,6 +123,25 @@ public enum AskFirst {
         VoiceToolName.checkFocus, VoiceToolName.checkErrands, VoiceToolName.findDeals,
     ]
 
+    /// Doddy's own changes on this iPhone that have Undo in "What Doddy did" (a note, a reminder, ingredients on a list),
+    /// and the drafts and hand-overs that change nothing anywhere (a message or BLIK transfer the person sends
+    /// themselves, an invoice draft, a presentation file, the lost-wallet checklist, Maps, the camera, a food app). They
+    /// run when asked, with no card, since 14 Nov 2026 (decision 2026-11-14-spoken-yes-and-fewer-cards, step 2b), and
+    /// Doddy says what it did. `ConfirmationTiers.ownUndoableAtOnce` names the rest of the at-once tier, which keeps its
+    /// card until it has an Undo (step 2c).
+    public static let ownChangesAtOnce: Set<String> = [
+        VoiceToolName.saveMemory, VoiceToolName.createReminder, VoiceToolName.addIngredients, VoiceToolName.openMap,
+        VoiceToolName.openCamera, VoiceToolName.openFoodApp, VoiceToolName.lostWallet, VoiceToolName.draftMessage,
+        VoiceToolName.draftBlikTransfer, VoiceToolName.draftInvoice, VoiceToolName.makePresentation,
+    ]
+
+    /// Of those, the ones that open another app or the camera. The voice controller runs them at once only while Doddy
+    /// is on screen: iOS opens nothing from the background, and "opened" is never said of what didn't open. Otherwise
+    /// their card stays, answered by a tap or a spoken yes.
+    public static let opensSomethingElse: Set<String> = [
+        VoiceToolName.openMap, VoiceToolName.openCamera, VoiceToolName.draftMessage, VoiceToolName.openFoodApp,
+    ]
+
     /// Doddy's own small things that run at once since 11 Nov 2026: each is undone in one step (stop, untick,
     /// unfollow, close the screen) and none reaches another app, an account or another person.
     public static let ownSmallActions: Set<String> = [
@@ -136,7 +155,9 @@ public enum AskFirst {
     /// to the user's own number. `voice-agent/tools.json` says `ask: runs_now` for exactly these. This is the baseline:
     /// `OutsideContentRule.guardedTools` among them can still ask in a conversation (`need(for:in:)`).
     public static func runsAtOnce(_ name: String) -> Bool {
-        if publicLookups.contains(name) || ownLooks.contains(name) || ownSmallActions.contains(name) { return true }
+        if publicLookups.contains(name) || ownLooks.contains(name) || ownSmallActions.contains(name) || ownChangesAtOnce.contains(name) {
+            return true
+        }
         if [VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe].contains(name) { return true }
         return CloudToolName.all.contains(name) && !CloudToolName.isWrite(name)
     }
@@ -186,8 +207,9 @@ public enum AskFirst {
             return .yesFirst(StudioAsk.card(job))
         // Opening a food app hands the person over to it (decision 2026-11-12-food-by-voice): the card names the app
         // and the search. Nothing is ordered here.
-        case .openFoodApp(let handoff):
-            return .yesFirst(handoff.card(polish: polish))
+        case .openFoodApp:
+            // Since 14 Nov 2026 (step 2b) it opens when asked; the controller keeps its card while Doddy isn't on screen.
+            return .runsNow
         // Taking something away keeps its card, with exactly what goes.
         case .removeFromList(let request):
             return .yesFirst(AskCard(
@@ -203,8 +225,12 @@ public enum AskFirst {
             // under iOS's own location permission), and the payload card with the place Maps found and the leave
             // time is the tap that sets the notification (ADR-718's first card is gone).
             return .ownPayloadCard
-        case .saveMemory, .createCalendarEvent, .createReminder, .remindAboutNote, .undoLast, .setTimer, .setAlarm, .cancelAlarm,
-             .openMap, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera, .controlHome, .addIngredients, .createList, .changeCalendarEvent, .changeReminder,
+        // Doddy's own changes with Undo, and the drafts and hand-overs that change nothing (`ownChangesAtOnce`, step 2b):
+        // no card. The tool's own flow still makes its payload; the controller runs it as the card's button would.
+        case .saveMemory, .createReminder, .addIngredients, .openMap, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera:
+            return .runsNow
+        case .createCalendarEvent, .remindAboutNote, .undoLast, .setTimer, .setAlarm, .cancelAlarm,
+             .runShortcut, .controlHome, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .parkingSpot(.save),
              // The card shows the time and the exact reason; the tap approves exactly that (ADR-754).
              // call_places: the card shows every place, its number and where it came from, the exact
@@ -216,13 +242,13 @@ public enum AskFirst {
             // decision 2026-11-09-restaurant-calls-one-tap). It can reach no one else (contact_policy.text_recipients).
             return .runsNow
         case .lostWallet:
-            // ADR-692: the checklist is its own card. Showing it reads and changes nothing; each
-            // step's page or number opens only on the person's tap on that step.
-            return .ownPayloadCard
+            // ADR-692: the checklist is shown at once; showing it reads and changes nothing. Each step's page or number
+            // opens only on the person's tap on that step.
+            return .runsNow
         case .draftInvoice:
-            // ADR-677: the draft card shows the exact invoice and changes nothing anywhere; issuing in
-            // inFakt is the card's own tap, bound to the digest of what it shows (ADR-640).
-            return .ownPayloadCard
+            // ADR-677: the draft is shown at once and changes nothing anywhere; issuing in inFakt is still the card's
+            // own tap, bound to the digest of what it shows (ADR-640), never a spoken yes.
+            return .runsNow
         case .cloudTool(let call):
             // A read through Doddy's server (an inbox, a calendar, a page, Claude writing something) runs at once
             // since 11 Nov 2026; the server's single-use approval is still made for exactly this call. A write

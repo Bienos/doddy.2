@@ -44,13 +44,14 @@ final class FoodHandoffTests: XCTestCase {
         XCTAssertEqual(FoodHandoff.parse(app: "Wolt", search: String(repeating: "a", count: 80)).map(\.search), .success(String(repeating: "a", count: 80)))
     }
 
-    func testAYesOrATapOpensTheAppAndTheCardSaysWhatAndThatTheOrderIsTheirs() throws {
+    func testItOpensWhenAskedAndTheCardSaysWhatAndThatTheOrderIsTheirs() throws {
         let handoff = try FoodHandoff.parse(app: "Wolt", search: "Sushi Kushi").get()
-        // Decision 2026-11-14-spoken-yes-and-fewer-cards: the card stays, and the person's own spoken yes answers it.
-        XCTAssertEqual(AskFirst.need(for: .openFoodApp(handoff)), .yesFirst(handoff.card(polish: false)))
-        XCTAssertFalse(AskFirst.needsTap(AskFirst.need(for: .openFoodApp(handoff))))
-        XCTAssertFalse(AskFirst.runsAtOnce(VoiceToolName.openFoodApp))
-        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.openFoodApp)?.approval, .card)
+        // Decision 2026-11-14-spoken-yes-and-fewer-cards, step 2b: it opens when asked, while Doddy is on screen (the
+        // controller shows this card otherwise). Nothing is ordered here.
+        XCTAssertEqual(AskFirst.need(for: .openFoodApp(handoff)), .runsNow)
+        XCTAssertTrue(AskFirst.runsAtOnce(VoiceToolName.openFoodApp))
+        XCTAssertTrue(AskFirst.opensSomethingElse.contains(VoiceToolName.openFoodApp))
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.openFoodApp)?.approval, .runsNow)
         let english = handoff.card(polish: false)
         XCTAssertEqual(english.title, "Open Wolt?")
         XCTAssertEqual(english.confirmLabel, "Open Wolt")
