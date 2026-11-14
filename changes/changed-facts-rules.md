@@ -1,0 +1,3 @@
+DoddyCore: `NoteUpdateMatch` finds the one saved note a new note may replace (the same words with a different number; where a person lives or works), so a changed fact can be offered as an update (ADR-252 keeps the old wording) instead of becoming a second note. Rules only, nothing calls them yet, so nothing changes on screen. Decision `2026-11-14-changed-facts-update-the-note` (step 1 of 3).
+Ran: `NoteUpdateMatchTests` (17, red first, six deliberate breaks each caught), `scripts/ci.sh --only checks,swift`. Not run: any app code or device (nothing uses it yet).
+Next: step 2, the "Update that note / Save as a new note" choice on the save screens (hot files `VoiceView.swift` and `VoiceSessionController.swift`: waits for #453).
