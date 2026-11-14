@@ -72,10 +72,39 @@ describe("the sign-in page", () => {
       },
     });
     renderApp("/sign-in?signin=not_linked&provider=google");
-    expect(await screen.findByRole("alert")).toHaveTextContent("This Google account isn't linked to a Doddy account yet");
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("This Google account isn't linked to a Doddy account yet");
+    // Nothing was made, and both kinds of person are told where to go next.
+    expect(alert).toHaveTextContent("no account was made");
+    expect(alert).toHaveTextContent("New to Doddy? Make your account in the Doddy app on your iPhone first.");
+    expect(alert).toHaveTextContent("Already use Doddy on your iPhone? Sign in here once with a code from it, then link Google in Settings.");
     await userEvent.type(screen.getByLabelText("Sign-in code"), "K7QM-4XPA");
     await userEvent.click(screen.getByRole("button", { name: "Sign in" }));
     expect(await screen.findByRole("heading", { name: "I'm here." })).toBeInTheDocument();
+  });
+
+  test("the same answer in Polish, for Apple, with the way forward", async () => {
+    fakeServer({ "GET /v1/web/session": signedOut, "GET /v1/web/sign-in-options": { body: { providers: ["apple"] } } });
+    renderApp("/sign-in?signin=not_linked&provider=apple", "pl");
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("To konto Apple nie jest jeszcze połączone z kontem Doddy, więc nic nie otwarto i nie założono konta.");
+    expect(alert).toHaveTextContent("Pierwszy raz w Doddy? Najpierw załóż konto w aplikacji Doddy na iPhonie.");
+    expect(alert).toHaveTextContent("Już używasz Doddy na iPhonie? Zaloguj się tutaj raz kodem z niego, potem połącz Apple w Ustawieniach.");
+  });
+
+  test("with sign-up closed, the page says before anyone tries that a new account is made on the iPhone first", async () => {
+    fakeServer({ "GET /v1/web/session": signedOut, "GET /v1/web/sign-in-options": { body: { providers: ["google", "apple"], signup: false } } });
+    renderApp();
+    expect(await screen.findByRole("link", { name: "Continue with Google" })).toBeInTheDocument();
+    expect(screen.getByText(/New to Doddy\? Make your account in the Doddy app on your iPhone first\./)).toBeInTheDocument();
+    expect(screen.queryByText(/Create my Doddy account/)).toBeNull();
+  });
+
+  test("with sign-up open, the page does not send a new person to the iPhone first", async () => {
+    fakeServer({ "GET /v1/web/session": signedOut, "GET /v1/web/sign-in-options": { body: { providers: ["google"], signup: true } } });
+    renderApp();
+    expect(await screen.findByRole("link", { name: "Continue with Google" })).toBeInTheDocument();
+    expect(screen.queryByText(/Make your account in the Doddy app on your iPhone first/)).toBeNull();
   });
 
   test("only the server's known results are read from the address", () => {

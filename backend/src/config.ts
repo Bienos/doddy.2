@@ -46,6 +46,11 @@ export interface Limits {
   serviceDailyAsk: number;
   /** Guests' Ask Doddy questions (`ask` sessions, ADR-587), for the whole service, per UTC day: their own pool, so guests can't use up `serviceDailyAsk`. */
   serviceDailyGuestAsk: number;
+  /**
+   * The browser chat's questions (`POST /v1/web/chat`), for the whole service, per UTC day: a pool of their own, so the
+   * web chat and Ask Doddy on the iPhone don't draw from one. One person's daily total (`userDailyAsk`) is still shared.
+   */
+  serviceDailyWebChat: number;
   serviceDailyCalls: number;
   serviceMonthlyCalls: number;
   userConcurrency: number;
@@ -200,7 +205,7 @@ export interface WebSocialSettings {
   publishableKey: string;
   /** Sign-in buttons offered, in this order. */
   providers: ("google" | "apple")[];
-  /** A Google or Apple account with no Doddy account may make one on the web, after saying so (DODDY_WEB_SIGNUP). */
+  /** A Google or Apple account with no Doddy account may make one on the web, after saying so (DODDY_WEB_SIGNUP=open; off unless the owner sets it). */
   signup: boolean;
   /**
    * The project's secret key, used only to delete a person's Supabase Auth user when their Doddy
@@ -278,6 +283,8 @@ const EnvSchema = z.object({
   DODDY_LIMIT_USER_DAILY_ASK: intSetting(50, 1, 10_000),
   DODDY_LIMIT_SERVICE_DAILY_ASK: intSetting(500, 1, 1_000_000),
   DODDY_LIMIT_SERVICE_DAILY_GUEST_ASK: intSetting(100, 1, 1_000_000),
+  /** The browser chat's own server-wide pool; each person's daily total (DODDY_LIMIT_USER_DAILY_ASK) is shared with Ask Doddy. */
+  DODDY_LIMIT_SERVICE_DAILY_WEB_CHAT: intSetting(200, 1, 1_000_000),
   COMPOSIO_API_KEY: z.string().optional(),
   COMPOSIO_GOOGLECALENDAR_AUTH_CONFIG_ID: z.string().optional(),
   COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION: z.string().optional(),
@@ -335,8 +342,11 @@ const EnvSchema = z.object({
   SUPABASE_PUBLISHABLE_KEY: z.string().optional(),
   /** Which buttons the web shows, comma-separated: google, apple. */
   DODDY_WEB_SIGNIN_PROVIDERS: z.string().default("google,apple"),
-  /** `open`: a Google or Apple account with no Doddy account can make one on the web (owner, 3 Nov 2026). `off`: it can only sign in to a linked one. */
-  DODDY_WEB_SIGNUP: z.enum(["open", "off"]).default("open"),
+  /**
+   * `off` (the default): a Google or Apple account signs in on the web only to an account that already exists, and a new person is
+   * asked to make theirs in the iPhone app first (decision 2026-11-12-voice-token-fair-share). `open`: it can make one on the web (owner, 3 Nov 2026).
+   */
+  DODDY_WEB_SIGNUP: z.enum(["open", "off"]).default("off"),
   /** Server only, never the web app: deletes a person's Supabase Auth user when their account is deleted. */
   SUPABASE_SECRET_KEY: z.string().optional(),
 });
@@ -652,6 +662,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       userDailyAsk: e.DODDY_LIMIT_USER_DAILY_ASK,
       serviceDailyAsk: e.DODDY_LIMIT_SERVICE_DAILY_ASK,
       serviceDailyGuestAsk: e.DODDY_LIMIT_SERVICE_DAILY_GUEST_ASK,
+      serviceDailyWebChat: e.DODDY_LIMIT_SERVICE_DAILY_WEB_CHAT,
       serviceDailyCalls: e.DODDY_LIMIT_SERVICE_DAILY_CALLS,
       serviceMonthlyCalls: e.DODDY_LIMIT_SERVICE_MONTHLY_CALLS,
       userConcurrency: e.DODDY_LIMIT_USER_CONCURRENCY,
@@ -754,6 +765,7 @@ export function testLimits(overrides: Partial<Limits> = {}): Limits {
     userDailyAsk: 50,
     serviceDailyAsk: 500,
     serviceDailyGuestAsk: 100,
+    serviceDailyWebChat: 200,
     serviceDailyCalls: 300,
     serviceMonthlyCalls: 3_000,
     userConcurrency: 1,
