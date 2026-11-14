@@ -16,6 +16,16 @@ public enum LocalDay {
 /// Reads the URL the system authentication session returned. Only the configured scheme and
 /// the allowlisted parameters are used; the server re-verifies everything regardless.
 public enum ConnectionCallback {
+    /// Shown when the sign-in page closed without the person closing it: it didn't open, or what came
+    /// back couldn't be read. The server is still told "canceled" so it discards the unfinished
+    /// connection, but the app must not say the person canceled.
+    public static let couldNotFinishMessage = "Couldn't finish connecting. Nothing was connected. Try again."
+
+    /// True unless the person themselves closed the browser sheet.
+    public static func endedWithoutTheirChoice(_ error: any Error) -> Bool {
+        (error as? WebAuthenticationError) != .canceled
+    }
+
     public static func result(from url: URL, expectedScheme: String, attemptId: UUID) -> CompletionResult? {
         guard url.scheme?.lowercased() == expectedScheme.lowercased(),
               let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems
