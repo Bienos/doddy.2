@@ -1,8 +1,8 @@
 # Voice and chat budgets are shared fairly: a small pool for new accounts, a fair share per account, the web chat on its own
 
 - **Date:** 2026-11-12
-- **Decided by:** proposal, owner approval pending
-- **Status:** proposed — waiting for the owner. No limit, default or live setting is changed by this file.
+- **Decided by:** the owner, 14 Nov 2026: items 1 to 4 as recommended, numbers included; item 5 (App Attest) stays an option for later
+- **Status:** items 1 and 2 merged on 14 Nov 2026 (#478; the voice server's defaults apply as soon as Vercel builds `main`, no setting to set); items 3 and 4 merged (#479; `doddy` is not redeployed by a merge, and `DODDY_WEB_SIGNUP` becomes `off` only when it is, `docs/OWNER_QUEUE.md` 110). Item 5 is not built.
 - **Replaces:** nothing. Builds on ADR-671 and ADR-712 (voice token limits), ADR-587 (Ask Doddy pools) and ADR-818 (web sign-in).
 
 ## Why
