@@ -89,16 +89,21 @@ final class ActivityLogStore {
         }
     }
 
-    /// Application Support/Activity/activity.json, readable after first unlock only.
+    /// Application Support/Activity/activity.json, readable after first unlock only. The folder is kept out of iPhone
+    /// backups: it is Doddy's own record of its work, not something the person saved to keep (backup rule,
+    /// docs/architecture/DEVICE_DATA_STORES.md).
     private static func defaultURL() -> URL? {
         let fileManager = FileManager.default
-        guard let directory = try? fileManager
+        guard var directory = try? fileManager
             .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
             .appendingPathComponent("Activity", isDirectory: true)
         else { return nil }
         try? fileManager.createDirectory(
             at: directory, withIntermediateDirectories: true,
             attributes: [.protectionKey: FileProtectionType.completeUntilFirstUserAuthentication])
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try? directory.setResourceValues(values)
         return directory.appendingPathComponent("activity.json")
     }
 }

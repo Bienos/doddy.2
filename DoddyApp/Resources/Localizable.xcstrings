@@ -6178,6 +6178,17 @@
         }
       }
     },
+    "Alarms and timers": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Budziki i minutniki"
+          }
+        }
+      }
+    },
     "Alarms need iOS 26 or later. On this iPhone Doddy can set timers and reminders instead.": {
       "extractionState": "manual",
       "localizations": {
@@ -17817,124 +17828,6 @@
         }
       }
     },
-    "Delete all %lld notes and %lld lists?": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alle %lld Notizen und %lld Listen löschen?"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "¿Eliminar las %lld notas y las %lld listas?"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Supprimer les %lld notes et les %lld listes ?"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Izbrisati sve bilješke (%lld) i popise (%lld)?"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eliminare tutte le %lld note e le %lld liste?"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "メモ%lld件とリスト%lld件をすべて削除しますか？"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usunąć wszystkie notatki (%lld) i listy (%lld)?"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apagar todas as %lld notas e %lld listas?"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "删除全部 %lld 条笔记和 %lld 个清单？"
-          }
-        }
-      }
-    },
-    "Delete all memories": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alles Gemerkte löschen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eliminar todos los recuerdos"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Supprimer tous les souvenirs"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Izbriši sva sjećanja"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Elimina tutti i ricordi"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "すべての記憶を削除"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usuń wszystkie wspomnienia"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apagar todas as memórias"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "删除所有记忆"
-          }
-        }
-      }
-    },
     "Delete all recordings": {
       "extractionState": "manual",
       "localizations": {
@@ -18362,6 +18255,47 @@
           "stringUnit": {
             "state": "translated",
             "value": "删除我的 Doddy 消息数据"
+          }
+        }
+      }
+    },
+    "Delete my account and erase this iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Delete my account and erase this iPad"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Delete my account and erase this iPhone"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usuń moje konto i wymaż ten iPad"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Usuń moje konto i wymaż ten iPhone"
+                }
+              }
+            }
           }
         }
       }
@@ -19183,47 +19117,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Usunięte z serwerów"
-          }
-        }
-      }
-    },
-    "Deleted on this iPhone, but sharing couldn't be stopped for %lld shared lists (%@). Their copy stays in iCloud and with the people you invited.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Deleted on this iPad, but sharing couldn't be stopped for %lld shared lists (%@). Their copy stays in iCloud and with the people you invited."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Deleted on this iPhone, but sharing couldn't be stopped for %lld shared lists (%@). Their copy stays in iCloud and with the people you invited."
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Usunięto na tym iPadzie, ale nie udało się zatrzymać udostępniania list (%lld: %@). Ich kopia zostaje w iCloud i u osób, które zaprosiłeś."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Usunięto na tym iPhonie, ale nie udało się zatrzymać udostępniania list (%lld: %@). Ich kopia zostaje w iCloud i u osób, które zaprosiłeś."
-                }
-              }
-            }
           }
         }
       }
@@ -21742,6 +21635,17 @@
         }
       }
     },
+    "Doddy couldn't confirm that these were erased: %@. Everything else was. Try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł potwierdzić, że to zostało wymazane: %@. Cała reszta została. Spróbuj ponownie."
+          }
+        }
+      }
+    },
     "Doddy couldn't confirm that was saved on this iPhone. Nothing was kept.": {
       "extractionState": "manual",
       "localizations": {
@@ -23297,6 +23201,17 @@
         }
       }
     },
+    "Doddy is looking at your screen. Stop sharing it, then try again. Nothing was erased.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy patrzy na Twój ekran. Zatrzymaj udostępnianie i spróbuj ponownie. Nic nie zostało wymazane."
+          }
+        }
+      }
+    },
     "Doddy is looking. The picks will wait here, in Tasks and in Messages.": {
       "extractionState": "manual",
       "localizations": {
@@ -23473,6 +23388,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 正在说话"
+          }
+        }
+      }
+    },
+    "Doddy is still listening or recording. End it, then try again. Nothing was erased.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nadal słucha lub nagrywa. Zakończ to i spróbuj ponownie. Nic nie zostało wymazane."
           }
         }
       }
@@ -23768,6 +23694,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy niczego z tego nie zachowuje. Kroki pochodzą z Ruchu i fitness, nie z aplikacji Zdrowie. iPhone raz pyta o zgodę na Ruch i fitness."
+          }
+        }
+      }
+    },
+    "Doddy keeps only your choices about what is sent, and the marks that say which first screens you've seen and that you accepted the Terms.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zachowuje tylko Twoje wybory dotyczące tego, co jest wysyłane, oraz znaczniki, które pierwsze ekrany zostały już pokazane i że Regulamin został zaakceptowany."
+          }
+        }
+      }
+    },
+    "Doddy keeps only your sign-in, your choices about what is sent, and the marks that say which first screens you've seen and that you accepted the Terms. Your Doddy account is a separate step: you can delete it next.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy zachowuje tylko Twoje logowanie, Twoje wybory dotyczące tego, co jest wysyłane, oraz znaczniki, które pierwsze ekrany zostały już pokazane i że Regulamin został zaakceptowany. Konto Doddy’ego to osobny krok: możesz je usunąć zaraz potem."
           }
         }
       }
@@ -26052,7 +26000,7 @@
         }
       }
     },
-    "Doddy's server deletes what it keeps for you, your messaging data and your sign-in, and disconnects your online accounts. Notes on this iPhone stay.": {
+    "Doddy's server deletes what it keeps for you, your messaging data and your sign-in, and disconnects your online accounts. Notes and everything else on this iPhone stay, unless you also erase this iPhone.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -26061,13 +26009,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy's server deletes what it keeps for you, your messaging data and your sign-in, and disconnects your online accounts. Notes on this iPad stay."
+                  "value": "Doddy's server deletes what it keeps for you, your messaging data and your sign-in, and disconnects your online accounts. Notes and everything else on this iPad stay, unless you also erase this iPad."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Doddy's server deletes what it keeps for you, your messaging data and your sign-in, and disconnects your online accounts. Notes on this iPhone stay."
+                  "value": "Doddy's server deletes what it keeps for you, your messaging data and your sign-in, and disconnects your online accounts. Notes and everything else on this iPhone stay, unless you also erase this iPhone."
                 }
               }
             }
@@ -26079,13 +26027,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Serwer Doddy’ego usuwa to, co dla ciebie przechowuje, dane wiadomości i logowanie, a także odłącza konta online. Notatki na tym iPadzie zostają."
+                  "value": "Serwer Doddy’ego usuwa to, co dla Ciebie przechowuje, dane wiadomości i logowanie, a także odłącza konta online. Notatki i wszystko inne na tym iPadzie zostają, chyba że wymażesz też ten iPad."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Serwer Doddy’ego usuwa to, co dla ciebie przechowuje, dane wiadomości i logowanie, a także odłącza konta online. Notatki na tym iPhonie zostają."
+                  "value": "Serwer Doddy’ego usuwa to, co dla Ciebie przechowuje, dane wiadomości i logowanie, a także odłącza konta online. Notatki i wszystko inne na tym iPhonie zostają, chyba że wymażesz też ten iPhone."
                 }
               }
             }
@@ -29154,6 +29102,99 @@
         }
       }
     },
+    "Erase everything": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wymaż wszystko"
+          }
+        }
+      }
+    },
+    "Erase everything on this iPhone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Erase everything on this iPad"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Erase everything on this iPhone"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wymaż wszystko z tego iPada"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wymaż wszystko z tego iPhone’a"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Erase everything on this iPhone?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Erase everything on this iPad?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Erase everything on this iPhone?"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wymazać wszystko z tego iPada?"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wymazać wszystko z tego iPhone’a?"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Evening wrap-up": {
       "extractionState": "manual",
       "localizations": {
@@ -29486,17 +29527,6 @@
         }
       }
     },
-    "Every recording, with its audio and its words, is removed too.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usuwane są też wszystkie nagrania, razem z dźwiękiem i zapisem słów."
-          }
-        }
-      }
-    },
     "Every saved session is removed from this iPhone. This can't be undone. The switch above stays as it is.": {
       "extractionState": "manual",
       "localizations": {
@@ -29604,6 +29634,88 @@
           "stringUnit": {
             "state": "translated",
             "value": "清单上的每个人都可以在“%@”收到提醒。"
+          }
+        }
+      }
+    },
+    "Everything Doddy kept on this iPhone is erased.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Everything Doddy kept on this iPad is erased."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Everything Doddy kept on this iPhone is erased."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wszystko, co Doddy trzymał na tym iPadzie, zostało wymazane."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wszystko, co Doddy trzymał na tym iPhonie, zostało wymazane."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Everything Doddy kept on this iPhone is erased. Your Doddy account, and what Doddy's server keeps for it, stay until you delete the account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Everything Doddy kept on this iPad is erased. Your Doddy account, and what Doddy's server keeps for it, stay until you delete the account."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Everything Doddy kept on this iPhone is erased. Your Doddy account, and what Doddy's server keeps for it, stay until you delete the account."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wszystko, co Doddy trzymał na tym iPadzie, zostało wymazane. Konto Doddy’ego i to, co trzyma dla niego serwer Doddy’ego, zostają, dopóki nie usuniesz konta."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Wszystko, co Doddy trzymał na tym iPhonie, zostało wymazane. Konto Doddy’ego i to, co trzyma dla niego serwer Doddy’ego, zostają, dopóki nie usuniesz konta."
+                }
+              }
+            }
           }
         }
       }
@@ -30788,6 +30900,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pliki"
+          }
+        }
+      }
+    },
+    "Files Doddy made": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pliki zrobione przez Doddy’ego"
           }
         }
       }
@@ -39902,6 +40025,17 @@
         }
       }
     },
+    "Keys you added": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodane przez Ciebie klucze"
+          }
+        }
+      }
+    },
     "Keywords, comma separated": {
       "extractionState": "manual",
       "localizations": {
@@ -42369,6 +42503,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "你共享的清单也会存在 iCloud 中，并与你邀请的人共享。"
+          }
+        }
+      }
+    },
+    "Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Other copies on Doddy's servers, exported files and older backups aren't affected.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnione przez Ciebie listy przestają być udostępniane, więc zaproszone osoby też je tracą. Gdy Pamięć w rozmowach telefonicznych jest włączona, kopia na Twoim serwerze wiadomości Doddy’ego zostaje opróżniona. Inne kopie na serwerach Doddy’ego, wyeksportowane pliki i starsze kopie zapasowe zostają bez zmian."
+          }
+        }
+      }
+    },
+    "Live Activities": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktywności na żywo"
           }
         }
       }
@@ -61188,6 +61344,17 @@
         }
       }
     },
+    "Photos on notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zdjęcia w notatkach"
+          }
+        }
+      }
+    },
     "Photos to look at": {
       "extractionState": "manual",
       "localizations": {
@@ -65107,6 +65274,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nagrywaj z Doddym"
+          }
+        }
+      }
+    },
+    "Recording audio": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dźwięk nagrań"
           }
         }
       }
@@ -74802,6 +74980,17 @@
         }
       }
     },
+    "Settings and saved values": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawienia i zapisane wartości"
+          }
+        }
+      }
+    },
     "Setting…": {
       "extractionState": "manual",
       "localizations": {
@@ -75476,6 +75665,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "共享清单"
+          }
+        }
+      }
+    },
+    "Shared lists in iCloud": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listy udostępnione w iCloud"
           }
         }
       }
@@ -77130,6 +77330,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wyloguj z głosu"
+          }
+        }
+      }
+    },
+    "Sign-in and server links": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logowanie i połączenia z serwerami"
           }
         }
       }
@@ -81851,6 +82062,17 @@
         }
       }
     },
+    "Temporary files": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pliki tymczasowe"
+          }
+        }
+      }
+    },
     "Terms & Conditions": {
       "extractionState": "manual",
       "localizations": {
@@ -84763,6 +84985,17 @@
         }
       }
     },
+    "The Memory on calls copy": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopia Pamięci w rozmowach telefonicznych"
+          }
+        }
+      }
+    },
     "The Shortcuts app opens for a moment": {
       "extractionState": "manual",
       "localizations": {
@@ -85683,17 +85916,6 @@
         }
       }
     },
-    "The copy on your Doddy messaging server (Memory on calls) couldn't be emptied yet: %@ Doddy tries again the next time you open it.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie udało się jeszcze opróżnić kopii na twoim serwerze wiadomości Doddy’ego (Pamięć w rozmowach): %@ Doddy spróbuje ponownie, gdy go następnym razem otworzysz."
-          }
-        }
-      }
-    },
     "The daily limit for recaps on Doddy's server is reached. Try again tomorrow.": {
       "extractionState": "manual",
       "localizations": {
@@ -86064,47 +86286,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Plik nie powstał albo Doddy nie mógł tego potwierdzić. Spróbuj jeszcze raz."
-          }
-        }
-      }
-    },
-    "The invoice draft couldn't be removed from this iPhone. Close it on the voice screen to try again.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "The invoice draft couldn't be removed from this iPad. Close it on the voice screen to try again."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "The invoice draft couldn't be removed from this iPhone. Close it on the voice screen to try again."
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Nie udało się usunąć szkicu faktury z tego iPada. Zamknij go na ekranie rozmowy, żeby spróbować ponownie."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Nie udało się usunąć szkicu faktury z tego iPhone’a. Zamknij go na ekranie rozmowy, żeby spróbować ponownie."
-                }
-              }
-            }
           }
         }
       }
@@ -86494,7 +86675,7 @@
         }
       }
     },
-    "The log stays on this iPhone, in its own file outside iCloud and backups. Nothing is sent to Doddy's server or to an AI. The notes' Delete all doesn't touch it; use Delete my training log below.": {
+    "The log stays on this iPhone, in its own file outside iCloud and backups. Nothing is sent to Doddy's server or to an AI. Erasing everything on this iPhone removes it too; or use Delete my training log below.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -86503,13 +86684,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "The log stays on this iPad, in its own file outside iCloud and backups. Nothing is sent to Doddy's server or to an AI. The notes' Delete all doesn't touch it; use Delete my training log below."
+                  "value": "The log stays on this iPad, in its own file outside iCloud and backups. Nothing is sent to Doddy's server or to an AI. Erasing everything on this iPad removes it too; or use Delete my training log below."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "The log stays on this iPhone, in its own file outside iCloud and backups. Nothing is sent to Doddy's server or to an AI. The notes' Delete all doesn't touch it; use Delete my training log below."
+                  "value": "The log stays on this iPhone, in its own file outside iCloud and backups. Nothing is sent to Doddy's server or to an AI. Erasing everything on this iPhone removes it too; or use Delete my training log below."
                 }
               }
             }
@@ -86521,13 +86702,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Dziennik zostaje na tym iPadzie, we własnym pliku poza iCloud i kopiami zapasowymi. Nic nie jest wysyłane na serwer Doddy’ego ani do AI. „Usuń wszystko” w notatkach go nie rusza; użyj poniżej „Usuń mój dziennik treningowy”."
+                  "value": "Dziennik zostaje na tym iPadzie, we własnym pliku poza iCloud i kopiami zapasowymi. Nic nie jest wysyłane na serwer Doddy’ego ani do AI. Wymazanie wszystkiego z tego iPada usuwa go też; możesz też użyć poniżej „Usuń mój dziennik treningowy”."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Dziennik zostaje na tym iPhonie, we własnym pliku poza iCloud i kopiami zapasowymi. Nic nie jest wysyłane na serwer Doddy’ego ani do AI. „Usuń wszystko” w notatkach go nie rusza; użyj poniżej „Usuń mój dziennik treningowy”."
+                  "value": "Dziennik zostaje na tym iPhonie, we własnym pliku poza iCloud i kopiami zapasowymi. Nic nie jest wysyłane na serwer Doddy’ego ani do AI. Wymazanie wszystkiego z tego iPhone’a usuwa go też; możesz też użyć poniżej „Usuń mój dziennik treningowy”."
                 }
               }
             }
@@ -91549,6 +91730,47 @@
         }
       }
     },
+    "This iPhone holds Doddy data made with another account, so nothing from it is sent to yours. Erasing it lets your account take this iPhone over.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This iPad holds Doddy data made with another account, so nothing from it is sent to yours. Erasing it lets your account take this iPad over."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "This iPhone holds Doddy data made with another account, so nothing from it is sent to yours. Erasing it lets your account take this iPhone over."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Na tym iPadzie są dane Doddy’ego z innego konta, więc nic z nich nie trafia na Twoje. Po ich wymazaniu Twoje konto może przejąć ten iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Na tym iPhonie są dane Doddy’ego z innego konta, więc nic z nich nie trafia na Twoje. Po ich wymazaniu Twoje konto może przejąć ten iPhone."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "This iPhone uses its own account again.": {
       "extractionState": "manual",
       "localizations": {
@@ -93058,130 +93280,22 @@
         }
       }
     },
-    "This removes every note, every list with its items, the search index and any unfinished notes from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too. So are the notes and lists rows in What Doddy did.": {
+    "This removes everything Doddy keeps on this iPhone and can't be undone: notes and lists with their photos and voice memos, recordings, Messages, remembered conversations, what Doddy did and learned, your answers in About you, tasks and calls, the training log and plan, parcels, your inFakt key, files Doddy made, trips, your settings, and the alarms, timers and reminders Doddy set.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Das entfernt jede Notiz, jede Liste mit ihren Einträgen, den Suchindex und alle unfertigen Notizen von diesem iPad und lässt sich nicht rückgängig machen. Listen, die du geteilt hast, werden nicht mehr geteilt, also verlieren auch die eingeladenen Personen sie. Mit Gedächtnis bei Anrufen an wird die Kopie auf deinem Doddy-Nachrichtenserver geleert. Exportierte Dateien und ältere Backups sind nicht betroffen. Alles, was Doddy aus deinen Worten gelernt hat, und die Zähler deiner Korrekturen werden ebenfalls entfernt. Ebenso die Zeilen zu Notizen und Listen unter „Was Doddy gemacht hat“."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Das entfernt jede Notiz, jede Liste mit ihren Einträgen, den Suchindex und alle unfertigen Notizen von diesem iPhone und lässt sich nicht rückgängig machen. Listen, die du geteilt hast, werden nicht mehr geteilt, also verlieren auch die eingeladenen Personen sie. Mit Gedächtnis bei Anrufen an wird die Kopie auf deinem Doddy-Nachrichtenserver geleert. Exportierte Dateien und ältere Backups sind nicht betroffen. Alles, was Doddy aus deinen Worten gelernt hat, und die Zähler deiner Korrekturen werden ebenfalls entfernt. Ebenso die Zeilen zu Notizen und Listen unter „Was Doddy gemacht hat“."
-                }
-              }
-            }
-          }
-        },
         "en": {
           "variations": {
             "device": {
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "This removes every note, every list with its items, the search index and any unfinished notes from this iPad and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too. So are the notes and lists rows in What Doddy did."
+                  "value": "This removes everything Doddy keeps on this iPad and can't be undone: notes and lists with their photos and voice memos, recordings, Messages, remembered conversations, what Doddy did and learned, your answers in About you, tasks and calls, the training log and plan, parcels, your inFakt key, files Doddy made, trips, your settings, and the alarms, timers and reminders Doddy set."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "This removes every note, every list with its items, the search index and any unfinished notes from this iPhone and can't be undone. Lists you shared stop being shared, so the people you invited lose them too. With Memory on calls on, the copy on your Doddy messaging server is emptied. Exported files and older backups aren't affected. Everything Doddy learned from what you said, and the counts of what you corrected, are removed too. So are the notes and lists rows in What Doddy did."
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Esto elimina todas las notas, todas las listas con sus elementos, el índice de búsqueda y las notas sin terminar de este iPad, y no se puede deshacer. Las listas que compartiste dejan de estar compartidas, así que las personas que invitaste también las pierden. Con Recuerdos en llamadas activado, se vacía la copia en tu servidor de mensajes de Doddy. Los archivos exportados y las copias de seguridad anteriores no se ven afectados. También se elimina todo lo que Doddy aprendió de lo que dijiste, y los recuentos de lo que corregiste. Y las filas de notas y listas en Lo que Doddy ha hecho."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Esto elimina todas las notas, todas las listas con sus elementos, el índice de búsqueda y las notas sin terminar de este iPhone, y no se puede deshacer. Las listas que compartiste dejan de estar compartidas, así que las personas que invitaste también las pierden. Con Recuerdos en llamadas activado, se vacía la copia en tu servidor de mensajes de Doddy. Los archivos exportados y las copias de seguridad anteriores no se ven afectados. También se elimina todo lo que Doddy aprendió de lo que dijiste, y los recuentos de lo que corregiste. Y las filas de notas y listas en Lo que Doddy ha hecho."
-                }
-              }
-            }
-          }
-        },
-        "fr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Ceci retire de cet iPad chaque note, chaque liste avec ses éléments, l’index de recherche et toute note inachevée, et c’est impossible à annuler. Les listes que tu as partagées cessent de l’être, donc les personnes invitées les perdent aussi. Avec Mémoire pendant les appels activé, la copie sur ton serveur de messagerie Doddy est vidée. Les fichiers exportés et les sauvegardes plus anciennes ne sont pas concernés. Tout ce que Doddy a appris de ce que tu as dit, et les compteurs de ce que tu as corrigé, sont retirés aussi. De même que les lignes de notes et de listes dans Ce que Doddy a fait."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Ceci retire de cet iPhone chaque note, chaque liste avec ses éléments, l’index de recherche et toute note inachevée, et c’est impossible à annuler. Les listes que tu as partagées cessent de l’être, donc les personnes invitées les perdent aussi. Avec Mémoire pendant les appels activé, la copie sur ton serveur de messagerie Doddy est vidée. Les fichiers exportés et les sauvegardes plus anciennes ne sont pas concernés. Tout ce que Doddy a appris de ce que tu as dit, et les compteurs de ce que tu as corrigé, sont retirés aussi. De même que les lignes de notes et de listes dans Ce que Doddy a fait."
-                }
-              }
-            }
-          }
-        },
-        "hr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Ovo uklanja svaku bilješku, svaki popis s njegovim stavkama, indeks pretraživanja i sve nedovršene bilješke s ovog iPada i ne može se poništiti. Popisi koje dijeliš prestaju se dijeliti, pa ih gube i pozvane osobe. Kad je uključeno Pamćenje na pozivima, kopija na tvom Doddyjevu poslužitelju za poruke se prazni. Izvezene datoteke i starije sigurnosne kopije nisu zahvaćene. Uklanja se i sve što je Doddy naučio iz tvojih riječi te brojači tvojih ispravaka. Kao i redci bilješki i popisa u „Što je Doddy napravio“."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Ovo uklanja svaku bilješku, svaki popis s njegovim stavkama, indeks pretraživanja i sve nedovršene bilješke s ovog iPhonea i ne može se poništiti. Popisi koje dijeliš prestaju se dijeliti, pa ih gube i pozvane osobe. Kad je uključeno Pamćenje na pozivima, kopija na tvom Doddyjevu poslužitelju za poruke se prazni. Izvezene datoteke i starije sigurnosne kopije nisu zahvaćene. Uklanja se i sve što je Doddy naučio iz tvojih riječi te brojači tvojih ispravaka. Kao i redci bilješki i popisa u „Što je Doddy napravio“."
-                }
-              }
-            }
-          }
-        },
-        "it": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Questo rimuove da questo iPad ogni nota, ogni lista con le sue voci, l'indice di ricerca e le note non finite, e non si può annullare. Le liste che hai condiviso smettono di essere condivise, quindi anche le persone che hai invitato le perdono. Con Ricordi nelle chiamate attivo, la copia sul tuo server di messaggistica di Doddy viene svuotata. I file esportati e i backup precedenti non vengono toccati. Anche tutto ciò che Doddy ha imparato da quello che hai detto, e i conteggi di ciò che hai corretto, vengono rimossi. Così come le righe di note e liste in Cosa ha fatto Doddy."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Questo rimuove da questo iPhone ogni nota, ogni lista con le sue voci, l'indice di ricerca e le note non finite, e non si può annullare. Le liste che hai condiviso smettono di essere condivise, quindi anche le persone che hai invitato le perdono. Con Ricordi nelle chiamate attivo, la copia sul tuo server di messaggistica di Doddy viene svuotata. I file esportati e i backup precedenti non vengono toccati. Anche tutto ciò che Doddy ha imparato da quello che hai detto, e i conteggi di ciò che hai corretto, vengono rimossi. Così come le righe di note e liste in Cosa ha fatto Doddy."
-                }
-              }
-            }
-          }
-        },
-        "ja": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "このiPadから、すべてのメモ、すべてのリストとその項目、検索インデックス、未完成のメモを削除します。元に戻すことはできません。あなたが共有していたリストは共有されなくなり、招待した人もそのリストを失います。「通話中の記憶」がオンの場合、Doddyのメッセージサーバー上のコピーは空にされます。書き出したファイルや古いバックアップには影響しません。Doddyがあなたの発言から学んだことと、訂正の回数も削除されます。「Doddyがしたこと」のメモとリストの行も同様です。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "このiPhoneから、すべてのメモ、すべてのリストとその項目、検索インデックス、未完成のメモを削除します。元に戻すことはできません。あなたが共有していたリストは共有されなくなり、招待した人もそのリストを失います。「通話中の記憶」がオンの場合、Doddyのメッセージサーバー上のコピーは空にされます。書き出したファイルや古いバックアップには影響しません。Doddyがあなたの発言から学んだことと、訂正の回数も削除されます。「Doddyがしたこと」のメモとリストの行も同様です。"
+                  "value": "This removes everything Doddy keeps on this iPhone and can't be undone: notes and lists with their photos and voice memos, recordings, Messages, remembered conversations, what Doddy did and learned, your answers in About you, tasks and calls, the training log and plan, parcels, your inFakt key, files Doddy made, trips, your settings, and the alarms, timers and reminders Doddy set."
                 }
               }
             }
@@ -93193,49 +93307,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "To usuwa z tego iPada wszystkie notatki, wszystkie listy z ich pozycjami, indeks wyszukiwania i niedokończone notatki i nie da się tego cofnąć. Udostępnione przez Ciebie listy przestają być udostępniane, więc zaproszone osoby też je tracą. Gdy Pamięć w rozmowach telefonicznych jest włączona, kopia na serwerze wiadomości Doddy’ego zostaje opróżniona. Wyeksportowane pliki i starsze kopie zapasowe pozostają bez zmian. Wszystko, czego Doddy nauczył się z Twoich słów, oraz liczniki poprawek również zostają usunięte. Znikają też wiersze notatek i list w „Co zrobił Doddy”."
+                  "value": "To usuwa z tego iPada wszystko, co trzyma Doddy, i nie da się tego cofnąć: notatki i listy wraz ze zdjęciami i notatkami głosowymi, nagrania, Wiadomości, zapamiętane rozmowy, to, co Doddy zrobił i czego się nauczył, Twoje odpowiedzi w sekcji O Tobie, sprawy i rozmowy, dziennik i plan treningowy, paczki, Twój klucz inFakt, pliki zrobione przez Doddy’ego, wyjazdy, Twoje ustawienia oraz budziki, minutniki i przypomnienia ustawione przez Doddy’ego."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "To usuwa z tego iPhone’a wszystkie notatki, wszystkie listy z ich pozycjami, indeks wyszukiwania i niedokończone notatki i nie da się tego cofnąć. Udostępnione przez Ciebie listy przestają być udostępniane, więc zaproszone osoby też je tracą. Gdy Pamięć w rozmowach telefonicznych jest włączona, kopia na serwerze wiadomości Doddy’ego zostaje opróżniona. Wyeksportowane pliki i starsze kopie zapasowe pozostają bez zmian. Wszystko, czego Doddy nauczył się z Twoich słów, oraz liczniki poprawek również zostają usunięte. Znikają też wiersze notatek i list w „Co zrobił Doddy”."
-                }
-              }
-            }
-          }
-        },
-        "pt-BR": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Isto remove deste iPad todas as notas, todas as listas com seus itens, o índice de busca e qualquer nota inacabada, e não pode ser desfeito. As listas que você compartilhou deixam de ser compartilhadas, então as pessoas que você convidou também as perdem. Com Memória nas chamadas ativada, a cópia no seu servidor de mensagens do Doddy é esvaziada. Arquivos exportados e backups antigos não são afetados. Tudo o que o Doddy aprendeu do que você disse, e as contagens do que você corrigiu, também são removidos. Assim como as linhas de notas e listas em O que o Doddy fez."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Isto remove deste iPhone todas as notas, todas as listas com seus itens, o índice de busca e qualquer nota inacabada, e não pode ser desfeito. As listas que você compartilhou deixam de ser compartilhadas, então as pessoas que você convidou também as perdem. Com Memória nas chamadas ativada, a cópia no seu servidor de mensagens do Doddy é esvaziada. Arquivos exportados e backups antigos não são afetados. Tudo o que o Doddy aprendeu do que você disse, e as contagens do que você corrigiu, também são removidos. Assim como as linhas de notas e listas em O que o Doddy fez."
-                }
-              }
-            }
-          }
-        },
-        "zh-Hans": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "这会从这台 iPad 上移除所有笔记、所有清单及其项目、搜索索引和所有未完成的笔记，且无法撤销。你共享的清单会停止共享，所以你邀请的人也会失去它们。如果“通话记忆”已开启，你 Doddy 消息服务器上的副本会被清空。已导出的文件和较早的备份不受影响。Doddy 从你说的话中学到的所有内容，以及你修正过的计数，也会一并移除。“Doddy 做过的事”中的笔记和清单记录同样会被移除。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "这会从这台 iPhone 上移除所有笔记、所有清单及其项目、搜索索引和所有未完成的笔记，且无法撤销。你共享的清单会停止共享，所以你邀请的人也会失去它们。如果“通话记忆”已开启，你 Doddy 消息服务器上的副本会被清空。已导出的文件和较早的备份不受影响。Doddy 从你说的话中学到的所有内容，以及你修正过的计数，也会一并移除。“Doddy 做过的事”中的笔记和清单记录同样会被移除。"
+                  "value": "To usuwa z tego iPhone’a wszystko, co trzyma Doddy, i nie da się tego cofnąć: notatki i listy wraz ze zdjęciami i notatkami głosowymi, nagrania, Wiadomości, zapamiętane rozmowy, to, co Doddy zrobił i czego się nauczył, Twoje odpowiedzi w sekcji O Tobie, sprawy i rozmowy, dziennik i plan treningowy, paczki, Twój klucz inFakt, pliki zrobione przez Doddy’ego, wyjazdy, Twoje ustawienia oraz budziki, minutniki i przypomnienia ustawione przez Doddy’ego."
                 }
               }
             }
@@ -97955,6 +98033,17 @@
         }
       }
     },
+    "Unfinished notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niedokończone notatki"
+          }
+        }
+      }
+    },
     "Unlink": {
       "extractionState": "manual",
       "localizations": {
@@ -100138,6 +100227,17 @@
         }
       }
     },
+    "Voice memos on notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notatki głosowe przy notatkach"
+          }
+        }
+      }
+    },
     "Voice sign-in": {
       "extractionState": "manual",
       "localizations": {
@@ -101183,13 +101283,13 @@
         }
       }
     },
-    "What Doddy made in Studio stays on Doddy's server until you delete it in Studio.": {
+    "What Doddy learned": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "To, co Doddy przygotował w Studiu, zostaje na serwerze Doddy’ego, dopóki tego nie usuniesz w Studiu."
+            "value": "Czego Doddy się nauczył"
           }
         }
       }
@@ -103946,6 +104046,17 @@
         }
       }
     },
+    "Widgets and sharing": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Widżety i udostępnianie"
+          }
+        }
+      }
+    },
     "Widgets couldn't be updated, so they may show older notes or lists. Open the widget's note in Doddy to see what is saved.": {
       "extractionState": "manual",
       "localizations": {
@@ -106581,6 +106692,17 @@
         }
       }
     },
+    "You're still signed in to your Doddy account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nadal masz zalogowane konto Doddy’ego."
+          }
+        }
+      }
+    },
     "You've handed over as many tasks today as Doddy's server allows. Try again tomorrow. Nothing started.": {
       "extractionState": "manual",
       "localizations": {
@@ -106632,6 +106754,58 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twoje konto Doddy’ego"
+          }
+        }
+      }
+    },
+    "Your Doddy account is separate": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konto Doddy’ego to osobna sprawa"
+          }
+        }
+      }
+    },
+    "Your Doddy account was deleted and this iPhone is signed out.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Doddy account was deleted and this iPad is signed out."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Your Doddy account was deleted and this iPhone is signed out."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Konto Doddy’ego zostało usunięte, a ten iPad jest wylogowany."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Konto Doddy’ego zostało usunięte, a ten iPhone jest wylogowany."
+                }
+              }
+            }
           }
         }
       }
@@ -107371,47 +107545,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twój klucz inFakt"
-          }
-        }
-      }
-    },
-    "Your inFakt key couldn't be removed from this iPhone's Keychain. Remove it in Settings › Invoices (inFakt).": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Your inFakt key couldn't be removed from this iPad's Keychain. Remove it in Settings › Invoices (inFakt)."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Your inFakt key couldn't be removed from this iPhone's Keychain. Remove it in Settings › Invoices (inFakt)."
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Nie udało się usunąć Twojego klucza inFakt z pęku kluczy tego iPada. Usuń go w Ustawieniach › Faktury (inFakt)."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Nie udało się usunąć Twojego klucza inFakt z pęku kluczy tego iPhone’a. Usuń go w Ustawieniach › Faktury (inFakt)."
-                }
-              }
-            }
           }
         }
       }
@@ -108547,17 +108680,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Twoje własne słowa"
-          }
-        }
-      }
-    },
-    "Your parcel list and your inFakt key are removed too.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lista przesyłek i Twój klucz inFakt też zostaną usunięte."
           }
         }
       }
@@ -109987,6 +110109,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "iPhone może też raz zapytać. Możesz to wyłączyć w każdej chwili w Ustawieniach, w sekcji Połączenia."
+          }
+        }
+      }
+    },
+    "iPhone search": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyszukiwanie na iPhonie"
           }
         }
       }

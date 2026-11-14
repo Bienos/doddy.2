@@ -69,7 +69,7 @@ struct TrainingLogView: View {
                 PlanSafetyNote()
 
                 PlanSection(title: Text("What stays here")) {
-                    Text("The log stays on this iPhone, in its own file outside iCloud and backups. Nothing is sent to Doddy's server or to an AI. The notes' Delete all doesn't touch it; use Delete my training log below.")
+                    Text("The log stays on this iPhone, in its own file outside iCloud and backups. Nothing is sent to Doddy's server or to an AI. Erasing everything on this iPhone removes it too; or use Delete my training log below.")
                 }
             }
             .padding(24)

@@ -143,6 +143,10 @@ struct MessagesView: View {
         .onReceive(NotificationCenter.default.publisher(for: ThreadInbox.delivered)) { note in
             if let message = note.object as? ThreadMessage { model.receive(message) }
         }
+        // The thread was erased on this iPhone: what this screen holds in memory goes too.
+        .onReceive(NotificationCenter.default.publisher(for: ThreadInbox.erased)) { _ in
+            model.threadWasErased()
+        }
         // Only once Ask Doddy is on: opening Messages with it off makes no call to Doddy's server.
         // The files list belongs to the person (their own session, as the Files sheet reads it), so it doesn't wait for
         // Ask Doddy. It keeps looking while Messages is open: a file takes a minute or two to make.

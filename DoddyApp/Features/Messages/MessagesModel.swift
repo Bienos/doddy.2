@@ -336,6 +336,19 @@ final class MessagesModel {
         await deleteWebCopy()
     }
 
+    /// The thread was erased from this iPhone by "Erase everything on this iPhone", which already emptied the store and read
+    /// it back. This only empties what the screen holds, so a later change can't send the erased messages to the web copy.
+    func threadWasErased() {
+        syncTask?.cancel()
+        invalidateLocalActions()
+        messages = []
+        proposals = [:]
+        planAsks = [:]
+        error = nil
+        makeFailure = nil
+        deleteFailed = false
+    }
+
     /// Deletes the web copy. No session for the server means there is no copy to delete.
     func deleteWebCopy() async {
         guard let sync else { return }

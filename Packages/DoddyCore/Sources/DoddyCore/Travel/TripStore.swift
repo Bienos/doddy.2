@@ -54,6 +54,12 @@ public struct TripStore: Sendable {
     public func save(_ trips: SavedTrips) throws(Failure) -> SavedTrips {
         do {
             try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            // Bookings found in email are Doddy's own work, not something the person saved to keep: the folder is kept
+            // out of iPhone backups (backup rule, docs/architecture/DEVICE_DATA_STORES.md).
+            var folder = fileURL.deletingLastPathComponent()
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = true
+            try? folder.setResourceValues(values)
             var options: Data.WritingOptions = [.atomic]
             #if os(iOS)
             options.insert(.completeFileProtectionUntilFirstUserAuthentication)

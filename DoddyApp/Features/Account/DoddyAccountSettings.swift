@@ -37,6 +37,8 @@ struct DoddyAccountSettingsSection: View {
 
 /// The account page: who is signed in and Sign out, then, apart and at the bottom, deleting the account.
 struct DoddyAccountView: View {
+    @Environment(MemoryStore.self) private var store
+    @Environment(ProfileStore.self) private var profiles
     @State private var account = DoddyAccountModel.shared
     @State private var confirmSignOut = false
     @State private var confirmDelete = false
@@ -97,9 +99,22 @@ struct DoddyAccountView: View {
                     deleting = false
                 }
             }
+            // Offered together with the deletion: once every server confirmed it, everything Doddy kept on this iPhone is
+            // erased too (`EraseThisIPhone`). A deletion that isn't confirmed erases nothing.
+            Button("Delete my account and erase this iPhone", role: .destructive) {
+                Task {
+                    deleting = true
+                    let store = store
+                    let profiles = profiles
+                    await DoddyAccountServers.deleteAccount(thenErase: {
+                        await EraseThisIPhone.lineAfterAccountDeleted(store: store, profiles: profiles)
+                    })
+                    deleting = false
+                }
+            }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Doddy's server deletes what it keeps for you, your messaging data and your sign-in, and disconnects your online accounts. Notes on this iPhone stay.")
+            Text("Doddy's server deletes what it keeps for you, your messaging data and your sign-in, and disconnects your online accounts. Notes and everything else on this iPhone stay, unless you also erase this iPhone.")
         }
     }
 }

@@ -10,6 +10,10 @@ enum ThreadInbox {
     /// Posted with the saved `ThreadMessage` as the object.
     static let delivered = Notification.Name("ThreadInbox.delivered")
 
+    /// Posted when the whole thread was erased from this iPhone ("Erase everything on this iPhone"). An open Messages screen
+    /// empties what it holds in memory, so it can't show, or send to the web copy, what was just erased.
+    static let erased = Notification.Name("ThreadInbox.erased")
+
     private static var repository: any MessageThreadRepository { AppEnvironment.shared.messageThreadRepository }
 
     /// True while the Messages screen is on screen (set by `MessagesView`): a result then shows there, with no notice.
