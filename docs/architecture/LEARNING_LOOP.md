@@ -54,6 +54,12 @@ Rules the code enforces at each arrow:
 ### 4.1 Facts
 - **Phase B/C proposer: rules on the device**, the existing `SaveSuggestions` reasons (`personalFact`, `preference`, `plan`, `dateOrNumber`, `recommendation`) extended with a `routine` detector: the same tool with the same parameters on three or more days within 30 days (from outcome events + activity log request keys, never from note text). Only the user's own transcribed sentences are used, never Doddy's lines or tool results (ADR-247 rule, kept).
 - **Later proposer: the model**, only through `AssistantClient`, returning a `LearningProposal` JSON block that is parsed into the same typed struct and goes through the same `LearningPolicy`. The model never gets to mark anything confirmed, and its proposal text is validated for length and the sensitive filter exactly like a rule proposal. Not part of Phase B.
+- **Quiet memory (decision `2026-11-14-quiet-memory`, step 1 built, not yet called by the app):**
+  - `LearningService.keepQuietlyAfterConversation` keeps every `preference` and `personalFact` sentence as a confirmed fact, without a card. It needs learning on and the person's own yes to quiet memory (`LearningMoment.keepsQuietly`).
+  - It uses the same `LearningPolicy` checks as a card, keeps at most 3 per conversation and 10 per day (`LearningLimits.quietPerConversation`, `quietPerDay`), and reads each fact back.
+  - Each fact is marked `LearningProvenance.keptQuietly`. That field is written only when true, so older rows are unchanged.
+  - With quiet memory on, `proposeAfterConversation` no longer proposes a fact card; routine cards are unchanged.
+  - Tests: `QuietMemoryTests` (SQLite), `QuietMemoryRulesTests`.
 
 ### 4.2 Procedures
 A procedure is proposed when the outcome events show the **same ordered sequence of two to five allowed tools** (`PlanTool.allowed`, the ADR-204 allowlist, nothing wider) completed on three or more separate days within 30 days. The proposal names the steps, which parameters are fixed (identical every time, e.g. the alarm time) and which are **asked** (differed every time, e.g. the reminder title). The user names the trigger on the card; Doddy suggests one from the first user sentence of the most recent episode.
