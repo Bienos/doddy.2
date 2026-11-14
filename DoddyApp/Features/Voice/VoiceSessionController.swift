@@ -1015,6 +1015,9 @@ final class VoiceSessionController {
         earlyToken: Task<Result<String, VoiceTokenError>, Never>?
     ) async {
         let auth: ElevenLabsConfiguration
+        // The account-derived user id the voice server sent with the token, when it sent one (decision
+        // 2026-11-12-voice-conversations-per-account). Deleting the account finds the conversations by it.
+        var accountUserID: String?
         switch mode {
         case .tokenServer(let endpoint):
             let fetched: Result<String, VoiceTokenError>
@@ -1036,6 +1039,7 @@ final class VoiceSessionController {
             switch fetched {
             case .success(let token):
                 auth = .conversationToken(token)
+                accountUserID = VoiceTokenUserIDs.shared.take(forToken: token)
             case .failure(let error):
                 let tokenNote = "voice token not received: attempt \(attempt), \(LogSafeError.kind(of: error))"
                 Self.audioLog.notice("\(tokenNote, privacy: .public)")
@@ -1061,7 +1065,13 @@ final class VoiceSessionController {
         let sessionNote = audioHold == nil ? "set up by LiveKit" : "held by Doddy: \(Self.describeAudioSession())"
         let connectNote = "connecting to ElevenLabs: attempt \(attempt), audio session \(sessionNote)"
         Self.audioLog.notice("\(connectNote, privacy: .public)")
-        let startConfig = config
+        // This iPhone's own id, unless the server sent an account id this app accepts (`VoiceUserIDPolicy`). A `let`:
+        // the start below captures it in a concurrent closure.
+        let startConfig: ConversationConfig = {
+            var withUser = config
+            if let accountID = VoiceUserIDPolicy.accepted(accountUserID) { withUser.userId = accountID }
+            return withUser
+        }()
         do {
             // At most `StartLimit.seconds` (ADR-686). One that connects after the limit anyway is
             // ended here, so nothing keeps listening.
@@ -1402,7 +1412,7 @@ final class VoiceSessionController {
         let recapLines = kept.map { RecapModelIO.Line(speaker: $0.fromUser ? .person : .doddy, text: $0.text) }
         let memories = store
         Task { await RecapKeeper.recapConversation(lines: recapLines, startedAt: log.startedAt, endedAt: log.endedAt,
-                                                   isPrivate: isPrivate, store: memories) }
+                                                   isPrivate: isPrivate, conversationID: log.id, store: memories) }
         guard ConversationRetention.shouldKeep(rememberRecent: logs.isEnabled, isPrivate: isPrivate, lineCount: lines.count) else { return }
         logs.append(log)
     }
@@ -2967,10 +2977,13 @@ final class VoiceSessionController {
                 return
             }
             do {
-                let outcome = PrivateNotesStore.current().shareable(try await store.recall(query))
+                let recall = ShareableRecallService(base: store.environment.recallService) { PrivateNotesStore.current().ids }
+                let outcome = try await recall.recall(query, limit: 20)
                 // No word matched: the newest notes too, e.g. one saved during this call.
                 let newest = outcome == .noMatch ? await store.newestNotesForVoice(excluding: PrivateNotesStore.current().ids) : .none
-                await reply(call.toolCallId, VoiceToolReply.search(outcome, question: query, newest: newest))
+                let currentPrivacy = PrivateNotesStore.current()
+                let shareableNewest = NewestNotes.pick(newest.notes, excluding: currentPrivacy.ids, withPhoto: newest.withPhoto)
+                await reply(call.toolCallId, VoiceToolReply.search(currentPrivacy.shareable(outcome), question: query, newest: shareableNewest))
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
@@ -4253,6 +4266,11 @@ final class VoiceSessionController {
             await reply(toolCallID, VoiceToolReply.callTaskBookingOff)
             return
         }
+        // Ordering food needs the order agent on the server (decision 2026-11-12-food-by-phone).
+        if draft.order != nil, availability.order != true {
+            await reply(toolCallID, VoiceToolReply.callTaskOrderOff)
+            return
+        }
         guard !callerFirstName.isEmpty else {
             await reply(toolCallID, VoiceToolReply.callTaskNoName)
             return
@@ -4280,7 +4298,7 @@ final class VoiceSessionController {
         guard approval.state != "unknown" else { return (VoiceToolReply.callTaskUnknown, true) }
         let first = preview.places.first?.callee.name ?? ""
         return (VoiceToolReply.callTaskStarted(first: first, count: preview.places.count, textResult: preview.textResult,
-                                               booking: preview.isBooking), true)
+                                               booking: preview.isBooking, order: preview.isOrder), true)
     }
 
     // MARK: Calls from Doddy's number later (ADR-754)

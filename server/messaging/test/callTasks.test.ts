@@ -197,6 +197,18 @@ describe("call tasks", { skip: dbSkip }, () => {
     await s.app.close();
   });
 
+  test("the place's name, as a search result gave it, and its quoted words carry no link, whatever the address ends in", async () => {
+    const s = await setup();
+    const created = await s.api("POST", "/v1/call-tasks", task([{ name: "Osteria Due www.osteria-due.example/promo", phone: dest() }]));
+    assert.equal(created.statusCode, 201, created.body);
+    const p = created.json();
+    await s.api("POST", `/v1/call-tasks/${p.taskId}/approve`, { digest: p.digest });
+    await answers(s, p.places[0].caseId, "Tak, mamy stolik, rezerwacja na goo.gl/abc albo evil.de/x. Zadzwoń, tel:+48600123456.", "conv_t_links2");
+    assert.deepEqual(await texts(s, p.taskId),
+      ["Doddy: Osteria Due … odpowiada: „Tak, mamy stolik, rezerwacja na … albo …. Zadzwoń, ….”. Szczegóły w aplikacji Doddy."]);
+    await s.app.close();
+  });
+
   test("a place that doesn't pick up is skipped; when nobody says yes the text says so", async () => {
     const s = await setup();
     const places = [{ name: "Uno", phone: dest() }, { name: "Due", phone: dest() }];

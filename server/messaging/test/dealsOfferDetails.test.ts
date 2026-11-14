@@ -115,6 +115,7 @@ describe("the reader's new conditions and promotions without a price", () => {
       chain: "biedronka", text: "Persil, wszystkie proszki i kapsułki do prania", mechanic: "1+1",
       conditions: ["z aplikacją Moja Biedronka", "max 2 szt."], flags: ["app"], validFrom: "2026-10-22", validTo: "2026-10-26",
       source: { url: BIEDRONKA_PRESS, page: 3 },
+      leafletRead: { readAt: "2026-10-24T06:10:00.000Z", validFrom: "2026-10-22", complete: true },
     }]);
     assert.ok(!JSON.stringify(response.items[0]!.promotions).match(/\d+,\d{2}/), "no price anywhere in a promotion");
   });

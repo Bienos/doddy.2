@@ -6,10 +6,11 @@ import { saveNoteIn } from "./inbox.js";
 import { log } from "./log.js";
 import { canPush, enqueue } from "./outbox.js";
 
-// Texts the user sends to Doddy's number (ADR-750 unit U3, ADR-753). Only the user's own verified number gets
-// through, and only with "Texts to Doddy" on (off by default, with its own consent wording); everyone else is
-// dropped without a reply and nothing about them is stored. A text becomes a note in the inbox, encrypted, that
-// waits for the user's confirmation. It gets NO reply: no model reads it, nothing from memory is put in a text,
+// Texts the user sends to Doddy's number (ADR-750 unit U3, ADR-753). Only a text that says it comes from the user's own
+// verified number gets through (the sender number can't be proven here, so this is a filter, not proof of who wrote
+// it; that is why the note below waits for the user), and only with "Texts to Doddy" on (off by default, with its own
+// consent wording); everyone else is dropped without a reply and nothing about them is stored. A text becomes a note
+// in the inbox, encrypted, that waits for the user's confirmation. It gets NO reply: no model reads it, nothing from memory is put in a text,
 // and the text is data, never an instruction. An answer by text is the separate "Text with Doddy" (ADR-656,
 // smsChat.ts, its own consent). The webhook gives a text to exactly one of the two, never both: see
 // routes/twilioWebhooks.ts. Doddy's old branch also had Claude write replies with a note and a memory tool; that

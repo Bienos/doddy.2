@@ -8,6 +8,7 @@ import { ElevenLabsTaskClient, TwilioCallClient } from "./taskCalls.js";
 import { GNewsSearch, HttpFeedSource } from "../news/sources.js";
 import { callsAvailable } from "../routes/twilioVoice.js";
 import { ClaudeDigestWriter, OpenAIDigestWriter } from "../news/writer.js";
+import { ClaudeArticleSummarizer, SummaryCache } from "../news/summary.js";
 import type { TaskCallDeps } from "../taskCalls/context.js";
 import { ClaudeBriefDrafter } from "../taskCalls/drafter.js";
 import { ClaudeResultWriter } from "../taskCalls/writer.js";
@@ -175,6 +176,8 @@ export function providersFrom(config: Config) {
     // ADR-685: CEIDG only with the owner's token; the route answers 503 registry_disabled otherwise.
     ceidg: config.ceidg ? new CeidgClient(config.ceidg) : undefined,
     watches,
+    // Deal watches (decision 2026-11-13-leaflet-results-and-deal-watches): checked against the leaflet catalog, in code.
+    dealWatches: { settings: config.dealWatchSettings },
     // Uber Direct (decision 2026-11-12-uber-direct-deliveries): only when enabled and configured.
     deliveries: config.uberDirect
       ? { provider: new UberDirectClient(config.uberDirect), mode: config.uberDirect.mode, limits: config.uberDirect.limits }
@@ -200,6 +203,17 @@ export function providersFrom(config: Config) {
       writer: config.anthropicApiKey ? new ClaudeDigestWriter(config.anthropicApiKey)
         : config.openaiApiKey ? new OpenAIDigestWriter(config.openaiApiKey, { model: config.openaiModel })
         : undefined,
+      // Article summaries for On my radar (POST /v1/news/summary): Claude only, with the switch on (NEWS_SUMMARY_ENABLED,
+      // default 0) and an Anthropic key; the page is read by the same polite fetcher (robots.txt, the AI-input content
+      // signal). One in-memory cache for the process.
+      summary: {
+        settings: config.newsSummarySettings,
+        summarizer: config.newsSummarySettings.enabled && config.anthropicApiKey
+          ? new ClaudeArticleSummarizer(config.anthropicApiKey, { model: config.newsSummarySettings.model })
+          : undefined,
+        fetcher,
+        cache: new SummaryCache(),
+      },
     },
   };
 }

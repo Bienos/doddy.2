@@ -88,7 +88,7 @@ if [ -f Config/Package.resolved ]; then
   echo "ci_post_clone: pinned package versions installed"
 fi
 
-# 2. One build number for the app, the widgets and the share extension: Xcode Cloud's.
+# 2. One build number for the app and all its extensions: Xcode Cloud's.
 if [ -n "${CI_BUILD_NUMBER:-}" ]; then
   case $CI_BUILD_NUMBER in
     *[!0-9]*) echo "ci_post_clone: CI_BUILD_NUMBER '$CI_BUILD_NUMBER' isn't a whole number" >&2; exit 1 ;;

@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { after, before, describe, test } from "node:test";
 import {
   CATALOG_CHAINS, catalogPageKey, catalogPages, DbCatalogStore, DbPageReadStore, materialFromSnapshot, MAX_PAGE_ATTEMPTS, runCatalogPass,
-  scanChain, type CatalogPageRead, type CatalogStore, type ChainSnapshot, type PageReadStore, type StoredPageRead,
+  scanChain, type CatalogPageRead, type CatalogStore, type ChainSnapshot, type MissingWhy, type PageReadStore, type StoredPageRead,
 } from "../src/deals/catalog.js";
 import type { FetchResult, PageFetcher } from "../src/deals/fetcher.js";
 import { searchDeals, type DealsDeps } from "../src/deals/service.js";
@@ -74,11 +74,15 @@ class MemoryPageReads implements PageReadStore {
     for (const k of keys) { const r = this.rows.get(`${chain}|${k}`); if (r) out.set(k, r); }
     return out;
   }
-  async putOk(chain: ReadChain, key: string, read: CatalogPageRead) { this.rows.set(`${chain}|${key}`, { kind: "ok", read }); }
-  async putFailed(chain: ReadChain, key: string) {
+  // As the database's: the read without its time, and the time the row was written.
+  async putOk(chain: ReadChain, key: string, read: CatalogPageRead) {
+    const { readAt: _at, ...kept } = read;
+    this.rows.set(`${chain}|${key}`, { kind: "ok", read: kept, readAt: NOW.toISOString() });
+  }
+  async putFailed(chain: ReadChain, key: string, failure?: MissingWhy) {
     const held = this.rows.get(`${chain}|${key}`);
     if (held?.kind === "ok") return;
-    this.rows.set(`${chain}|${key}`, { kind: "failed", attempts: (held?.attempts ?? 0) + 1 });
+    this.rows.set(`${chain}|${key}`, { kind: "failed", attempts: (held?.attempts ?? 0) + 1, ...(failure ? { failure } : {}) });
   }
 }
 
@@ -263,11 +267,14 @@ describe("a snapshot in a search", () => {
     assert.equal(model.reads.length, 0, "no page read for the search");
     assert.equal(stats.fromCatalog, 1);
     assert.equal(stats.pagesRead, 0);
-    assert.deepEqual(response.chains, [{ chain: "biedronka", status: "checked", leaflet: s.leaflets[0]!.leaflet }]);
+    // 13 Nov 2026: the row says when the catalog read the chain and that it read all of it.
+    assert.deepEqual(response.chains, [{ chain: "biedronka", status: "checked", leaflet: s.leaflets[0]!.leaflet, readAt: s.scannedAt, complete: true }]);
     const butter = response.items[0]!.offers[0]!;
     assert.equal(butter.product, "Masło Extra 82%");
     assert.equal(butter.price.minor, 499);
     assert.equal(butter.readBy, "page_image");
+    assert.equal(butter.match, "exact");
+    assert.deepEqual(butter.leafletRead, { readAt: NOW.toISOString(), validFrom: "2026-11-10", validTo: "2026-11-16", complete: true });
     assert.equal(response.items[1]!.offers[0]?.product, "Słuchawki bezprzewodowe douszne");
   });
 
@@ -347,6 +354,13 @@ describe("the catalog in the database", { skip: dbSkip }, () => {
     assert.deepEqual((await store.get("dino", [key])).get(key), { kind: "failed", attempts: 2 });
     await store.putOk("dino", key, { products: [], promotions: [] });
     await store.putFailed("dino", key);
-    assert.deepEqual((await store.get("dino", [key])).get(key), { kind: "ok", read: { products: [], promotions: [] } });
+    const ok = (await store.get("dino", [key])).get(key);
+    assert.ok(ok?.kind === "ok");
+    assert.deepEqual(ok.read, { products: [], promotions: [] });
+    assert.match(ok.readAt ?? "", /^\d{4}-\d{2}-\d{2}T/, "an ok read carries when it was read");
+    // 13 Nov 2026: a failure keeps why, so a snapshot can say which pages are missing and why.
+    const other = "fedcba9876543210fedcba9876543210";
+    await store.putFailed("dino", other, "image_too_large");
+    assert.deepEqual((await store.get("dino", [other])).get(other), { kind: "failed", attempts: 1, failure: "image_too_large" });
   });
 });

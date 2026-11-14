@@ -198,14 +198,29 @@ test("leaflets (ADR-609, 662): off by default, Haiku 5.5 reads pages, 40 pages p
   assert.deepEqual(c.dealsSettings, {
     enabled: false, visionModel: "claude-haiku-5-5", maxPages: 40, screenPages: 120, dailyPerAccount: 30, dailyPerServer: 1000,
     dailyForNewAccounts: 200, newAccountHours: 24,
-    // The leaflet catalog (decision 2026-11-12-leaflet-catalog): off by default; a scan every 6 hours, 160 pages a chain.
-    catalog: { enabled: false, everyHours: 6, maxPagesPerChain: 160 },
+    // The leaflet catalog (decision 2026-11-12-leaflet-catalog): off by default; a scan every 6 hours, 160 pages a chain;
+    // since 13 Nov 2026 at most 1.5 million tokens a chain and 6 million in all a day.
+    catalog: { enabled: false, everyHours: 6, maxPagesPerChain: 160, dailyTokensPerChain: 1_500_000, dailyTokens: 6_000_000 },
   });
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_ENABLED: "1" }).dealsSettings.enabled, true);
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_CATALOG_ENABLED: "1" }).dealsSettings.catalog?.enabled, true);
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_SCREEN_PAGES: "0" }).dealsSettings.screenPages, 0, "0 turns screening off");
+  const budget = loadConfig({ DATABASE_URL: "postgres://x/y", DEALS_CATALOG_DAILY_TOKENS_PER_CHAIN: "0", DEALS_CATALOG_DAILY_TOKENS: "2000000" }).dealsSettings.catalog;
+  assert.deepEqual([budget?.dailyTokensPerChain, budget?.dailyTokens], [0, 2_000_000], "0 reads no new page");
   for (const bad of [{ DEALS_ENABLED: "yes" }, { DEALS_MAX_PAGES: "101" }, { DEALS_SCREEN_PAGES: "201" }, { DEALS_DAILY_PER_ACCOUNT: "0" }, { DEALS_VISION_MODEL: "Claude Haiku" },
-    { DEALS_CATALOG_ENABLED: "yes" }, { DEALS_CATALOG_EVERY_HOURS: "0" }, { DEALS_CATALOG_MAX_PAGES: "401" }]) {
+    { DEALS_CATALOG_ENABLED: "yes" }, { DEALS_CATALOG_EVERY_HOURS: "0" }, { DEALS_CATALOG_MAX_PAGES: "401" },
+    { DEALS_CATALOG_DAILY_TOKENS_PER_CHAIN: "-1" }, { DEALS_CATALOG_DAILY_TOKENS: "many" }]) {
+    assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
+  }
+});
+
+test("deal watches (13 Nov 2026): off by default, 10 an account, 5000 for the server, 3 pushes a day, 60 days; limits are validated", () => {
+  const c = loadConfig({ DATABASE_URL: "postgres://x/y", DEAL_WATCHES_ENABLED: "" });
+  assert.deepEqual(c.dealWatchSettings, { enabled: false, maxPerAccount: 10, maxPerServer: 5000, pushesPerDay: 3, days: 60 });
+  assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEAL_WATCHES_ENABLED: "1" }).dealWatchSettings.enabled, true);
+  assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", DEAL_WATCHES_PUSHES_PER_DAY: "0" }).dealWatchSettings.pushesPerDay, 0, "0: in the app only");
+  for (const bad of [{ DEAL_WATCHES_ENABLED: "true" }, { DEAL_WATCHES_MAX_PER_ACCOUNT: "0" }, { DEAL_WATCHES_MAX_PER_ACCOUNT: "51" },
+    { DEAL_WATCHES_PUSHES_PER_DAY: "21" }, { DEAL_WATCHES_DAYS: "0" }, { DEAL_WATCHES_MAX_PER_SERVER: "0" }]) {
     assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", ...bad }), JSON.stringify(bad));
   }
 });

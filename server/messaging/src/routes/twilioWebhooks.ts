@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
+import { clearContactOptOut, recordContactOptOut } from "../contactTexts.js";
 import type { Deps } from "../app.js";
 import { abuseLimits } from "../config.js";
 import { inTransaction } from "../db.js";
@@ -27,7 +28,9 @@ export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (ap
   const smsChatLog = deps.smsChatLog ?? ((msg: string, extra: object = {}) => app.log.info(extra, msg));
 
   // Inbound SMS. STOP / START / HELP change state only; Twilio's Advanced Opt-Out sends the confirmation replies.
-  // Any other text goes to exactly one handler, never both, and only for the user's own verified number:
+  // Any other text goes to exactly one handler, never both, and only for a text that names the user's own verified number
+  // as its sender (the sender number can't be proven here, so what a handler does with a text is limited instead: a
+  // note that waits for the user, or an answer that carries no link):
   //  1. "Texts to Doddy" (ADR-753, off by default): the text becomes a note in the inbox, with no reply.
   //  2. Otherwise "Text with Doddy" (ADR-656, off by default, smsChat.ts): one answer by text, queued for the worker.
   // From anyone else the text is dropped: no reply, nothing stored. The answer to Twilio is always empty TwiML.
@@ -46,10 +49,13 @@ export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (ap
           `UPDATE phone_numbers SET sms_opted_out_at = now(), updated_at = now()
            WHERE e164 = $1 RETURNING account_id`, [from]);
         for (const r of rows) await cancelQueuedSms(c, r.account_id);
+        // Any number can answer STOP to a text sent to it as someone's contact (decision 2026-11-09-texts-to-contacts).
+        if (/^\+[1-9][0-9]{7,14}$/.test(from)) await recordContactOptOut(c, deps.cipher, from);
       });
     } else if (kind === "opt_in") {
       await db.query(
         "UPDATE phone_numbers SET sms_opted_out_at = NULL, updated_at = now() WHERE e164 = $1", [from]);
+      await clearContactOptOut(db, deps.cipher, from);
     } else if (kind === "other") {
       const kept = await receiveText(deps, { from, sid, body });
       if (kept === "dropped") {

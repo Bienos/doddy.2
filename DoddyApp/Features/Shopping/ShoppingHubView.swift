@@ -24,6 +24,9 @@ struct ShoppingHubView: View {
     @Environment(MemoryStore.self) private var store
     private let model = ErrandsModel.shared
     private let watches = WatchModel.shared
+    /// Price alerts (decision 2026-11-14-price-alerts-screen): the row shows only once the server says they are on.
+    private let priceAlerts = PriceAlertsModel.shared
+    @State private var showPriceAlerts = false
     @State private var words = ""
     /// The person's own pick of where the words go; nil lets the code decide.
     @State private var place: ShoppingRoute.Place?
@@ -74,6 +77,13 @@ struct ShoppingHubView: View {
                         OnlineNextCard(things: moreOnline, priorities: moreOnlinePriorities)
                         if !shoppingTasks.isEmpty { searches }
                     }
+                    // Shops by kind (decision 2026-11-13-shopping-by-kind): groceries, fashion, electronics, home, other.
+                    if scope.shows(.errands) || scope.shows(.deals) {
+                        ShopKindsSection()
+                    }
+                    if scope.shows(.deals), priceAlerts.availability == .available {
+                        PriceAlertsRow { showPriceAlerts = true }
+                    }
                     if scope.shows(.priceWatch) {
                         checkThisCard.id(Self.checkThisCardID)
                         WatchesSection()
@@ -105,10 +115,20 @@ struct ShoppingHubView: View {
             }
             .sheet(isPresented: $showShopify) { ShopifyLiveShoppingView() }
             .sheet(item: $watchPage) { WatchCard(page: $0) }
+            .sheet(isPresented: $showPriceAlerts) { PriceAlertsView() }
             .refreshable { await reload() }
             .task {
                 await model.load()
                 await reload()
+            }
+            // Whether the server keeps price alerts (it says so by answering the list): the row waits for that.
+            .task { await priceAlerts.refresh() }
+            // A price-alert push, tapped (decision 2026-11-14-price-alerts-screen): the alerts open, where what each found is.
+            .onChange(of: router.isPriceAlertsRequested, initial: true) { _, requested in
+                guard requested else { return }
+                router.isPriceAlertsRequested = false
+                guard scope.shows(.deals) else { return }
+                showPriceAlerts = true
             }
             // A product link shared from Safari or a shop app with "Check the price": it fills the "Check this" card and
             // the screen scrolls there. The card still asks for a tap before anything is read or sent.

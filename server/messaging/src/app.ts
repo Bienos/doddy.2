@@ -43,6 +43,9 @@ import type { AssistantDeps } from "./assistant/deps.js";
 import type { PhoneRecapDeps } from "./phoneRecaps.js";
 import { phoneRecapRoutes } from "./routes/phoneRecaps.js";
 import { watchRoutes } from "./routes/watches.js";
+import { dealWatchRoutes } from "./routes/dealWatches.js";
+import { dealWatchContextFor, type DealWatchContext } from "./deals/dealWatches.js";
+import type { DealWatchSettings } from "./config.js";
 import { deliveryRoutes } from "./routes/deliveries.js";
 import type { DeliveryDeps } from "./delivery/deliveries.js";
 import { watchContext, type WatchContext, type WatchDeps } from "./watches/context.js";
@@ -59,6 +62,8 @@ declare module "fastify" {
     fileWatchContext: FileWatchContext | null;
     /** The price-watch context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
     watchContext: WatchContext | null;
+    /** The deal-watch context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run its checks on it. */
+    dealWatchContext: DealWatchContext | null;
   }
 }
 
@@ -123,8 +128,13 @@ export interface Deps {
   phoneRecaps?: PhoneRecapDeps;
   /** Price watches (shopping stage 2, SHOPPING_WATCH.md): settings and the polite fetcher. Needs `cipher` too. */
   watches?: WatchDeps;
+  /** Deal watches against the leaflet catalog (decision 2026-11-13-leaflet-results-and-deal-watches). Needs `cipher` and the
+   * catalog on (`deals.settings.catalog.enabled`). `now`: a fixed clock for tests. */
+  dealWatches?: { settings: DealWatchSettings; now?: () => Date };
   /** Deliveries through Uber Direct (decision 2026-11-12-uber-direct-deliveries): off unless configured and enabled. Needs `cipher` too. */
   deliveries?: DeliveryDeps;
+  /** Texts to the user's contacts (decision 2026-11-09-texts-to-contacts). Off unless true; needs `sms` and `cipher` too. */
+  contactTexts?: boolean;
   /** Where price-watch log lines go (tests capture them); default: the request logger. */
   watchLog?: (msg: string, extra?: object) => void;
   /** Where texting-Doddy log lines go (tests capture them); default: the request logger. */
@@ -249,6 +259,8 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const watchCtx = watchContext(deps.db, deps.watches, deps.cipher, deps.push,
     deps.watchLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
   app.decorate("watchContext", watchCtx ?? null);
+  const dealWatchCtx = dealWatchContextFor(deps, deps.watchLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
+  app.decorate("dealWatchContext", dealWatchCtx ?? null);
 
   await app.register(accountRoutes(deps, taskCtx));
   await app.register(phoneRoutes(deps));
@@ -274,6 +286,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(registryRoutes(deps));
   await app.register(jakdojadeRoutes(deps));
   await app.register(watchRoutes(deps, watchCtx));
+  await app.register(dealWatchRoutes(deps, dealWatchCtx));
   await app.register(deliveryRoutes(deps));
   return app;
 }

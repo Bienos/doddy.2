@@ -197,4 +197,108 @@ final class CallTaskTests: XCTestCase {
         XCTAssertEqual(preview.places.first?.booking?.partySize, 2)
         XCTAssertTrue(preview.places.first?.confirmLine?.hasPrefix("Dobrze, proszę o rezerwację") == true)
     }
+
+    // MARK: Order (decision docs/decisions/2026-11-12-food-by-phone.md)
+
+    private func order(_ extra: [String: Any] = [:]) -> [String: Any] {
+        var a = args(names: ["Pizzeria Roma"], phones: ["22 123 45 67"], extra: [
+            "order_name": "Anna Kowalska",
+            "order_item_names": ["pizza margherita", "cola"],
+            "order_item_quantities": [2, 1],
+            "order_item_notes": ["bez cebuli", ""],
+            "order_street": "ul. Długa 5", "order_apartment": "12",
+            "order_postcode": "00-001", "order_city": "Warszawa", "order_phone": "+48 600 000 000",
+        ])
+        a["question"] = nil
+        return a.merging(extra) { $1 }
+    }
+
+    func testADeliveryOrderCarriesItsDetailsAndNoQuestion() throws {
+        guard case .callPlaces(let draft) = try parse(order()) else { return XCTFail("parsed") }
+        let expected = CallTaskOrder(
+            name: "Anna Kowalska",
+            lines: [.init(quantity: 2, name: "pizza margherita", note: "bez cebuli"), .init(quantity: 1, name: "cola")],
+            delivery: .init(street: "ul. Długa 5", apartment: "12", postcode: "00-001", city: "Warszawa", phone: "+48 600 000 000"))
+        XCTAssertEqual(draft.order, expected)
+        XCTAssertEqual(draft.order?.maxTotalPln, 150)
+        XCTAssertEqual(draft.question, "")
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(draft.body(principalName: "Anna"))) as? [String: Any])
+        XCTAssertEqual(Set(json.keys), ["kind", "places", "principal", "goal", "order", "facts", "maxDurationSecs", "textResult"])
+        XCTAssertEqual(json["kind"] as? String, "order")
+        let sent = try XCTUnwrap(json["order"] as? [String: Any])
+        XCTAssertNil(sent["pickup"], "nil fields are left out, as the strict schema needs")
+        XCTAssertEqual(sent["maxTotalPln"] as? Int, 150)
+    }
+
+    func testAPickupOrderHasNoAddressAndTheCapCanBeSet() throws {
+        var a = order(["order_pickup": true, "order_max_total_pln": 80])
+        for k in ["order_street", "order_apartment", "order_postcode", "order_city", "order_phone"] { a[k] = nil }
+        guard case .callPlaces(let draft) = try parse(a) else { return XCTFail("parsed") }
+        XCTAssertNil(draft.order?.delivery)
+        XCTAssertEqual(draft.order?.pickup, true)
+        XCTAssertEqual(draft.order?.maxTotalPln, 80)
+        XCTAssertNotNil(reason(try parse(order(["order_pickup": true]))), "pickup with an address")
+    }
+
+    func testAnOrderIsRefusedWhenAnythingIsMissingOrMalformed() throws {
+        var noName = order(); noName["order_name"] = nil
+        XCTAssertTrue(try XCTUnwrap(reason(try parse(noName))).contains("never guess"))
+        XCTAssertNotNil(reason(try parse(order(["order_item_quantities": [2]]))), "a quantity for each dish")
+        XCTAssertNotNil(reason(try parse(order(["order_item_quantities": [0, 1]]))))
+        XCTAssertNotNil(reason(try parse(order(["order_item_quantities": [21, 1]]))))
+        XCTAssertNotNil(reason(try parse(order(["order_item_quantities": [1.5, 1]]))))
+        XCTAssertNotNil(reason(try parse(order(["order_item_notes": ["x"]]))))
+        XCTAssertNotNil(reason(try parse(order(["order_item_names": Array(repeating: "x", count: 9),
+                                                "order_item_quantities": Array(repeating: 1, count: 9), "order_item_notes": Array(repeating: "", count: 9)]))))
+        XCTAssertNotNil(reason(try parse(order(["order_postcode": "00001"]))))
+        XCTAssertNotNil(reason(try parse(order(["order_phone": "12345"]))))
+        XCTAssertNotNil(reason(try parse(order(["order_max_total_pln": 9]))))
+        XCTAssertNotNil(reason(try parse(order(["order_max_total_pln": 501]))))
+        var noStreet = order(); noStreet["order_street"] = nil
+        XCTAssertTrue(try XCTUnwrap(reason(try parse(noStreet))).contains("never guess an address"))
+        XCTAssertTrue(try XCTUnwrap(reason(try parse(order(["question": "Czy dowieziecie?"])))).contains("leave out question"))
+        XCTAssertNotNil(reason(try parse(order(["order_item_names": ["pizza {{x}}", "cola"]]))), "no braces")
+        XCTAssertNotNil(reason(try parse(order(["booking_name": "Anna", "booking_date": "2026-11-13", "booking_time": "19:00", "booking_party_size": 2]))),
+                        "never both")
+        XCTAssertNotNil(reason(try parse(args(extra: ["order_name": "Anna Kowalska"]))), "some order fields but not all")
+    }
+
+    func testQuantitiesAsDigitStringsAreAccepted() throws {
+        // The voice agent's tool arrays hold strings only, so the tool declares the quantities as strings.
+        guard case .callPlaces(let draft) = try parse(order(["order_item_quantities": ["2", "1"]])) else { return XCTFail("parsed") }
+        XCTAssertEqual(draft.order?.lines.map(\.quantity), [2, 1])
+        XCTAssertNotNil(reason(try parse(order(["order_item_quantities": ["two", "1"]]))))
+    }
+
+    func testAnOrderGoesToExactlyOnePlace() throws {
+        XCTAssertTrue(try XCTUnwrap(reason(try parse(order(["place_names": ["A", "B"], "place_phones": ["22 123 45 61", "22 123 45 62"]]))))
+            .contains("exactly one place"))
+    }
+
+    func testOrderRepliesAndErrors() {
+        let started = VoiceToolReply.callTaskStarted(first: "Roma", count: 1, textResult: true, order: true)
+        XCTAssertTrue(started.contains("that anything is ordered"))
+        XCTAssertEqual(VoiceToolReply.callTaskRefused(CallCaseError.orderNotConfigured), VoiceToolReply.callTaskOrderOff)
+        XCTAssertTrue(VoiceToolReply.callTaskOrderOff.hasPrefix("failed:"))
+    }
+
+    func testTheCardDecodesAnOrderPreview() throws {
+        let json = """
+        {"taskId":"2b0e6c0a-3c1d-4b9a-9d55-0d6f4a1c2b3e","kind":"order","digest":"ab","approvableUntil":"2026-11-12T12:00:00Z",
+         "textResult":true,"callableNow":true,"places":[{"caseId":"8c7f2e4d-1a2b-4c3d-8e9f-0a1b2c3d4e5f","digest":"cd",
+         "approvableUntil":"2026-11-12T12:00:00Z","callee":{"name":"Pizzeria Roma","phone":"22 123 45 67","destinationKind":"geographic",
+         "source":"places","sourceLabel":null},"principal":{"name":"Anna","genitive":"Anny"},"goal":"Zamówić dokładnie to, co opisano poniżej.",
+         "openingLine":"Dzień dobry…","question":"Czy mogą Państwo przyjąć zamówienie z dostawą?","facts":[],"kind":"order",
+         "order":{"name":"Anna Kowalska","lines":[{"quantity":2,"name":"pizza margherita"}],
+                  "delivery":{"street":"ul. Długa 5","postcode":"00-001","city":"Warszawa","phone":"600 000 000"},"maxTotalPln":150},
+         "confirmLine":"Dobrze, proszę o zamówienie: 2 × pizza margherita, dostawa na ul. Długa 5, 00-001 Warszawa, płatność gotówką lub kartą przy odbiorze, na nazwisko Anna Kowalska.",
+         "forbidden":[],"callbackLine":"Sprawdzę to u Anny i oddzwonię.","maxDurationSecs":240,"notice":"off","recordsAudio":false}]}
+        """
+        let preview = try JSONDecoder().decode(CallTaskPreview.self, from: Data(json.utf8))
+        XCTAssertTrue(preview.isOrder)
+        XCTAssertFalse(preview.isBooking)
+        XCTAssertEqual(preview.places.first?.order?.maxTotalPln, 150)
+        XCTAssertEqual(preview.places.first?.order?.delivery?.phone, "600 000 000")
+        XCTAssertTrue(preview.places.first?.confirmLine?.hasPrefix("Dobrze, proszę o zamówienie") == true)
+    }
 }

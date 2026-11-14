@@ -184,6 +184,8 @@ files=(
   DoddyApp/Features/Shopping/DealsModel.swift
   # Price watch (SHOPPING_WATCH.md): the card's flow and the list's state, without the views.
   DoddyApp/Features/Shopping/WatchModel.swift
+  # Price alerts' model (decision 2026-11-14-price-alerts-screen): looks the server up through ServerConfig, stubbed above.
+  DoddyApp/Features/Shopping/PriceAlertsModel.swift
   # The parcel list (ADR-641): its state and the look-up flow, without the views or the InPost client.
   DoddyApp/Features/Parcels/ParcelsModel.swift
   # The "Na oku" page's state (ADR-756), without the view or the collector that reads the stores.

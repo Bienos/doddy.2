@@ -53,6 +53,50 @@ final class MemoryStoreTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testNewestVoiceNotesExcludePrivateRowsBeforeTheStorageLimit() async throws {
+        let environment = AppEnvironment.live(arguments: ["-inMemoryStore"])
+        let store = MemoryStore(environment: environment)
+        let date = Date(timeIntervalSince1970: 1_800_000_000)
+        let visible = try await environment.memoryRepository.save(NewMemory(text: "Visible synthetic note", capturedAt: date))
+        var excluded = Set<UUID>()
+        for index in 0..<60 {
+            let hidden = try await environment.memoryRepository.save(NewMemory(text: "Hidden synthetic note \(index)", capturedAt: date.addingTimeInterval(1)))
+            excluded.insert(hidden.id)
+        }
+        let newest = await store.newestNotesForVoice(excluding: excluded)
+        XCTAssertEqual(newest.notes.map(\.id), [visible.id])
+    }
+
+    private actor CountingEmbedder: MeaningEmbedder {
+        var calls: [String: Int] = [:]
+        func vector(for text: String) async -> [Float]? {
+            calls[text, default: 0] += 1
+            return text == "keys" ? [0, 1] : [1, 0]
+        }
+        func count(_ text: String) -> Int { calls[text, default: 0] }
+    }
+
+    @MainActor
+    func testTheStoreInvalidatesSemanticVectorsOnCorrectionAndDeleteAll() async throws {
+        let embedder = CountingEmbedder()
+        let index = MeaningIndex(embedder: embedder)
+        let store = MemoryStore(environment: .live(arguments: ["-inMemoryStore"]), meaningIndex: index)
+        let record = try await store.save(text: "dumplings", category: .other)
+        _ = try await store.save(text: "keys", category: .other)
+        let snapshot = store.memories
+        _ = await index.search("pierogi", in: snapshot, excluding: [])
+        _ = try await store.correct(id: record.id, text: "dumplings")
+        _ = await index.search("pierogi", in: store.memories, excluding: [])
+        let afterCorrection = await embedder.count("dumplings")
+        XCTAssertEqual(afterCorrection, 2, "Even a same-text revision invalidates the vector")
+        try await store.deleteAll()
+        // A deliberate stale fixture proves clear happened; production never passes deleted records back.
+        _ = await index.search("pierogi", in: snapshot, excluding: [])
+        let afterClear = await embedder.count("dumplings")
+        XCTAssertEqual(afterClear, 3)
+    }
+
     /// Photo notes (ADR-218): the file is written before the link, kept through Undo, and
     /// deleted with the note or by Remove photo. In-memory launches use their own folder.
     @MainActor

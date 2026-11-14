@@ -4,6 +4,7 @@
 import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
 import { after, before, describe, test } from "node:test";
+import { clearContactOptOut, contactOptedOut, recordContactOptOut } from "../src/contactTexts.js";
 import { TextCipher } from "../src/crypto.js";
 import type { Db } from "../src/db.js";
 import { saveNote } from "../src/inbox.js";
@@ -135,5 +136,28 @@ describe("re-encrypting to a new key version against real Postgres", { skip: dbS
     assert.match(missing.out.join("\n"), /MEMORY_ENCRYPTION_KEY_PREVIOUS/);
     assert.equal(await script.run(["--batch", "0"], io().io), 64, "a bad option is a usage error");
     await w.app.close();
+  });
+  test("a contact's STOP survives a rotation: found under either key while both are set, re-hashed, then found with the new key alone", async () => {
+    await db.query("DELETE FROM contact_text_opt_outs");
+    const number = "+48600999001";
+    await recordContactOptOut(db, v1, number);
+    assert.equal(await contactOptedOut(db, v2only, number), false, "a hash made with the old key is not the new key's hash");
+    assert.equal(await contactOptedOut(db, ring, number), true, "while both keys are set the old hash still counts");
+    // The same number says STOP again during the rotation: a second row, under the new key.
+    await recordContactOptOut(db, ring, number);
+    assert.equal((await db.query("SELECT count(*)::int AS n FROM contact_text_opt_outs")).rows[0].n, 2);
+
+    const report = await reencryptAll(db, ring);
+    const r = report.find((x) => x.table === "contact_text_opt_outs")!;
+    assert.deepEqual([r.column, r.rewritten, r.unreadable, r.left], ["number_ciphertext", 1, 0, 0]);
+    const { rows } = await db.query("SELECT key_version, number_ciphertext FROM contact_text_opt_outs");
+    assert.equal(rows.length, 1, "one row per number");
+    assert.equal(rows[0].key_version, 2);
+    assert.ok(!(rows[0].number_ciphertext as Buffer).toString("latin1").includes("600999001"), "the number is kept only encrypted");
+    assert.equal(await contactOptedOut(db, v2only, number), true, "after the rewrite the new key alone finds it: the STOP is not forgotten");
+    assert.equal(await contactOptedOut(db, v2only, "+48600999002"), false);
+
+    await clearContactOptOut(db, v2only, number);
+    assert.equal(await contactOptedOut(db, ring, number), false, "START clears it");
   });
 });

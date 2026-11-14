@@ -229,8 +229,8 @@ public enum DataFlow {
                     : "Only when CEIDG is switched on on the server; otherwise it answers that it isn't, and nothing is asked."),
             DataFlowRow(
                 id: "placeSearch", destination: "Apple Maps (place search and travel time)",
-                what: "The words you type to find a place, and roughly where you are if Doddy already knows. For a leave reminder: where your iPhone is and the place you're going. For My shops: the shops' chain names and roughly where you are.",
-                when: "Only when you search for a place for a reminder, ask when to leave, or look for your shops in Cheapest this week.", isActive: true,
+                what: "The words you type to find a place, and roughly where you are if Doddy already knows. For a leave reminder: where your iPhone is and the place you're going. For My shops: the shops' chain names and roughly where you are. For Food: the dish and the delivery address you type.",
+                when: "Only when you search for a place for a reminder, ask when to leave, look for your shops in Cheapest this week, or search for food in Food.", isActive: true,
                 note: "Doddy keeps only the place you pick, and only on this iPhone. iOS watches a reminder's place itself; Doddy doesn't follow where you go."),
             DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
@@ -381,6 +381,19 @@ public enum DataFlow {
                     : state.pauseAll
                         ? "Connections are paused, so no new price is watched. Prices you already watch keep being checked by Doddy's server until you stop or delete them."
                         : "The server keeps the words encrypted only while the watch runs and for 30 days after it ends; Delete removes it at once. It keeps no page content, only the prices it read and when."),
+            // Decision 2026-11-14-price-alerts-screen (server: 2026-11-13-leaflet-results-and-deal-watches): an alert Doddy's
+            // server checks against the leaflets it has already read. No page is read and no model is involved for the
+            // check, so nothing here goes to an AI service or to a shop.
+            DataFlowRow(
+                id: "dealWatches", destination: "Your Doddy messaging server (price alerts)",
+                what: "For each price alert you add: the item's words, the price you set (if you set one), the shops you pick and your language. Doddy's server keeps them encrypted and, once a day after it has read the shops' leaflets, checks them against what it already read; no leaflet page is read again and no AI is used for this. When something new matches, it sends one notification through Apple that says only that an offer was found: not the item, the shop or the price. Nothing is bought. Opening Price alerts also asks the server for your list of alerts; that request carries no words. Never your saved notes, lists or profile.",
+                when: "Only when you add a price alert, until it ends (its end date is on it) or you delete it. The screen is shown only while Doddy's server has price alerts switched on.",
+                isActive: state.messagingServerSet && !state.pauseAll,
+                note: !state.messagingServerSet
+                    ? "No messaging server is set, so price alerts can't be kept."
+                    : state.pauseAll
+                        ? "Connections are paused, so no new price alert is saved and the list isn't asked for. Alerts you already have keep being checked by Doddy's server until they end or you delete them."
+                        : "Delete removes an alert, and what it found, from the server at once. When an alert ends, the server deletes it."),
             // SHOPPING.md "Shopify": a search or a cart for a Shopify shop's product. Doddy's server asks Shopify's Shop
             // service (mcp.shop.com); the app never talks to Shopify or a shop itself. Read from backend/src/shopify/ucp.ts.
             DataFlowRow(
@@ -515,6 +528,7 @@ public enum DataFlow {
         "updates": "Apple and Twilio (notifications and texts from Doddy, through your messaging server)",
         "deals": "the shops' leaflet pages and Anthropic (leaflets you check, through your messaging server)",
         "watches": "the shops' pages, read by your messaging server (prices you watch)",
+        "dealWatches": "your messaging server (price alerts)",
         "shopify": "Shopify's Shop service, asked by your Doddy server (Shopify shops' products you search)",
         "siri": "Siri (when you ask it)",
         "askDoddy": "Anthropic (Ask Doddy, through your messaging server)",
@@ -553,6 +567,8 @@ public enum DataFlow {
                 : "Conversations: none are remembered.",
             "Your calendar, reminders and contacts, except the items Doddy uses in a conversation.",
             "Places you set for reminders, and when you arrive or leave: iOS checks this on this iPhone.",
+            // Decision 2026-11-13-food-search-nearby: typed, kept for the next search, sent only to Apple Maps.
+            "The delivery address you type in Food, until you clear it there; it goes to Apple Maps only when you search.",
             "Notes suggested after a conversation: picked from your own words on this iPhone.",
             // ADR-440: proposals are picked here; only what you confirm and switch on is ever handed over.
             "What Doddy learned (facts, routines, and counts of what you corrected): kept here; confirmed ones go to a conversation only if you turn that on.",

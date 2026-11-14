@@ -25,7 +25,7 @@ import { MockCalendarProvider } from "./providers/mock.js";
 import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./providers/unconfigured.js";
 import type { CalendarProvider } from "./providers/types.js";
 import { ConnectedAppsService, PROVIDER as CALENDAR_PROVIDER } from "./service.js";
-import { Store, SUPABASE_AUTH_CLEANUP } from "./store.js";
+import { ANTHROPIC_FILE_CLEANUP, Store, SUPABASE_AUTH_CLEANUP } from "./store.js";
 import { UsageLimiter } from "./policy.js";
 import { ShopifyUcpService } from "./shopify/ucp.js";
 import { TOOLKITS } from "./tools/catalog.js";
@@ -41,7 +41,7 @@ import { WebRoutes } from "./web/routes.js";
 import { oldestKeptDay } from "./web/logbook.js";
 import { REDEEM_LIMITS, SESSION_IDLE_MS, WebAuth } from "./web/sessions.js";
 import { SocialSignIn, SupabaseUserRemover } from "./web/social.js";
-import { OwnerPanel, SupabaseUserDirectory } from "./web/owner.js";
+import { OWNER_AUDIT_KEPT_DAYS, OwnerPanel, SupabaseUserDirectory } from "./web/owner.js";
 import { WebStatic } from "./web/static.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
@@ -193,6 +193,8 @@ export async function buildApp(
       { providers: [CALENDAR_PROVIDER], remove: (connectionId, signal) => provider.removeConnection({ connectionId, signal }) },
       { providers: Object.keys(TOOLKITS), remove: (connectionId, signal) => toolsProvider.removeConnection({ connectionId, signal }) },
       ...(supabaseUsers ? [supabaseUsers] : []),
+      // A document's copy at Anthropic still owed a deletion when the account is erased: removed now, or kept queued.
+      ...(claude ? [{ providers: [ANTHROPIC_FILE_CLEANUP], remove: (id: string, signal: AbortSignal) => claude.deleteFile(id, signal) }] : []),
     ],
     timeoutMs: config.limits.providerTimeoutMs,
     floors,
@@ -285,6 +287,7 @@ export async function buildApp(
       .then(() => store.failStaleDocuments(Date.now(), DOCUMENT_STALE_AFTER_MS))
       .then(() => store.pruneDocuments(Date.now()))
       .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
+      .then(() => store.pruneOwnerAudit(Date.now() - OWNER_AUDIT_KEPT_DAYS * 86_400_000))
       .then(() => store.pruneTokenFloors(Date.now()))
       .then(() => store.pruneAccountLinkCodes(Date.now()))
       .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))

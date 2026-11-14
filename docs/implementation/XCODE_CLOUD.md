@@ -21,8 +21,8 @@ after it downloads the code and before it builds. It does five things:
    committed. XcodeGen is installed at one pinned version from its GitHub release file, after a
    SHA-256 check (`scripts/install_xcodegen.sh`, the same script GitHub's CI uses), not from
    Homebrew.
-2. Gives the app and its three extensions (widgets, share, notification content) Xcode Cloud's
-   build number. TestFlight needs a higher one for every upload, the same in all four.
+2. Gives the app and its four extensions (widgets, share, screen sharing, notification content)
+   Xcode Cloud's build number. TestFlight needs a higher one for every upload, the same in all five.
 3. Writes the commit the build is made from (`CI_COMMIT`) into the `DODDY_GIT_COMMIT` build
    setting. Info.plist carries it as `DoddyGitCommit`, and Settings › About shows its first seven
    characters next to the version, for example "0.1.0 (12, 8f3c2a1)". A build made anywhere else
@@ -59,7 +59,9 @@ Linux, and `scripts/ci.sh` runs that test.
    signing builds and signs the app, but it cannot register a bundle ID with Apple. Build 8
    (8 Nov 2026) archived fine and then all three exports failed with exit code 70 and
    `Automatic signing cannot register bundle identifier "com.bienos.doddy2.dev.notificationcontent"`:
-   the notification content extension (ADR-786) was newer than the IDs registered by hand.
+   the notification content extension (ADR-786) was newer than the IDs registered by hand. Builds
+   67 to 69 (10 Nov 2026) failed the same three exports after the screen-sharing extension
+   (`.screen`, decision `2026-11-09-doddy-looks-at-the-screen`) was added.
    Register each one at developer.apple.com › Certificates, Identifiers & Profiles › Identifiers
    › + › App IDs › App, with an **explicit** bundle ID:
 
@@ -68,6 +70,7 @@ Linux, and `scripts/ci.sh` runs that test.
    | `com.bienos.doddy2.dev` (the app) | what `Config/Doddy-Push-AppGroup.entitlements` asks for: Sign in with Apple, Push Notifications, Time Sensitive Notifications, App Groups, HealthKit, HomeKit |
    | `com.bienos.doddy2.dev.widgets` | App Groups (`group.com.bienos.doddy2.dev`) |
    | `com.bienos.doddy2.dev.share` | App Groups (same group) |
+   | `com.bienos.doddy2.dev.screen` | App Groups (same group) |
    | `com.bienos.doddy2.dev.notificationcontent` | none (no App Group, no network, no permissions) |
 
    The App Group `group.com.bienos.doddy2.dev` must exist under Identifiers › App Groups. The same

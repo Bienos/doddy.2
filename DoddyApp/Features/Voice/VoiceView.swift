@@ -1291,7 +1291,9 @@ struct VoiceView: View {
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
         case .callLater: (NSLocalizedString("Book call", comment: ""), NSLocalizedString("Don't book", comment: ""))
         case .callNow: (NSLocalizedString("Call me", comment: ""), NSLocalizedString("Don't call", comment: ""))
-        case .callTask: (NSLocalizedString("Call them", comment: ""), NSLocalizedString("Don't call", comment: ""))
+        case .callTask(_, let preview):
+            preview.isOrder ? (NSLocalizedString("Call and order", comment: ""), NSLocalizedString("Don't order", comment: ""))
+                            : (NSLocalizedString("Call them", comment: ""), NSLocalizedString("Don't call", comment: ""))
         // A card may name its own other button ("Not now" on a Studio job, ADR-740).
         case .ask(_, let card, _, _, _): (card.confirmLabel, card.declineLabel ?? NSLocalizedString("No", comment: ""))
         case .cloudRead(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("No", comment: ""))
@@ -1318,7 +1320,10 @@ struct VoiceView: View {
     /// comes back. The one tap approves exactly this.
     @ViewBuilder
     private func callTaskContent(_ preview: CallTaskPreview) -> some View {
-        if preview.isBooking {
+        if preview.isOrder {
+            Text("Order from this place for you?")
+                .font(.headline)
+        } else if preview.isBooking {
             Text(preview.places.count == 1 ? NSLocalizedString("Book at this place for you?", comment: "")
                                            : NSLocalizedString("Book at one of these places for you?", comment: ""))
                 .font(.headline)
@@ -1357,17 +1362,33 @@ struct VoiceView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("voice.callTask.booking")
-            if let confirm = first.confirmLine {
-                Text("Doddy accepts only with:")
+            callTaskConfirmLine(first.confirmLine)
+        }
+        // An order (decision 2026-11-12-food-by-phone): exactly what may be ordered, where it goes, the cap,
+        // that payment is on delivery or pickup only, and the one sentence that accepts it.
+        if let first = preview.places.first, let order = first.order {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Order")
                     .font(.footnote.weight(.semibold))
-                Text(verbatim: confirm)
-                    .font(.body)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(10)
-                    .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 10))
-                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.separator, lineWidth: 1))
-                    .accessibilityIdentifier("voice.callTask.confirmLine")
+                ForEach(Array(order.lines.enumerated()), id: \.offset) { _, line in
+                    Text(verbatim: "\(line.quantity) × \(line.name)" + (line.note.map { " (\($0))" } ?? ""))
+                }
+                if let delivery = order.delivery {
+                    Text(verbatim: "\(delivery.street)\(delivery.apartment.map { " m. \($0)" } ?? ""), \(delivery.postcode) \(delivery.city)")
+                    Text(String(format: NSLocalizedString("Courier's phone: %@", comment: "order delivery phone"), delivery.phone))
+                        .monospacedDigit()
+                } else {
+                    Text("Pickup at the restaurant")
+                }
+                Text(String(format: NSLocalizedString("Under the name %@", comment: "booking name"), order.name))
+                Text(String(format: NSLocalizedString("Doddy accepts no total above %lld zł", comment: "order cap"), order.maxTotalPln))
+                Text("Payment on delivery or at pickup. Doddy never gives card details.")
+                    .foregroundStyle(Theme.secondaryText)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("voice.callTask.order")
+            callTaskConfirmLine(first.confirmLine)
         }
         if let first = preview.places.first {
             Text("Doddy says:")
@@ -1397,6 +1418,22 @@ struct VoiceView: View {
         if preview.callableNow == false {
             Label("It's outside calling hours (8:00 to 23:00), so the first call can't start now.", systemImage: "moon")
                 .font(.footnote)
+        }
+    }
+
+    /// "Doddy accepts only with:" and the one sentence the server built; shared by a booking and an order.
+    @ViewBuilder
+    private func callTaskConfirmLine(_ confirm: String?) -> some View {
+        if let confirm {
+            Text("Doddy accepts only with:")
+                .font(.footnote.weight(.semibold))
+            Text(verbatim: confirm)
+                .font(.body)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+                .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.separator, lineWidth: 1))
+                .accessibilityIdentifier("voice.callTask.confirmLine")
         }
     }
 

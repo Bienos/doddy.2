@@ -1,0 +1,99 @@
+{
+  "_comment": "Deal watches (decision docs/decisions/2026-11-13-leaflet-results-and-deal-watches.md): POST /v1/deal-watches, GET /v1/deal-watches, GET /v1/deal-watches/{id}/offers, DELETE /v1/deal-watches/{id}. Device token; strict bodies; off unless DEAL_WATCHES_ENABLED=1, MEMORY_ENCRYPTION_KEY and the leaflet catalog (503 deal_watches_disabled). Matches come from the leaflet catalog in code: the item itself (by its words, `match: exact`, or its brand or model, `match: brand`), never a similar product, only offers the code stands behind (`check` false) and at or under `maxPriceMinor` when set. `chains` only those the catalog reads. A push carries only {\"doddy\": {\"kind\": \"deal-watch\"}}, never the item, shop or price. Example data, not real prices.",
+  "request": {
+    "item": "masło",
+    "maxPriceMinor": 500,
+    "chains": ["biedronka", "lidl"],
+    "language": "pl"
+  },
+  "created": {
+    "watch": {
+      "id": "6f1c2a9e-1b2c-4d3e-8f40-5a6b7c8d9e0f",
+      "item": "masło",
+      "maxPriceMinor": 500,
+      "chains": ["biedronka", "lidl"],
+      "language": "pl",
+      "createdAt": "2026-11-13T09:00:00.000Z",
+      "endsAt": "2027-01-12T09:00:00.000Z",
+      "found": 0
+    },
+    "checkedAt": "2026-11-13T09:00:00.000Z",
+    "offers": [
+      {
+        "chain": "biedronka",
+        "product": "Masło Extra 82% 200 g",
+        "price": { "minor": 499, "currency": "PLN" },
+        "size": { "value": 200, "unit": "g" },
+        "unitPrice": { "minor": 2495, "per": "kg" },
+        "conditions": [],
+        "validFrom": "2026-11-10",
+        "validTo": "2026-11-16",
+        "source": { "url": "https://www.biedronka.pl/pl/press,id,example,title,gazetka", "page": 4 },
+        "readBy": "page_image",
+        "check": false,
+        "match": "exact",
+        "leafletRead": { "readAt": "2026-11-13T05:45:00.000Z", "validFrom": "2026-11-10", "validTo": "2026-11-16", "complete": true }
+      }
+    ],
+    "chains": [
+      { "chain": "biedronka", "readAt": "2026-11-13T05:45:12.000Z", "complete": true },
+      { "chain": "lidl", "readAt": "2026-11-13T05:45:51.000Z", "complete": false }
+    ]
+  },
+  "list": {
+    "watches": [
+      {
+        "id": "6f1c2a9e-1b2c-4d3e-8f40-5a6b7c8d9e0f",
+        "item": "masło",
+        "maxPriceMinor": 500,
+        "chains": ["biedronka", "lidl"],
+        "language": "pl",
+        "createdAt": "2026-11-13T09:00:00.000Z",
+        "endsAt": "2027-01-12T09:00:00.000Z",
+        "lastCheckedAt": "2026-11-14T06:02:00.000Z",
+        "found": 1
+      },
+      {
+        "id": "7a2d3b0f-0000-4000-8000-000000000001",
+        "item": "słuchawki Apple",
+        "language": "pl",
+        "createdAt": "2026-11-13T09:05:00.000Z",
+        "endsAt": "2027-01-12T09:05:00.000Z",
+        "found": 0
+      }
+    ]
+  },
+  "offers": {
+    "id": "6f1c2a9e-1b2c-4d3e-8f40-5a6b7c8d9e0f",
+    "checkedAt": "2026-11-14T08:00:00.000Z",
+    "offers": [
+      {
+        "chain": "lidl",
+        "product": "Masło ekstra 82% 200 g",
+        "price": { "minor": 479, "currency": "PLN" },
+        "size": { "value": 200, "unit": "g" },
+        "unitPrice": { "minor": 2395, "per": "kg" },
+        "conditions": ["z Lidl Plus"],
+        "validFrom": "2026-11-13",
+        "validTo": "2026-11-15",
+        "source": { "url": "https://www.lidl.pl/l/pl/gazetki/example/view/flyer/page/6", "page": 6 },
+        "readBy": "page_image",
+        "check": false,
+        "flags": ["app"],
+        "match": "exact",
+        "leafletRead": { "readAt": "2026-11-14T06:01:30.000Z", "validFrom": "2026-11-13", "validTo": "2026-11-15", "complete": true }
+      }
+    ],
+    "chains": [
+      { "chain": "biedronka", "readAt": "2026-11-14T06:00:40.000Z", "complete": true },
+      { "chain": "lidl", "readAt": "2026-11-14T06:01:55.000Z", "complete": true }
+    ]
+  },
+  "errors": {
+    "invalid": { "status": 400, "body": { "error": "invalid_request", "fields": ["chains.0"] } },
+    "notFound": { "status": 404, "body": { "error": "not_found" } },
+    "tooMany": { "status": 409, "body": { "error": "too_many_watches" } },
+    "serverFull": { "status": 409, "body": { "error": "server_full" } },
+    "disabled": { "status": 503, "body": { "error": "deal_watches_disabled" } }
+  }
+}

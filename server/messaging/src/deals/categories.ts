@@ -13,7 +13,7 @@
 // several match, the longest phrase wins: "masło do ciała" is cosmetics, "masło" alone is butter.
 import { normalize, stem, wordSimilarity } from "./match.js";
 
-export type CategoryGroup = "food" | "drink" | "household" | "cosmetics" | "baby" | "pet";
+export type CategoryGroup = "food" | "drink" | "household" | "cosmetics" | "baby" | "pet" | "electronics" | "toys" | "appliances" | "tools";
 
 export interface Category {
   id: string;
@@ -201,6 +201,26 @@ const ROWS: Row[] = [
   ["cat_food", "pet_food", "pet", "karma dla kota|karma dla kotow|karma mokra dla kota|karma sucha dla kota|saszetki dla kota|przysmaki dla kota"],
   ["pet_food", "pet_food", "pet", "karma", true],
   ["cat_litter", "pet_care", "pet", "zwirek|zwirek dla kota|podloze dla kota"],
+  // ----- non-food things grocery leaflets carry on their middle pages (13 Nov 2026: "słuchawki Apple" found nothing).
+  // What a brand or model is (AirPods: headphones) lives in brands.ts; these are the things themselves.
+  ["headphones", "audio", "electronics", "sluchawki|sluchawki bezprzewodowe|sluchawki douszne|sluchawki nauszne|sluchawki bluetooth|earbuds"],
+  ["speakers", "audio", "electronics", "glosnik|glosniki|glosnik bluetooth|glosnik przenosny|soundbar"],
+  ["phones", "phones", "electronics", "smartfon|smartfony|telefon|telefon komorkowy"],
+  ["tablets", "computers", "electronics", "tablet|tablety"],
+  ["laptops", "computers", "electronics", "laptop|laptopy|notebook"],
+  ["smartwatches", "wearables", "electronics", "smartwatch|smartwatche|smartband|opaska sportowa|zegarek sportowy"],
+  ["consoles", "gaming", "electronics", "konsola|konsola do gier|kontroler do gier|gra na konsole"],
+  ["tv", "tv", "electronics", "telewizor|telewizory|smart tv"],
+  ["blocks", "toys", "toys", "klocki|zestaw klockow|klocki konstrukcyjne"],
+  ["dolls", "toys", "toys", "lalka|lalki|domek dla lalek"],
+  ["toy_cars", "toys", "toys", "samochodzik|resorak|resoraki|tor samochodowy"],
+  ["toys", "toys", "toys", "zabawka|zabawki", true],
+  ["coffee_machine", "kitchen_appliances", "appliances", "ekspres do kawy|ekspres cisnieniowy|ekspres przelewowy|ekspres kolbowy"],
+  ["kettle", "kitchen_appliances", "appliances", "czajnik|czajnik elektryczny"],
+  ["vacuum", "cleaning_appliances", "appliances", "odkurzacz|odkurzacz pionowy|robot sprzatajacy|robot odkurzajacy"],
+  ["electric_shaver", "shaving", "appliances", "golarka|golarka elektryczna|trymer|maszynka do strzyzenia"],
+  ["drills", "tools", "tools", "wiertarka|wkretarka|wiertarko wkretarka|wiertarka udarowa"],
+  ["tools", "tools", "tools", "elektronarzedzia|narzedzia", true],
 ];
 
 interface Compiled extends Category { phrases: { length: number; words: { raw: string; stem: string }[] }[] }
@@ -222,23 +242,58 @@ const SIMILAR = 0.6;
  * diminutive before a shared start: "kasza" isn't "kaszka", "szampon" isn't "szampan"), then the longest phrase;
  * on a tie, the earlier in the list. */
 export function categoryOf(text: string): Category | undefined {
+  return categoryMatch(text)?.category;
+}
+
+/** `categoryOf` with how closely its phrase matched (1: the same words; 0.9: the same stems; below: a diminutive or a
+ * shared start), so brands.ts can tell a product's own clear word from a guess. */
+export function categoryMatch(text: string): { category: Category; quality: number } | undefined {
   const words = normalize(text).split(" ").filter(Boolean).map((raw) => ({ raw, stem: stem(raw) }));
   if (!words.length) return undefined;
+  // Only phrases whose first word could be like the word at this place are tried (PHRASES_BY_START), in the list's own
+  // order, so the answer is the one trying every phrase at every place gave: the best quality, then the longest phrase,
+  // then the earliest in the list. (13 Nov 2026: trying all ~900 phrases took about 0.7 ms a product name, 13 s for a
+  // catalog of 20,000 products; a search and every deal-watch check read the whole catalog.)
   let found: Category | undefined;
   let bestQuality = 0;
   let longest = 0;
-  for (const c of CATEGORIES) {
-    for (const p of c.phrases) {
-      if (p.words.length === 0 || p.words.length > words.length) continue;
-      for (let i = 0; i + p.words.length <= words.length; i++) {
-        const quality = Math.min(...p.words.map((w, j) => wordSimilarity(w, words[i + j]!)));
-        if (quality < SIMILAR) continue;
-        if (quality > bestQuality || (quality === bestQuality && p.length > longest)) { found = c; bestQuality = quality; longest = p.length; }
+  let bestOrder = Infinity;
+  for (let i = 0; i < words.length; i++) {
+    for (const { c, p, order } of PHRASES_BY_START.get(startKey(words[i]!.stem)) ?? []) {
+      if (i + p.words.length > words.length) continue;
+      const quality = Math.min(...p.words.map((w, j) => wordSimilarity(w, words[i + j]!)));
+      if (quality < SIMILAR) continue;
+      if (quality > bestQuality || (quality === bestQuality && (p.length > longest || (p.length === longest && order < bestOrder)))) {
+        found = c; bestQuality = quality; longest = p.length; bestOrder = order;
       }
     }
   }
-  return found;
+  return found ? { category: found, quality: bestQuality } : undefined;
 }
+
+/**
+ * Two words are alike enough (wordSimilarity ≥ 0.6) only when their stems share their first three letters: the same
+ * word or stem, a diminutive of a stem of three letters or more, or a shared start of five. A stem shorter than three
+ * letters matches only itself. So a phrase can start only where a word's stem starts with its first word's three.
+ */
+const startKey = (s: string) => s.slice(0, 3);
+
+/** Every phrase by the start of its first word's stem, each with its place in the list (category, then phrase). */
+const PHRASES_BY_START: ReadonlyMap<string, { c: Compiled; p: Compiled["phrases"][number]; order: number }[]> = (() => {
+  const map = new Map<string, { c: Compiled; p: Compiled["phrases"][number]; order: number }[]>();
+  let order = 0;
+  for (const c of CATEGORIES) {
+    for (const p of c.phrases) {
+      order++;
+      if (p.words.length === 0) continue;
+      const key = startKey(p.words[0]!.stem);
+      const list = map.get(key) ?? [];
+      list.push({ c, p, order });
+      map.set(key, list);
+    }
+  }
+  return map;
+})();
 
 /** How a product's category stands to a query's: the same thing, a similar one (a substitute), another kind of
  * thing altogether, or not known (a side without a category: matching by words decides). */

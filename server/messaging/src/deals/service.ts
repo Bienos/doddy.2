@@ -28,13 +28,15 @@ import {
   headMention, itemRules, MATCH_THRESHOLD, MAX_PICK_CANDIDATES, matchScore, meetsRules, normalize, parsePrintedUnitPrice, parseSize,
   pickWithModel, terms, unitPrice, unitPricesAgree, type ItemRules, type Terms,
 } from "./match.js";
-import { categoryOf, relation, type Category } from "./categories.js";
+import { categoryMatch, categoryOf, relation, type Category } from "./categories.js";
+import { brandsOf, marksIn, queryMarks, thingOf, type QueryMarks } from "./brands.js";
 import { DEFAULT_MAX_AGE_HOURS, isCatalogChain, materialFromSnapshot, type CatalogStore, type ChainSnapshot } from "./catalog.js";
 import { prepareImage, readPage, readScreen, screenBatches, type Mechanic, type ReadDate, type ReadProduct, type ReadPromotion } from "./vision.js";
 import {
   CHAIN_NAMES, isReadChain, LINK_ONLY_URLS, pageKey, READ_CHAINS, type Chain, type ChainAdapter, type ChainRow, type ChainStatus,
   type Condition, type DataProduct, type DealsModelApi, type DealsResponse, type DealsSettings, type LeafletInfo, type LeafletPage, type LeafletRead, type PageImage,
-  type LinkChain, type ModelUsage, type Money, type Offer, type OfferFlag, type PagesRead, type Promotion, type ReadChain, type UnitPrice,
+  type LeafletReadInfo, type LinkChain, type MatchKind, type ModelUsage, type Money, type Offer, type OfferFlag, type PagesRead, type Promotion,
+  type ReadChain, type UnitPrice,
 } from "./types.js";
 
 export const ADAPTERS: Record<ReadChain, ChainAdapter> = { biedronka, lidl, dino, rossmann, aldi, zabka, delikatesy, leclerc, maxizoo, komfort, ccc, lewiatan, natura, action, deichmann, zooplus };
@@ -200,6 +202,8 @@ interface OfferInput {
   ean?: string;
   /** Reasons the code already has for `check` (a low-confidence read, dates outside the leaflet, …). */
   doubts: string[];
+  /** When its source was read (13 Nov 2026). */
+  leafletRead?: LeafletReadInfo;
 }
 
 /** The wire offer. `check` is true whenever the code can't stand behind the price as shown (contract rules). */
@@ -247,6 +251,7 @@ export function buildOffer(o: OfferInput, language: string): { offer: Offer; dou
     ...(eff ? { effective: { ...eff, ...(effUnit ? { unitPrice: effUnit } : {}) } } : {}),
     ...(cut ? { cut } : {}),
     ...(limit ? { limit } : {}),
+    ...(o.leafletRead ? { leafletRead: o.leafletRead } : {}),
   };
   return { offer, doubts };
 }
@@ -270,7 +275,11 @@ function readDates(p: Pick<ReadProduct, "validFrom" | "validTo">, leaflet: Leafl
 
 /** `similar[i]`: the product is of another kind in item i's family (ADR-662), so it's a substitute for item i, never
  * the item. */
-interface Candidate { id: string; chain: ReadChain; offer: Offer; doubts: string[]; scores: number[]; similar?: boolean[] }
+interface Candidate {
+  id: string; chain: ReadChain; offer: Offer; doubts: string[]; scores: number[]; similar?: boolean[];
+  /** How the product matched each item it matched: by its words or through its brand or model. */
+  kinds?: (MatchKind | undefined)[];
+}
 interface PromotionCandidate { promotion: Promotion; scores: number[] }
 
 interface ChainResult {
@@ -287,6 +296,8 @@ interface ChainResult {
   complete: boolean;
   /** Fewer pages read than were worth reading. */
   pages?: PagesRead;
+  /** When what the offers came from was read: the catalog's scan, or this search's own read. */
+  readAt?: string;
 }
 
 /** What building offers from a chain's reads needs: the items and how to word the offers. */
@@ -296,12 +307,18 @@ export interface QueryEnv {
   queryCats: (Category | undefined)[];
   /** Each item's own rules, "tylko Łaciate", "bez laktozy" (ADR-664). */
   queryRules: ItemRules[];
+  /** Each item's brands and thing (brands.ts). Absent: worked out from the rules' words. */
+  queryMarks?: QueryMarks[];
+  /** Product facts kept across many items (deal-watch checks); absent: worked out per call. */
+  factsCache?: Map<string, ProductFacts>;
   today: string;
   language: string;
   nextId: () => string;
 }
 
 interface Env extends QueryEnv {
+  /** This search's `checkedAt`: when what it reads live is read. */
+  checkedAt: string;
   fetcher: PageFetcher;
   model?: DealsModelApi;
   queries: string[];
@@ -315,19 +332,74 @@ interface Env extends QueryEnv {
 
 const best = (scores: number[]) => scores.reduce((a, b) => Math.max(a, b), 0);
 
-/** Words first, then the categories (ADR-662): another kind of thing altogether is no match ("masło shea" for
- * "masło"); another kind in the same family is a similar product, kept apart ("masło roślinne"). */
+/** What the matcher works out about a product's name whatever the item: its words, its category, its brands and what
+ * it is. The same for every item, so the deal-watch checks, which match many items against one catalog, keep it. */
+export interface ProductFacts {
+  t: Terms;
+  cat?: Category;
+  named: Set<string>;
+  product: ReturnType<typeof thingOf>;
+}
+
+export function productFacts(text: string, cache?: Map<string, ProductFacts>): ProductFacts {
+  const held = cache?.get(text);
+  if (held) return held;
+  const cm = categoryMatch(text);
+  const marks = marksIn(text);
+  const facts: ProductFacts = { t: terms(text), cat: cm?.category, named: brandsOf(marks), product: thingOf(text, marks, cm) };
+  cache?.set(text, facts);
+  return facts;
+}
+
+/** The score a product gets for an item when it matched through its brand or model, not its words: above the threshold,
+ * below a product whose own words name the item, so the latter comes first among the candidates. */
+export const BRAND_SCORE = 0.7;
+
+/**
+ * Words first, then the categories (ADR-662): another kind of thing altogether is no match ("masło shea" for
+ * "masło"); another kind in the same family is a similar product, kept apart ("masło roślinne"). Then brands and models
+ * (brands.ts, 13 Nov 2026): a product that names the brand the item names and is the same thing matches even without
+ * the item's words ("Apple AirPods 4" for "słuchawki Apple"), and so does a product named only by its brand or model for
+ * an item that names the thing ("AirPods 4" for "słuchawki"): match "brand". An item that names a brand never matches a
+ * product whose name doesn't name it: the same thing of another brand is similar at most, never the item.
+ */
 function makeJudge(env: QueryEnv) {
+  const qMarks = env.queryMarks ?? env.queryRules.map((r) => queryMarks(r.words));
   return (text: string) => {
-    const t = terms(text);
-    const cat = categoryOf(text);
+    const { t, cat, named, product } = productFacts(text, env.factsCache);
     const rel = env.queryCats.map((q) => relation(q, cat));
     // The person's own rules hold for similar products too: "tylko Łaciate" wants Łaciate, whatever the kind.
     const meets = env.queryRules.map((r) => meetsRules(r, text));
-    return {
-      scores: env.queryTerms.map((q, i) => (rel[i] === "other" || !meets[i] ? 0 : matchScore(q, t))),
-      similar: rel.map((r, i) => r === "similar" && meets[i]!),
-    };
+    const scores: number[] = [];
+    const similar: boolean[] = [];
+    const kinds: (MatchKind | undefined)[] = [];
+    env.queryTerms.forEach((q, i) => {
+      const qm = qMarks[i] ?? { brands: new Set<string>() };
+      let score = rel[i] === "other" || !meets[i] ? 0 : matchScore(q, t);
+      let kind: MatchKind | undefined = score >= MATCH_THRESHOLD ? "exact" : undefined;
+      let sim = rel[i] === "similar" && meets[i]!;
+      const sameThing = qm.thing && product.thing ? relation(qm.thing, product.thing) : "unknown";
+      if (meets[i] && qm.brands.size > 0) {
+        const namesIt = [...qm.brands].some((b) => named.has(b));
+        if (!namesIt) {
+          // The item names a brand the product doesn't: never the item. The same thing is shown as similar.
+          if (kind) { score = 0; kind = undefined; }
+          if (sameThing === "same") sim = true;
+        } else if (!kind) {
+          // A brand alone ("Kinder", "Apple") asks for that brand's products; with a thing, only that thing.
+          if (!qm.thing || sameThing === "same") { score = BRAND_SCORE; kind = "brand"; }
+          else if (sameThing === "similar") sim = true;
+        }
+      } else if (meets[i] && !kind && rel[i] !== "similar" && product.from === "mark") {
+        // A product named only by its brand or model ("AirPods 4", "Pampers Active Baby 4") for an item that names the thing.
+        if (sameThing === "same") { score = BRAND_SCORE; kind = "brand"; }
+        else if (sameThing === "similar") sim = true;
+      }
+      scores.push(score);
+      similar.push(sim);
+      kinds.push(kind);
+    });
+    return { scores, similar, kinds };
   };
 }
 
@@ -354,6 +426,13 @@ export interface ChainMaterial {
   pages?: PagesRead;
   /** The catalog's: an offer whose last day is before this day (YYYY-MM-DD) is left out. */
   endedBefore?: string;
+  /** When the chain was read: the catalog's scan (its data products were read then), or this search's own read. */
+  readAt?: string;
+  /** When each page was read, "leaflet index:page number" (the catalog keeps a page's read across scans). */
+  pageReadAt?: ReadonlyMap<string, string>;
+  /** From the leaflet catalog: the chain's row says when it was read and whether all of it was (a live read's row is
+   * read at `checkedAt`, and says so by `status` and `pages` as before). */
+  fromCatalog?: boolean;
 }
 
 
@@ -539,6 +618,7 @@ async function runChain(chain: ReadChain, adapter: ChainAdapter, env: Env): Prom
     }).length;
     const built = chainOffers(chain, {
       leaflets: read.leaflets, reads, promos, complete, reasons, ...(got < hiding.length ? { pages: { read: got, of: hiding.length } } : {}),
+      readAt: env.checkedAt,
     }, env);
     return done(built, built.complete);
   } finally {
@@ -562,23 +642,30 @@ export function chainOffers(chain: ReadChain, m: ChainMaterial, env: QueryEnv):
   const read = { leaflets: m.leaflets };
   const leaflets = m.leaflets.map((l) => ({ l, data: fittingData(l, judge) }));
   const ended = (validTo: string | undefined) => !!m.endedBefore && !!validTo && validTo < m.endedBefore;
+  // When the source was read (13 Nov 2026): a page's own read time when the catalog kept one, else the chain's read.
+  const readInfo = (li: number, page?: number): { leafletRead?: LeafletReadInfo } => {
+    const at = (page !== undefined ? m.pageReadAt?.get(key(li, page)) : undefined) ?? m.readAt;
+    if (!at) return {};
+    const l = m.leaflets[li]!.leaflet;
+    return { leafletRead: { readAt: at, ...(l.validFrom ? { validFrom: l.validFrom } : {}), ...(l.validTo ? { validTo: l.validTo } : {}), complete: m.complete } };
+  };
   // Offers: data products (confirmed against their page where needed), then what the reader found.
   const candidates: Candidate[] = [];
   const seen = new Set<string>();
   const leafletOf = new Map<string, number>();
-  const add = (input: OfferInput, scores: number[], li: number, similar?: boolean[]) => {
+  const add = (input: OfferInput, scores: number[], li: number, similar?: boolean[], kinds?: (MatchKind | undefined)[]) => {
     if (ended(input.validTo)) return;
     const dedupe = `${normalize(input.name)}|${input.price.minor}|${input.validFrom ?? ""}`;
     if (seen.has(dedupe)) return;
     seen.add(dedupe);
     const { offer, doubts } = buildOffer(input, env.language);
     const id = env.nextId();
-    candidates.push({ id, chain, offer, doubts, scores, ...(similar?.some(Boolean) ? { similar } : {}) });
+    candidates.push({ id, chain, offer, doubts, scores, ...(similar?.some(Boolean) ? { similar } : {}), ...(kinds ? { kinds } : {}) });
     leafletOf.set(id, li);
   };
   leaflets.forEach(({ l, data }, li) => {
     const used = new Set<ReadProduct>();
-    for (const { p, scores, similar } of data) {
+    for (const { p, scores, similar, kinds } of data) {
       const doubts: string[] = [];
       let extra: Partial<DataProduct> & { lowConfidence?: boolean } = {};
       if (p.confirmOnPage) {
@@ -609,13 +696,13 @@ export function chainOffers(chain: ReadChain, m: ChainMaterial, env: QueryEnv):
       add({
         chain, name: merged.name, price: p.price, sizeText: merged.sizeText, regularPrice: merged.regularPrice, lowest30d: merged.lowest30d,
         printedUnitPrice: merged.printedUnitPrice, conditions: merged.conditions, validFrom: p.validFrom, validTo: p.validTo,
-        source: { url: p.url, ...(p.page ? { page: p.page } : {}) }, readBy: "leaflet_data", ean: p.ean, doubts,
-      }, scores, li, similar);
+        source: { url: p.url, ...(p.page ? { page: p.page } : {}) }, readBy: "leaflet_data", ean: p.ean, doubts, ...readInfo(li),
+      }, scores, li, similar, kinds);
     }
     for (const page of l.pages) {
       for (const v of reads.get(key(li, page.number)) ?? []) {
         if (used.has(v)) continue;
-        const { scores, similar } = judge(v.name);
+        const { scores, similar, kinds } = judge(v.name);
         if (best(scores) < MATCH_THRESHOLD && !similar.some(Boolean)) continue;
         const dates = readDates(v, l.leaflet, env.today);
         // Komfort prints on every page that its crossed-out prices are the 30-day lowest (ADR-667); the reader
@@ -626,7 +713,8 @@ export function chainOffers(chain: ReadChain, m: ChainMaterial, env: QueryEnv):
           printedUnitPrice: v.printedUnitPrice, conditions: v.conditions, validFrom: dates.validFrom, validTo: dates.validTo,
           source: { url: page.url, page: page.number }, readBy: "page_image",
           doubts: [...(v.lowConfidence ? ["low_confidence_read"] : []), ...(dates.outside ? ["dates_outside_leaflet"] : [])],
-        }, scores, li, similar);
+          ...readInfo(li, page.number),
+        }, scores, li, similar, kinds);
       }
     }
   });
@@ -653,18 +741,19 @@ export function chainOffers(chain: ReadChain, m: ChainMaterial, env: QueryEnv):
           promotion: {
             chain, text: p.range, mechanic, conditions, ...(flags.length ? { flags } : {}),
             ...(dates.validFrom ? { validFrom: dates.validFrom } : {}), ...(dates.validTo ? { validTo: dates.validTo } : {}),
-            source: { url: page.url, page: page.number },
+            source: { url: page.url, page: page.number }, ...readInfo(li, page.number),
           },
         });
       }
     }
   });
 
-  const pages = m.pages ? { pages: m.pages } : {};
+  const rowRead = m.fromCatalog && m.readAt ? { readAt: m.readAt } : {};
+  const pages = { ...(m.pages ? { pages: m.pages } : {}), ...rowRead };
   if (candidates.length === 0 && promotions.length === 0) {
     // "Nothing matched" only when everything that should have been read was read.
     return m.complete
-      ? { status: "no_match", candidates, promotions, complete: true }
+      ? { status: "no_match", candidates, promotions, complete: true, ...rowRead }
       : { status: "failed", reason: [...reasons].join(",") || "incomplete", candidates, promotions, complete: false, ...pages };
   }
   // The chain's row names the leaflet most of its offers came from.
@@ -675,6 +764,24 @@ export function chainOffers(chain: ReadChain, m: ChainMaterial, env: QueryEnv):
     status: "checked", leaflet: read.leaflets[main]!.leaflet, candidates, promotions, complete: m.complete,
     ...(reasons.size ? { reason: [...reasons].join(",") } : {}), ...pages,
   };
+}
+
+/**
+ * Deal watches (decision 2026-11-13-leaflet-results-and-deal-watches): the offers in one chain's kept material that are
+ * the item, by its words or its brand (never a similar product), each saying how it matched. Code only: no model, no
+ * fetch, no page read.
+ */
+export function itemOffers(item: string, chain: ReadChain, m: ChainMaterial, today: string, language: string,
+  factsCache?: Map<string, ProductFacts>): Offer[] {
+  const rules = itemRules(item.trim());
+  let n = 0;
+  const env: QueryEnv = {
+    queryTerms: [terms(rules.words)], queryCats: [categoryOf(rules.words)], queryRules: [rules], queryMarks: [queryMarks(rules.words)],
+    today, language, nextId: () => `w${++n}`, ...(factsCache ? { factsCache } : {}),
+  };
+  return chainOffers(chain, m, env).candidates
+    .filter((c) => (c.scores[0] ?? 0) >= MATCH_THRESHOLD && !c.similar?.[0])
+    .map((c): Offer => ({ ...c.offer, match: c.kinds?.[0] ?? "exact" }));
 }
 
 // ---------- choosing the offers ----------
@@ -724,6 +831,10 @@ const byValue = (per: UnitPrice["per"] | undefined) => (a: Candidate, b: Candida
 /** Up to six offers, best value first (price per kg, l or piece), with every chain's lowest price among them:
  * the basket buys one pack of each item, so it needs each chain's cheapest pack. */
 export function selectOffers(cands: Candidate[]): Offer[] {
+  return selectCandidates(cands).map((c) => c.offer);
+}
+
+function selectCandidates(cands: Candidate[]): Candidate[] {
   const cheapest = [...cands].sort(byPrice);
   const picked: Candidate[] = [];
   const chains = new Set<ReadChain>();
@@ -733,8 +844,11 @@ export function selectOffers(cands: Candidate[]): Offer[] {
     if (picked.length >= MAX_OFFERS_PER_ITEM) break;
     if (!picked.includes(c)) picked.push(c);
   }
-  return picked.slice(0, MAX_OFFERS_PER_ITEM).sort(value).map((c) => c.offer);
+  return picked.slice(0, MAX_OFFERS_PER_ITEM).sort(value);
 }
+
+/** A product's own words first, then a match through its brand or model; then the score. */
+const kindRank = (c: Candidate, qi: number) => (c.kinds?.[qi] === "brand" ? 1 : 0);
 
 // ---------- the search ----------
 
@@ -750,8 +864,10 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
   // ADR-667: the default leaves out the on-request chains (E.Leclerc); a specialty shop is read only for its kind of item.
   const requested = chainsToRead([...new Set(input.chains ?? defaultChains(READ_CHAINS))], queries, isReadChain);
   let n = 0;
+  const checkedAt = now().toISOString();
   const env: Env = {
     fetcher, model: deps.model, queries, queryTerms: rules.map((r) => terms(r.words)), queryCats: rules.map((r) => categoryOf(r.words)), queryRules: rules,
+    queryMarks: rules.map((r) => queryMarks(r.words)), checkedAt,
     today: warsawDay(now()), language: input.language,
     maxPages: deps.settings.maxPages, screenPages: deps.settings.screenPages ?? 0, readConcurrency: deps.readConcurrency ?? 10,
     chainDeadline: started + budget - (deps.model ? PICK_RESERVE_MS : 500), signal, nextId: () => `c${++n}`, log,
@@ -791,7 +907,7 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
   // The code's candidates per item, best first; then the model may say which of the top ones are the item.
   const all = results.flatMap((r) => r.candidates);
   const perItem = queries.map((_, qi) => all.filter((c) => (c.scores[qi] ?? 0) >= MATCH_THRESHOLD && !c.similar?.[qi])
-    .sort((a, b) => (b.scores[qi] ?? 0) - (a.scores[qi] ?? 0) || byPrice(a, b)));
+    .sort((a, b) => kindRank(a, qi) - kindRank(b, qi) || (b.scores[qi] ?? 0) - (a.scores[qi] ?? 0) || byPrice(a, b)));
   let chosen = perItem;
   let picked: SearchStats["picked"] = "code";
   const left = started + budget - Date.now();
@@ -822,9 +938,12 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
   const items = queries.map((query, i) => {
     const promotions = allPromotions.filter((p) => (p.scores[i] ?? 0) >= MATCH_THRESHOLD)
       .sort((a, b) => (b.scores[i] ?? 0) - (a.scores[i] ?? 0)).slice(0, MAX_PROMOTIONS_PER_ITEM).map((p) => p.promotion);
-    // Similar products: by how well their words fit, then best value; never the item, so never in `offers`.
-    const similar = selectOffers(all.filter((c) => c.similar?.[i])).slice(0, MAX_SIMILAR_PER_ITEM);
-    return { query, offers: selectOffers(chosen[i] ?? []), ...(promotions.length ? { promotions } : {}), ...(similar.length ? { similar } : {}) };
+    // Similar products: by how well their words fit, then best value; never the item, so never in `offers`. Each offer
+    // says how it matched (13 Nov 2026): the app shows "similar" ones as "podobne, ale nie to samo".
+    const similar = selectCandidates(all.filter((c) => c.similar?.[i])).slice(0, MAX_SIMILAR_PER_ITEM)
+      .map((c): Offer => ({ ...c.offer, match: "similar" }));
+    const offers = selectCandidates(chosen[i] ?? []).map((c): Offer => ({ ...c.offer, match: c.kinds?.[i] ?? "exact" }));
+    return { query, offers, ...(promotions.length ? { promotions } : {}), ...(similar.length ? { similar } : {}) };
   });
   // ADR-668: the partner link goes on last, after the picks, so it never changes an offer, its place or its price.
   if (deps.affiliate) {
@@ -841,11 +960,14 @@ export async function searchDeals(deps: DealsDeps, input: SearchInput, signal: A
   const chains: ChainRow[] = requested.map((chain): ChainRow => {
     if (!isReadChain(chain)) return { chain, status: "link_only", leafletUrl: LINK_ONLY_URLS[chain as LinkChain] };
     const r = byChain.get(chain)!;
-    const pages = r.pages ? { pages: r.pages } : {};
+    // When it was read and whether all of it was (13 Nov 2026), for every row built from a read.
+    const read = r.readAt ? { readAt: r.readAt, complete: r.complete } : {};
+    const pages = { ...(r.pages ? { pages: r.pages } : {}), ...read };
     if (r.status === "failed" || (r.status === "checked" && !r.leaflet)) return { chain, status: "failed", ...pages };
+    if (r.status === "no_match") return { chain, status: "no_match", ...read };
     if (r.status !== "checked") return { chain, status: r.status };
     // Read, but the pick kept none of its products: nothing matched (if it was all read).
-    if (!offered.has(chain)) return r.complete ? { chain, status: "no_match" } : { chain, status: "failed", ...pages };
+    if (!offered.has(chain)) return r.complete ? { chain, status: "no_match", ...read } : { chain, status: "failed", ...pages };
     return { chain, status: "checked", leaflet: r.leaflet!, ...pages };
   });
   const statuses: SearchStats["statuses"] = {};

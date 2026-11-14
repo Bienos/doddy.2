@@ -192,6 +192,21 @@ export const accountRoutes = (deps: Deps, taskCtx?: TaskCallContext): FastifyPlu
     return reply.code(204).send();
   });
 
+  // Signing out on this iPhone (security audit 2026-11-09, finding 1). The device row is the whole of this iPhone's
+  // authority here: its token (stored as a hash) and its push binding are columns of it, so deleting it ends
+  // both in one statement: the token is refused from then on, and no later push is addressed to this iPhone.
+  // Other iPhones of the account are untouched. Only an iPhone of a Doddy account can do this: signing in
+  // again makes a new device row, whereas the only device of an anonymous account is the only way back in.
+  // A repeat with the same token is answered 401 (the token no longer exists), which the app reads as "done".
+  app.delete("/v1/device", { preHandler: auth }, async (req, reply) => {
+    const { rowCount } = await db.query(
+      `DELETE FROM devices d USING accounts a
+        WHERE d.id = $1 AND a.id = d.account_id AND a.auth_subject IS NOT NULL`,
+      [principal(req).deviceId]);
+    if (!rowCount) return reply.code(409).send({ error: "device_not_signed_in_to_an_account" });
+    return reply.code(204).send();
+  });
+
   app.delete("/v1/device/push-token", { preHandler: auth }, async (req, reply) => {
     await db.query("UPDATE devices SET apns_token = NULL, apns_environment = NULL WHERE id = $1", [principal(req).deviceId]);
     return reply.code(204).send();

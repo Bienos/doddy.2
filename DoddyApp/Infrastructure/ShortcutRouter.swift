@@ -113,6 +113,7 @@ final class ShortcutRouter {
         isCallRecapsPresented = false
         isMessagesRequested = false
         isRadarRequested = false
+        isPriceAlertsRequested = false
         priceCheckLink = nil
         translatorPreset = nil
         talkToDoddyOpened = false
@@ -294,6 +295,18 @@ final class ShortcutRouter {
         guard !isVoicePresented, drafts.shown == nil else { return }
         isSetupPresented = false
         isRadarRequested = true
+    }
+
+    /// A price-alert push was tapped (decision 2026-11-14-price-alerts-screen): Home opens Shopping, which opens Price
+    /// alerts, where what each alert found is read from the server. Navigation only: it starts nothing and sends nothing.
+    /// The Shopping screen takes it once (its `.onChange`).
+    var isPriceAlertsRequested = false
+
+    func priceAlertsOpened() {
+        guard mayGoAhead(.openNoteSheet, again: { [self] in priceAlertsOpened() }) else { return }
+        guard !isVoicePresented, drafts.shown == nil else { return }
+        isSetupPresented = false
+        isPriceAlertsRequested = true
     }
 
     /// DODDY Capture (ADR-588): Recordings is a sheet on Home. A link, the island's Open button and

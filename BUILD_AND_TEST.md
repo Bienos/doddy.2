@@ -1,5 +1,7 @@
 # Build and test
 
+Memory retrieval diagnostics (10 Nov 2026): see [memory/RAG implementation evidence](docs/architecture/memory-rag/DODDY-MEMORY-RAG-IMPLEMENTATION.md). The opt-in `DODDY_MEMORY_BENCHMARK=1 swift test --package-path Packages/DoddyCore --filter MemoryRetrievalBenchmarkTests` runs synthetic quality and timing fixtures without keys, user data or model calls. Routine tests skip these observational benchmarks. Run on a quiet machine in the same configuration before/after; Mac results do not establish iPhone voice latency. Static checks require a current Python (the existing generator uses Python 3.12+ syntax), PyYAML, ReportLab and Matplotlib.
+
 How to build Doddy, run its tests and checks, and what CI runs. What is live is in [STATUS.md](STATUS.md); each
 platform's page is in [docs/platforms/](docs/platforms/README.md).
 
@@ -94,7 +96,7 @@ swallows network failures; it cannot establish that a connection was prepared or
 
 Merged database migrations are frozen by tests: `DoddyDatabaseFrozenMigrationsTests` (the phone's 22 in
 `DoddyDatabase.swift`, in the `swift` group) and `server/messaging/test/migrationsFrozen.test.ts` (the server's
-SQL files, 001 to 030 on 12 Nov 2026, in the `messaging` group). Renaming, reordering or removing a merged migration,
+SQL files, 001 to 039 on 14 Nov 2026, with no 011, 031 or 035 on `main`, in the `messaging` group). Renaming, reordering or removing a merged migration,
 or adding a server file that sorts before an applied one, fails CI; a new migration appends its name to the list in
 the same commit.
 
@@ -140,8 +142,11 @@ exact release in the script (2.46.0), downloaded from its GitHub release and unp
 checksum in the script. To move it, change `version` and `sha256` together in a pull request of their own; the checks
 group tests the installer with a stand-in download (`scripts/test_install_xcodegen.sh`). Render's builds of `backend/`
 and `server/messaging/` run `npm ci --ignore-scripts` (none of their locked packages has an install script; if one
-gains one, remove the flag for that service), while `web/`, whose build tool esbuild has an install script, installs
-as before. `web/` tests run on Vitest 4.1.12.
+gains one, remove the flag for that service; `scripts/check_render_install_scripts.py`, in the checks group, fails
+when a folder installed with the flag has a locked package with an install script, or a lifecycle script of its own),
+while `web/`, whose build tool esbuild has an install script, installs as before. The same group fails when a tracked
+file downloads something and hands it straight to a shell (`scripts/check_no_pipe_to_shell.py`): download to a file,
+check its SHA-256, then run it, as `scripts/install_xcodegen.sh` does. `web/` tests run on Vitest 4.1.12.
 
 The Ubuntu 24.04 checks/Swift/Node/messaging jobs install the same dependency packages through
 `scripts/ci_install_ubuntu_packages.sh`. If the default apt sources fail, it retries
@@ -164,7 +169,10 @@ tests primary success, download/install failures, fallback failure and cleanup.
   `scripts/ci.sh --app-only`: the Swift package tests, then the Xcode part (build
   once with `xcodebuild build-for-testing`, unit tests, restart the simulator, UI tests: ADR-561; then the
   simulator restarted again and the native island test alone, under an 8-minute watchdog, because the hosted
-  simulator sometimes freezes during it: ADR-764). It no longer
+  simulator sometimes freezes during it: ADR-764). A UI test that failed only because the app would not start
+  ("Failed to launch", "Failed to get launch progress") is run once more on a restarted simulator; any other
+  failure fails the step as before (`scripts/ci_launch_failures.sh`, decision `2026-11-13-ui-launch-retry`).
+  It no longer
   waits for `core`, and no longer repeats the Node suites. Run the workflow by hand (Actions → iOS build and
   tests → Run workflow) and it always runs.
 - Pushes to `main` (ADR-811) run every job, each commit in its own run that nothing cancels; pull requests
@@ -306,7 +314,7 @@ It began on 9 Oct as a read-only Google Calendar view, which a Debug build still
 cd backend
 npm ci                    # installs the pinned versions from package-lock.json
 npm run typecheck         # type-checks against the installed @composio/core declarations
-npm test                  # builds, then 649 offline tests (8 Nov 2026, about 15 minutes here); no secrets, no network
+npm test                  # builds, then 860 offline tests (14 Nov 2026, about 9 minutes here); no secrets, no network
 npm run build && npm start   # mock mode on http://127.0.0.1:8787 (default; no secrets)
 ```
 `scripts/ci.sh --only backend` runs the same install, type-check and tests.

@@ -97,50 +97,74 @@ public final class SQLiteMemoryRepository: MemoryRepository {
     static let scanLimit = 5_000
 
     public func query(_ query: String, limit: Int) async throws -> [MemoryCandidate] {
+        try await search(query, limit: limit, notesOnly: false, excluding: [])
+    }
+
+    public func queryNotes(_ query: String, limit: Int, excluding privateIDs: Set<UUID>) async throws -> [MemoryCandidate] {
+        try await search(query, limit: limit, notesOnly: true, excluding: privateIDs)
+    }
+
+    private func search(_ query: String, limit: Int, notesOnly: Bool, excluding privateIDs: Set<UUID>) async throws -> [MemoryCandidate] {
         let terms = RecallMatching.terms(query)
         guard let pattern = RecallMatching.ftsPattern(terms), limit > 0 else { return [] }
         let sample = MemorySource.sampleFixture.rawValue
-        // Each row comes with its stored folded text, so matching doesn't fold every note again.
-        let hits = try await dbQueue.read { db -> [Hit] in
+        // One bound JSON value works even for a private set larger than SQLite's variable limit.
+        let excluded = String(decoding: try JSONEncoder().encode(privateIDs.map(\.uuidString)), as: UTF8.self)
+        // Rank lightweight search rows, then decode only the selected notes. Both happen in
+        // one snapshot on the database queue, without loading every note's original/current text.
+        return try await dbQueue.read { db in
             let indexed = try Row.fetchAll(
                 db,
                 sql: """
-                    SELECT memories.* FROM memories
+                    SELECT memories.rowid AS memory_rowid, memories.search_text FROM memories
                     JOIN memories_fts ON memories_fts.rowid = memories.rowid
                     WHERE memories_fts MATCH ? AND memories.source != ?
+                      AND (? = 0 OR memories.category != ?)
+                      AND memories.id NOT IN (SELECT value FROM json_each(?))
                     ORDER BY bm25(memories_fts) LIMIT ?
                     """,
-                arguments: [pattern, sample, limit]
+                arguments: [pattern, sample, notesOnly, MemoryCategory.list.rawValue, excluded, limit]
             ).map(Self.hit)
             // Typos and spoken numbers can't be expressed as FTS terms, so when the index finds
             // fewer than asked, the newest notes are also checked with the same word rules.
             // The index matches every prefix and the rules are stricter ("car" vs "card"), so
             // only index hits the rules accept count.
             let accepted = RecallMatching.Matcher(terms).matchedWords(inFolded: indexed.map(\.folded))
-            guard accepted.filter({ !$0.isEmpty }).count < limit else { return indexed }
-            let scanned = try Row.fetchAll(
-                db,
-                sql: """
-                    SELECT * FROM memories WHERE source != ?
-                    ORDER BY captured_at_ms IS NULL, captured_at_ms DESC, rowid DESC LIMIT ?
-                    """,
-                arguments: [sample, Self.scanLimit]
-            ).map(Self.hit)
-            return indexed + scanned
+            var hits = indexed
+            if accepted.filter({ !$0.isEmpty }).count < limit {
+                hits += try Row.fetchAll(
+                    db,
+                    sql: """
+                        SELECT rowid AS memory_rowid, search_text FROM memories WHERE source != ?
+                          AND (? = 0 OR category != ?)
+                          AND id NOT IN (SELECT value FROM json_each(?))
+                        ORDER BY captured_at_ms IS NULL, captured_at_ms DESC, rowid DESC LIMIT ?
+                        """,
+                    arguments: [sample, notesOnly, MemoryCategory.list.rawValue, excluded, Self.scanLimit]
+                ).map(Self.hit)
+            }
+            // Index order first, then newest scan rows. All eligible rows are judged together:
+            // a two-edit typo counts only when none has the word as typed.
+            var seen = Set<Int64>()
+            let unique = hits.filter { seen.insert($0.rowID).inserted }
+            let matched = RecallMatching.Matcher(terms).matchedWords(inFolded: unique.map(\.folded))
+            let selected = zip(unique, matched).enumerated()
+                .filter { !$0.element.1.isEmpty }
+                .sorted { ($0.element.1.count, -$0.offset) > ($1.element.1.count, -$1.offset) }
+                .prefix(limit)
+            guard !selected.isEmpty else { return [] }
+            let rowIDs = String(decoding: try JSONEncoder().encode(selected.map { $0.element.0.rowID }), as: UTF8.self)
+            let rows = try Row.fetchAll(db, sql: """
+                SELECT rowid AS memory_rowid, * FROM memories
+                WHERE rowid IN (SELECT value FROM json_each(?))
+                """, arguments: [rowIDs])
+            var records: [Int64: MemoryRecord] = [:]
+            for row in rows { records[row["memory_rowid"]] = try Self.record(from: row) }
+            return try selected.map { entry in
+                guard let record = records[entry.element.0.rowID] else { throw MemoryStoreError.verificationFailed }
+                return MemoryCandidate(record: record, matchedTerms: entry.element.1)
+            }
         }
-        // Index hits keep their rank order; scan hits follow, newest first. All notes read are
-        // judged together, so a two-letter typo only counts when no note has the word as typed.
-        var seen = Set<UUID>()
-        let unique = hits.filter { seen.insert($0.record.id).inserted }
-        let matched = RecallMatching.Matcher(terms).matchedWords(inFolded: unique.map(\.folded))
-        let candidates = zip(unique, matched).compactMap { hit, words -> MemoryCandidate? in
-            words.isEmpty ? nil : MemoryCandidate(record: hit.record, matchedTerms: words)
-        }
-        // More matched words first; ties keep the order above (sort is stable on the index).
-        return Array(candidates.enumerated()
-            .sorted { ($0.element.matchedTerms.count, -$0.offset) > ($1.element.matchedTerms.count, -$1.offset) }
-            .map(\.element)
-            .prefix(limit))
     }
 
     /// Changes the wording and keeps it as the note's next correction (ADR-252), in one
@@ -300,10 +324,10 @@ public final class SQLiteMemoryRepository: MemoryRepository {
 
     // MARK: Helpers
 
-    private typealias Hit = (record: MemoryRecord, folded: String)
+    private typealias Hit = (rowID: Int64, folded: String)
 
     private static func hit(_ row: Row) throws -> Hit {
-        (try record(from: row), row["search_text"])
+        (row["memory_rowid"], row["search_text"])
     }
 
     private static func corrections(_ id: UUID, _ db: Database) throws -> [MemoryCorrection] {
