@@ -76,10 +76,22 @@ enum DoddyAccountServers {
         pairs: VoiceAccountSessionKeychain(), owed: ServerPendingRevocationStore.voiceSessions,
         accounts: SignedInVoiceAccount(), endpoint: { VoiceConfig.authEndpoint }, transport: URLSessionTransport.shared)
 
-    /// Asks the messaging server again about every token still owed a revocation, and the voice server about every
-    /// session still owed a sign-out. Needs no sign-in: the token itself is the proof, and it is used for nothing else.
+    /// The backend's own session for the signed-in Doddy account on this iPhone, and the ends still owed to the backend
+    /// (decision 2026-11-12-one-token-per-server). The rules are `BackendAccountSessions` in DoddyCore, tested on Linux; the
+    /// Keychain slots are `BackendAccountSessionKeychain` and `ServerPendingRevocationStore.backendSessions`. It is apart from
+    /// this iPhone's earlier device session (`DeviceSession`) and from `KeychainSessionStore`, the slot the backend clients
+    /// read, which holds whichever token they send. The device id goes to the exchange only for an address the app's policy
+    /// lets it go to (`DeviceSession.deviceIDForAccountExchange`, ADR-720).
+    static let backendSessions = BackendAccountSessions(
+        records: BackendAccountSessionKeychain(), owed: ServerPendingRevocationStore.backendSessions,
+        accounts: SignedInVoiceAccount(), endpoint: { DeviceSession.serverURL() },
+        deviceID: { DeviceSession.deviceIDForAccountExchange(server: $0) }, transport: URLSessionTransport.shared)
+
+    /// Asks the messaging server again about every token still owed a revocation, and the voice server and the backend about
+    /// every session still owed a sign-out. Needs no sign-in: the token itself is the proof, and it is used for nothing else.
     static func retryRevocations() async {
         await voiceSessions.retryOwed()
+        await backendSessions.retryOwed()
         guard revocations.count > 0, let server = ServerConfig.baseURL() else { return }
         await revocations.retry(server: server)
     }
@@ -118,7 +130,10 @@ enum DoddyAccountServers {
 
     private static func linkBackend(_ session: DoddyAccountSession, epoch: Int) async {
         guard let server = DeviceSession.serverURL(), use(.backend, server) != .account else { return }
-        let earlier = KeychainSessionStore.read()?.token(for: server).flatMap { $0.hasPrefix("ds1.") ? $0 : nil }
+        // This iPhone's EARLIER DEVICE session, which the link needs. Both it and the backend's account session start with
+        // `ds1.`; the link routes refuse the account session, so it is never picked (`BackendSessionToken`, tested in DoddyCore).
+        let earlier = BackendSessionToken.earlierDeviceSession(
+            stored: KeychainSessionStore.read()?.token(for: server), accountSession: backendSessions.heldToken(for: server))
         let decided: DoddyAccountServerUse?
         if let earlier {
             let outcome = await DoddyAccountLink.linkBackend(server: server, account: session, deviceToken: earlier, transport: URLSessionTransport.shared)
@@ -177,12 +192,24 @@ enum DoddyAccountServers {
         case deviceSession
     }
 
-    /// What `DeviceSession` hands the backend clients. `afterRefusal`: the server said 401.
-    static func backendToken(for server: URL, afterRefusal: Bool = false) async -> BackendToken {
+    /// What `DeviceSession` hands the backend clients. `afterRefusal`: the server said 401, to the token `refusedToken` (the one
+    /// in the clients' slot).
+    ///
+    /// Decision 2026-11-12-one-token-per-server: the backend's OWN session for the account goes first (`backendSessions`: made
+    /// once with a fresh Supabase token, kept, renewed two days before its end, made again once when the backend refuses it).
+    /// The account's Supabase token is what is handed over when no session can be had (a server without the route, one not set up
+    /// for it, a limit, offline), exactly as before this change: the backend accepts both this release, and nothing is
+    /// remembered about the failure beyond a few minutes in this launch. A 429 from a request is the client's, as it was.
+    static func backendToken(for server: URL, afterRefusal: Bool = false, refusedToken: String? = nil) async -> BackendToken {
         let model = DoddyAccountModel.shared
         guard model.isConfigured, use(.backend, server) == .account else { return .deviceSession }
         // Signed out: no token, and no device session behind the person's back either.
         guard model.isSignedIn else { return .unavailable }
+        let epoch = model.identityEpoch
+        if let session = await backendSessions.token(for: server, refused: afterRefusal ? refusedToken : nil) {
+            // Signed out while the backend answered: the session was ended and is not handed to anyone.
+            return stillSignedIn(since: epoch) ? .account(session) : .unavailable
+        }
         do throws(DoddyAccountError) {
             let token: String
             if afterRefusal {
@@ -413,6 +440,14 @@ enum DoddyAccountServers {
         // before this returns, its sign-out written down as owed and tried now and at each launch until the server
         // answers. Nothing says it ended until it did (DOD-08). Deleting the account comes through here too.
         voiceSessions.signedOut()
+        // The backend's session for this account (decision 2026-11-12-one-token-per-server): gone from this iPhone before this
+        // returns, its end (`DELETE /v1/web/devices/:id`, made with the iPhone's own session) written down as owed and tried
+        // now and at each launch until the backend confirms it. This runs before the Supabase sign-out is asked for
+        // (`DoddyAccountModel.forget` calls it first), so the end is written down and scheduled first; it is not waited for
+        // (signing out never waits for a network) and needs nothing from Supabase: the backend checks its own session without
+        // it. Nothing says it ended until it did (DOD-08). Deleting the account comes through here too: the backend has then
+        // erased the row, which answers 401, and nothing is left owed.
+        backendSessions.signedOut()
         if let server = DeviceSession.serverURL(), use(.backend, server) == .account { KeychainSessionStore.delete() }
         guard let server = ServerConfig.baseURL(), use(.messaging, server) == .account else { return }
         let store = ServerKeychainStore()
@@ -424,7 +459,8 @@ enum DoddyAccountServers {
     }
 }
 
-/// Who is signed in, and the account's own token for the exchange with the voice server (`VoiceAccountSessions`).
+/// Who is signed in, and the account's own token for the exchange with the voice server (`VoiceAccountSessions`) and with the
+/// backend (`BackendAccountSessions`).
 @MainActor
 struct SignedInVoiceAccount: VoiceAccountTokenSource {
     var accountID: String? { DoddyAccountModel.shared.session?.userID }
