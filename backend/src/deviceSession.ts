@@ -4,6 +4,7 @@ import { SignedSessionVerifier } from "./auth.js";
 import { clientKey } from "./clientAddress.js";
 import type { OwnerClaim } from "./config.js";
 import { AppError } from "./errors.js";
+import type { SigningKeys } from "./signingKeys.js";
 
 /**
  * Device sessions for the beta (ADR-563).
@@ -15,7 +16,7 @@ import { AppError } from "./errors.js";
  * `/v1/tools/run` call at all).
  *
  * How it works: the app makes one random device ID (a UUID kept in its Keychain) and posts it. The
- * server derives a stable user ID from it with its signing key and returns an ordinary owner-format
+ * server derives a stable user ID from it with its identifier key and returns an ordinary owner-format
  * session token (`ds1`), which the existing `SignedSessionVerifier` already accepts. The device ID
  * itself is never stored.
  *
@@ -100,17 +101,26 @@ export interface DeviceOwnerStore {
 export class DeviceSessionIssuer {
   private readonly signer: SignedSessionVerifier;
   private readonly codes: Buffer[];
-  /** Per configured code, an ID for its counters: keyed with the server's secret, so it is not the code and can't be turned back into it. */
+  /** Per configured code, an ID for its counters: keyed with the identifier key, so it is not the code and can't be turned back into it. */
   private readonly codeIds: string[];
+  /** Makes each device's user id and the invite codes' counter ids. Not a signing key: see `deviceUserId`. */
+  private readonly identifierKey: Buffer;
   private lastUnclaimedLog = Number.NEGATIVE_INFINITY;
   private lastFullLog = Number.NEGATIVE_INFINITY;
 
+  /**
+   * `keys`: the signing keys for the session tokens (`signingKeys.ts`), or a master key alone, which then also
+   * stands for the identifier key, as it always did. With a keyring, `options.identifierKey` is required, so
+   * a rotation of the signing keys can never move a person's identifiers.
+   */
   constructor(
-    private readonly key: Buffer,
+    keys: SigningKeys | Buffer,
     private readonly options: {
       signup: DeviceSignup;
       inviteCodes: readonly string[];
       store: DeviceOwnerStore;
+      /** `DODDY_IDENTIFIER_KEY`, or the master key when that is not set (config decides). Stays put when the signing keys are rotated. */
+      identifierKey?: Buffer;
       /**
        * May the first caller claim an empty server (ADR-707)? Config decides (closed in live mode)
        * and the server always passes it. Left out, it is `open`, the behaviour before ADR-707, for
@@ -125,17 +135,21 @@ export class DeviceSessionIssuer {
     },
   ) {
     if (options.signup === "off" && options.inviteCodes.length === 0) throw new Error("device sessions need first-device sign-up or an invite code");
-    this.signer = new SignedSessionVerifier(key);
+    const identifierKey = options.identifierKey ?? (Buffer.isBuffer(keys) ? keys : null);
+    if (!identifierKey) throw new Error("device sessions need an identifier key");
+    if (identifierKey.length < 32) throw new Error("identifier key too short");
+    this.identifierKey = identifierKey;
+    this.signer = new SignedSessionVerifier(keys);
     // Compared as HMAC digests so every comparison is the same length (no length leak).
     this.codes = options.inviteCodes.map((code) => digest(code));
-    this.codeIds = options.inviteCodes.map((code) => createHmac("sha256", key).update(`doddy-invite-id:v1:${code}`).digest("base64url").slice(0, 22));
+    this.codeIds = options.inviteCodes.map((code) => createHmac("sha256", identifierKey).update(`doddy-invite-id:v1:${code}`).digest("base64url").slice(0, 22));
   }
 
   /** `client`: the caller's address (see `clientAddress`), for the guest and invite limits. */
   async issue(body: unknown, now: Date, client = "unknown"): Promise<DeviceSessionResponse> {
     const parsed = DeviceSessionRequest.safeParse(body);
     if (!parsed.success) throw new AppError("invalid_request");
-    const userId = deviceUserId(this.key, parsed.data.deviceId.toLowerCase());
+    const userId = deviceUserId(this.identifierKey, parsed.data.deviceId.toLowerCase());
     // Decision 2026-11-08-required-account: once a Doddy account took over this iPhone's data, the
     // device id no longer opens it; the iPhone signs in with the account.
     if (await this.options.store.isLinkedUser?.(userId)) {
@@ -218,7 +232,7 @@ export class DeviceSessionIssuer {
   /** This device's own user ID (ADR-819), or null for something that isn't a device ID. */
   userIdFor(deviceId: unknown): string | null {
     const parsed = DeviceSessionRequest.shape.deviceId.safeParse(deviceId);
-    return parsed.success ? deviceUserId(this.key, parsed.data.toLowerCase()) : null;
+    return parsed.success ? deviceUserId(this.identifierKey, parsed.data.toLowerCase()) : null;
   }
 
   /** One try with an invite code, per client network per hour (ADR-709). */
@@ -283,14 +297,19 @@ export class DeviceSessionIssuer {
 }
 
 /**
- * Stable user ID for a device: HMAC of the device ID with the server's signing key, shaped as a
- * version-4 UUID so the rest of the server treats it like any other user. Without the key nobody
- * can link a user ID back to a device.
+ * Stable user ID for a device: HMAC of the device ID with the identifier key, shaped as a version-4 UUID
+ * so the rest of the server treats it like any other user. Without the key nobody can link a user ID back
+ * to a device.
  *
- * Rotating the signing key changes every device's user ID: all tokens stop working (their
- * signatures no longer match) and the stored owner is a user ID that no iPhone produces any more.
- * That is how it has always worked and is unchanged by ADR-707 and ADR-709: after a rotation the
- * operator must clear the owner row by hand and open `DODDY_OWNER_CLAIM` for the owner's next sign-in.
+ * The identifier key is `DODDY_IDENTIFIER_KEY`, or, when that is not set, `DODDY_SESSION_SIGNING_KEY`
+ * itself: the same bytes and the same derivation as before keys per purpose, so every stored id (the
+ * owner, device joins, linked accounts, usage counters) still belongs to the same person. It is not one
+ * of the per-purpose signing keys, and it is not rotated with them: before the signing keys are rotated,
+ * set `DODDY_IDENTIFIER_KEY` to the value the signing key has today (`docs/integrations/DEPLOY_RENDER.md`,
+ * "Rotating the signing key"). Changing the
+ * identifier key changes every device's user ID: the stored owner is then a user ID that no iPhone
+ * produces any more, and the operator must clear the owner row by hand and open `DODDY_OWNER_CLAIM`
+ * for the owner's next sign-in (ADR-707, ADR-709).
  */
 export function deviceUserId(key: Buffer, deviceId: string): string {
   const bytes = createHmac("sha256", key).update(`doddy-device:v1:${deviceId}`).digest().subarray(0, 16);

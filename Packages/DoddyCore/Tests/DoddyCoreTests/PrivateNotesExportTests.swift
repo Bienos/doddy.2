@@ -113,6 +113,97 @@ final class PrivateNotesExportTests: XCTestCase {
         }
     }
 
+    // MARK: The JSON restore in Settings names what it adds as private
+
+    /// What Settings › Restore from a JSON export does with a chosen file, step by step (`MemoryRestore`).
+    private func settingsRestore(_ data: Data, existing: [MemoryRecord] = []) throws -> (plan: MemoryRestorePlan, marked: Set<UUID>) {
+        let file = try MemoryRestore.read(data)
+        let plan = MemoryRestore.plan(file.records, corrections: file.corrections, existing: existing, exportedAt: file.exportedAt)
+        return (plan, try MemoryRestore.privateIDs(data, adding: plan))
+    }
+
+    func testAJSONRestoreNamesThePrivateNotesItAddsAndNoOthers() throws {
+        let pin = try note("Bank PIN 4417"), keys = try note("Keys", at: 5), here = try note("Already here", at: 9)
+        let data = try MemoryExport.json([pin, keys, here], privateIDs: [pin.id, here.id], exportedAt: t0)
+        let step = try settingsRestore(data, existing: [here])
+        XCTAssertEqual(Set(step.plan.toAdd.map(\.id)), [pin.id, keys.id])
+        XCTAssertEqual(step.marked, [pin.id], "a note already on this iPhone keeps its own state, so the file does not mark it")
+    }
+
+    func testAJSONRestoreOfAFileWithNoMarksMarksNothing() throws {
+        let keys = try note("Keys")
+        let step = try settingsRestore(try MemoryExport.json([keys], exportedAt: t0))
+        XCTAssertEqual(step.marked, [])
+        XCTAssertEqual(PrivateNotes.markingBeforeRestore(stored: nil, incoming: step.marked).newlyMarked, [])
+    }
+
+    func testAJSONRestoreBringsAPrivateListBackPrivateToo() throws {
+        let list = try MemoryRecord(id: UUID(), rawText: "Gifts", source: .explicitText, category: .list, capturedAt: t0)
+        let step = try settingsRestore(try MemoryExport.json([list], privateIDs: [list.id], exportedAt: t0))
+        XCTAssertEqual(step.plan.toAdd.map(\.id), [list.id])
+        XCTAssertEqual(step.marked, [list.id])
+    }
+
+    func testAJSONRestoreIgnoresAMarkForANoteThatIsNotInTheFile() throws {
+        let keys = try note("Keys")
+        var file = try object(try MemoryExport.json([keys], exportedAt: t0))
+        file["privateNoteIds"] = [UUID().uuidString]
+        let step = try settingsRestore(try JSONSerialization.data(withJSONObject: file))
+        XCTAssertEqual(step.marked, [], "only a note this restore adds can be marked by it")
+    }
+
+    func testAJSONRestoreWithDamagedMarksIsRefusedWhileTheFileIsPreparedNotAfterTheConfirmation() throws {
+        let pin = try note("Bank PIN 4417")
+        var file = try object(try MemoryExport.json([pin], privateIDs: [pin.id], exportedAt: t0))
+        file["privateNoteIds"] = ["not-an-id"]
+        let data = try JSONSerialization.data(withJSONObject: file)
+        let plan = MemoryRestore.plan(try MemoryRestore.read(data).records, existing: [], exportedAt: nil)
+        XCTAssertEqual(plan.toAdd.map(\.id), [pin.id], "the notes themselves read fine, so only the marks stop the restore")
+        XCTAssertThrowsError(try MemoryRestore.privateIDs(data, adding: plan)) {
+            XCTAssertEqual($0 as? MemoryRestoreError, .unreadablePrivateMarks)
+        }
+        XCTAssertThrowsError(try MemoryRestore.privateIDs(try MemoryExport.json([pin], exportedAt: t0), adding: plan, maxBytes: 10)) {
+            guard case .tooLarge? = $0 as? MemoryRestoreError else { return XCTFail("\($0)") }
+        }
+    }
+
+    func testAJSONRestoreIsMarkedBeforeAnythingIsAddedAndOnlyForWhatWasAdded() throws {
+        let pin = try note("Bank PIN 4417"), keys = try note("Keys", at: 5)
+        let step = try settingsRestore(try MemoryExport.json([pin, keys], privateIDs: [pin.id], exportedAt: t0))
+        // The marks as they are stored the moment before the first note is added: the private note is already in.
+        let before = PrivateNotes.markingBeforeRestore(stored: nil, incoming: step.marked)
+        XCTAssertTrue(PrivateNotes(stored: before.stored).contains(pin.id))
+        XCTAssertFalse(PrivateNotes(stored: before.stored).contains(keys.id))
+        // Once the notes are added, the mark stays for the note that was added.
+        let settled = PrivateNotes.settlingAfterRestore(stored: before.stored, newlyMarked: before.newlyMarked, added: Set(step.plan.toAdd.map(\.id)))
+        XCTAssertEqual(PrivateNotes(stored: settled).ids, [pin.id])
+    }
+
+    // MARK: The text export goes through the same check as the others
+
+    func testTheTextExportAsksAboutPrivateNotesAndListsAndNamesThemInTheFile() throws {
+        let pin = try note("Bank PIN 4417"), keys = try note("Keys", at: 5)
+        let list = DoddyList(
+            record: try MemoryRecord(id: UUID(), rawText: "Gifts", source: .explicitText, category: .list, capturedAt: t0), items: [])
+        let marks = PrivateNotes(ids: [pin.id, list.id])
+        // The records the file holds: the notes and the records of the lists, as the Markdown export hands them over.
+        let check = PrivateNotesExport.check(records: [pin, keys] + [list.record], privateNotes: marks)
+        XCTAssertTrue(check.needsFaceID)
+        XCTAssertEqual(check.privateIDs, [pin.id, list.id])
+        guard case .go(let marked) = PrivateNotesExport.outcome(for: check, faceIDConfirmed: true) else { return XCTFail("expected go") }
+        let text = MemoryExport.plainText([pin, keys], lists: [list], privateIDs: marked, exportedAt: t0)
+        XCTAssertEqual(text.components(separatedBy: "Private: yes").count - 1, 2, "the private note and the private list, nobody else")
+        // Face ID not confirmed: no marked set comes out of the check, so there is nothing to build the text from.
+        XCTAssertEqual(PrivateNotesExport.outcome(for: check, faceIDConfirmed: false), .stop)
+    }
+
+    func testTheTextExportOfOrdinaryNotesAsksNothingAndIsUnchanged() throws {
+        let keys = try note("Keys")
+        let check = PrivateNotesExport.check(records: [keys], privateNotes: PrivateNotes(ids: [UUID()]))
+        XCTAssertEqual(PrivateNotesExport.outcome(for: check, faceIDConfirmed: false), .go(marked: []))
+        XCTAssertEqual(MemoryExport.plainText([keys], privateIDs: [], exportedAt: t0), MemoryExport.plainText([keys], exportedAt: t0))
+    }
+
     // MARK: The mark is set before the note is added
 
     func testRestoreMarksTheIncomingNotesFirstAndKeepsWhatWasMarked() {

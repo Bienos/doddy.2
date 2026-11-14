@@ -180,7 +180,8 @@ final class BlikTransferTests: XCTestCase {
     func testCatalogGateAndSwitches() throws {
         let tool = try XCTUnwrap(ToolCatalog.descriptor(VoiceToolName.draftBlikTransfer))
         XCTAssertEqual(tool.effect, .handoff)
-        XCTAssertEqual(tool.approval, .card)
+        // The details are shown when asked (step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards); Doddy sends nothing.
+        XCTAssertEqual(tool.approval, .runsNow)
         XCTAssertEqual(tool.connection, .blik)
         XCTAssertFalse(tool.planEligible)
         XCTAssertEqual(VoiceConnection.blik.title, "BLIK transfers")

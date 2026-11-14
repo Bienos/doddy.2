@@ -94,7 +94,6 @@ final class AskFirstTests: XCTestCase {
         // by the tool's tier (`SpokenConfirmation`), never the ledger's.
         let ownOrServerCard: [VoiceToolRequest] = [
             .parkingSpot(.save(note: nil)),
-            .saveMemory(text: "x"),
             .runShortcut(name: "Home"),
             .cloudTool(CloudToolCall(name: CloudToolName.draftEmail, arguments: [:])),
             .cloudTool(CloudToolCall(name: CloudToolName.sendEmail, arguments: [:])),
@@ -184,7 +183,7 @@ final class AskFirstTests: XCTestCase {
         let specRunsNow = Set(spec.filter { $0.ask == .runsNow }.map(\.name))
         XCTAssertEqual(
             specRunsNow,
-            AskFirst.publicLookups.union(AskFirst.ownLooks).union(AskFirst.ownSmallActions)
+            AskFirst.publicLookups.union(AskFirst.ownLooks).union(AskFirst.ownSmallActions).union(AskFirst.ownChangesAtOnce)
                 .union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe])
                 .union(CloudToolName.all.subtracting(CloudToolName.writes)))
         // The catalog knows the same tools, so "every other tool" is every other tool the app has.
@@ -206,7 +205,9 @@ final class AskFirstTests: XCTestCase {
             XCTAssertTrue(AskFirst.runsAtOnce(name), "\(name) is a read through Doddy's server")
             XCTAssertEqual(AskFirst.need(for: .cloudTool(CloudToolCall(name: name, arguments: [:]))), .runsNow, name)
         }
-        for name in ["save_memory", "create_calendar_event", "delete_calendar_event", "send_email", "hand_over_errand",
+        // A note runs at once since 14 Nov 2026 (it has Undo; step 2b); these keep their card.
+        XCTAssertTrue(AskFirst.runsAtOnce("save_memory"))
+        for name in ["create_calendar_event", "delete_calendar_event", "send_email", "hand_over_errand",
                      "make_something", "call_places", "remove_from_list"] {
             XCTAssertNotNil(ToolCatalog.descriptor(name), "\(name) is a tool the app has")
             XCTAssertFalse(AskFirst.runsAtOnce(name), "\(name) still shows its card")
@@ -216,23 +217,26 @@ final class AskFirstTests: XCTestCase {
     }
 
     func testPhoneActionsWaitForATapOnTheirOwnCard() {
-        // Step 2.5: messages (opened for the user to send), calls (no tool: Doddy can't call),
-        // shortcuts, alarms, timers and Maps all show their own card and run only on a tap.
+        // Step 2.5: calls (no tool: Doddy can't call), shortcuts, alarms and timers show their own card (a tap or,
+        // since 14 Nov 2026, a spoken yes). A message draft, a BLIK draft and Maps hand over to another app and run
+        // when asked since step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards, while Doddy is on screen.
         let calls: [(String, String)] = [
             ("set_timer", #"{"minutes":5,"label":"Eggs"}"#),
             ("set_alarm", #"{"time":"2099-01-05T07:30"}"#),
             ("cancel_alarm", #"{"time":"07:30"}"#),
             ("run_shortcut", #"{"name":"Home"}"#),
-            ("draft_message", #"{"to":"Anna","body":"On my way"}"#),
-            // BLIK (ADR-510): the card shows the transfer; even its tap sends nothing.
-            ("draft_blik_transfer", #"{"to":"Ania","amount":50}"#),
-            ("open_map", #"{"place":"Demo Café"}"#),
         ]
         for (name, json) in calls {
             let request = VoiceToolRequest.parse(name: name, parametersJSON: Data(json.utf8))
             if case .invalid(_, let reason) = request { XCTFail("\(name): \(reason)"); continue }
             XCTAssertEqual(AskFirst.need(for: request), .ownPayloadCard, name)
             XCTAssertTrue(AskFirst.needsTap(AskFirst.need(for: request)), name)
+        }
+        for (name, json) in [("draft_message", #"{"to":"Anna","body":"On my way"}"#),
+                             // BLIK (ADR-510): the details are shown; nothing is sent from Doddy.
+                             ("draft_blik_transfer", #"{"to":"Ania","amount":50}"#),
+                             ("open_map", #"{"place":"Demo Café"}"#)] {
+            XCTAssertEqual(AskFirst.need(for: VoiceToolRequest.parse(name: name, parametersJSON: Data(json.utf8))), .runsNow, name)
         }
         XCTAssertNil(ToolCatalog.descriptor("make_call"), "there is no call tool")
     }

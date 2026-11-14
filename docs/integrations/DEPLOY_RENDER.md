@@ -117,6 +117,8 @@ On 18 Oct 2026 the workspace also runs copies of `doddy-voice-token` and `doddy-
    | `DATABASE_CA_CERT` | the database's root CA as PEM (Supabase: `prod-ca-2021.crt` from the project's Database settings) |
    | `DODDY_PUBLIC_BASE_URL` | the service's origin, e.g. `https://doddy-yaci.onrender.com` (no path) |
    | `DODDY_SESSION_SIGNING_KEY` | **secret**: Render's "Generate" button, or `openssl rand -base64 32`. Must decode to at least 32 bytes: a typed password or a 32-character hex string is refused |
+   | `DODDY_SESSION_SIGNING_KEY_PREVIOUS` | optional, **secret**: only while rotating (see "Rotating the signing key"). The key `DODDY_SESSION_SIGNING_KEY` had before; accepted for checking, never for signing. Leave it out otherwise |
+   | `DODDY_IDENTIFIER_KEY` | optional, **secret**: makes each iPhone's user id. Unset it is `DODDY_SESSION_SIGNING_KEY` itself, as before. Set it to that key's value before the first rotation |
    | `MONID_API_KEY` | **secret**: app.monid.ai → Access → API keys (`monid_live_…`) |
 
    Leave every `COMPOSIO_*` variable out (all of them, or all three Calendar ones plus a toolkit pair later).
@@ -131,6 +133,18 @@ On 18 Oct 2026 the workspace also runs copies of `doddy-voice-token` and `doddy-
    Web search shows "Ready, no sign-in"; switch it on and ask Doddy something current.
 
 Checks after a search: Render logs show `POST /v1/tools/run` with status 200; app.monid.ai shows the run and its cost.
+
+## Rotating the signing key
+Decision `2026-11-14-backend-keys-per-purpose` (step b of `2026-11-12-account-and-device-tokens`). The server derives one key per job from `DODDY_SESSION_SIGNING_KEY` (device and owner sessions, links to files Doddy made; `backend/src/signingKeys.ts`) and puts a key id on everything it signs. Each iPhone's user id and the invite codes' counter ids come from a separate **identifier key** that is not rotated with the signing keys. A deploy of this change needs no new setting: tokens and links made before it keep working, and `DODDY_IDENTIFIER_KEY` unset means the signing key itself, as before.
+
+To replace the signing key without signing anyone out, in this order (each step is a Render settings change and a deploy, so it waits for the owner's word):
+1. **Pin the identifier key** (first rotation only): set `DODDY_IDENTIFIER_KEY` to the value `DODDY_SESSION_SIGNING_KEY` has now. The log should show the same sign-ins afterwards. Skip this step and every iPhone gets a new user id on the next key change.
+2. **Move the key**: set `DODDY_SESSION_SIGNING_KEY_PREVIOUS` to the current `DODDY_SESSION_SIGNING_KEY`, and set `DODDY_SESSION_SIGNING_KEY` to a new `openssl rand -base64 32`. Deploy. New tokens and links carry the new key's id; everything made with the old key still checks. The `listening` line in the log says `"signingKeyPrevious":true` while the previous key is held. The server refuses to start, naming the settings and never a value, if either key is too short, if the two are the same key, or if `DODDY_SESSION_SIGNING_KEY_PREVIOUS` is set while `DODDY_IDENTIFIER_KEY` is not (so a rotation can't move identifiers by mistake; the voice token server follows the same rule with the same two settings).
+3. **Remove the previous key** once the longest token has run out: 30 days after step 2 (a session lasts 30 days; a file link lasts a day, `DOCUMENT_LINK_TTL_SECONDS`). Delete `DODDY_SESSION_SIGNING_KEY_PREVIOUS` and deploy. A token still signed with the old key then stops working: an iPhone on a device session signs in again by itself with its device id; a token made with `npm run session:mint` has to be made again with the new key.
+
+Mint tokens with the **current** key (`DODDY_SESSION_SIGNING_KEY`); the previous key never signs, here or in the server. Changing `DODDY_IDENTIFIER_KEY` is a different and much larger step: it gives every iPhone a new user id, so the stored owner and every stored row stops belonging to anyone. Don't, unless the data is meant to start over.
+
+**Rolling the deploy back.** Reverting this change leaves every token and link made before it valid. Tokens and links made after it carry a key id, which the earlier code does not accept, so while the earlier build runs they stop working: a device session until the iPhone signs in again (the app does so by itself when the server answers 401), a minted token until it is made again, a file link until the app asks for a fresh one. That lasts until those tokens would have expired anyway (sessions up to 30 days, links a day), so roll back soon after the deploy or accept that those iPhones sign in again once. If no rotation has happened, nothing else changes: a rollback needs no settings change.
 
 ## Adding the accounts later (Composio)
 
@@ -184,7 +198,7 @@ Before people can sign in (owner):
 
 Doddy Web can sign in with Google or Apple: into the person's own account once they have linked one to it (from the
 iPhone, or from a browser signed in with a code), and, for someone new, into a new account made on the web after they
-press "Create my Doddy account" (`DODDY_WEB_SIGNUP=open`, the default; owner, 3 Nov 2026). This is separate from `DODDY_AUTH_MODE`: the iPhone keeps its own session,
+press "Create my Doddy account" (only with `DODDY_WEB_SIGNUP=open`, which the owner asked for on 3 Nov 2026; since decision `2026-11-12-voice-token-fair-share` the default is `off`, and a new person is asked to make the account in the iPhone app first). This is separate from `DODDY_AUTH_MODE`: the iPhone keeps its own session,
 and the auth mode stays `signed`. Checked on 3 Nov 2026: in the project `doddy-gateway` (`sliondswemhneuzehpoq`),
 Google and Apple are **off** and email is on; no one has signed in through it.
 
@@ -208,7 +222,8 @@ Owner steps, in this order (each is in your own account; nothing here is a secre
 5. **Render → `doddy` → Environment:** `SUPABASE_URL=https://sliondswemhneuzehpoq.supabase.co` and
    `SUPABASE_PUBLISHABLE_KEY=` the project's publishable key (Supabase → Project Settings → API keys, `sb_publishable_…`;
    never the `sb_secret_…` one: the server refuses to start with it). Optional: `DODDY_WEB_SIGNIN_PROVIDERS=google` to
-   offer Google alone until Apple is set up; `DODDY_WEB_SIGNUP=off` to stop new accounts on the web.
+   offer Google alone until Apple is set up; `DODDY_WEB_SIGNUP=open` to let new accounts be made on the web (unset or
+   `off`: Google and Apple open an existing account only, and a new person is told to make theirs in the iPhone app first).
    **Recommended:** `SUPABASE_SECRET_KEY` (the `sb_secret_…` key, from 1Password item `supabase-secret-key`). With it,
    deleting a Doddy account also deletes the person's Supabase sign-in (their name and email); without it the deletion
    says that part is still owed, and it stays in Supabase until you remove it there (Authentication, Users).

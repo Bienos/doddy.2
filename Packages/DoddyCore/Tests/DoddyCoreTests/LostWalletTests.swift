@@ -219,11 +219,13 @@ final class LostWalletTests: XCTestCase {
 
     func testItIsItsOwnCardAndNeverRunsWithoutOne() {
         let request = VoiceToolRequest.lostWallet(LostWalletSituation(lost: [.idCard], stolen: false, abroad: false))
-        XCTAssertEqual(AskFirst.need(for: request), .ownPayloadCard)
+        // The checklist is shown when asked (step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards); each step's page
+        // or number still opens only on its own tap.
+        XCTAssertEqual(AskFirst.need(for: request), .runsNow)
         XCTAssertEqual(CarProfile.decision(for: request), .run)
         XCTAssertFalse(ConnectionPause.applies(to: request))
         XCTAssertNil(ActivityRequest.describe(request, calendar: .current))
-        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.lostWallet)?.approval, .card)
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.lostWallet)?.approval, .runsNow)
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.lostWallet)?.effect, .handoff)
     }
 }

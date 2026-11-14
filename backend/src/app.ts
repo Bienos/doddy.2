@@ -89,7 +89,7 @@ export async function buildApp(
     store,
     accounts: supabase,
     // The iPhone's own device session (valid and not cut off, ADR-709) starts a link and can undo it.
-    devices: config.sessionSigningKey ? new RevocableSessionVerifier(new SignedSessionVerifier(config.sessionSigningKey), floors) : null,
+    devices: config.signingKeys ? new RevocableSessionVerifier(new SignedSessionVerifier(config.signingKeys), floors) : null,
     floors,
     log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
@@ -125,8 +125,8 @@ export async function buildApp(
   // Claude (ADR-564): live only with an Anthropic key; mock mode uses offline demo text.
   const claude =
     overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude, undefined, undefined, usageDeps) : null) : new MockClaudeProvider();
-  // Document links are signed with the session key; without one, make_document says "not set up".
-  const documentLinks = config.sessionSigningKey ? new DocumentLinks(config.sessionSigningKey, config.publicBaseUrl) : null;
+  // Document links are signed with their own key, derived from the session key (signingKeys.ts); without one, make_document says "not set up".
+  const documentLinks = config.signingKeys ? new DocumentLinks(config.signingKeys, config.publicBaseUrl) : null;
   // Files are kept only encrypted, with the memory key (decision 2026-11-12-documents-at-rest); without it, "not set up" too.
   store.sealDocumentsWith(config.memoryKey ? new DocumentSeal(new MemoryCipher(config.memoryKey)) : null);
   // Booking emails are read by the small chat model (DODDY_CHAT_MODEL) when the server has one.
@@ -161,11 +161,12 @@ export async function buildApp(
   // invite codes, and a signing key (config checks both). Whether the first caller may claim a server
   // with no owner yet (ADR-707) and the invite limits (ADR-709) come from config.
   const deviceSessions =
-    (config.deviceSignup !== "off" || config.deviceInviteCodes.length > 0) && config.sessionSigningKey
-      ? new DeviceSessionIssuer(config.sessionSigningKey, {
+    (config.deviceSignup !== "off" || config.deviceInviteCodes.length > 0) && config.signingKeys && config.identifierKey
+      ? new DeviceSessionIssuer(config.signingKeys, {
           signup: config.deviceSignup,
           inviteCodes: config.deviceInviteCodes,
           store,
+          identifierKey: config.identifierKey,
           ownerClaim: config.ownerClaim,
           inviteLimits: config.inviteLimits,
           log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
@@ -325,10 +326,10 @@ export async function buildApp(
 /** Which sign-ins this server accepts (ADR-526). */
 export function sessionVerifier(config: Config, prebuilt: SupabaseSessionVerifier | null = null): SessionVerifier {
   if (config.authMode === "dev") return new DevSessionVerifier();
-  if (config.authMode === "signed") return new SignedSessionVerifier(config.sessionSigningKey!);
+  if (config.authMode === "signed") return new SignedSessionVerifier(config.signingKeys!);
   const supabase = prebuilt ?? new SupabaseSessionVerifier({ projectUrl: config.supabaseUrl! });
   // Development only (config enforces it): the owner's minted token still works next to Supabase.
-  return config.sessionSigningKey ? new AnyOfSessionVerifier([new SignedSessionVerifier(config.sessionSigningKey), supabase]) : supabase;
+  return config.signingKeys ? new AnyOfSessionVerifier([new SignedSessionVerifier(config.signingKeys), supabase]) : supabase;
 }
 
 /** The iPhone's own URL scheme, where its Apple or Google sign-in sheet ends (ADR-818): DODDY_APP_RETURN_URL's when it is a doddy scheme. */

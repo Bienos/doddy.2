@@ -11,8 +11,10 @@ The app calls two routes:
 
 - `POST /api/voice-auth`: Apple identity-token verification, refresh-token rotation, sign-out, and
   DODDY voice-session deletion. ElevenLabs must be configured before a voice account
-  session can be created. `delete-conversations` deletes an account's voice conversations (below).
-- `POST /api/voice-token`: validates an active DODDY session and returns an ElevenLabs conversation
+  session can be created. `account-session` trades a Doddy account's token for this server's own session
+  ("One token per server", below). `delete-conversations` deletes an account's voice conversations (below).
+- `POST /api/voice-token`: validates an active DODDY session, or, during the move to one token per server, a Doddy
+  account's own token, and returns an ElevenLabs conversation
   token and the account's keyed `userId` (below). ElevenLabs is the only voice (9 Nov 2026); a request that
   names OpenAI gets `400 unknown_provider`.
 
@@ -24,10 +26,10 @@ Access tokens last 10 minutes and stay in app memory. Opaque refresh tokens rota
 device-only accessibility. A revoked Apple credential, DODDY sign-out, or invalid refresh token
 requires a new Apple sign-in. The server stores only a keyed pseudonymous Apple subject, session
 records, refresh-token hashes (the current one and the one it replaced), and replay/rate-limit
-counters (the sign-in ones are keyed by a hash of the caller's address, never the address), plus, when the Apple key below is set,
+counters (the sign-in ones are keyed by a hash of the caller's address, never the address), the UTC day of each account's first voice token (a day number and nothing else, "How the limits fit together" below), plus, when the Apple key below is set,
 Apple's refresh token for the person, sealed (AES-256-GCM) with a key of its own derived from the signing key (see "Keys" below).
 Request logs contain action/provider, outcome, status, and duration only (and, for account deletion,
-whether Apple revoked the link).
+whether Apple revoked the link, and, at `/api/voice-token`, which kind of token the request came with, as a fixed word).
 
 ## Owner configuration required before deployment
 
@@ -39,7 +41,7 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 | Name | Purpose |
 |---|---|
 | `APPLE_BUNDLE_ID` | Exact bundle identifier for the app build signing in (for example, the development bundle identifier). |
-| `SUPABASE_URL` | Optional. The Doddy accounts project (`https://<ref>.supabase.co`, decision `2026-11-08-required-account`). With it, `/api/voice-token` also accepts a Doddy account's access token (Apple, Google or a code by email), checked against the project's published keys (`src/doddy-account.js`): no secret is needed. Its limits count per account (`account:<id>`), apart from the Apple voice accounts. Unreadable keys answer 503 `account_check_unavailable`, never 401. Without it, only this server's own Apple sign-in works, as before. |
+| `SUPABASE_URL` | Optional. The Doddy accounts project (`https://<ref>.supabase.co`, decision `2026-11-08-required-account`). With it, `/api/voice-token` also accepts a Doddy account's access token (Apple, Google or a code by email), checked against the project's published keys (`src/doddy-account.js`): no secret is needed. `account-session` takes the same token once and answers with this server's own session for the account ("One token per server" below). Its limits count per account (`account:<id>`), apart from the Apple voice accounts, whichever of the two kinds of token the request comes with. Unreadable keys answer 503 `account_check_unavailable`, never 401. Without it, only this server's own Apple sign-in works, as before. |
 | `DODDY_SESSION_SIGNING_KEY` | Stable random secret, at least 32 bytes. The master key: a key of its own for each job (the access tokens, the sealed Apple tokens) is derived from it, and the Apple pseudonyms and the other keyed hashes are made with it unless `DODDY_IDENTIFIER_KEY` is set (see "Keys" below). Replace it only by the steps under "Rotating the signing key". |
 | `DODDY_SESSION_SIGNING_KEY_PREVIOUS` | Optional, for a rotation only. The key that was `DODDY_SESSION_SIGNING_KEY` before: access tokens and sealed Apple tokens made with it are still accepted. It is only ever used to check and to open, never to sign or seal. Needs `DODDY_IDENTIFIER_KEY`: with a previous key and no identifier key the server answers `503 server_not_configured` rather than move anyone's identifiers. Nothing has to be set for this at deploy. |
 | `DODDY_IDENTIFIER_KEY` | Optional, for a rotation only. At least 32 bytes. The key of the keyed hashes that must never change for a person: the Apple pseudonyms, the keys under which an account's voice conversations are recorded, the user id given to ElevenLabs and the rate-limit buckets. Not set means they use `DODDY_SESSION_SIGNING_KEY` exactly as they always have. Before the signing key is replaced it is set to the signing key's current value, and then it is left alone. |
@@ -51,12 +53,80 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 | `CRON_SECRET` | Secret, at least 16 characters, in 1Password (item `voice-token-cron-secret`). Vercel sends it as `Authorization: Bearer …` to the daily retry of voice conversation deletions (`/api/voice-cron`). Without it that route answers 503 and does nothing; an owed deletion then waits until it is set. Nothing else reads it. |
 | `DODDY_TOKENS_PER_HOUR` | Optional shared per-account issuance limit; defaults to `30`. |
 | `DODDY_TOKENS_PER_DAY` | Optional per-account issuance limit per UTC day, on top of the hourly one; defaults to `150` (ADR-712). |
-| `DODDY_GLOBAL_TOKENS_PER_HOUR` | Optional shared global issuance limit; defaults to `100`. |
+| `DODDY_GLOBAL_TOKENS_PER_HOUR` | Optional shared global issuance limit; defaults to `100`. This is the ceiling for everyone in an hour; the fair share below is counted inside it. |
+| `DODDY_GLOBAL_TOKENS_PER_DAY` | Optional ceiling for the whole service per UTC day; defaults to `600`. |
+| `DODDY_NEW_ACCOUNT_DAYS` | Optional: how many days an account counts as new (the day of its first token and the days after it); defaults to `7`. It is also how long, from the day the rules first run, every account first seen counts as established ("How the limits fit together" below). |
+| `DODDY_NEW_ACCOUNT_POOL_PER_DAY` | Optional: tokens per UTC day shared by all new accounts together; defaults to `100`. |
+| `DODDY_NEW_ACCOUNT_TOKENS_PER_DAY` | Optional: tokens per UTC day for each new account on its own; defaults to `10`. |
+| `DODDY_FAIR_SHARE_BUDGET_PERCENT` | Optional: the share of the hour's budget for everyone (`DODDY_GLOBAL_TOKENS_PER_HOUR`), from 1 to 100, after which the fair share applies; defaults to `50`. At `100` the hour's budget alone decides. |
+| `DODDY_FAIR_SHARE_TOKENS_PER_HOUR` | Optional: once that share is used, an account that has already had this many tokens in the hour is refused; defaults to `10`. |
 | `DODDY_SIGNINS_PER_CLIENT_HOUR` | Optional: sign-ins one caller address may complete per hour; defaults to `10` (ADR-712). |
 | `DODDY_SIGNINS_PER_CLIENT_DAY` | Optional: the same per UTC day; defaults to `30`. |
 | `APPLE_TEAM_ID` | Optional, with the next two: the Apple Developer team ID. Lets "Delete voice account" also revoke Sign in with Apple (ADR-524). |
 | `APPLE_SIGN_IN_KEY_ID` | The key ID of a Sign in with Apple key (Apple Developer › Certificates, Identifiers & Profiles › Keys). |
 | `APPLE_SIGN_IN_PRIVATE_KEY` | That key's `.p8` file contents (PEM; literal `\n` line breaks work). Secret: 1Password only. |
+
+### How the limits fit together (decision `2026-11-12-voice-token-fair-share`)
+
+Code: `hitLimits` in `src/voice-auth.js` (one Redis script, one request to the store) and the settings in `src/handler.js`.
+A token is issued only when none of these says no. They are checked in this order, the first one that says no is the
+`limit` in the log, and all of them are checked before anything is counted, so a refused request uses no budget and
+writes nothing about the account (ADR-671, ADR-712); the only write a refused request can make is the start day below,
+and only once, for the very first request the script ever sees.
+
+| # | `limit` in the log | Refuses when | Retry-After is |
+|---|---|---|---|
+| 1 | `user_hour` | the account already had `DODDY_TOKENS_PER_HOUR` tokens this hour | the end of the hour |
+| 2 | `user_day` | the account already had `DODDY_TOKENS_PER_DAY` tokens today (UTC) | the next UTC midnight |
+| 3 | `new_account_day` | a new account already had `DODDY_NEW_ACCOUNT_TOKENS_PER_DAY` tokens today | the next UTC midnight |
+| 4 | `new_pool` | new accounts together already had `DODDY_NEW_ACCOUNT_POOL_PER_DAY` tokens today | the next UTC midnight |
+| 5 | `global` | everyone together already had `DODDY_GLOBAL_TOKENS_PER_HOUR` tokens this hour | the end of the hour |
+| 6 | `global_day` | everyone together already had `DODDY_GLOBAL_TOKENS_PER_DAY` tokens today | the next UTC midnight |
+| 7 | `fair_share` | `DODDY_FAIR_SHARE_BUDGET_PERCENT` percent of the hour's budget for everyone (5) is used, and the account already had `DODDY_FAIR_SHARE_TOKENS_PER_HOUR` tokens this hour | the end of the hour |
+
+- **What the app sees.** The same `429` with `{"error":"rate_limited"}` and `Retry-After` for all seven, and so the same
+  text as before ("You've started a lot of conversations. Try again in N minutes, in N hours or tomorrow; your notes still
+  work.", `Packages/DoddyCore/Sources/DoddyCore/VoiceToken.swift`). Nothing changes in the app. `Retry-After` says when
+  the limit that refused ends; a later one can still say no.
+- **New accounts.** An account is new for the UTC day of its first token and the days after it, `DODDY_NEW_ACCOUNT_DAYS` days
+  in all (7 by default). While it is new it has `DODDY_NEW_ACCOUNT_TOKENS_PER_DAY` tokens a day of its own (10) and also
+  draws from a pool that all new accounts share (`DODDY_NEW_ACCOUNT_POOL_PER_DAY`, 100 a day). After that only the normal
+  limits apply. A new account's tokens count against the hour's and the day's budgets for everyone like any other. An
+  established account is never counted against the pool, and a full pool never refuses it. Every account the server
+  limits is treated the same way: a Doddy account and an older Apple voice session alike.
+- **Today's testers stay where they are.** An account is new only when the day of its first token is later than the day the
+  rules first ran plus `DODDY_NEW_ACCOUNT_DAYS` days. Everyone whose first token falls on that day or in the 7 days after
+  it (always at least 7 x 24 hours) counts as established, for good. Tokens issued before this change left no
+  first-seen day, so "first token" means the first one issued by this code: someone who used voice before it shipped, and
+  who first asks for a token only after that first week, counts as new for one week.
+- **What is stored.** One key per account, `doddy:voice:v1:first-seen:<account>`, holding only the UTC day number of the
+  account's first token: no content, nothing else. It is written only when a token is issued (a refused request writes
+  nothing), and it expires 180 days after the account's latest token, so an account in use keeps it and one that has not asked
+  for a token for six months starts as new if it comes back. One key for the service, `doddy:voice:v1:fair-share-started`,
+  holding the UTC day the rules first ran: set once, by the first request that reaches the script (`SET ... NX`, inside
+  it), never changed afterwards, never expiring, and read at every decision. The daily counters for the whole service
+  and for the new-account pool (`limit-global-day:<day>`, `limit-new-pool:<day>`) expire after a day and an hour, like the
+  others. Nothing is logged about any of it beyond the fixed `limit` word.
+- **If the store is reset.** Both kinds of key are then gone, and the next request sets the start day again. For the 7 days
+  after that everyone who asks for a token counts as established: nobody is treated as new, which is the safer of the two
+  ways a reset can go (the other would give every account a smaller allowance for a week). The cost is that for those days
+  a genuinely new account has the normal limits, and that accounts which don't ask for a token in those days count as
+  new when they come back. The hour's and the day's counters also start from zero, as a reset does to every limit here.
+  If only the per-account keys are lost, those accounts count as new for up to a week: a smaller allowance, never a
+  larger one. An unreachable store is, as always, `503` and no token.
+- **The fair share.** The hourly budget for everyone is the ceiling (5). Once `DODDY_FAIR_SHARE_BUDGET_PERCENT` percent of
+  it is used (50 of 100 by default), an account that already had `DODDY_FAIR_SHARE_TOKENS_PER_HOUR` tokens that hour (10)
+  waits for the next hour; an account that had fewer is served as usual, up to the ceiling. In a quiet hour an account can
+  still have up to `DODDY_TOKENS_PER_HOUR` (30).
+- **Settings.** All six are whole numbers from 1 to 10 000 (the percentage from 1 to 100). Not set means the default, and
+  nothing has to be set on the host. Anything else answers `500 server_not_configured` before anything is counted or sent,
+  like the other limits. To switch a rule off, set it high (`10000`, and `100` for the percentage).
+  `DODDY_NEW_ACCOUNT_DAYS` is read at every decision: changing it moves the end of every account's new window and the end of
+  the first-week grace together.
+- **Rolling back.** Revert the change and redeploy: the earlier code reads the three limits it always read and ignores
+  the keys above, which stay in Redis (the per-account ones for up to 180 days, the counters for a day). When the change is
+  deployed again later, `fair-share-started` still holds the first day, so the first-week grace does not start again;
+  to start it again the owner deletes that one key in the Upstash console before redeploying.
 
 ### Keys: one per job, with a key id and a previous key (decision `2026-11-12-account-and-device-tokens`, part b)
 
@@ -154,7 +224,10 @@ no time limit (owner, 13 Nov 2026), so nothing ages out: only these steps remove
   not be read to the end or there is no ElevenLabs key, because what is there is then unknown: **it is never 0 unless
   everything is confirmed.** One request works for about 9 seconds or 300 ids; what is left stays owed. The
   action counts against the same per-caller limits as a sign-in (`DODDY_SIGNINS_PER_CLIENT_HOUR` / `_DAY`, keyed
-  by account), and a refused call never reaches ElevenLabs. An unreachable store is `503`, never a count.
+  by account), and a refused call never reaches ElevenLabs. An unreachable store is `503`, never a count. Once the
+  call is let through it also ends every voice session of the account that `account-session` made (before it
+  touches ElevenLabs, so a store that is down answers `503` with nothing half done; asking again ends nothing more,
+  and a refused call ends nothing). The answer is the same counts.
 - **`delete-account` (an older Apple voice account)** does the same for that account's recorded conversations before
   its session is deleted and adds `conversations: { deleted, pending }` to its answer. ElevenLabs failing never keeps
   the account.
@@ -179,9 +252,9 @@ deletes what it can at once; only the daily retry waits.
 ### Revoking Sign in with Apple for a Doddy account (decision `2026-11-09-apple-revoke-for-doddy-accounts`)
 
 A Doddy account (a Supabase user, `SUPABASE_URL` set) made with Sign in with Apple needs the same
-revoke, but it has no voice session. Two more `POST /api/voice-auth` actions take the **Doddy account's
+revoke, but it has no Apple voice account. Two more `POST /api/voice-auth` actions take the **Doddy account's
 access token** as the Bearer, checked like `/api/voice-token` checks it (a voice session's token is
-refused). Both need the three `APPLE_*` key settings and `APPLE_BUNDLE_ID` below; without them they
+refused, and so is an access token made by `account-session`). Both need the three `APPLE_*` key settings and `APPLE_BUNDLE_ID` below; without them they
 answer 200 and do nothing.
 
 | Action | Body | When the app sends it | Answer |
@@ -191,6 +264,78 @@ answer 200 and do nothing.
 
 `APPLE_BUNDLE_ID` is one value: it must be the bundle ID of the build that signs in (Beta:
 `com.bienos.doddy2.dev`), because Apple issues the one-time code to that app.
+
+### One token per server: this server's own session for a Doddy account (decision `2026-11-12-one-token-per-server`)
+
+The Doddy account signs in once, at Supabase. Its token is then traded once, here, for a token that only this server
+accepts, which this server can end itself. Code: the `account-session` action in `src/voice-auth.js`; the session,
+refresh and sign-out code is the one an Apple voice account has always used. **This is the server's half. Nothing in the
+app calls it yet**, so installed apps change in no way: they keep sending the Supabase token, which is still accepted.
+
+- **`POST /api/voice-auth` `{ "action": "account-session" }`** takes the **Doddy account's access token** as the Bearer,
+  checked exactly like `apple-link` checks it (the project's published keys; a voice session's token and an access token
+  made by this action are refused, so a session can't mint another). The answer is the one `sign-in` gives,
+  `{ accessToken, refreshToken, expiresIn: 600 }`: a 10-minute access token (HS256, audience `voice`, the key id and the
+  access-token key of "Keys" above) and an opaque refresh token that rotates and lasts 30 days. The session is bound to the
+  account, as `account:<Supabase user id>`, the bucket the account's own token already counts under. Refused with the
+  answers of its neighbours: `401 session_expired` for any token that isn't a Doddy account's, `503 account_check_unavailable`
+  when the project's keys can't be read, `503 server_not_configured` when the server can't issue voice tokens, the signing
+  key is unusable or a limit setting is, `400` for a body over the size limit or not JSON, `405` for anything but POST.
+  Nothing is made or counted for a refused call.
+- **Limits.** Per account (`account-session:<account>`) and per caller address (`account-session-client:<address>`), each
+  one a keyed hash, with the numbers of a sign-in (`DODDY_SIGNINS_PER_CLIENT_HOUR` / `_DAY`, 10 and 30), counted in
+  the same store and failing closed, and only once the account's token has checked out. The address is believed only
+  from the header Vercel sets, an unknown address shares one bucket with ten times the limit and the log says
+  `noClientAddress: true`: all as for a sign-in ("Security behavior"). The two buckets are this action's own: Apple
+  sign-ins from the same address are neither counted in them nor refused by them. A refused call is `429
+  rate_limited` with `Retry-After`. There is no new setting.
+- **Two kinds of token at `/api/voice-token` during this release.**
+
+  | Token | Checked | Counts under | `auth` in the log |
+  |---|---|---|---|
+  | this server's access token, from `account-session` | HS256 signature, `kid`, expiry, and its session record in the store | `account:<id>` | `account_session` |
+  | the Doddy account's Supabase token (as before) | the project's published keys | `account:<id>` | `account_token` |
+  | an older Apple voice account's access token (as before) | HS256 signature, expiry, session record | the Apple pseudonym | `apple_session` |
+
+  Both of the first two are the same account to every limit: the same `account:<id>` goes to the same Redis script, so the
+  per-account hour and day, the new-account day and pool, the fair share and the daily ceiling count a person once,
+  and a person can neither be counted twice nor escape counting by switching kind (tests: `test/account-session.test.js`, on
+  an in-memory store and on a real Redis). They also give ElevenLabs the same keyed `userId`, so one person's conversations
+  stay together, and are recorded and deleted under the same key. `auth` is a fixed word on the `voice_token` log line, so
+  the share of requests still using the Supabase token can be read before it stops being accepted.
+- **Ending a session.** All of it is code that already existed for Apple voice accounts:
+  - `sign-out` (the session's access token) ends that session: its record and its refresh hashes. The account's other
+    sessions are untouched.
+  - `refresh` rotates the refresh token. A swapped-out refresh token coming back ends the whole session, and the caller
+    sees the same `401 session_expired` as for any dead token (ADR-712). A refresh token that has run out (30 days) or
+    been ended gives no new access token.
+  - `delete-account` with the session's access token ends all of the account's sessions, revokes its Apple link, deletes
+    its voice conversations and forgets the link, as it does for an Apple voice account.
+  - **New:** `delete-conversations`, the call the app makes first when a Doddy account is deleted, now also ends every
+    voice session of the account (`revokeUserSessions` in the store). That is the one step every deletion makes, so it is
+    where this belongs; `apple-revoke` runs for accounts made with Apple only. The Apple link is left for `apple-revoke`.
+  - **What "ended" means here.** Every request to this server looks the session of the access token up, so once a session
+    is ended its access token is refused at once, here, even inside its 10 minutes. That is the whole of it: an ElevenLabs
+    conversation token already handed out, and a conversation already running, are ElevenLabs's and live out their own
+    short lives; and the Doddy account's Supabase token, which this server cannot revoke, is still accepted at
+    `/api/voice-token` this release until it expires on its own.
+  - **Known limits.** This server can't see that a Supabase account was deleted, so a session made on another device in the
+    minutes after the deletion, or a deletion that didn't go through `delete-conversations`, leaves a session that works
+    until its 30 days end (its tokens are still counted and limited under the account like any other). A session made
+    while the code is live is a plain session in the store: nothing about it is read by the app yet.
+- **Refreshing never shortens the Apple link.** A Doddy account's sealed Apple token (`apple-token:account:<id>`) is the
+  same key an Apple voice account's refresh keeps alive. A refresh now only lengthens it, never shortens it (the 400 days
+  `apple-link` gave it stay), so using the new session can't make deleting the account stop revoking Sign in with Apple.
+  Apple voice accounts are extended exactly as before.
+- **Moving over.** This release: `/api/voice-token` takes both kinds, `apple-link`, `apple-revoke`, `delete-conversations` and
+  `account-session` take the Supabase token only (they run right after sign-in and right before deletion). A later pull
+  request, once the owner confirms the installed builds are new enough (owner queue 50), stops accepting the Supabase
+  token at `/api/voice-token` and leaves it only at those four. The app half is a separate pull request.
+- **Rolling back.** Revert the change and redeploy. `account-session` then answers `400 unknown_action`, and the app, which
+  keeps the Supabase token it still holds, uses that. Sessions made while the new code was live are plain voice sessions
+  to the earlier code too: `/api/voice-token`, `refresh` and `sign-out` read them the same way and keep working until they
+  end. What the earlier code does not do: end them in `delete-conversations`, and keep the Apple link's 400 days when such a
+  session is refreshed (it sets 30). Nothing stored needs changing either way.
 
 ### Revoking Sign in with Apple when an account is deleted (ADR-524)
 
@@ -238,7 +383,9 @@ agent IDs are cleared on launch; the old tester code Keychain item is deleted.
 - Shared atomic per-account (hourly and daily) and global rate limits run before any paid provider
   request. Only a token that is actually issued is counted, so a refused request never uses up the
   global budget or the account's own allowance (ADR-671, ADR-712). A `429` log line says which limit
-  it was (`user_hour`, `user_day`, `global`); the app sees the same `rate_limited` for all three.
+  it was (`user_hour`, `user_day`, `global`, and the four added by "How the limits fit together":
+  `new_account_day`, `new_pool`, `global_day`, `fair_share`); the app sees the same `rate_limited`
+  with `Retry-After` for all of them.
 - Sign-in is limited per caller address (`DODDY_SIGNINS_PER_CLIENT_HOUR` / `_DAY`), in the same
   Redis store and failing closed like the rest (ADR-712). It counts sign-ins that carry a token Apple
   verified, not junk, and not refresh or sign-out. The address is only believed from the header
@@ -246,10 +393,13 @@ agent IDs are cleared on launch; the old tester code Keychain item is deleted.
   an IPv6 address counts as its /64. Without a usable address every caller shares one "unknown"
   bucket with ten times the limit, and the log line carries `noClientAddress: true`. This is a brake
   on making many accounts from one place, not a defence against a network of addresses: add a Vercel
-  Firewall rate limit on `/api/voice-auth` for that (dashboard setting).
-- With the defaults a handful of accounts can still use the hourly global budget (30 per account,
-  100 for everyone). Lower `DODDY_TOKENS_PER_HOUR` or raise `DODDY_GLOBAL_TOKENS_PER_HOUR` to move
-  that; it is the owner's choice of cost against convenience.
+  Firewall rate limit on `/api/voice-auth` for that (dashboard setting). `account-session` is limited the same way, once
+  the Doddy account's token has been checked, per account and per address, in buckets of its own and with the same two
+  settings ("One token per server" above).
+- With the defaults an account may have 30 tokens an hour and 100 are shared by everyone, but once half
+  of those 100 are used an account that already had 10 in the hour waits for the next hour
+  ("How the limits fit together" above). Lower `DODDY_TOKENS_PER_HOUR` or raise
+  `DODDY_GLOBAL_TOKENS_PER_HOUR` to move that; it is the owner's choice of cost against convenience.
 - Request sizes, method, provider, upstream timeout, and provider response shape are checked.
 - No content, credentials, Apple subject, or user/account identifier is written to application logs. Neither is a
   conversation id: deleting voice conversations logs counts only.

@@ -1,8 +1,8 @@
 # Account and device tokens: production rules follow where the server runs, one key per purpose, devices you can see and revoke, tokens that expire
 
 - **Date:** 2026-11-12
-- **Decided by:** proposal, owner approval pending
-- **Status:** proposed — waiting for the owner. No code, setting or live service is changed by this file.
+- **Decided by:** the owner, 14 Nov 2026: build it as recommended, numbers included (60 days idle, 180 days absolute, 90 days for joins)
+- **Status:** approved, built in steps. Merged on 14 Nov 2026: step 2 of (e), the voice server's keys (#475; live from `main`, no setting to set); step 1, the backend's keys (#480; `doddy` is not redeployed by a merge); and (d), messaging expiry and rotation (#476; `doddy-messaging` not redeployed, `docs/OWNER_QUEUE.md` 106). Still to build: step 3 (stored devices, list, revoke), step 5 (the app) and step 6 (the start-up check and `render.yaml`). The settings on `doddy` after step 6 stay the owner's decision and wait for the owner's yes.
 - **Replaces:** nothing. Builds on ADR-563 (device sign-in), ADR-707 (owner claim), ADR-709 (token floors), ADR-819 (an iPhone using another account), `2026-11-08-required-account` and the open proposal `2026-11-09-sign-out-ends-the-messaging-device` (#279).
 
 ## Why

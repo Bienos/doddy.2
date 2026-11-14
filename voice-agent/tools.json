@@ -26,7 +26,7 @@
         },
         "required": ["text"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9401m4et17pfe598c1wmvdhpwhcv"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9401m4et17pfe598c1wmvdhpwhcv"}
     },
     {
       "type": "function",
@@ -97,7 +97,7 @@
         },
         "required": ["title"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9901m4f2xyn1exfrx6as0kek55rk"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9901m4f2xyn1exfrx6as0kek55rk"}
     },
     {
       "type": "function",
@@ -472,7 +472,7 @@
         },
         "required": ["place"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6101m4gj36nbe1tv5mpj73rzbqsa"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_6101m4gj36nbe1tv5mpj73rzbqsa"}
     },
     {
       "type": "function",
@@ -487,7 +487,7 @@
         },
         "required": ["app"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
     },
     {
       "type": "function",
@@ -545,7 +545,7 @@
         },
         "required": ["to", "body"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9001m4gj38k8fmwbr3gy4qz3wygw"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9001m4gj38k8fmwbr3gy4qz3wygw"}
     },
     {
       "type": "function",
@@ -561,7 +561,7 @@
         },
         "required": ["to", "amount"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5701m57c1717fmebcs14kbrjqmdq"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_5701m57c1717fmebcs14kbrjqmdq"}
     },
     {
       "type": "function",
@@ -601,7 +601,7 @@
         },
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_9301m6bqvywnfmv93krv5jhdpd7b"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_9301m6bqvywnfmv93krv5jhdpd7b"}
     },
     {
       "type": "function",
@@ -616,7 +616,7 @@
         },
         "required": ["title", "slides"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 120, "elevenlabs_tool_id": "tool_9601m5em00c3f66tbpag9f27kf4h"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "force", "timeout_secs": 120, "elevenlabs_tool_id": "tool_9601m5em00c3f66tbpag9f27kf4h"}
     },
     {
       "type": "function",
@@ -715,7 +715,7 @@
       "name": "open_camera",
       "description": "Open Doddy's camera on the user's screen, when they ask to take a photo or open the camera. The app shows a card and the camera opens only after the user taps Open camera. A photo the user keeps goes into a new note that they check and save themselves; you never see it. The result starts with 'opened' (the camera is open), 'declined' or 'unavailable'. Before this tool runs, say only one short line, for example 'Tap the card to open the camera.' (Polish: 'Stuknij kartę, żeby otworzyć aparat.'). Never say a photo was taken or saved. If the app doesn't know this tool, use run_shortcut with \"Doddy Camera\" as before.",
       "parameters": {"type": "object", "properties": {}},
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_3501m5ewmn09fmw9n8j15kx7x8n7"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_3501m5ewmn09fmw9n8j15kx7x8n7"}
     },
     {
       "type": "function",
@@ -885,7 +885,7 @@
         },
         "required": ["lost"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_4201m6f4xwztfs08n8r4ht6nf0ka"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "force", "timeout_secs": 60, "elevenlabs_tool_id": "tool_4201m6f4xwztfs08n8r4ht6nf0ka"}
     },
     {
       "type": "function",
@@ -1852,7 +1852,7 @@
         },
         "required": ["list", "dish", "items"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9201m4nf430kezd9s0fpxznfkppr"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9201m4nf430kezd9s0fpxznfkppr"}
     },
     {
       "type": "function",
