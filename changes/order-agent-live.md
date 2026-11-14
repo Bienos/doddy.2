@@ -1,0 +1,1 @@
+Food by phone: the live order agent exists (ElevenLabs "Doddy 7", made from the booking agent) and `ELEVENLABS_TASK_ORDER_AGENT_ID` is set on Render `doddy-messaging`; owner queue 61 is done. Orders are reachable only once row 48 puts `call_places` on the live main agent. Docs only.
