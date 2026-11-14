@@ -1015,6 +1015,9 @@ final class VoiceSessionController {
         earlyToken: Task<Result<String, VoiceTokenError>, Never>?
     ) async {
         let auth: ElevenLabsConfiguration
+        // The account-derived user id the voice server sent with the token, when it sent one (decision
+        // 2026-11-12-voice-conversations-per-account). Deleting the account finds the conversations by it.
+        var accountUserID: String?
         switch mode {
         case .tokenServer(let endpoint):
             let fetched: Result<String, VoiceTokenError>
@@ -1036,6 +1039,7 @@ final class VoiceSessionController {
             switch fetched {
             case .success(let token):
                 auth = .conversationToken(token)
+                accountUserID = VoiceTokenUserIDs.shared.take(forToken: token)
             case .failure(let error):
                 let tokenNote = "voice token not received: attempt \(attempt), \(LogSafeError.kind(of: error))"
                 Self.audioLog.notice("\(tokenNote, privacy: .public)")
@@ -1061,7 +1065,13 @@ final class VoiceSessionController {
         let sessionNote = audioHold == nil ? "set up by LiveKit" : "held by Doddy: \(Self.describeAudioSession())"
         let connectNote = "connecting to ElevenLabs: attempt \(attempt), audio session \(sessionNote)"
         Self.audioLog.notice("\(connectNote, privacy: .public)")
-        let startConfig = config
+        // This iPhone's own id, unless the server sent an account id this app accepts (`VoiceUserIDPolicy`). A `let`:
+        // the start below captures it in a concurrent closure.
+        let startConfig: ConversationConfig = {
+            var withUser = config
+            if let accountID = VoiceUserIDPolicy.accepted(accountUserID) { withUser.userId = accountID }
+            return withUser
+        }()
         do {
             // At most `StartLimit.seconds` (ADR-686). One that connects after the limit anyway is
             // ended here, so nothing keeps listening.
