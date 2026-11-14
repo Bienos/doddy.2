@@ -15,7 +15,7 @@ let package = Package(
         .package(url: "https://github.com/groue/GRDB.swift", exact: "7.12.0"),
         // Encrypted backup file (ADR-222): CryptoKit on Apple platforms; this same-API package
         // only on Linux, so the encryption is tested in CI. Not linked into the iPhone app.
-        .package(url: "https://github.com/apple/swift-crypto", exact: "3.15.1"),
+        .package(url: "https://github.com/apple/swift-crypto", exact: "5.1.1"),
     ],
     targets: [
         .target(
