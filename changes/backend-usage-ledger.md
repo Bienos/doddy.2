@@ -1,0 +1,3 @@
+Backend: every Anthropic call `doddy` makes is one content-free row per account in a new table `claude_usage` (model, feature, token counters with cache writes and reads, outcome, cost from a price table; no text), covering Ask Doddy, the web chat, `ask_claude`, documents, decks, the trip planner and travel-email reading; not voice and not the messaging server. Rows go with the account and are pruned after 400 days; nothing shows them yet. Decision `2026-11-14-backend-usage-ledger`.
+Ran: `npm run build` and the backend suite in `backend/` (results in the pull request). Not run: a live Anthropic call, so no real `usage` object was read.
+Deploy: `doddy` creates the table at its next start, no setting. The privacy policy needs a line (owner queue 98).

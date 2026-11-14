@@ -6,6 +6,7 @@ import { renderDeck, slideText } from "./render.js";
 import { gatherResearch, RESEARCH_PLAN_SCHEMA, ResearchPlan, type ResearchPack, type Wikimedia } from "./research.js";
 import { checkDeck, DECK_JSON_SCHEMA, DECK_LIMITS, type DeckProblem, dropBroken } from "./spec.js";
 import { unzip } from "./zip.js";
+import { UsageScope } from "../usageLedger.js";
 
 /**
  * Doddy's decks (decision 2026-11-10-better-presentations), replacing a single "make a pptx" request
@@ -69,16 +70,17 @@ export interface MadeDeck extends ClaudeFile {
 export class DeckMaker {
   constructor(private readonly deps: DeckMakerDeps) {}
 
-  async make(args: MakeDocumentArgs, allowWebSearch: () => Promise<boolean>, signal: AbortSignal): Promise<MadeDeck> {
+  /** `usage`: whose deck this is and the document's id, so each Claude call is one ledger row (a scope for each call, so only a refused-schema re-ask is recorded as a retry). */
+  async make(args: MakeDocumentArgs, allowWebSearch: () => Promise<boolean>, signal: AbortSignal, usage?: { userId: string; requestId: string }): Promise<MadeDeck> {
     const log = this.deps.log ?? (() => {});
-    const plan = await this.plan(args, signal);
+    const plan = await this.plan(args, signal, usage);
     const pack = await gatherResearch(plan, args.material, { wikimedia: this.deps.wikimedia, webSearch: this.deps.webSearch, allowWebSearch, log }, signal);
 
-    let raw = await this.write(args, pack, null, signal);
+    let raw = await this.write(args, pack, null, signal, usage);
     let checked = checkDeck(raw, pack);
     const firstProblems = checked.problems.length;
     if (checked.problems.length) {
-      raw = await this.write(args, pack, { previous: raw, problems: checked.problems }, signal);
+      raw = await this.write(args, pack, { previous: raw, problems: checked.problems }, signal, usage);
       checked = checkDeck(raw, pack);
     }
     let deck = checked.deck;
@@ -102,24 +104,24 @@ export class DeckMaker {
     return { name: fileName(args.title, info.ext), mime: info.mime, bytes: rendered.bytes, summary: `${rendered.slideCount} slides`, slideCount: rendered.slideCount };
   }
 
-  private async plan(args: MakeDocumentArgs, signal: AbortSignal): Promise<ResearchPlan> {
+  private async plan(args: MakeDocumentArgs, signal: AbortSignal, usage?: { userId: string; requestId: string }): Promise<ResearchPlan> {
     const user = [`Title: ${args.title}`, `Request: ${args.request}`, args.material ? `<material>\n${args.material.slice(0, 2_000)}\n</material>` : ""].filter(Boolean).join("\n");
-    const result = await this.structured({ name: DECK_PLAN_STEP, system: PLAN_SYSTEM, user, schema: RESEARCH_PLAN_SCHEMA, maxTokens: DECK_PLAN_TOKENS, effort: "low" }, signal);
+    const result = await this.structured({ name: DECK_PLAN_STEP, system: PLAN_SYSTEM, user, schema: RESEARCH_PLAN_SCHEMA, maxTokens: DECK_PLAN_TOKENS, effort: "low" }, signal, usage);
     const plan = ResearchPlan.safeParse(result);
     if (!plan.success) throw new ProviderError("malformed_provider_result");
     return plan.data;
   }
 
-  private async write(args: MakeDocumentArgs, pack: ResearchPack, repair: { previous: unknown; problems: DeckProblem[] } | null, signal: AbortSignal): Promise<unknown> {
+  private async write(args: MakeDocumentArgs, pack: ResearchPack, repair: { previous: unknown; problems: DeckProblem[] } | null, signal: AbortSignal, usage?: { userId: string; requestId: string }): Promise<unknown> {
     const user = writeRequest(args, pack, repair);
-    return this.structured({ name: DECK_WRITE_STEP, system: WRITE_SYSTEM, user, schema: DECK_JSON_SCHEMA, maxTokens: DECK_WRITE_TOKENS, effort: "medium" }, signal);
+    return this.structured({ name: DECK_WRITE_STEP, system: WRITE_SYSTEM, user, schema: DECK_JSON_SCHEMA, maxTokens: DECK_WRITE_TOKENS, effort: "medium" }, signal, usage);
   }
 
-  private async structured(input: Parameters<ClaudeProvider["structured"]>[0], signal: AbortSignal): Promise<unknown> {
+  private async structured(input: Parameters<ClaudeProvider["structured"]>[0], signal: AbortSignal, usage?: { userId: string; requestId: string }): Promise<unknown> {
     try {
       // `promptFallback`: both steps are checked whole by code afterwards (`ResearchPlan`, `checkDeck`), so when
       // Anthropic refuses the compiled schema the same request is asked once with the schema as words instead.
-      const result = await this.deps.claude.structured({ ...input, promptFallback: true }, signal);
+      const result = await this.deps.claude.structured({ ...input, promptFallback: true }, signal, usage ? new UsageScope(usage.userId, "make_deck", usage.requestId) : undefined);
       // Content-free: the step and what Anthropic said to the schema.
       if (result.schemaRefused) this.deps.log?.({ level: "warn", event: "deck_schema_refused", step: input.name ?? null, ...result.schemaRefused });
       return result.value;
