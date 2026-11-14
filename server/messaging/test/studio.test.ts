@@ -7,7 +7,7 @@ import { dispatchDue } from "../src/outbox.js";
 import { DEFAULT_STUDIO_SETTINGS, type StudioContext, type StudioSettings } from "../src/studio/context.js";
 import { claimNext, newStudioLoopState, reapInterrupted, runNext, runStudioPasses, stopStudioRuns, tidyAnthropicFiles } from "../src/studio/worker.js";
 import { dbSkip, freshDb, testApp, testCipher } from "./helpers.js";
-import { content, FakeStudioApi, goodFiles, job, png } from "./studioFakes.js";
+import { content, FakeStudioApi, goodFiles, job, plan, png, usage } from "./studioFakes.js";
 
 describe("studio against real Postgres", { skip: dbSkip }, () => {
   let db: Db;
@@ -319,6 +319,10 @@ describe("studio against real Postgres", { skip: dbSkip }, () => {
     assert.equal(await reapInterrupted(w.ctx), 1);
     assert.equal((await row(lost.id)).failure, "interrupted");
     assert.equal((await dayRows()).spend, before, "nothing came back for a job whose cost is unknown");
+    // Reaping again, or starting the loop again, neither re-runs the job nor reserves or releases anything a second time.
+    assert.equal(await reapInterrupted(w.ctx), 0);
+    assert.equal(await runNext(w.ctx), undefined);
+    assert.equal((await dayRows()).spend, before, "no second reservation or release after the crash");
   });
 
   // Studio spend counts cancelled work: a request cut off mid-way (Cancel, the time limit, a provider failure) has
@@ -364,16 +368,34 @@ describe("studio against real Postgres", { skip: dbSkip }, () => {
   });
 
   test("spending past the reservation is never given back: the day counts what was spent", async () => {
-    const w = await world({ settings: { dailyServerCapUsd: 100, dailyCapUsd: 100, maxOpen: 10, dailyPerAccount: 10, jobLimitUsd: 0.05 } });
+    // Since the pre-call budget (changes/studio-precall-budget.md) a call is only sent when its worst case fits the job's limit, so
+    // going past the limit takes a reply that cost more than the estimate allowed for: here a plan whose reported prompt is far
+    // larger than the request was estimated to be. The check after the call still ends the job, and the day holds what was spent.
+    const api = new FakeStudioApi();
+    api.plans.push({ kind: "ok", value: plan, usage: usage(400_000, 500) });
+    const w = await world({ api, settings: { dailyServerCapUsd: 100, dailyCapUsd: 100, maxOpen: 10, dailyPerAccount: 10, jobLimitUsd: 0.5 } });
+    const item = await approveJob(w);
+    assert.equal((await dayRows()).spend, 0.5);
+    await runNext(w.ctx);
+    const r = await row(item.id);
+    assert.equal(r.failure, "cost_limit");
+    const cost = Number(r.cost_usd);
+    assert.ok(cost > 0.5, `the job went past its limit before the check stopped it (${cost})`);
+    assert.ok(Math.abs((await dayRows()).spend - cost) < 0.001, "the day holds the real spend, not the smaller reservation");
+    assert.ok(Math.abs((await monthTotal()) - cost) < 0.001);
+  });
+
+  test("a limit that can't pay for even the first call stops the job before anything is sent: nothing spent, the whole reservation given back", async () => {
+    const api = new FakeStudioApi();
+    const w = await world({ api, settings: { dailyServerCapUsd: 100, dailyCapUsd: 100, maxOpen: 10, dailyPerAccount: 10, jobLimitUsd: 0.05 } });
     const item = await approveJob(w);
     assert.equal((await dayRows()).spend, 0.05);
     await runNext(w.ctx);
     const r = await row(item.id);
     assert.equal(r.failure, "cost_limit");
-    const cost = Number(r.cost_usd);
-    assert.ok(cost > 0.05, `the job went past its limit before the check stopped it (${cost})`);
-    assert.ok(Math.abs((await dayRows()).spend - cost) < 0.001, "the day holds the real spend, not the smaller reservation");
-    assert.ok(Math.abs((await monthTotal()) - cost) < 0.001);
+    assert.equal(Number(r.cost_usd), 0, "no model call was made, so none was paid for");
+    assert.deepEqual(api.maxTokens, {}, "the plan request was never sent");
+    assert.equal((await dayRows()).spend, 0, "the reservation came back whole");
   });
 
   // Copies made at Anthropic are written down the moment their ids come back, so nothing that ends the run early loses them.

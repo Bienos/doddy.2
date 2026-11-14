@@ -142,25 +142,33 @@ export class FakeStudioApi implements StudioModelApi {
       });
     }
   }
-  async plan(): Promise<Structured<PlanOutput>> {
+  /** The max_tokens each call was given by the pipeline's budget clamp, by step. */
+  maxTokens: Record<string, number[]> = {};
+  private seen(name: string, n?: number) { if (n !== undefined) (this.maxTokens[name] ??= []).push(n); }
+  async plan(_i?: string, _s?: AbortSignal, n?: number): Promise<Structured<PlanOutput>> {
+    this.seen("plan", n);
     await this.step("plan");
     return this.plans.shift() ?? { kind: "ok", value: plan, usage: usage() };
   }
-  async research(messages: ResearchTurn[], signal?: AbortSignal): Promise<ResearchMessage> {
+  async research(messages: ResearchTurn[], signal?: AbortSignal, n?: number): Promise<ResearchMessage> {
+    this.seen("research", n);
     await this.step("research", signal);
     this.researchInputs.push(structuredClone(messages));
     return this.researches.shift() ?? researchMessage();
   }
-  async pack(): Promise<Structured<PackOutput>> {
+  async pack(_i?: string, _s?: AbortSignal, n?: number): Promise<Structured<PackOutput>> {
+    this.seen("pack", n);
     await this.step("pack");
     return this.packs.shift() ?? { kind: "ok", value: packOutput(), usage: usage() };
   }
-  async write(input: string): Promise<Structured<ContentOutput>> {
+  async write(input: string, _s?: AbortSignal, n?: number): Promise<Structured<ContentOutput>> {
+    this.seen("write", n);
     await this.step("write");
     this.writeInputs.push(input);
     return this.writes.shift() ?? { kind: "ok", value: content(), usage: usage() };
   }
-  async make(messages: MakeTurn[], containerId: string | undefined): Promise<MakeMessage> {
+  async make(messages: MakeTurn[], containerId: string | undefined, _s?: AbortSignal, n?: number): Promise<MakeMessage> {
+    this.seen("make", n);
     await this.step("make");
     this.makeInputs.push(structuredClone(messages));
     const next = this.makes.shift() ?? { files: goodFiles(content()) };
