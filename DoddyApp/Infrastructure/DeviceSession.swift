@@ -88,7 +88,11 @@ enum DeviceSession {
 
     /// The server refused the token (expired, or its key changed): forget it and sign in again.
     static func renew(server: URL) async -> Bool {
-        switch await DoddyAccountServers.backendToken(for: server, afterRefusal: true) {
+        // The token the server just refused is the one the clients sent: what is in their slot. When that was the backend's own
+        // session for the account, it is forgotten and made again once; when it was anything else (a newer session, the
+        // Supabase token) the session is left alone (decision 2026-11-12-one-token-per-server).
+        switch await DoddyAccountServers.backendToken(
+            for: server, afterRefusal: true, refusedToken: KeychainSessionStore.read()?.token(for: server)) {
         case .account(let token): return keep(token, server: server)
         case .unavailable: return false
         case .deviceSession: break
@@ -146,6 +150,15 @@ enum DeviceSession {
     static func isServerInUse() -> Bool {
         guard let server = serverURL() else { return false }
         return KeychainSessionStore.read()?.token(for: server) != nil || hasDeviceID
+    }
+
+    /// The device ID for the backend's account-session exchange (decision 2026-11-12-one-token-per-server): the same id the
+    /// device sign-in sends, and sent only to an address the policy lets it go to, whoever asks (ADR-720). Nil otherwise, and
+    /// then nothing is sent. The backend keeps no copy of it: it keys this iPhone's stored row from it together with the
+    /// account, and the exchange needs the account's own token as well.
+    static func deviceIDForAccountExchange(server: URL) -> String? {
+        guard ServerAddressPolicy.accepts(server, debug: isDevelopmentBuild) else { return nil }
+        return deviceID()
     }
 
     /// This iPhone's device ID, made once. Nil only if the Keychain refuses to keep it.

@@ -142,6 +142,14 @@ export interface Config {
    */
   signingKeys: SigningKeys | null;
   /**
+   * The keys of the three jobs that outlive owner tokens: account sessions (`POST /v1/session/account`), links to files Doddy
+   * made, and the proof of an iPhone's earlier data (decision 2026-11-14-production-rules). The same keyring as `signingKeys`
+   * wherever that is loaded. Under DODDY_ENV=production with Supabase sign-in, where `signingKeys` is always null, it is the
+   * keyring of DODDY_SESSION_SIGNING_KEY when that is set, and nothing built from it accepts an owner-minted token or makes a
+   * device session. Null: those three are not set up on this server.
+   */
+  accountKeys: SigningKeys | null;
+  /**
    * Makes each iPhone's user id and an invite code's counter id (`deviceUserId`). DODDY_IDENTIFIER_KEY when
    * set, else the session signing key itself, so nothing moves at deploy. Not rotated with the signing keys.
    */
@@ -251,6 +259,52 @@ export function isLoopbackHost(host: string): boolean {
 
 function isLoopbackUrl(url: URL): boolean {
   return isLoopbackHost(url.hostname.replace(/^\[|\]$/g, ""));
+}
+
+/**
+ * What the start-up check reads: the settings as `loadConfig` resolved them, never a secret.
+ * `ownerTokensBesideSupabase`: this server would accept an owner-minted token next to Supabase sign-in.
+ * `deviceInviteCodes`: how many codes are set, not the codes.
+ */
+export interface ProductionRuleFacts {
+  mode: Mode;
+  host: string;
+  env: Env;
+  authMode: AuthMode;
+  ownerTokensBesideSupabase: boolean;
+  deviceSignup: "off" | "first-device" | "open";
+  deviceInviteCodes: number;
+  ownerClaim: OwnerClaim;
+  completionMode: CompletionMode;
+}
+
+/**
+ * Live on a host that is not loopback means production rules (decision 2026-11-12-account-and-device-tokens, part a): where
+ * the server runs decides, not DODDY_ENV. The same test the database check uses for "reachable from outside".
+ */
+export function appliesProductionRules(mode: Mode, host: string): boolean {
+  return mode === "live" && !isLoopbackHost(host);
+}
+
+const WHERE = "when DODDY_MODE=live and DODDY_HOST is not loopback";
+
+/**
+ * The problems production rules find, one line each, in the order of the decision's list. A line names the setting and the
+ * state it has to be in, never the state it is in and never a value. Nothing is found for a mock server or a loopback host.
+ */
+export function productionRuleProblems(facts: ProductionRuleFacts): string[] {
+  if (!appliesProductionRules(facts.mode, facts.host)) return [];
+  const found: string[] = [];
+  if (facts.env !== "production") found.push(`DODDY_ENV must be production ${WHERE}`);
+  if (facts.authMode === "signed") found.push(`DODDY_AUTH_MODE must be supabase ${WHERE}`);
+  if (facts.ownerTokensBesideSupabase) {
+    found.push(`Owner-minted tokens beside Supabase sign-in are not allowed ${WHERE} (DODDY_SESSION_SIGNING_KEY with DODDY_ENV other than production turns them on)`);
+  }
+  if (facts.deviceSignup !== "off") found.push(`DODDY_DEVICE_SIGNUP must be off ${WHERE}`);
+  if (facts.deviceInviteCodes > 0) found.push(`DODDY_DEVICE_INVITE_CODES must be unset ${WHERE}`);
+  if (facts.ownerClaim === "open") found.push(`DODDY_OWNER_CLAIM must be closed or unset ${WHERE}`);
+  if (facts.completionMode === "callback") found.push(`COMPOSIO_COMPLETION_MODE must be verifier ${WHERE}`);
+  return found;
 }
 
 const intSetting = (fallback: number, min: number, max: number) =>
@@ -429,13 +483,18 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   }
 
   let signingKeys: SigningKeys | null = null;
+  let accountKeys: SigningKeys | null = null;
   let masterKey: Buffer | null = null;
   // In supabase mode the owner's minted tokens keep working in development only, while the app
   // gets Apple and Google sign-in; production accepts Supabase sign-ins alone.
   const ownerTokens =
     e.DODDY_AUTH_MODE === "signed" ||
     (e.DODDY_AUTH_MODE === "supabase" && e.DODDY_ENV !== "production" && (e.DODDY_SESSION_SIGNING_KEY ?? "").trim() !== "");
-  if (ownerTokens) {
+  // Production with Supabase sign-in loads the same key for the three jobs that outlive owner tokens (`accountKeys`), and for
+  // nothing else: `signingKeys`, which owner-minted tokens and device sign-in need, stays null there. Without the key, as
+  // before, those three are not set up (decision 2026-11-14-production-rules).
+  const accountSessionsOnly = !ownerTokens && e.DODDY_AUTH_MODE === "supabase" && e.DODDY_ENV === "production" && (e.DODDY_SESSION_SIGNING_KEY ?? "").trim() !== "";
+  if (ownerTokens || accountSessionsOnly) {
     const key = e.DODDY_SESSION_SIGNING_KEY ? Buffer.from(e.DODDY_SESSION_SIGNING_KEY, "base64") : null;
     if (!key || key.length < 32) {
       problems.push("DODDY_SESSION_SIGNING_KEY must be base64 of at least 32 random bytes");
@@ -460,7 +519,10 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
         previous = decoded;
       }
     }
-    if (masterKey) signingKeys = new SigningKeys(masterKey, previous);
+    if (masterKey) {
+      accountKeys = new SigningKeys(masterKey, previous);
+      if (ownerTokens) signingKeys = accountKeys;
+    }
   }
   // Identifiers (an iPhone's user id) come from their own key, so a rotation of the signing keys moves nobody's
   // data. Unset, it is the signing key itself, the same bytes as before keys per purpose.
@@ -555,7 +617,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     if (e.COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION && !/^\d{8}_\d{2}$/.test(e.COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION)) {
       problems.push("COMPOSIO_GOOGLECALENDAR_TOOLKIT_VERSION must be a pinned version like 20250909_00, not 'latest'");
     }
-    if (e.COMPOSIO_COMPLETION_MODE === "callback" && e.DODDY_ENV !== "development") {
+    // On a live host that is not loopback the production rules below report it, once.
+    if (e.COMPOSIO_COMPLETION_MODE === "callback" && e.DODDY_ENV !== "development" && !appliesProductionRules(e.DODDY_MODE, e.DODDY_HOST)) {
       problems.push("COMPOSIO_COMPLETION_MODE=callback is only allowed for single-owner development; use verifier");
     }
     if (composioGiven && missing.length === 0) {
@@ -674,6 +737,22 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   // Paying for things (x402): off unless the owner sets a wallet.
   const payments = loadPayments(e, problems);
 
+  // Live on a host that is not loopback means production rules, whatever DODDY_ENV says (decision
+  // 2026-11-12-account-and-device-tokens, part a). Each line names a setting, never its value.
+  problems.push(
+    ...productionRuleProblems({
+      mode: e.DODDY_MODE,
+      host: e.DODDY_HOST,
+      env: e.DODDY_ENV,
+      authMode: e.DODDY_AUTH_MODE,
+      ownerTokensBesideSupabase: ownerTokens && e.DODDY_AUTH_MODE === "supabase",
+      deviceSignup: e.DODDY_DEVICE_SIGNUP,
+      deviceInviteCodes: deviceInviteCodes.length,
+      ownerClaim,
+      completionMode: e.COMPOSIO_COMPLETION_MODE,
+    }),
+  );
+
   if (problems.length > 0) throw new ConfigError(problems);
 
   return {
@@ -688,6 +767,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     databaseCaCert: e.DATABASE_CA_CERT?.trim() ? e.DATABASE_CA_CERT.trim().replace(/\\n/g, "\n") : null,
     authMode: e.DODDY_AUTH_MODE,
     signingKeys,
+    accountKeys,
     identifierKey,
     memoryKey,
     deviceSignup: e.DODDY_DEVICE_SIGNUP,

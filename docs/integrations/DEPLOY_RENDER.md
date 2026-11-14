@@ -109,7 +109,7 @@ On 18 Oct 2026 the workspace also runs copies of `doddy-voice-token` and `doddy-
    |---|---|
    | `NODE_VERSION` | `22` |
    | `DODDY_MODE` | `live` |
-   | `DODDY_ENV` | `development` (live + production is refused until real sign-in exists) |
+   | `DODDY_ENV` | `development` today. A build with the start-up check refuses to start on a live public host unless it is `production` (see "Production rules") |
    | `DODDY_HOST` | `0.0.0.0` |
    | `DODDY_PORT` | `10000` |
    | `DODDY_AUTH_MODE` | `signed` |
@@ -133,6 +133,25 @@ On 18 Oct 2026 the workspace also runs copies of `doddy-voice-token` and `doddy-
    Web search shows "Ready, no sign-in"; switch it on and ask Doddy something current.
 
 Checks after a search: Render logs show `POST /v1/tools/run` with status 200; app.monid.ai shows the run and its cost.
+
+## Production rules (the start-up check)
+Decision `2026-11-14-production-rules` (part a of `2026-11-12-account-and-device-tokens`). Where the server runs decides, not `DODDY_ENV`: when `DODDY_MODE=live` and `DODDY_HOST` is not loopback (`127.0.0.1`, `::1`, `localhost`), the backend refuses to start, whatever `DODDY_ENV` says, while any of these is true. The log has one line for each, `Not starting. <setting> must be …`, naming the setting and never a value; the process exits with code 78 before it opens the database or a port.
+
+| Setting | Has to be |
+|---|---|
+| `DODDY_ENV` | `production` |
+| `DODDY_AUTH_MODE` | `supabase` (not `signed`) |
+| `DODDY_SESSION_SIGNING_KEY` with `DODDY_ENV` other than `production` | owner-minted tokens beside Supabase sign-in are refused; with `DODDY_ENV=production` the key does not turn them on |
+| `DODDY_DEVICE_SIGNUP` | `off` (`first-device` and `open`, guest sessions included, are refused) |
+| `DODDY_DEVICE_INVITE_CODES` | unset |
+| `DODDY_OWNER_CLAIM` | `closed` or unset (not `open`) |
+| `COMPOSIO_COMPLETION_MODE` | `verifier` (not `callback`) |
+
+A mock server or a loopback host is never refused by it. A server that started says `"productionRules":true` in its `listening` line.
+
+Under `DODDY_ENV=production` with `DODDY_AUTH_MODE=supabase`, `DODDY_SESSION_SIGNING_KEY` (and, while rotating, `_PREVIOUS` and `DODDY_IDENTIFIER_KEY`) is read for three jobs only: the backend's session for a Doddy account on an iPhone (`POST /v1/session/account`), links to files Doddy made, and the proof of an iPhone's earlier data (`POST /v1/account/link-device/start`, `/undo`). Owner-minted tokens, device sessions and guest sessions are not accepted at any route and `POST /v1/session/device` is not served. Without the key, none of the three is set up. The signing key is still a secret in production; rotate it as below.
+
+**This build refuses to start with the settings the live service has today** (`DODDY_ENV=development`, device sign-in `open`, `callback`). Deploying it and changing the settings go together, on the owner's yes, in the order of `docs/OWNER_QUEUE.md` 113. `render.yaml` keeps the live service's values on purpose: a Blueprint sync would apply new ones before that decision.
 
 ## Rotating the signing key
 Decision `2026-11-14-backend-keys-per-purpose` (step b of `2026-11-12-account-and-device-tokens`). The server derives one key per job from `DODDY_SESSION_SIGNING_KEY` (device and owner sessions, links to files Doddy made; `backend/src/signingKeys.ts`) and puts a key id on everything it signs. Each iPhone's user id and the invite codes' counter ids come from a separate **identifier key** that is not rotated with the signing keys. A deploy of this change needs no new setting: tokens and links made before it keep working, and `DODDY_IDENTIFIER_KEY` unset means the signing key itself, as before.

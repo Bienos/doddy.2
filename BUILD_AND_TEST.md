@@ -363,7 +363,7 @@ refuses to book with a live key). Offline tests: `cd backend && npm run build &&
 | "Doddy's server didn't accept this device's session" | Wrong/expired token, or a dev token against a `signed` server |
 | "Needs attention" after connecting | Granted access isn't provably read-only (auth config scopes too broad, or scopes not reported). Fix the auth config and reconnect |
 | Simulator can't reach `http://localhost:8787` | App Transport Security may block plain http (unverified); use an HTTPS tunnel |
-| `Not starting. Invalid configuration: …` | Read the named variables; values are never printed |
+| `Not starting. …` (one line for each problem) | Read the named settings; values are never printed. On a live server that is not on loopback, `docs/integrations/DEPLOY_RENDER.md` "Production rules" lists what each setting has to be |
 
 ### Messages local actions
 
