@@ -2024,7 +2024,7 @@
     {
       "type": "function",
       "name": "ask_claude",
-      "description": "Ask Claude, a strong writing and thinking model on Doddy's server, for something you'd do worse yourself: sum up a long email or note, write or rewrite a short text (a message, a caption, a short email), explain something carefully, plan, brainstorm or translate. Pass the request in the user's language and, when the user means something already in this conversation (an email you read, web results, a note), copy that text into material. You get Claude's answer; say the useful part in one to three sentences, or offer to read it all. For anything long (a blog post, an article, a deck, a document, a spreadsheet, a PDF) use make_document instead. For anything current (prices, news, opening hours) use web_search first and pass its results as material. Runs at once: don't ask first.",
+      "description": "Only for long or careful writing, or work on a long text: never for a quick answer, a recipe, a how-to, a riddle or a fact, which you answer yourself at once (this tool takes about ten seconds). Ask Claude, a strong writing and thinking model on Doddy's server, for something you'd do worse yourself: sum up a long email or note, write or rewrite a short text (a message, a caption, a short email), explain something carefully, plan, brainstorm or translate. Pass the request in the user's language and, when the user means something already in this conversation (an email you read, web results, a note), copy that text into material. You get Claude's answer; say the useful part in one to three sentences, or offer to read it all. For anything long (a blog post, an article, a deck, a document, a spreadsheet, a PDF) use make_document instead. For anything current (prices, news, opening hours) use web_search first and pass its results as material. Runs at once. If text from outside has come into this conversation and you pass material, the app first shows a card with what will be sent, and the answer comes only after the user taps; a result starting with 'declined' means nothing was sent.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -2034,7 +2034,7 @@
         },
         "required": ["task", "request"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_1601m5f15swpeetbygr32gwr4h5a"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1601m5f15swpeetbygr32gwr4h5a"}
     },
     {
       "type": "function",
