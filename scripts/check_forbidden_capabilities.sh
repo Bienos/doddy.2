@@ -262,6 +262,13 @@ voice_controller=DoddyApp/Features/Voice/VoiceSessionController.swift
 if [ -f "$voice_controller" ] && ! { grep -q 'AskFirst.need(for: request)' "$voice_controller" && grep -q 'askLedger.mayRun(' "$voice_controller"; }; then
   echo "FAIL: ASK-01: $voice_controller must check AskFirst before a tool runs." >&2; status=1
 fi
+# DOD-07: on top of that check, the session-aware one (`AskFirst.need(for:in:)`, DoddyCore OutsideContent.swift) asks for
+# a tap after text from outside has reached the conversation. The controller must apply it, mark the tools that bring
+# such text in (`outsideContent.noteRun`) and keep the user's own words for it (`outsideContent.userSaid`).
+if [ -f "$voice_controller" ] && ! { grep -q 'AskFirst.need(for: request, in: outsideContent' "$voice_controller" \
+    && grep -q 'outsideContent.noteRun(of:' "$voice_controller" && grep -q 'outsideContent.userSaid(' "$voice_controller"; }; then
+  echo "FAIL: DOD-07: $voice_controller must apply the outside-content rule (AskFirst.need(for: request, in: outsideContent, ...), outsideContent.noteRun, outsideContent.userSaid)." >&2; status=1
+fi
 if grep -RInE --include='*.swift' "$wake_only" "${dirs[@]}" | code_only; then
   echo "FAIL: wake-word engine code is back (removed in ADR-549)." >&2; status=1
 fi

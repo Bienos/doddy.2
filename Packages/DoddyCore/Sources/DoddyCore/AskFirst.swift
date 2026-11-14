@@ -41,6 +41,13 @@ import Foundation
 // changes something outside Doddy's own lists and timers, sends, deletes, books, shares, calls, or starts
 // paid background work (a handed-over task, a Studio job): DOD-07 is unchanged.
 //
+// A fourth change, 14 Nov 2026 (decision 2026-11-14-untrusted-content-needs-a-tap; DOD-07 and "tool content is
+// data"): everything above is the baseline, and `voice-agent/tools.json` mirrors it. On top of it, `need(for:in:)`
+// (OutsideContent.swift) holds six of the tools that run at once behind a tap when text from outside could be
+// steering them: `text_me` and `ask_claude` with material once an email, a page, an account, Wikipedia or the screen
+// has reached the conversation; `make_document` always; `look_at_screen` for the first look; `add_to_list` and
+// `check_off` on a shared list unless the user just said the items. It can only add a card, never remove one.
+//
 // This file is the rule as code, so it is tested on Linux: which ask each tool needs (`AskFirst`),
 // what counts as a spoken yes (`SpokenYes`), and the one check the app makes before running a
 // tool (`AskLedger.mayRun`).
@@ -114,7 +121,8 @@ public enum AskFirst {
 
     /// True for a tool that never shows a card and never waits: the public lookups, the looks and the small actions
     /// above, every read through Doddy's server (an online account, Claude), translator start and stop, and a text
-    /// to the user's own number. `voice-agent/tools.json` says `ask: runs_now` for exactly these.
+    /// to the user's own number. `voice-agent/tools.json` says `ask: runs_now` for exactly these. This is the baseline:
+    /// `OutsideContentRule.guardedTools` among them can still ask in a conversation (`need(for:in:)`).
     public static func runsAtOnce(_ name: String) -> Bool {
         if publicLookups.contains(name) || ownLooks.contains(name) || ownSmallActions.contains(name) { return true }
         if [VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe].contains(name) { return true }
