@@ -4,8 +4,8 @@ Each platform builds from its own XcodeGen spec into its own Xcode project. Gene
 
 | Command | Spec | Project | Contains |
 |---|---|---|---|
-| `make project` | `project.yml` | `Doddy.xcodeproj` | iPhone/iPad app, widgets, share extension, notification content extension and tests. **This is what ships and what CI builds.** Scheme: `Doddy`. |
-| `make project-iphone` | `project-iphone.yml` | `DoddyiPhone.xcodeproj` | The iPhone/iPad app with no entitlements, so a free Apple team can sign it. No widgets and no share extension (they need the App Group), no push, no HealthKit; the notification content extension stays (it needs no entitlements). Scheme: `Doddy`. |
+| `make project` | `project.yml` | `Doddy.xcodeproj` | iPhone/iPad app, widgets, share extension, screen-sharing extension (`DoddyScreen`), notification content extension and tests. **This is what ships and what CI builds.** Scheme: `Doddy`. |
+| `make project-iphone` | `project-iphone.yml` | `DoddyiPhone.xcodeproj` | The iPhone/iPad app with no entitlements, so a free Apple team can sign it. No widgets, no share extension and no screen-sharing extension (they need the App Group), no push, no HealthKit; the notification content extension stays (it needs no entitlements). Scheme: `Doddy`. |
 | `make project-watch ENABLE_WATCH=1` | `project-watch.yml` | `DoddyWithWatch.xcodeproj` | **PAUSED (ADR-572).** `project.yml` plus the Apple Watch app and its complications embedded in the app. Schemes: `Doddy`, `DoddyWatch`. |
 | `make project-mac ENABLE_MAC=1` | `project-mac.yml` | `DoddyMac.xcodeproj` | **PAUSED (ADR-572).** Mac menu bar app and desktop widget **only**. Nothing from the iPhone app. Scheme: `DoddyMac`. |
 
@@ -13,7 +13,7 @@ Each platform builds from its own XcodeGen spec into its own Xcode project. Gene
 
 `make project` and `make project-iphone` also copy `Config/Package.resolved`, the app's locked package versions (7 packages, committed), into the new project (`scripts/install_package_resolved.sh`), so Xcode resolves exactly those versions; `ci_scripts/ci_post_clone.sh` and `scripts/ci.sh` do the same. `make update-packages` (Mac) resolves the packages afresh and writes the file; commit it with the `project.yml` change that needed it.
 
-`project-iphone.yml` includes `project.yml` and repeats the app's dependency list, less the widget and share extensions. `scripts/check_platform_specs.py`, which runs in `scripts/ci.sh`, fails if the lists drift, if a Watch or Mac target is back in `project.yml`, if the dormant specs drift from it, or if a target sits in the wrong spec.
+`project-iphone.yml` includes `project.yml` and repeats the app's dependency list, less the widget, share and screen-sharing extensions. `scripts/check_platform_specs.py`, which runs in `scripts/ci.sh`, fails if the lists drift, if a Watch or Mac target is back in `project.yml`, if the dormant specs drift from it, or if a target sits in the wrong spec.
 
 ## Who uses which folder
 
@@ -21,7 +21,7 @@ Each platform builds from its own XcodeGen spec into its own Xcode project. Gene
 |---|---|---|---|
 | `DoddyApp/` app code | ✔ | | |
 | `Shared/` (Live Activity attributes, Dynamic Island art, widget snapshot, Shortcuts and other intents shared with extensions) | ✔ | one file (`Shared/Widgets/WidgetSnapshotFile.swift`) | |
-| `DoddyWidgets/`, `DoddyShare/`, `DoddyNotificationContent/` | ✔ | | |
+| `DoddyWidgets/`, `DoddyShare/`, `DoddyScreen/`, `DoddyNotificationContent/` | ✔ | | |
 | `DoddyWatch/`, `DoddyWatchWidgets/` (paused) | | ✔ | |
 | `DoddyMac/`, `DoddyMacWidgets/` (paused) | | | ✔ |
 | `Packages/DoddyCore` → `DoddyCore` (rules, no UI) | ✔ | ✔ | ✔ |
