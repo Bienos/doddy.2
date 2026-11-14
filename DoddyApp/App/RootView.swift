@@ -7,6 +7,9 @@ enum PreferenceKey {
     static let showNoteTextInNotifications = "showNoteTextInNotifications"
     /// Memories shows Lists instead of Notes (ADR-216).
     static let memoriesShowsLists = "memoriesShowsLists"
+    /// The last timing lines of an Action Button press (`StartTimingJournal`, decision 2026-11-14-start-timing-on-the-phone):
+    /// fixed words and seconds only; erased with everything else.
+    static let startTimingJournal = "startTimingJournal"
     static let notificationExplainerSeen = "notificationExplainerSeen"
     static let appearance = "appearance"
     /// Settings › App language (ADR-459): a language code, or "system" for the iPhone's language. Absent means English.

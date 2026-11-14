@@ -3699,5 +3699,9 @@
   "Why this one": "Dlaczego ta",
   "This price came from a list, not the shop's page, so Doddy can't watch it.": "Ta cena pochodzi z listy, a nie ze strony sklepu, więc Doddy nie może jej pilnować.",
   "Say yes, or tap": "Powiedz „tak” albo stuknij",
-  "Say yes, or tap. Nothing happens before that.": "Powiedz „tak” albo stuknij. Wcześniej nic się nie dzieje."
+  "Say yes, or tap. Nothing happens before that.": "Powiedz „tak” albo stuknij. Wcześniej nic się nie dzieje.",
+  "Start timing": "Czas startu",
+  "Nothing yet. Press the Action Button once, then pull down here to refresh.": "Na razie nic. Naciśnij raz Action Button, a potem pociągnij tutaj w dół, żeby odświeżyć.",
+  "The timing of Doddy's last starts, as he measured it. Only seconds and fixed words are kept, and only on this iPhone. Erase everything removes them.": "Czas ostatnich uruchomień Doddy’ego, tak jak go zmierzył. Zapisywane są tylko sekundy i stałe słowa, i tylko na tym iPhonie. „Wymaż wszystko” je usuwa.",
+  "Copied. It leaves the clipboard after two minutes.": "Skopiowano. Za dwie minuty zniknie ze schowka."
 }
