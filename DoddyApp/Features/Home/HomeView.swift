@@ -186,6 +186,17 @@ struct HomeView: View {
                 guard scope.shows(.following) else { return }
                 showFollowing = true
             }
+            // A price-alert push, tapped (decision 2026-11-14-price-alerts-screen): Shopping opens, and it opens Price alerts and
+            // clears the request. Where Shopping is hidden in this build, nothing opens and the request is dropped.
+            .onChange(of: router.isPriceAlertsRequested, initial: true) { _, requested in
+                guard requested else { return }
+                guard scope.shows(.deals) else {
+                    router.isPriceAlertsRequested = false
+                    return
+                }
+                guard !showShopping else { return }
+                showShopping = true
+            }
             .fullScreenCover(isPresented: $showAsk, onDismiss: { photoForMessages = nil; fileForMessages = nil }) {
                 MessagesView(repository: store.environment.messageThreadRepository, photo: photoForMessages,
                              file: fileForMessages, openSettings: { selectedTab = .settings })

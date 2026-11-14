@@ -155,6 +155,38 @@ final class DataFlowTests: XCTestCase {
         XCTAssertFalse(DataFlow.cloudAISummary(state).contains("Shopify"))
     }
 
+    /// Decision 2026-11-14-price-alerts-screen: a price alert's words go to the messaging server only, which checks them
+    /// against leaflets it already read; the notification says only that an offer was found, nothing is bought, no AI
+    /// service and no shop is involved, and nothing new is sent without a server or while Connections are paused.
+    func testPriceAlertRowSaysWhatGoesWhereAndThatNoAIAndNoShopIsInvolved() {
+        XCTAssertFalse(row("dealWatches", base).isActive)
+        XCTAssertEqual(row("dealWatches", base).note, "No messaging server is set, so price alerts can't be kept.")
+        XCTAssertFalse(DataFlow.networkSummary(base).contains("price alerts"))
+        var state = base
+        state.messagingServerSet = true
+        let alerts = row("dealWatches", state)
+        XCTAssertTrue(alerts.isActive)
+        XCTAssertEqual(alerts.destination, "Your Doddy messaging server (price alerts)")
+        for part in ["the item's words", "the price you set", "the shops you pick", "keeps them encrypted", "once a day after it has read the shops' leaflets",
+                     "no AI is used for this", "says only that an offer was found: not the item, the shop or the price", "Nothing is bought",
+                     "that request carries no words", "Never your saved notes"] {
+            XCTAssertTrue(alerts.what.contains(part), part)
+        }
+        XCTAssertTrue(alerts.when.contains("Only when you add a price alert"))
+        XCTAssertTrue(alerts.note?.contains("Delete removes an alert, and what it found, from the server at once") ?? false)
+        XCTAssertTrue(DataFlow.networkSummary(state).contains("your messaging server (price alerts)"))
+        // No model and no shop reads an alert: it is in no AI summary, and its destination names neither.
+        XCTAssertFalse(alerts.destination.contains("Anthropic"))
+        XCTAssertFalse(alerts.destination.localizedCaseInsensitiveContains("shops'"))
+        XCTAssertFalse(DataFlow.cloudAISummary(state).localizedCaseInsensitiveContains("alert"))
+        // Paused: nothing new goes, and the row says the server still checks what is already kept.
+        state.pauseAll = true
+        let paused = row("dealWatches", state)
+        XCTAssertFalse(paused.isActive)
+        XCTAssertTrue(paused.note?.contains("keep being checked by Doddy's server until they end or you delete them") ?? false)
+        XCTAssertFalse(DataFlow.networkSummary(state).contains("price alerts"))
+    }
+
     /// SHOPPING_WATCH.md (ADR-614): a watched price goes to the messaging server, which reads the shop's page;
     /// the notification has no product words, nothing is bought, no AI service is involved, and nothing is sent
     /// without a server or while Connections are paused.
