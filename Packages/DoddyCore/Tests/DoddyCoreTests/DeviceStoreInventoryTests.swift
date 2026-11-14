@@ -162,7 +162,7 @@ final class DeviceStoreInventoryTests: XCTestCase {
         XCTAssertTrue(DeviceKeychain.shouldErase(service: "com.bienos.doddy2.gateway", scope: .keepSignIn))
         XCTAssertTrue(DeviceKeychain.shouldErase(service: "com.bienos.doddy2.voice-access-code", scope: .keepSignIn))
         // The sign-in and what ties this iPhone to its servers stay, unless the account was deleted.
-        for name in ["doddy-account", "voice-session", "voice-account-session", "voice-account-session-owed", "connected-apps", "server", "device"] {
+        for name in ["doddy-account", "voice-session", "voice-account-session", "voice-account-session-owed", "backend-account-session", "backend-account-session-owed", "connected-apps", "server", "device"] {
             XCTAssertFalse(DeviceKeychain.shouldErase(service: "com.bienos.doddy2.\(name)", scope: .keepSignIn), name)
             XCTAssertTrue(DeviceKeychain.shouldErase(service: "com.bienos.doddy2.\(name)", scope: .afterAccountDeleted), name)
         }
@@ -188,7 +188,8 @@ final class DeviceStoreInventoryTests: XCTestCase {
         XCTAssertEqual(
             Set(DeviceKeychain.keptServices(scope: .keepSignIn)),
             ["com.bienos.doddy2.doddy-account", "com.bienos.doddy2.voice-session", "com.bienos.doddy2.voice-account-session",
-             "com.bienos.doddy2.voice-account-session-owed", "com.bienos.doddy2.connected-apps",
+             "com.bienos.doddy2.voice-account-session-owed", "com.bienos.doddy2.backend-account-session",
+             "com.bienos.doddy2.backend-account-session-owed", "com.bienos.doddy2.connected-apps",
              "com.bienos.doddy2.server", "com.bienos.doddy2.device"])
         XCTAssertEqual(DeviceKeychain.keptServices(scope: .afterAccountDeleted), [])
     }
@@ -208,5 +209,24 @@ final class DeviceStoreInventoryTests: XCTestCase {
             XCTAssertEqual(DeviceKeychain.store(for: name), .keychainServerHandles, name)
             XCTAssertFalse(DeviceKeychain.services.first { $0.name == name }?.holds.isEmpty ?? true, "\(name) needs a line saying what it holds")
         }
+    }
+
+    /// One token per server, the backend's half: the backend's own session for the Doddy account, and the ends still owed to
+    /// the backend, are Keychain items of their own, apart from the slot the backend clients read (`connected-apps`, which
+    /// holds whichever token they send). Kept while the person stays signed in and erased with the account, like the voice
+    /// server's.
+    func testTheBackendAccountSessionItemsAreRegisteredKeptWhileSignedInAndErasedWithTheAccount() {
+        let session = "com.bienos.doddy2.backend-account-session"
+        let owed = "com.bienos.doddy2.backend-account-session-owed"
+        XCTAssertEqual(DeviceKeychain.services.first { $0.name == session }?.role, .signIn)
+        XCTAssertEqual(DeviceKeychain.services.first { $0.name == owed }?.role, .serverTie)
+        for name in [session, owed] {
+            XCTAssertFalse(DeviceKeychain.shouldErase(service: name, scope: .keepSignIn), name)
+            XCTAssertTrue(DeviceKeychain.shouldErase(service: name, scope: .afterAccountDeleted), name)
+            XCTAssertEqual(DeviceKeychain.store(for: name), .keychainServerHandles, name)
+            XCTAssertFalse(DeviceKeychain.services.first { $0.name == name }?.holds.isEmpty ?? true, "\(name) needs a line saying what it holds")
+        }
+        let names = DeviceKeychain.services.map(\.name)
+        XCTAssertEqual(Set(names).count, names.count, "no service is listed twice")
     }
 }
