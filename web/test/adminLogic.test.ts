@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { insights, matchesFilter, percent, retention, stateOf, troubleRate, daysBetween } from "../src/admin/logic.js";
+import { insights, matchesFilter, percent, retention, stateOf, troubleRate, daysBetween, valueRow } from "../src/admin/logic.js";
 import { OwnerAccounts, OwnerOverview, type OwnerAccount } from "../src/owner/schema.js";
 import { fixture } from "./fakeServer.js";
 
@@ -105,5 +105,39 @@ describe("the Needs attention list is computed from the numbers", () => {
     expect(ids).toContain("directory");
     expect(ids).not.toContain("activation");
     expect(ids).not.toContain("new");
+  });
+});
+
+describe("tasks that worked out (decision 2026-11-14-tasks-that-worked-out)", () => {
+  const week = (over: Partial<{ active: number; withWorkedOut: number; workedOut: number }>, outcomes: Partial<Record<"done" | "declined" | "unsure" | "failed" | "undone", number>> = {}) => ({
+    week: "2026-10-19", active: 0, withWorkedOut: 0, workedOut: 0, ...over,
+    outcomes: { done: 0, declined: 0, unsure: 0, failed: 0, undone: 0, ...outcomes },
+  });
+
+  test("per account that used Doddy, to one decimal, with each guardrail over what it can fairly be a share of", () => {
+    const row = valueRow(week({ active: 3, withWorkedOut: 2, workedOut: 10 }, { done: 12, undone: 2, unsure: 2, failed: 1, declined: 5 }));
+    expect(row.perAccount).toBe(3.3);
+    expect(row.withWorkedOut).toBe(67);
+    // Tries that ran: 12 done + 2 not sure + 1 didn't work = 15. Said no never ran.
+    expect(row.notSure).toBe(13);
+    expect(row.failed).toBe(7);
+    expect(row.undone).toBe(17); // of the 12 done
+    expect(row.declined).toBe(25); // of the 20 asked
+  });
+
+  test("a week with nobody or nothing in it is a dash, never a made-up 0", () => {
+    expect(valueRow(week({}))).toEqual({ week: "2026-10-19", active: 0, workedOut: 0, perAccount: null, withWorkedOut: null, notSure: null, failed: null, undone: null, declined: null });
+    const onlyNo = valueRow(week({ active: 1 }, { declined: 2 }));
+    expect(onlyNo.perAccount).toBe(0);
+    expect(onlyNo.declined).toBe(100);
+    expect(onlyNo.notSure).toBeNull();
+    expect(onlyNo.undone).toBeNull();
+  });
+
+  test("on the fixture: this week so far and last week, per account", () => {
+    const rows = overview.value.weeks.map(valueRow);
+    expect(rows).toHaveLength(8);
+    expect(rows[7]).toMatchObject({ week: "2026-10-19", active: 3, workedOut: 13, perAccount: 4.3 });
+    expect(rows[6]).toMatchObject({ week: "2026-10-12", active: 3, workedOut: 59, perAccount: 19.7 });
   });
 });

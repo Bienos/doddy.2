@@ -1,3 +1,0 @@
-Calls for you: a new call starts from one field, "Who and why"; Doddy's server has Claude propose the brief, code checks every field (the number only from the user's words or picked contact), and the editor opens filled in with the details folded; the card and its approval are unchanged (decision `docs/decisions/2026-11-13-calls-one-field-brief.md`).
-New server route `POST /v1/call-cases/draft` (needs a `doddy-messaging` deploy; uses the existing Anthropic key, no new env).
-Ran: server `npm test` (1084 pass), `make test-core` (3100, 0 failures), `swiftc -parse`, strings check, `scripts/ci.sh --only checks`, `scripts/typecheck_app_logic.sh`. Not run: the SwiftUI views were not compiled; no real model call; not on a device.

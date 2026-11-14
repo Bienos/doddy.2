@@ -547,7 +547,10 @@ test("maker, live adapter: when Anthropic refuses the outline's schema the deck 
   assert.equal(plan.output_config.format.type, "json_schema");
   assert.deepEqual(refused.output_config, { effort: "medium", format: { type: "json_schema", schema: DECK_JSON_SCHEMA } });
   assert.deepEqual(retry.output_config, { effort: "medium" }, "the retry sends no compiled schema");
-  assert.ok(retry.system.startsWith(refused.system) && retry.system.includes(JSON.stringify(DECK_JSON_SCHEMA)), "the schema is in the prompt instead");
+  // The outline's instructions are long enough to be cached, so `system` is one marked block (prompt caching); its text is what is compared.
+  const systemText = (s: unknown): string => (typeof s === "string" ? s : (s as { text: string }[]).map((b) => b.text).join(""));
+  assert.ok(Array.isArray(refused.system) && Array.isArray(retry.system), "the long fixed instructions are marked for caching, on the refused request and on the retry");
+  assert.ok(systemText(retry.system).startsWith(systemText(refused.system)) && systemText(retry.system).includes(JSON.stringify(DECK_JSON_SCHEMA)), "the schema is in the prompt instead");
   assert.deepEqual(retry.messages, refused.messages, "the request and the sources are the same");
   assert.deepEqual(logs.find((l) => l.event === "deck_schema_refused"), { level: "warn", event: "deck_schema_refused", step: DECK_WRITE_STEP, status: 400, type: "invalid_request_error", hint: "grammar" });
   assert.doesNotMatch(JSON.stringify(logs), /Demo Town|compiled grammar/, "logs carry no content and none of Anthropic's message");
@@ -623,7 +626,7 @@ test("maker: what Claude reads marks sources and material as data and lists the 
 
 // ------------------------------------------------------------------ through the server
 
-const linkId = (url: string) => new DocumentLinks(TEST_LINK_KEY, "https://api.doddy.test").verify(new URL(url), new Date("2026-10-10T10:00:00Z"))!;
+const linkId = (url: string) => new DocumentLinks(TEST_LINK_KEY, "https://api.doddy.test").claim(new URL(url))!.id;
 
 test("make_document deck: the card says where research goes; the file is a real deck with Doddy's frame", async () => {
   rig = await start();

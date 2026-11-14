@@ -6,7 +6,7 @@ Doddy is an app for iPhone and iPad that you talk to. You say what you need in a
 
 This repository holds everything: the iPhone app, the servers behind it, Doddy Web (a browser version for the same account), the website [www.doddy.lol](https://www.doddy.lol) and all the documents.
 
-> **Where things stand (12 Nov 2026, checked against `main`).** The app is in testing: CI builds it and runs its tests in the simulator, and the owner runs it on their own iPhone and through TestFlight (Doddy Beta), but it is not on the App Store. Doddy Web and the website are live. The Apple Watch and Mac apps are paused. [STATUS.md](STATUS.md) is the one page that says what is live and what is open right now.
+> **Where things stand (14 Nov 2026, checked against `main`).** The app is in testing: CI builds it and runs its tests in the simulator, and the owner runs it on their own iPhone and through TestFlight (Doddy Beta), but it is not on the App Store. Doddy Web and the website are live. The Apple Watch and Mac apps are paused. [STATUS.md](STATUS.md) is the one page that says what is live and what is open right now.
 
 ## How Doddy works
 
@@ -18,12 +18,12 @@ Three promises shape the whole app. They are written down in [docs/trust/](docs/
 
 ## What Doddy can do today
 
-This is what the code on `main` does (12 Nov 2026). It builds and passes its tests in CI, but most of what was added since 20 October hasn't been tried on a real iPhone yet. Every feature, with its status, is listed in [docs/platforms/iphone.md](docs/platforms/iphone.md).
+This is what the code on `main` does (14 Nov 2026). It builds and passes its tests in CI, but most of what was added since 20 October hasn't been tried on a real iPhone yet. Every feature, with its status, is listed in [docs/platforms/iphone.md](docs/platforms/iphone.md).
 
-- **Talk.** Tap Doddy on Home and talk. He listens only after a tap ("Start listening when I open Doddy" stays off unless you turn it on). The voice runs on ElevenLabs, or on OpenAI if you choose it in Settings › Voice; while you talk, your voice goes to that company.
+- **Talk.** Tap Doddy on Home and talk. He listens only after a tap ("Start listening when I open Doddy" stays off unless you turn it on). The voice runs on ElevenLabs, in one voice (OpenAI voice was removed on 9 Nov); while you talk, your voice goes to ElevenLabs. Translating uses a separate agent with no tools.
 - **Remember.** Notes and lists live in a database on the phone. Doddy asks before keeping anything. You can find notes by their words or their meaning, correct them, delete them, export them, and back them up to an encrypted file.
 - **Your day.** With iOS's permission he reads and changes your calendar and reminders (several changes on one card, with undo), looks up contacts and birthdays, drafts texts and emails for you to send, sets timers and alarms (alarms need iOS 26), remembers where you parked and tells you when to leave. There are also shopping lists, a translator, meeting recordings written out on the phone, steps and Apple Health, and morning and evening check-ins.
-- **With help from the servers.** Web, news and place searches; a typed chat in Messages answered by Claude; Gmail, Outlook, Google Calendar, Drive, Notion and Todoist once you connect them, and other online apps you add yourself; documents and slide decks; this week's shop leaflets; longer tasks that run in the background; research briefs and infographics (Studio). Some of these are off on the server until they are switched on, Studio among them.
+- **With help from the servers.** Web, news, place and flight searches; a typed chat in Messages answered by Claude; Gmail, Outlook, Google Calendar, Drive, Notion and Todoist once you connect them, and other online apps you add yourself; documents and slide decks; this week's shop leaflets; longer tasks that run in the background; research briefs and infographics (Studio). Some of these are off on the server until they are switched on, Studio among them.
 - **Around the phone.** Home Screen and Lock Screen widgets, Doddy in the Dynamic Island while he talks, Siri and Shortcuts, the Action Button, and "Save to Doddy" in the Share menu.
 - **Languages.** The app's screens are in Polish by default, with English and eight more languages to choose from. The eight are machine translations no native speaker has checked yet.
 - **Your Doddy account.** Everyone signs in with Apple or Google before using Doddy (a code sent by email is built but hidden for now). Google works only once the owner finishes its setup (the owner queue says what is left).
@@ -32,7 +32,7 @@ This is what the code on `main` does (12 Nov 2026). It builds and passes its tes
 
 **Not done yet:**
 - Google sign-in fails until the owner registers a return address with Google; today only Sign in with Apple gets you in.
-- Calls and texts are written but not seen end to end: Doddy phoning a restaurant for you, calling you later, call-backs to Doddy's number, and texts to your own number. Calling Doddy's own phone number is merged but off, and Studio is off on the server.
+- Calls and texts are written but not seen end to end: Doddy phoning a restaurant for you (to ask, to book a table or to order food), calling you later, call-backs to Doddy's number, and texts to your own number. Calling Doddy's own phone number is merged but off, and Studio is off on the server.
 - Invoices can't be sent to inFakt or KSeF. Doddy can't pay for anything you can use: paying for a web page in USDC is merged but off by default, on a test network only. The BLIK transfer draft (a card you send from your bank app, never a payment by Doddy) is back since 7 Nov.
 - The app isn't on the App Store. Every build shows every feature: the beta list that hid some of them was dropped on 10 Nov (decision `2026-11-10-no-beta-scope`). The Apple Watch and Mac apps are paused.
 
@@ -41,7 +41,7 @@ This is what the code on `main` does (12 Nov 2026). It builds and passes its tes
 ```mermaid
 flowchart LR
     you((You)) --> app["iPhone / iPad app"]
-    app -- "talks to" --> voice["Voice agent<br/>(ElevenLabs, or OpenAI)"]
+    app -- "talks to" --> voice["Voice agent<br/>(ElevenLabs)"]
     app -- "voice sign-in" --> token["Voice token server<br/>(Vercel)"]
     app -- "account, files, connected apps" --> backend["Doddy server 'doddy'<br/>(Render)"]
     app -- "messages, errands, leaflets,<br/>texts, calls, Studio, notifications" --> messaging["Messaging server<br/>(Render + Postgres)"]
@@ -59,9 +59,9 @@ flowchart LR
 |---|---|
 | [`DoddyApp/`](DoddyApp/) | The iPhone and iPad app (SwiftUI). One folder per feature in `DoddyApp/Features/`. |
 | [`Packages/DoddyCore/`](Packages/DoddyCore/) | The app's rules and memory database, with no screens, so they can be tested on any computer. |
-| `Shared/`, `DoddyWidgets/`, `DoddyShare/`, `DoddyNotificationContent/` | Code shared with the app's extensions, then the extensions: Home Screen widgets, "Save to Doddy" in the Share menu, and the expanded view of a reminder notification. |
+| `Shared/`, `DoddyWidgets/`, `DoddyShare/`, `DoddyScreen/`, `DoddyNotificationContent/` | Code shared with the app's extensions, then the extensions: Home Screen widgets, "Save to Doddy" in the Share menu, sharing the screen with Doddy, and the expanded view of a reminder notification. |
 | `DoddyTests/`, `DoddyUITests/` | The app's tests. UI tests drive the app in the iPhone simulator. |
-| [`voice-agent/`](voice-agent/README.md) | What the voice agents are told and which tools they have: the main agent, the phone agent and the task-call agent. |
+| [`voice-agent/`](voice-agent/README.md) | What the voice agents are told and which tools they have: the main agent, the phone agent, the translator, and the three agents that call a business for you (to ask, to book, to order food). |
 | `backend/` | The main server (`doddy` on Render): accounts, connected apps, documents Doddy makes, and Doddy Web. |
 | [`web/`](web/README.md) | Doddy Web, the browser app for the same account. |
 | [`server/messaging/`](server/messaging/README.md) | The messaging server: messages, errands, shop leaflets, texts and calls, Studio, push notifications. |

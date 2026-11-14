@@ -226,6 +226,15 @@ Owner, 13 Nov 2026: "to musi być dobrze zrobione, tak zajebiście i też to gra
 - **Where:** the rules in DoddyCore `ShoppingGlance.swift` (tested by `ShoppingGlanceTests` on Linux); the pieces in `ShoppingLook.swift`, the motion in `ShoppingMotion.swift`, `BasketTabPicker.swift`, `DealsStates.swift`, `ShoppingRouteChip.swift`. `ShoppingHubView` and `DealsView` only call them, because the redesign pull requests #411 and #416 redraw those two files.
 - **Checked:** `make test-core` with `ShoppingGlanceTests`; `swiftc -parse` on every changed Swift file; the string catalogs. **Not checked:** the SwiftUI is not compiled (no Xcode here) and nothing was seen on a device, in dark mode, at accessibility text sizes or with Reduce Motion on.
 
+## Compare the picks (14 Nov 2026, decision `2026-11-14-shopping-compare-picks`)
+
+Owner, 13 Nov 2026: "zawsze wyskakuje kilka opcji, porównywanie dogłębsze". A task's result with **two picks or more** (each with its offer) gets "Compare the picks side by side" under its summary. It opens a sheet (`ShoppingCompareView`) with one card per pick, in the result card's order: its role, the price, the shop, where the price was read and when, the delivery text the source gave, Doddy's notes, the reason for the pick and its trade-off, "Watch the price" (only for a price read on the shop's page) and "Buy at …" (Safari, as on the result card, with the partner-link line when there is one).
+
+- **Only the code compares** (DoddyCore `ShoppingComparison`, `ShoppingComparisonTests`): the lowest price and "N more than the lowest" are sums in integer minor units over the registered prices, and only when every shown pick is in one currency. Mixed currencies: nothing is marked and the sheet says why. A tie has no lowest; two picks at the same lowest price are both marked.
+- **Said as missing, not guessed:** a delivery the result doesn't carry reads "Not in the result"; the result has no returns policy, so none is compared.
+- **Nothing new is sent or stored:** the sheet reads the result already on the iPhone. No server change.
+- **Checked:** `ShoppingComparisonTests` and the SwiftUI sheet are built by CI, not by the session that wrote them (no Swift toolchain there). **Not checked:** anything on a device, in dark mode, at accessibility text sizes (the cards stack under each other there) or with VoiceOver.
+
 ## Shopify shops (12 Nov 2026)
 
 Owner, 12 Nov 2026: "dawaj z Shopify", after the research of 11 Nov (Shopify opened its cross-merchant catalogue in June 2026). The server route and the screen come from PR #332 (a draft with the voice tools too); this section is **only the screen and the route**. The voice tools `shopify_search` and `shopify_prepare_checkout`, and everything in `voice-agent/`, stay in #332.

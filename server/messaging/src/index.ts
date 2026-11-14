@@ -25,6 +25,7 @@ const deps = {
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
   jakdojade: config.jakdojade ? new JakdojadePartnerClient(async () => config.jakdojade ?? null) : undefined,
   fileWatches: { origin: config.documentsOrigin }, radar: { enabled: config.radarAlertsEnabled },
+  contactTexts: config.contactTextsEnabled,
   trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap, quietHours: config.quietHours,
 };
 const app = await buildApp(deps);
@@ -44,6 +45,7 @@ app.log.info({
   deals: config.dealsSettings.enabled, dealsReader: !!providers.deals.model, shoppingOffers: !!config.shoppingSettings.serperApiKey,
   dealsSearchShops: config.dealsSearchShops.length, affiliateRules: config.shoppingSettings.affiliateRules.length,
   watches: config.watchSettings.enabled && !!providers.cipher,
+  contactTexts: config.contactTextsEnabled && !!providers.cipher && !!providers.sms,
   fileReadyPush: !!(config.documentsOrigin && providers.cipher && providers.push),
   radarAlerts: config.radarAlertsEnabled,
   leafletCatalog: config.dealsSettings.enabled && !!config.dealsSettings.catalog?.enabled,

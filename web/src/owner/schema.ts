@@ -41,8 +41,24 @@ export const ConversationShape = z
   .strict();
 export type ConversationShape = z.output<typeof ConversationShape>;
 
-export const Cohort = z.object({ week: Day, size: count, active: z.array(count) }).strict();
+/** `w4`: of the accounts whose days 22 to 28 after joining are over, how many had a task that worked out then. */
+export const Cohort = z
+  .object({ week: Day, size: count, active: z.array(count), w4: z.object({ eligible: count, kept: count }).strict() })
+  .strict();
 export type Cohort = z.output<typeof Cohort>;
+
+/** Accounts by the week of their first task that worked out, and how many had another one each week after. */
+export const FirstTaskCohort = z.object({ week: Day, size: count, active: z.array(count) }).strict();
+export type FirstTaskCohort = z.output<typeof FirstTaskCohort>;
+
+/**
+ * One week of tasks that worked out (decision 2026-11-14-tasks-that-worked-out): Logbook's "done" less
+ * "undone", which still holds look-ups, opened apps and cards shown, so it is not "confirmed".
+ */
+export const ValueWeek = z
+  .object({ week: Day, active: count, withWorkedOut: count, workedOut: count, outcomes: Outcomes })
+  .strict();
+export type ValueWeek = z.output<typeof ValueWeek>;
 
 export const OwnerOverview = z
   .object({
@@ -70,6 +86,7 @@ export const OwnerOverview = z
     errands: z.object({ handedOver: count, finished: count, stopped: count }).strict(),
     activation: z.object({ joined: count, activated: count }).strict(),
     cohorts: z.array(Cohort),
+    value: z.object({ weeks: z.array(ValueWeek), firstTaskCohorts: z.array(FirstTaskCohort) }).strict(),
   })
   .strict();
 export type OwnerOverview = z.output<typeof OwnerOverview>;

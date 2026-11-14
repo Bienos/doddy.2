@@ -155,6 +155,37 @@ describe("the admin dashboard", () => {
     expect(within(cohorts).getAllByRole("row")).toHaveLength(9); // header + 8 weeks
     expect(within(cohorts).getByRole("columnheader", { name: "+1 wk" })).toBeInTheDocument();
     expect(within(cohorts).getByText("2026-09-28")).toBeInTheDocument();
+    // Nobody in the fixture joined 28 days ago, so week 4 has no one to judge yet: a dash, never 0%.
+    expect(within(cohorts).getByRole("columnheader", { name: "Value in week 4" })).toBeInTheDocument();
+    const firstWeek = within(cohorts).getByRole("row", { name: /^2026-09-28/ });
+    expect(within(firstWeek).getAllByRole("cell").at(-1)).toHaveTextContent("—");
+  });
+
+  test("growth: tasks that worked out each week, per account, with the guardrails and what the number leaves in", async () => {
+    renderAdmin();
+    await userEvent.click(await tab("Growth"));
+    const value = (await screen.findByRole("heading", { level: 2, name: "Tasks that worked out" })).closest("section") as HTMLElement;
+    expect(within(value).getByText(/not only changes Doddy confirmed/)).toBeInTheDocument();
+    expect(within(value).getByText("This week so far")).toBeInTheDocument();
+    expect(within(value).getAllByRole("row")).toHaveLength(9); // header + 8 weeks
+    const now = within(value).getByRole("row", { name: /^2026-10-19 \(so far\)/ });
+    expect(within(now).getAllByRole("cell").map((c) => c.textContent)).toEqual(["3", "13", "4.3", "100%", "7%", "0%", "0%", "22%"]);
+    for (const name of ["Not sure", "Didn't work", "Undone", "Said no"]) expect(within(value).getByRole("columnheader", { name })).toBeInTheDocument();
+
+    const first = screen.getByRole("heading", { level: 2, name: "From the first task that worked out" }).closest("section") as HTMLElement;
+    expect(within(first).getAllByRole("row")).toHaveLength(9);
+    expect(within(first).queryByRole("columnheader", { name: "Joined" })).toBeNull();
+    const row = within(first).getByRole("row", { name: /^2026-09-28/ });
+    // Size, then weeks +1 to +3 after the first task, then the four weeks still to come as blanks.
+    expect(within(row).getAllByRole("cell").map((c) => c.textContent)).toEqual(["1", "100%", "100%", "100%", "", "", "", ""]);
+  });
+
+  test("growth in Polish: the new sections have their Polish words", async () => {
+    renderAdmin("/admin", {}, "pl");
+    await userEvent.click(await tab("Wzrost"));
+    expect(await screen.findByRole("heading", { level: 2, name: "Zadania, które wyszły" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "Od pierwszego zadania, które wyszło" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Wartość w 4. tygodniu" })).toBeInTheDocument();
   });
 
   test("changing the period asks the server for that period (and keeps the page on screen meanwhile)", async () => {

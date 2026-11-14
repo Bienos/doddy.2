@@ -158,6 +158,38 @@ export interface Cohort {
   size: number;
   /** `active[k]`: how many used Doddy in week k after joining (0 is the week they joined). */
   active: number[];
+  /**
+   * Value in week 4 (decision 2026-11-14-tasks-that-worked-out): of the accounts whose days 22 to 28
+   * after joining (the joining day is day 1) are all in the past, how many had a task that worked out
+   * on one of those days. An account whose window hasn't closed is in neither number.
+   */
+  w4: { eligible: number; kept: number };
+}
+
+/**
+ * Of the accounts whose first task that worked out (as far back as Logbook keeps) fell in one week,
+ * how many had another task that worked out in that week and each one after.
+ */
+export interface FirstTaskCohort {
+  /** The Monday the week starts on. */
+  week: string;
+  size: number;
+  /** `active[k]`: how many had a task that worked out in week k after the first one (0 is that week, so it equals `size`). */
+  active: number[];
+}
+
+/** One calendar week (Monday to Sunday; the current week so far) of what Doddy's tools came to, over every account. */
+export interface ValueWeek {
+  /** The Monday the week starts on. */
+  week: string;
+  /** Accounts that used Doddy in the week. */
+  active: number;
+  /** Of those, the accounts with at least one task that worked out. */
+  withWorkedOut: number;
+  /** Tasks that worked out (`workedOut`), added up. */
+  workedOut: number;
+  /** Every tool result in the week, added up: the guardrails shown beside `workedOut`. */
+  outcomes: Outcomes;
 }
 
 export interface OwnerAccount {
@@ -209,6 +241,11 @@ export interface OwnerOverview {
   activation: { joined: number; activated: number };
   /** The last 8 weeks, oldest first. */
   cohorts: Cohort[];
+  /**
+   * Tasks that worked out (decision 2026-11-14-tasks-that-worked-out), from Logbook alone, so it needs no
+   * account list: the last 8 weeks, oldest first, and retention counted from each account's first one.
+   */
+  value: { weeks: ValueWeek[]; firstTaskCohorts: FirstTaskCohort[] };
 }
 
 const DAY_MS = 86_400_000;
@@ -234,6 +271,31 @@ function used(day: DaySummary): boolean {
   if (Object.values(day.notes.by_source).some((n) => n > 0) || day.lists.added_voice + day.lists.added_typed + day.lists.ticked > 0) return true;
   return Object.values(day.tools).some((o) => o.done + o.declined + o.unsure + o.failed > 0);
 }
+
+/**
+ * Tasks that worked out on a day (decision 2026-11-14-tasks-that-worked-out): every tool result Logbook
+ * counts as done, less the ones undone afterwards. Logbook's `done` also holds look-ups, opened apps and
+ * cards shown for the person to act on (`LogbookBuilder.swift`), so this is not "confirmed by read-back";
+ * the panel says so.
+ */
+export function workedOut(tools: Record<string, Outcomes>): number {
+  return Object.values(tools).reduce((sum, o) => sum + Math.max(0, o.done - o.undone), 0);
+}
+
+const noOutcomes = (): Outcomes => ({ done: 0, declined: 0, unsure: 0, failed: 0, undone: 0 });
+
+function addOutcomes(into: Outcomes, tools: Record<string, Outcomes>): void {
+  for (const o of Object.values(tools)) {
+    into.done += o.done;
+    into.declined += o.declined;
+    into.unsure += o.unsure;
+    into.failed += o.failed;
+    into.undone += o.undone;
+  }
+}
+
+/** A day (YYYY-MM-DD) moved by whole days. */
+const plusDays = (day: string, n: number) => isoDay(Date.parse(`${day}T00:00:00Z`) + n * DAY_MS);
 
 function emptyTotals(): UsageTotals {
   return { activeDays: 0, conversations: 0, seconds: 0, notes: 0, listItems: 0, errands: 0, tools: {} };
@@ -310,9 +372,9 @@ export class OwnerPanel {
   async overview(now: Date, periodDays: number): Promise<OwnerOverview> {
     const today = isoDay(now.getTime());
     const since = isoDay(now.getTime() - (periodDays - 1) * DAY_MS);
-    // Engagement and the cohorts look further back than the period: the last 30 days and 8 whole weeks.
-    const cohortFrom = isoDay(now.getTime() - (COHORT_WEEKS * 7 + 6) * DAY_MS);
-    const fetchFrom = [since, cohortFrom, isoDay(now.getTime() - 29 * DAY_MS)].sort()[0]!;
+    // Engagement and the cohorts look further back than the period (the last 30 days and 8 whole weeks), and
+    // an account's first task that worked out can be any day Logbook keeps, so every kept day is read.
+    const fetchFrom = isoDay(now.getTime() - LOGBOOK_KEPT_DAYS * DAY_MS);
     const [directory, links, states, rows] = await Promise.all([
       this.listDirectory(),
       this.store.accountUsers(),
@@ -340,10 +402,25 @@ export class OwnerPanel {
     const errands = { handedOver: 0, finished: 0, stopped: 0 };
     const activeOn = new Map<string, Set<string>>(); // day -> accounts that used Doddy
     const activeDays = new Map<string, string[]>(); // account -> days it used Doddy (for activation and cohorts)
+    const workedDays = new Map<string, string[]>(); // account -> days with a task that worked out
+    const mondays = Array.from({ length: COHORT_WEEKS }, (_, i) => mondayOf(isoDay(now.getTime() - (COHORT_WEEKS - 1 - i) * 7 * DAY_MS)));
+    const weeks = new Map(mondays.map((week) => [week, { active: new Set<string>(), withWorkedOut: new Set<string>(), workedOut: 0, outcomes: noOutcomes() }]));
     const sending = new Set<string>();
     for (const row of rows) {
       const day = parse(row.summary);
       if (!day) continue;
+      const worked = workedOut(day.tools);
+      if (worked > 0) {
+        const list = workedDays.get(row.user_id) ?? [];
+        list.push(row.day);
+        workedDays.set(row.user_id, list);
+      }
+      const week = weeks.get(mondayOf(row.day));
+      if (week && row.day <= today) {
+        addOutcomes(week.outcomes, day.tools);
+        week.workedOut += worked;
+        if (worked > 0) week.withWorkedOut.add(row.user_id);
+      }
       if (used(day)) {
         const accounts = activeOn.get(row.day) ?? new Set<string>();
         accounts.add(row.user_id);
@@ -351,6 +428,7 @@ export class OwnerPanel {
         const list = activeDays.get(row.user_id) ?? [];
         list.push(row.day);
         activeDays.set(row.user_id, list);
+        if (week && row.day <= today) week.active.add(row.user_id);
       }
       if (row.day < since) continue;
       sending.add(row.user_id);
@@ -386,27 +464,51 @@ export class OwnerPanel {
     // Activation and cohorts need to know when each account joined, so they need the account list.
     let joined = 0;
     let activated = 0;
-    const mondays = Array.from({ length: COHORT_WEEKS }, (_, i) => mondayOf(isoDay(now.getTime() - (COHORT_WEEKS - 1 - i) * 7 * DAY_MS)));
-    const cohortUsers = new Map<string, string[]>(mondays.map((m) => [m, []]));
+    const cohortUsers = new Map<string, { userId: string; created: string }[]>(mondays.map((m) => [m, []]));
     for (const user of directory ?? []) {
       if (!user.createdAt) continue;
       const created = isoDay(Date.parse(user.createdAt));
       const userId = userFor.get(user.id) ?? user.id;
       if (created >= since) {
         joined += 1;
-        const limit = isoDay(Date.parse(`${created}T00:00:00Z`) + 7 * DAY_MS);
+        const limit = plusDays(created, 7);
         if ((activeDays.get(userId) ?? []).some((d) => d >= created && d <= limit)) activated += 1;
       }
-      cohortUsers.get(mondayOf(created))?.push(userId);
+      cohortUsers.get(mondayOf(created))?.push({ userId, created });
     }
-    const cohorts: Cohort[] = mondays.map((week, index) => {
-      const users = cohortUsers.get(week) ?? [];
-      const weeksSince = mondays.length - 1 - index;
-      const active = Array.from({ length: weeksSince + 1 }, (_, k) => {
-        const target = isoDay(Date.parse(`${week}T00:00:00Z`) + k * 7 * DAY_MS);
-        return users.filter((userId) => (activeDays.get(userId) ?? []).some((d) => mondayOf(d) === target)).length;
+    /** For each of the 8 weeks: of `members`, how many have a day in `days` in that week and each one after. */
+    const weekly = (week: string, index: number, members: string[], days: Map<string, string[]>) =>
+      Array.from({ length: mondays.length - index }, (_, k) => {
+        const target = plusDays(week, k * 7);
+        return members.filter((userId) => (days.get(userId) ?? []).some((d) => mondayOf(d) === target)).length;
       });
-      return { week, size: users.length, active };
+    const cohorts: Cohort[] = mondays.map((week, index) => {
+      const members = cohortUsers.get(week) ?? [];
+      const w4 = { eligible: 0, kept: 0 };
+      for (const { userId, created } of members) {
+        // The joining day is day 1, so days 22 to 28 are 21 to 27 days after it.
+        const from = plusDays(created, 21);
+        const to = plusDays(created, 27);
+        if (to >= today) continue;
+        w4.eligible += 1;
+        if ((workedDays.get(userId) ?? []).some((d) => d >= from && d <= to)) w4.kept += 1;
+      }
+      return { week, size: members.length, active: weekly(week, index, members.map((m) => m.userId), activeDays), w4 };
+    });
+
+    // Retention from the first task that worked out: needs only Logbook, so it is there without the account list.
+    const firstTaskUsers = new Map<string, string[]>(mondays.map((m) => [m, []]));
+    for (const [userId, days] of workedDays) {
+      const first = days.reduce((a, b) => (b < a ? b : a));
+      if (first <= today) firstTaskUsers.get(mondayOf(first))?.push(userId);
+    }
+    const firstTaskCohorts: FirstTaskCohort[] = mondays.map((week, index) => {
+      const members = firstTaskUsers.get(week) ?? [];
+      return { week, size: members.length, active: weekly(week, index, members, workedDays) };
+    });
+    const valueWeeks: ValueWeek[] = mondays.map((week) => {
+      const w = weeks.get(week)!;
+      return { week, active: w.active.size, withWorkedOut: w.withWorkedOut.size, workedOut: w.workedOut, outcomes: w.outcomes };
     });
 
     return {
@@ -430,6 +532,7 @@ export class OwnerPanel {
       errands,
       activation: { joined, activated },
       cohorts: directory ? cohorts : [],
+      value: { weeks: valueWeeks, firstTaskCohorts },
     };
   }
 
