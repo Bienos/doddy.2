@@ -15,6 +15,7 @@ import {
   type StructuredInput, type StructuredResult,
 } from "../src/tools/claude.js";
 import { MockWebSearchProvider } from "../src/tools/websearch.js";
+import type { LedgerEvent } from "../src/usageLedger.js";
 import { off, type Rig, run, start, TEST_LINK_KEY } from "./toolsRig.js";
 
 /**
@@ -584,6 +585,17 @@ test("maker, live adapter: a schema-free answer is still checked by code, and a 
   await assert.rejects(maker(), (e: ProviderError) => e.detail?.hint === "too_long");
   await maker();
   assert.equal(both.bodies[4].output_config.format.type, "json_schema", "the schema is tried again next time");
+});
+
+test("maker, live adapter: each Claude call of a deck is one usage row under the document's id, and none is a retry", async () => {
+  const fake = scriptedAnthropic([answer(PLAN), answer(goodDeck())]);
+  const events: LedgerEvent[] = [];
+  const claude = new AnthropicClaudeProvider({ apiKey: "sk-ant-test-key-1234", model: "claude-sonnet-5-5" }, fake.impl, "https://anthropic.test", { recorder: { record: async (e) => void events.push(e) } });
+  await new DeckMaker({ claude, wikimedia: new MockWikimedia(), webSearch: null }).make(ARGS, async () => false, AbortSignal.timeout(5_000), { userId: "u-1", requestId: "doc-1" });
+  assert.deepEqual(events.map((e) => [e.userId, e.feature, e.requestId, e.seq, e.kind, e.outcome]), [
+    ["u-1", "make_deck", "doc-1", 0, "initial", "succeeded"],
+    ["u-1", "make_deck", "doc-1", 0, "initial", "succeeded"],
+  ]);
 });
 
 test("the log's hint names a schema Anthropic can't compile, a request that is too long and broken text; only request-shaped 400s are retried", async () => {

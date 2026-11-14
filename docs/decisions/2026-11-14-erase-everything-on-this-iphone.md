@@ -28,10 +28,18 @@
 - Spotlight can't be read back; iOS's confirmation of the delete is what counts.
 - Alarms and timers Doddy set are cancelled by the erase; the confirmation names them.
 - The capability guard (`scripts/check_forbidden_capabilities.sh`) allows one more Keychain file, which may only list services and delete them (it may not read, add or change a value).
-- Owner questions: `docs/OWNER_QUEUE.md` row 98.
+- Owner questions: the decision file's "Choices for the owner" section.
 
 ## Evidence
 - DoddyCore on Linux (Swift 6.1.3): `DeviceErasureTests`, `FolderErasureTests`, `DevicePreferencesErasureTests`, `DeviceStoreInventoryTests`, `LocalDataOwnerTests`; counts in the pull request.
 - `scripts/typecheck_app_logic.sh` (47 app files, Swift 6): includes the changed `ConversationLogStore`, `ActivityLogStore`, `UnfinishedNoteStore`, `MessagesModel` and, added here, `LocalMadeFilesStore`.
 - `scripts/ci.sh --only checks`.
 - Not compiled here: the app files `EraseThisIPhone.swift`, `EraseThisIPhoneRow.swift`, `EraseThisIPhoneText.swift`, `DeviceKeychainEraser.swift`, `SettingsScreens.swift`, `DoddyAccountApp.swift`, `DoddyAccountSettings.swift`, `SpotlightSync.swift`, `SharedListsController.swift`, `MessagesView.swift`, `TrainingLogView.swift`; the hosted `ios-build` job is their first compile. Not run on a device: nothing here has been seen erasing a real iPhone, and the Keychain, AlarmKit, Live Activity, notification, Spotlight and iCloud steps are untested outside a compile.
+
+## Choices for the owner
+
+Say what "Erase everything on this iPhone" and the new backup rule mean in the privacy policy and the App Store answers (decision [`2026-11-14-erase-everything-on-this-iphone`](decisions/2026-11-14-erase-everything-on-this-iphone.md), proposal). Three yes-or-no choices: (1) keep the signed-in account signed in after the erase (the proposal, so the account can be deleted next and another account's data can be erased) or sign out too; (2) the conversation transcript file, the activity list, unfinished-note drafts and saved trips are now kept out of iPhone and iCloud backups, while the notes database (which also holds the Messages thread, recordings' words, calls, tasks and what Doddy learned) stays in: keep that, or give those tables their own file later; (3) the person's privacy choices (Ask Doddy, Logbook counts, remembered conversations, Face ID lock, widgets, Siri reading notes) keep their position through an erase instead of returning to their defaults. The privacy policy wording and the store answers don't say any of this yet; the draft is `docs/legal/PRIVACY_POLICY_DRAFT.md` (rows 7, 26, 58).
+
+**Why it is the owner's:** The policy wording and the store answers are yours to approve; the backup rule changes what an iPhone restored from a backup brings back.
+
+**If it waits:** Until the wording says so, nobody should write "privacy guaranteed" about the erase. The app already says what it keeps and what it didn't confirm.

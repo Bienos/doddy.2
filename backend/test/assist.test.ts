@@ -417,7 +417,7 @@ test("live adapter: structured output at low effort, the answer read from the te
   const input = { system: "S", user: "U", schema: buildSchema(["n1"]), maxTokens: 1_500 };
 
   const ok = await claude.structured(input, AbortSignal.timeout(1_000));
-  assert.deepEqual(ok, { value: { answer: "North rack.", sources: ["n1"] }, usage: { inputTokens: 700, outputTokens: 20 } });
+  assert.deepEqual(ok, { value: { answer: "North rack.", sources: ["n1"] }, usage: { inputTokens: 700, outputTokens: 20, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 } });
   const sent = calls[0]!;
   assert.equal(sent.url, "https://anthropic.test/v1/messages");
   assert.equal(sent.headers["x-api-key"], "sk-ant-test-key-1234");

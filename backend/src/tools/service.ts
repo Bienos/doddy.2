@@ -57,6 +57,7 @@ import {
 } from "./claude.js";
 import { judgeDocumentRequest, needDetailsMessage } from "./documentDetails.js";
 import type { DocumentLinks } from "../documents.js";
+import { UsageScope } from "../usageLedger.js";
 import { MockWikimedia } from "../decks/demo.js";
 import { DeckMaker } from "../decks/maker.js";
 import { type Wikimedia, WikimediaClient } from "../decks/research.js";
@@ -699,7 +700,7 @@ export class CloudToolsService {
     const tool = this.requireTool(READ_EMAIL.name);
     await this.limiter.reserveRequest(userId, this.now());
     const row = await this.checkUsable(userId, tool, "read");
-    this.travelReaderOrRefuse();
+    this.travelReaderOrRefuse(userId);
     const { approvalId, expiresAt } = await this.ask.issue({ userId, tool: TRAVEL_SCAN, accountId: row.connection_id, argsDigest: TRAVEL_SCAN_DIGEST });
     return {
       mode: this.mode,
@@ -723,7 +724,7 @@ export class CloudToolsService {
     const now = this.now();
     await this.limiter.reserveRequest(userId, now);
     const row = await this.checkUsable(userId, tool, "read");
-    const reader = this.travelReaderOrRefuse();
+    const reader = this.travelReaderOrRefuse(userId);
     const binding: AskBinding = { userId, tool: TRAVEL_SCAN, accountId: row.connection_id, argsDigest: TRAVEL_SCAN_DIGEST };
     const unasked = async () =>
       askFirstRefusal(await this.receipt(userId, tool.toolkit, "read", TRAVEL_SCAN, "blocked", "Not done: Doddy didn't have a yes for this.", "ask_first_required", null));
@@ -796,6 +797,7 @@ export class CloudToolsService {
           name: UNDERSTAND_STEP,
         },
         AbortSignal.timeout(15_000),
+        new UsageScope(userId, "travel_plan"),
       );
       proposed = result.value;
     } catch (error) {
@@ -834,14 +836,14 @@ export class CloudToolsService {
     };
   }
 
-  private travelReaderOrRefuse(): TravelReader {
+  private travelReaderOrRefuse(userId?: string): TravelReader {
     if (this.deps.travelReader) return this.deps.travelReader;
     const claude = this.deps.travelClaude !== undefined ? this.deps.travelClaude : (this.deps.claude ?? null);
     if (!claude || !claude.isConfigured()) {
       throw new AppError("live_not_configured", { message: "Reading booking emails isn't set up on this server." });
     }
     // A new reader per run, so its token count is this run's.
-    return new ClaudeTravelReader(claude);
+    return new ClaudeTravelReader(claude, undefined, userId);
   }
 
   /**
@@ -1295,7 +1297,7 @@ export class CloudToolsService {
 
       if (tool === ASK_CLAUDE_TOOL) {
         try {
-          const answer = await claude.ask(args as never, AbortSignal.timeout(ASK_CLAUDE_TIMEOUT_MS));
+          const answer = await claude.ask(args as never, AbortSignal.timeout(ASK_CLAUDE_TIMEOUT_MS), new UsageScope(userId, "ask_claude"));
           // ADR-710: Claude worked from material that may be untrusted (an email, a page), so what it wrote
           // goes back marked as information, the way the read tools mark theirs.
           const text = `Claude's answer (written for this user; read it out or sum it up, in your own words if it's long). ${MODEL_TEXT_LABEL}\n${answer.text}`;
@@ -1387,8 +1389,9 @@ export class CloudToolsService {
               args,
               () => this.deckSearchAllowed(userId),
               signal,
+              { userId, requestId: id },
             )
-          : await claude.makeDocument(args, signal, this.fileLedger(userId));
+          : await claude.makeDocument(args, signal, this.fileLedger(userId), new UsageScope(userId, "make_document", id));
       await this.store.finishDocument(userId, id, file.name, file.mime, file.bytes);
       this.deps.log?.({ level: "info", event: "document_ready", kind: args.kind, bytes: file.bytes.length });
     } catch (error) {
