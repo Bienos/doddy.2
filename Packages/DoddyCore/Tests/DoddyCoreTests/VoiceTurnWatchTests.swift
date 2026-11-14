@@ -101,4 +101,9 @@ final class VoiceTurnWatchTests: XCTestCase {
                      "find_places", "make_document", "get_weather", "wikipedia_search", "read_calendar"]
         XCTAssertEqual(Set(names.compactMap(VoiceWaitActivity.forTool)), Set(VoiceWaitActivity.allCases))
     }
+
+    func testResearchSaysItIsSearchingTheWeb() {
+        // research_now searches and reads pages; the screen says "Searching the web…" for it, with no new wording.
+        XCTAssertEqual(VoiceWaitActivity.forTool("research_now"), .searchingWeb)
+    }
 }

@@ -1475,6 +1475,20 @@
     },
     {
       "type": "function",
+      "name": "research_now",
+      "description": "Research a question on the web now, while the user waits: Doddy's server has Claude search the web and read two or three pages, then answer in a few spoken sentences with the sites it used. Use it when web_search's five snippets can't answer: plans and options (a weekend away, what's on and what it costs, places to compare), or anything that needs a page read. Pass the user's question in their language with their exact budget, dates and wishes. Relay the answer, name the sites, and never add a price, date or opening hour it didn't give. It can take up to 45 seconds, so say one short line first. If it fails, offer web_search or hand_over_errand. Runs at once.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "question": {"type": "string", "description": "What to find out, in the user's language, with their exact budget, dates and wishes, e.g. 'weekend near Warsaw for two, 21-22 Nov, under 1500 zł, with a spa'. At most 600 characters."},
+          "language": {"type": "string", "description": "Optional two-letter code of the language to write the answer in, e.g. 'pl' or 'en'. Without it: the question's language."}
+        },
+        "required": ["question"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
       "name": "geocode_place",
       "description": "Find the latitude and longitude of a city or town so that get_weather can be called. Use it when the user asks about the weather somewhere. If the user does not name a place, use the city from their notes or profile if one is there, otherwise ask which city in a few words. Returns one best match with its country, region and timezone. Runs at once.",
       "parameters": {
