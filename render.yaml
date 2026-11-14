@@ -23,7 +23,9 @@ services:
     rootDir: backend
     # Also builds Doddy Web (web/, ADR-600), which this service serves on its own origin. The live
     # service was made by hand: its build command has to be changed the same way in the dashboard.
-    buildCommand: npm ci && npm run build && npm ci --prefix ../web && npm run build --prefix ../web
+    # The server's install skips package scripts (--ignore-scripts): none of its locked packages has
+    # one. The web install keeps them: its build tool, esbuild, ships an install script.
+    buildCommand: npm ci --ignore-scripts && npm run build && npm ci --prefix ../web && npm run build --prefix ../web
     startCommand: node dist/src/server.js
     healthCheckPath: /v1/health
     autoDeploy: false
@@ -104,6 +106,16 @@ services:
       # Web search through Monid (optional; empty = "not set up"). Paid from Doddy's Monid wallet.
       - key: MONID_API_KEY
         sync: false
+      # Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking). Each part is off until set:
+      # FLIGHT_SEARCH_ENABLED=1 turns on Kiwi.com search (KIWI_MCP_URL defaults to https://mcp.kiwi.com);
+      # DUFFEL_ACCESS_TOKEN (a duffel_test_ key) turns on Duffel search; FLIGHT_BOOKING_ENABLED=1 also lets
+      # Doddy book, test mode only (the server refuses to book with a live key).
+      - key: FLIGHT_SEARCH_ENABLED
+        value: "0"
+      - key: DUFFEL_ACCESS_TOKEN
+        sync: false
+      - key: FLIGHT_BOOKING_ENABLED
+        value: "0"
       # ADR-563: the phone signs itself in with a device ID. open (ADR-587, owner 22 Oct: Ask Doddy
       # for everyone) = the first iPhone that signs in owns this server; every other iPhone gets a
       # guest session good for Ask Doddy only (never the owner's accounts, search or documents).
@@ -145,13 +157,20 @@ services:
     region: frankfurt
     plan: starter
     rootDir: server/messaging
-    buildCommand: npm ci && npm run build
+    # --include=dev: with NODE_ENV=production npm ci would leave out TypeScript, which the build needs.
+    # --ignore-scripts: none of its locked packages has an install script, so none is needed. A
+    # dependency that adds one needs this removed (the build would still pass, the package would not be set up).
+    buildCommand: npm ci --include=dev --ignore-scripts && npm run build
     startCommand: npm start
     healthCheckPath: /healthz
     autoDeploy: false
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # A deployed server: it refuses to start without MEMORY_ENCRYPTION_KEY (server/messaging/src/deployment.ts;
+      # RENDER, which Render sets, counts too).
+      - key: NODE_ENV
+        value: production
       - key: DATABASE_URL
         fromDatabase:
           name: doddy-db
@@ -180,8 +199,10 @@ services:
       # Phone calls (S2)
       - key: ELEVENLABS_API_KEY
         sync: false
-      # ADR-706: required in production. Without it texts, pushes and digests are not queued (they would be
-      # stored unencrypted). Set it on BOTH doddy-messaging and the worker before deploying (the live setup is one service with the worker inside it).
+      # ADR-706: required. Without it the server refuses to start (it would store texts unencrypted). Set it on BOTH
+      # doddy-messaging and the worker before deploying (the live setup is one service with the worker inside it).
+      # A rotation adds MEMORY_ENCRYPTION_KEY_VERSION, _PREVIOUS and _PREVIOUS_VERSION by hand for a while
+      # (server/messaging/README.md, "Rotating MEMORY_ENCRYPTION_KEY").
       - key: MEMORY_ENCRYPTION_KEY
         sync: false
       - key: ELEVENLABS_TOOL_SECRET
@@ -207,6 +228,8 @@ services:
       # budget per errand, the countries that may get codes, texts and calls (PHONE_ALLOWED_COUNTRY_CODES), daily
       # text/call/verification caps and TASK_CALL_BLOCKED_NUMBERS. Names, defaults and meaning: server/messaging/.env.example.
       # Web and worker read the same values: with a separate worker, set a changed one on both services (the live setup is one service).
+      - key: ANONYMOUS_ACCOUNTS # "0" (the default): POST /v1/accounts answers 403 sign_in_required, new accounts come from a Doddy account sign-in (needs SUPABASE_URL); "1" makes anonymous accounts as before
+        value: "0"
       - key: TASK_CALLS_KILL_SWITCH # "1" stops every call by Doddy at once
         value: "0"
       - key: CALL_RECORDING_NOTICE # off until the owner confirms the legal basis
@@ -225,11 +248,17 @@ services:
         value: "0"
       - key: WATCHES_ENABLED # Price watches (shopping stage 2): "0" (the default) answers 503 watches_disabled and checks nothing; "1" reads a shop page about 4 times a day for 30 days (the worker does the checks; needs MEMORY_ENCRYPTION_KEY)
         value: "0"
+      - key: RADAR_ALERTS_ENABLED # On my radar alerts (decision 2026-11-10-radar-alerts): "0" (the default) answers 503 radar_disabled to a new alert and checks nothing; "1" keeps the follows a person chose to have checked and pushes new matching stories (the worker checks)
+        value: "0"
+      - key: NEWS_SUMMARY_ENABLED # On my radar, AI summary of one story on a tap (13 Nov 2026): "0" (the default) answers 503 summary_off; "1" reads the publisher's page and has NEWS_SUMMARY_MODEL [claude-haiku-5-5] summarize it (needs ANTHROPIC_API_KEY; caps NEWS_SUMMARY_DAILY_PER_ACCOUNT [40], NEWS_SUMMARY_DAILY_PER_SERVER [1000])
+        value: "0"
       - key: ASSISTANT_ENABLED # Messages (ADR-586): "0" (the default) answers 503 notConfigured; "1" lets the app's typed conversation ask Claude
         value: "0"
       - key: SERPER_API_KEY # Shopping errands (ADR-607): Google Shopping offers for Poland; empty means find_offers answers "not set up"
         sync: false
       - key: DEALS_ENABLED # Leaflets (ADR-609): "0" (the default) answers 503 deals_disabled; "1" reads the four chains' leaflets on request
+        value: "0"
+      - key: DEALS_CATALOG_ENABLED # Leaflet catalog (decision 2026-11-12-leaflet-catalog): "1" scans each chain's leaflets in the background every DEALS_CATALOG_EVERY_HOURS [6] and answers searches from them; "0" (the default) reads every chain on each search
         value: "0"
       # Studio (ADR-740): "1" also needs STUDIO_SKILLS (ids from scripts/studio_skills.sh upload). Limits
       # and caps have defaults (server/messaging/.env.example).
@@ -250,12 +279,17 @@ services:
     region: frankfurt
     plan: starter
     rootDir: server/messaging
-    buildCommand: npm ci && npm run build
+    # --include=dev: with NODE_ENV=production npm ci would leave out TypeScript, which the build needs.
+    # --ignore-scripts: as doddy-messaging (no locked package has an install script).
+    buildCommand: npm ci --include=dev --ignore-scripts && npm run build
     startCommand: npm run worker
     autoDeploy: false
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # As doddy-messaging: refuses to start without MEMORY_ENCRYPTION_KEY.
+      - key: NODE_ENV
+        value: production
       - key: DATABASE_URL
         fromDatabase:
           name: doddy-db
@@ -321,6 +355,10 @@ services:
       - key: ERRANDS_ENABLED # "0" (the default) refuses new errands and starts no queued one; "1" turns them on
         value: "0"
       - key: WATCHES_ENABLED # Price watches (shopping stage 2): "0" (the default) answers 503 watches_disabled and checks nothing; "1" reads a shop page about 4 times a day for 30 days (the worker does the checks; needs MEMORY_ENCRYPTION_KEY)
+        value: "0"
+      - key: RADAR_ALERTS_ENABLED # On my radar alerts (decision 2026-11-10-radar-alerts): "0" (the default) answers 503 radar_disabled to a new alert and checks nothing; "1" keeps the follows a person chose to have checked and pushes new matching stories (the worker checks)
+        value: "0"
+      - key: NEWS_SUMMARY_ENABLED # On my radar, AI summary of one story on a tap (13 Nov 2026): "0" (the default) answers 503 summary_off; "1" reads the publisher's page and has NEWS_SUMMARY_MODEL [claude-haiku-5-5] summarize it (needs ANTHROPIC_API_KEY; caps NEWS_SUMMARY_DAILY_PER_ACCOUNT [40], NEWS_SUMMARY_DAILY_PER_SERVER [1000])
         value: "0"
       - key: ASSISTANT_ENABLED # Messages (ADR-586): "0" (the default) answers 503 notConfigured; "1" lets the app's typed conversation ask Claude
         value: "0"

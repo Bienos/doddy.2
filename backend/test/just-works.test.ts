@@ -230,16 +230,20 @@ test("make_document: answers at once with a link; the link says 'still making', 
   let release!: () => void;
   const gate = new Promise<void>((r) => (release = r));
   const slow = new MockClaudeProvider();
-  const original = slow.makeDocument.bind(slow);
-  slow.makeDocument = async (args) => {
+  // A deck is made from Claude's structured answers (decision 2026-11-10-better-presentations): held at its first one.
+  const original = slow.structured.bind(slow);
+  slow.structured = async (input) => {
     await gate;
-    return original(args);
+    return original(input);
   };
   rig = await start({}, { claude: slow });
   const res = await run(rig, "make_document", { kind: "deck", title: "Q4 plan: Doddy/beta", request: "Ten slides on the beta plan" });
   assert.equal(res.status, 200, res.text);
   assert.match(res.body.text, /^started: Claude is making the deck "Q4 plan: Doddy\/beta"/);
   assert.doesNotMatch(res.body.text, /https?:\/\//, "the voice agent never gets the link");
+  // Owner, 13 Nov 2026: nothing waits on the screen for a tap while the file is made, so the agent isn't told there is.
+  assert.doesNotMatch(res.body.text, /card|on the user's screen/i, "no card is promised");
+  assert.match(res.body.text, /doesn't need to tap anything/);
   assert.equal(res.body.document.status, "working");
   assert.equal(res.body.document.name, "Q4 plan Doddybeta.pptx");
   const link = new URL(res.body.document.url);
@@ -255,7 +259,7 @@ test("make_document: answers at once with a link; the link says 'still making', 
   await rig.tools.settle();
   const ready = await local(link);
   assert.equal(ready.status, 200);
-  assert.equal(ready.text, "DEMO deck: Q4 plan: Doddy/beta");
+  assert.ok(ready.text.startsWith("PK"), "the deck is a real PowerPoint file (a ZIP)");
 
   // A changed signature, a changed ID or an expired link opens nothing.
   const forged = new URL(link);
@@ -272,7 +276,7 @@ test("make_document: a failure says so on the page and in the log, without conte
     throw new ProviderError("provider_unavailable");
   };
   rig = await start({}, { claude: failing });
-  const res = await run(rig, "make_document", { kind: "text", title: "Blog: private stuff", request: "Write a blog post" });
+  const res = await run(rig, "make_document", { kind: "text", title: "Blog: private stuff", request: "Write a blog post for my friends" });
   assert.equal(res.status, 200, res.text);
   await rig.tools.settle();
   const link = new URL(res.body.document.url);
@@ -289,7 +293,7 @@ test("Claude not set up, or no document links: the card is refused honestly and 
   assert.equal(res.body.error.message, "Claude isn't set up on this server.");
   await rig.close();
   rig = await start({}, { documentLinks: false });
-  const doc = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "make_document", arguments: { kind: "pdf", title: "x", request: "y" } } });
+  const doc = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "make_document", arguments: { kind: "pdf", title: "x", request: "y for the owner" } } });
   assert.equal(doc.status, 503);
 });
 

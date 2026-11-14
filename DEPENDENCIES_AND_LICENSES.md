@@ -11,9 +11,10 @@
 | [LiveKit FFI](https://github.com/livekit/livekit-ffi-xcframework) (via LiveKit) | 0.13.1 (exact in LiveKit 2.19.0's `Package.swift`) | Apache-2.0 | Prebuilt LiveKit library that the LiveKit SDK links |
 
 LiveKit's manifest also names swift-protobuf (its own tests only) and swift-docc-plugin (its documentation only). Neither
-is linked into the app. `Config/Package.resolved` is meant to lock every Swift package the app resolves
-(`docs/decisions/2026-11-07-reproducible-app-builds.md`), but it is not in the repository yet (7 Nov 2026). Until a Mac
-run commits it, the versions come from the exact pins above.
+is linked into the app. `Config/Package.resolved` (committed) locks every Swift package the app resolves to an exact
+commit: seven remote packages, the six in the table above plus swift-asn1 1.7.3 (swift-crypto's dependency)
+(`docs/decisions/2026-11-07-reproducible-app-builds.md`). DoddyCore is a local package and isn't pinned there. The
+Mac CI job fails when Xcode resolves something else.
 
 Everything else is Apple system frameworks (`SwiftUI`, `UIKit`, `Foundation`, `AVFAudio`, system SQLite). No analytics,
 no crash reporting, no fonts. Of these packages, the ElevenLabs voice session (while it is open) is the only network
@@ -68,7 +69,7 @@ Pinned exactly in `web/package.json`; locked in `web/package-lock.json`.
 | react-router | 7.18.4 | MIT | Pages |
 | zod | 3.25.76 | MIT | Checking the server's replies |
 
-Build and test only (not in the built page): vite 7.3.7, @vitejs/plugin-react 5.2.0, typescript 5.9.3, vitest 3.2.7,
+Build and test only (not in the built page): vite 7.3.7, @vitejs/plugin-react 5.2.0, typescript 5.9.3, vitest 4.1.12,
 jsdom 27.4.0, @testing-library/dom 10.4.2, @testing-library/jest-dom 6.9.1, @testing-library/react 16.3.3,
 @testing-library/user-event 14.6.8, @playwright/test 1.56.1, and @types/node, @types/react, @types/react-dom. All MIT
 except typescript and Playwright (Apache-2.0).
@@ -86,7 +87,7 @@ use Node's built-in modules only.
 | Tool | Used for | Licence | Note |
 |---|---|---|---|
 | Swift 6.1 Linux toolchain (swift.org) | `Packages/DoddyCore` tests on Linux | Apache-2.0 w/ runtime exception | CI's `swift` job uses the official `swift:6.1-noble` image. On 7 Nov 2026, 6.1.3 ran `make test-core`: 2416 tests, 0 failures. 6.1.0 crashes while compiling DoddyCore, so use 6.1.3 or newer. Toolchains downloaded by hand (6.3.3 earlier, 6.1.0 and 6.1.3 on 7 Nov) came over HTTPS; their **GPG signatures were not verified** |
-| XcodeGen | generating the Xcode project | MIT | `brew install xcodegen`; CI installs Homebrew's current version (not pinned). 2.44.1 was built on Linux once to validate `project.yml` |
+| XcodeGen | generating the Xcode project | MIT | `brew install xcodegen` on your own Mac. GitHub's Mac jobs install version 2.46.0 from its GitHub release file after a SHA-256 check (`scripts/install_xcodegen.sh`). 2.44.1 was built on Linux once to validate `project.yml` |
 | Xcode / iOS SDK | app build | Apple developer terms | Xcode 26.6 on the `macos-26` runner, pinned in `.github/workflows/ios.yml` and `project.yml` (`xcodeVersion`) |
 | Node.js 22 | servers, Doddy Web and site tests | MIT | every `package.json` but `site/`'s sets `engines`; CI uses `actions/setup-node` with `22` |
 
@@ -110,7 +111,6 @@ rights review of the pack is still an open owner decision (see `DECISIONS.md`).
 
 ## Voice samples
 
-`DoddyApp/Resources/VoicePreviews/voice-preview-*.mp3` (six clips, ~540 KB) are speech generated on 2026-10-10 with
-ElevenLabs `eleven_v4` on the owner's ElevenLabs account, one per voice offered in Settings (ADR-122). They are
-**development candidates**: check ElevenLabs' output terms for the owner's plan and the Voice Library terms of the
-library voices (Josh, Wiktor) before any release.
+Removed on 12 Nov 2026 with the choice of voice (decision `docs/decisions/2026-11-12-one-voice.md`): the six
+`DoddyApp/Resources/VoicePreviews/voice-preview-*.mp3` clips (speech generated on 2026-10-10 with ElevenLabs
+`eleven_v4`, ADR-122) are no longer in the app.

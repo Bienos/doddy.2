@@ -59,6 +59,35 @@ final class ThreadDeliveryTests: XCTestCase {
         XCTAssertNil(ThreadDelivery.document(RunDocument(url: link, name: "x", kind: "deck", status: .failed), polish: true, now: now))
     }
 
+    func testAFileMadeByVoiceSaysWhatItIsAbout() throws {
+        let doc = RunDocument(url: link, name: "Kraków.pptx", kind: "deck", status: .working)
+        let call = CloudToolCall(name: CloudToolName.makeDocument, arguments: [
+            "kind": .string("deck"), "title": .string("Kraków"),
+            "request": .string("  Prezentacja o weekendzie w Krakowie\n dla rodziców, 8 slajdów  "),
+        ])
+        let brief = try XCTUnwrap(ThreadDelivery.madeFileBrief(of: call))
+        XCTAssertEqual(brief, "Prezentacja o weekendzie w Krakowie dla rodziców, 8 slajdów")
+        let message = try XCTUnwrap(ThreadDelivery.document(doc, about: brief, polish: true, now: now))
+        XCTAssertTrue(message.text.hasPrefix("Robię to dla ciebie"))
+        XCTAssertTrue(message.text.hasSuffix("\n\n" + brief))
+        XCTAssertEqual(message.document?.url, link)
+    }
+
+    func testOnlyMakeDocumentHasABrief() {
+        XCTAssertNil(ThreadDelivery.madeFileBrief(of: CloudToolCall(name: CloudToolName.webSearch, arguments: ["request": .string("x")])))
+        XCTAssertNil(ThreadDelivery.madeFileBrief(of: CloudToolCall(name: CloudToolName.makeDocument, arguments: ["request": .string("   ")])))
+        XCTAssertNil(ThreadDelivery.madeFileBrief(of: CloudToolCall(name: CloudToolName.makeDocument, arguments: [:])))
+        let doc = RunDocument(url: link, name: "Kraków.pptx", kind: "deck", status: .ready)
+        XCTAssertEqual(ThreadDelivery.document(doc, about: nil, polish: false, now: now)?.text, "Here it is: “Kraków.pptx”.")
+    }
+
+    func testALongBriefIsClippedAtAWord() throws {
+        let call = CloudToolCall(name: CloudToolName.makeDocument, arguments: ["request": .string(String(repeating: "slajd ", count: 400))])
+        let brief = try XCTUnwrap(ThreadDelivery.madeFileBrief(of: call))
+        XCTAssertTrue(brief.hasSuffix("…"))
+        XCTAssertLessThanOrEqual(brief.count, ThreadMessage.fileAboutLimit + 1)
+    }
+
     func testTheSameFileIsNotAddedTwice() {
         let doc = RunDocument(url: link, name: "Warszawa.pptx", kind: "deck", status: .working)
         let message = ThreadDelivery.document(doc, polish: false, now: now)!

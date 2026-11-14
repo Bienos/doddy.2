@@ -6,10 +6,14 @@
 // until the iPhone saves them as a note and says so, or for 30 days. The transcript lives in memory for this
 // one call: it is never stored, and the log carries ids, counts and outcomes, never words.
 //
+// Only a call on which the caller said the right PIN gets a recap (`calls.pin_verified_at`, set by the phone
+// agent's verify-pin tool). Caller ID can be faked, and the app saves a recap as a note without a tap, so the
+// words of a caller who never proved who they are must not become one. Such a call keeps
+// `recap_not_created = 'pin_not_verified'`, which the app can read from `GET /v1/calls`, and its words reach no model.
+//
 // A missing recap is never shown as anything else: a call that wasn't matched, belongs to an account with
-// recaps off, said too little, hit a cap or failed in the model just has none.
+// recaps off, wasn't verified, said too little, hit a cap or failed in the model just has none.
 import type { Db } from "./db.js";
-import { inTransaction } from "./db.js";
 import type { TextCipher } from "./crypto.js";
 import { reserve, addTokens } from "./assistant/usage.js";
 import { RECAP_LIMITS, type RecapWriter } from "./assistant/recap.js";
@@ -35,7 +39,8 @@ export interface PhoneRecapDeps {
 
 export interface PhoneRecapContext {
   db: Db;
-  cipher: TextCipher;
+  /** Without MEMORY_ENCRYPTION_KEY there are no recaps; the conversation id is still stored on the call. */
+  cipher?: TextCipher;
   deps: PhoneRecapDeps;
   log: (msg: string, extra?: object) => void;
 }
@@ -43,7 +48,22 @@ export interface PhoneRecapContext {
 export const recapAad = (accountId: string, callId: string) => `${accountId}:phone-recap:${callId}`;
 
 export type PhoneRecapOutcome =
-  | "stored" | "duplicate" | "ignored" | "unreadable" | "unmatched" | "off" | "tooShort" | "cap" | "failed";
+  | "stored" | "duplicate" | "ignored" | "unreadable" | "unmatched" | "off" | "unverified" | "tooShort" | "cap" | "failed";
+
+/**
+ * A run of six or more digits, written together or split by single spaces or hyphens (a PIN, a card or account
+ * number, a phone number), with its leading "+". The recap instructions ask the model to leave such things out;
+ * this makes sure in code. Dots and colons don't join a run, so dates (12.11.2026) and times (18:00) stay.
+ */
+const LONG_NUMBER = /\+?\p{Nd}(?:[  -]?\p{Nd}){5,}/gu;
+
+/** A recap point with each long number replaced by "…". */
+export function withoutLongNumbers(point: string): string {
+  return point.replace(LONG_NUMBER, "…").replace(/\s{2,}/g, " ").trim();
+}
+
+/** Every point cleaned; a point left with no letter (it was only a number) is dropped. */
+const cleaned = (points: string[]) => points.map(withoutLongNumbers).filter((p) => /\p{L}/u.test(p));
 
 export interface StoredPhoneRecap {
   discussed: string[];
@@ -103,25 +123,35 @@ function fitted(turns: Turn[]): Turn[] {
 /**
  * The post-call payload of a phone-agent call. Awaited by tests; the route doesn't wait for it, so ElevenLabs
  * gets its answer at once (it switches a webhook off after repeated failures).
+ *
+ * Every matched call keeps the conversation's id first, recaps on or off, so deleting the account deletes the
+ * conversation at ElevenLabs too (`queuePhoneAgentDeletions`). A call that already holds another id keeps it.
  */
 export async function onPhonePostCall(ctx: PhoneRecapContext, json: unknown): Promise<PhoneRecapOutcome> {
   const { db, cipher, deps } = ctx;
   const payload = readPayload(json);
   if (!payload) return "unreadable";
   if (!deps.phoneAgentId || payload.agentId !== deps.phoneAgentId) return "ignored";
-  const writer = deps.writer;
-  if (!writer) return "off";
   const now = (deps.now ?? (() => new Date()))();
 
-  const { rows } = await db.query<{ id: string; account_id: string; direction: "inbound" | "outbound"; enabled: boolean }>(
-    `SELECT c.id, c.account_id, c.direction, s.recaps_enabled_at IS NOT NULL AS enabled
+  const { rows } = await db.query<{ id: string; account_id: string; direction: "inbound" | "outbound"; enabled: boolean; verified: boolean }>(
+    `SELECT c.id, c.account_id, c.direction, s.recaps_enabled_at IS NOT NULL AS enabled, c.pin_verified_at IS NOT NULL AS verified
        FROM calls c LEFT JOIN call_settings s ON s.account_id = c.account_id
       WHERE (c.conversation_id = $1 OR ($2::text IS NOT NULL AND c.call_sid = $2))
         AND c.created_at > $3::timestamptz - interval '2 days'
       ORDER BY c.created_at DESC LIMIT 1`, [payload.conversationId, payload.callSid, now]);
   const call = rows[0];
   if (!call) return "unmatched";
+  await db.query("UPDATE calls SET conversation_id = $2 WHERE id = $1 AND conversation_id IS NULL", [call.id, payload.conversationId]);
+  const writer = deps.writer;
+  if (!writer || !cipher) return "off";
   if (!call.enabled) return "off";
+  if (!call.verified) {
+    // Recaps are on, so the app expects one: the call says why there is none. The words are read no further.
+    await db.query("UPDATE calls SET recap_not_created = 'pin_not_verified' WHERE id = $1", [call.id]);
+    ctx.log("phone recap not created", { callId: call.id, reason: "pin_not_verified" });
+    return "unverified";
+  }
   const { rows: existing } = await db.query("SELECT 1 FROM phone_recaps WHERE call_id = $1", [call.id]);
   if (existing.length > 0) return "duplicate";
   if (wordCount(payload.turns.filter((t) => t.role === "person").map((t) => t.text).join(" ")) < MIN_WORDS_FROM_CALLER) return "tooShort";
@@ -147,17 +177,18 @@ export async function onPhonePostCall(ctx: PhoneRecapContext, json: unknown): Pr
       return "failed";
     }
     const stored: StoredPhoneRecap = {
-      discussed: outcome.recap.discussed, agreed: outcome.recap.agreed, to_do: outcome.recap.to_do,
+      discussed: cleaned(outcome.recap.discussed), agreed: cleaned(outcome.recap.agreed), to_do: cleaned(outcome.recap.to_do),
       endedAt: now.toISOString(), durationSecs: payload.durationSecs, direction: call.direction,
     };
-    const inserted = await inTransaction(db, async (c) => {
-      await c.query("UPDATE calls SET conversation_id = coalesce(conversation_id, $2) WHERE id = $1", [call.id, payload.conversationId]);
-      const r = await c.query(
-        `INSERT INTO phone_recaps (call_id, account_id, key_version, ciphertext, created_at)
-         VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`,
-        [call.id, call.account_id, cipher.keyVersion, cipher.encrypt(JSON.stringify(stored), recapAad(call.account_id, call.id)), now]);
-      return (r.rowCount ?? 0) > 0;
-    });
+    if (stored.discussed.length + stored.agreed.length + stored.to_do.length === 0) {
+      ctx.log("phone recap not written", { callId: call.id, outcome: "only_numbers" });
+      return "failed";
+    }
+    const r = await db.query(
+      `INSERT INTO phone_recaps (call_id, account_id, key_version, ciphertext, created_at)
+       VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`,
+      [call.id, call.account_id, cipher.keyVersion, cipher.encrypt(JSON.stringify(stored), recapAad(call.account_id, call.id)), now]);
+    const inserted = (r.rowCount ?? 0) > 0;
     ctx.log("phone recap stored", {
       callId: call.id, turns: payload.turns.length,
       points: stored.discussed.length + stored.agreed.length + stored.to_do.length, duplicate: !inserted,

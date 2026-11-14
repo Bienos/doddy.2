@@ -174,16 +174,23 @@ final class UpdatesModel {
     func deleteServerAccount() async {
         guard let client else { return }
         await run {
-            try await client.deleteAccount()
-            self.defaults.set(false, forKey: PreferenceKey.pushUpdatesOn)
-            self.defaults.set(false, forKey: PreferenceKey.memoryCopyOn)
-            self.defaults.set(false, forKey: PreferenceKey.textsToDoddyOn)
-            MemoryCopySync.shared.stop()
-            self.pushState = .off
-            self.phone = .none
-            self.phoneStep = .enterNumber
-            self.lastTest = nil
-            self.message = NSLocalizedString("Your Doddy messaging data was deleted. Memories on this iPhone were not touched.", comment: "")
+            // "Deleted" only when the server answered 204 (decision 2026-11-12-account-deletion-truth, DOD-08).
+            switch AccountErasurePlan.SettingsDelete(await client.deleteAccountWithStoredToken()) {
+            case .deleted:
+                self.defaults.set(false, forKey: PreferenceKey.pushUpdatesOn)
+                self.defaults.set(false, forKey: PreferenceKey.memoryCopyOn)
+                self.defaults.set(false, forKey: PreferenceKey.textsToDoddyOn)
+                MemoryCopySync.shared.stop()
+                self.pushState = .off
+                self.phone = .none
+                self.phoneStep = .enterNumber
+                self.lastTest = nil
+                self.message = NSLocalizedString("Your Doddy messaging data was deleted. Memories on this iPhone were not touched.", comment: "")
+            case .nothingKept:
+                self.message = NSLocalizedString("This iPhone has no sign-in for Doddy's messaging server, so nothing was deleted from here. If you reinstalled the app, delete your Doddy account in Settings to remove what the server holds.", comment: "")
+            case .notConfirmed:
+                self.message = NSLocalizedString("Doddy's server didn't confirm deleting your messaging data, so nothing was changed. Check your connection and try again.", comment: "")
+            }
         }
     }
 

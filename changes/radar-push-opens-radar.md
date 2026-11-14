@@ -1,0 +1,2 @@
+On my radar: a tapped radar notification now opens On my radar on Home (and comes back to Home from another tab first), finishing part 3 of decision `docs/decisions/2026-11-13-radar-fixes.md`. Radar pushes still exist only with `RADAR_ALERTS_ENABLED=1` and working APNs.
+Ran: `swiftc -parse` on `HomeView.swift` and `RootView.swift`, `scripts/ci.sh --only checks`. Not compiled here; not seen on a device.

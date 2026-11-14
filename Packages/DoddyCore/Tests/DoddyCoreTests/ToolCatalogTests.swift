@@ -36,15 +36,19 @@ final class ToolCatalogTests: XCTestCase {
             let approval = try XCTUnwrap(ToolCatalog.descriptor(tool.name)?.approval, tool.name)
             let tap = approval == .card || approval == .serverApproval
             XCTAssertEqual(tool.confirmOnScreen, tap, "\(tool.name): confirm_on_screen vs \(approval)")
-            // ASK-01: the spec says how the user answers, and it matches what the app asks for.
-            XCTAssertEqual(tool.ask, tap ? .tap : approval == .runsNow ? .runsNow : .yesOrTap, tool.name)
+            // ASK-01: the spec says how the user answers, and it matches what the app asks for. Since
+            // decision 2026-11-11-asked-for-runs-at-once a tool either waits for a tap or runs at once:
+            // no approval and no spec entry is left that a spoken yes answers.
+            XCTAssertTrue(tap || approval == .runsNow, "\(tool.name): \(approval) is neither a tap nor at once")
+            XCTAssertEqual(tool.ask, tap ? .tap : .runsNow, tool.name)
+            XCTAssertEqual(tool.ask == .runsNow, AskFirst.runsAtOnce(tool.name), tool.name)
         }
+        XCTAssertEqual(try spec().filter { $0.ask == .yesOrTap }.map(\.name), [], "no tool is yes_or_tap any more")
     }
 
     func testACardHasTimeToBeTapped() throws {
         // The agent's wait covers the user reading the card; a short timeout would end the call
-        // before the tap and leave the change unanswered.
-        // ASK-01: every tool waits for an answer now, reads included.
+        // before the tap and leave the change unanswered. Every tool that doesn't run at once waits.
         for tool in try spec() where tool.ask != .runsNow {
             XCTAssertGreaterThanOrEqual(tool.timeoutSeconds, 60, tool.name)
         }
@@ -61,36 +65,67 @@ final class ToolCatalogTests: XCTestCase {
 
     // MARK: Rules between effect and approval
 
-    func testNoChangeRunsWithoutACard() {
-        // ASK-01: since 2026-10-18 list changes and the capability-gap row show a card too. Only
-        // translator mode, which changes no data, runs without a card: since ADR-619 (owner,
-        // 24 Oct 2026) it starts and stops at once, without asking. And text_me, which can reach
-        // only the user's own verified number, while Texts from Doddy is on (owner, 9 Nov 2026,
-        // decision 2026-11-09-restaurant-calls-one-tap).
+    func testOnlyDoddysOwnSmallActionsRunWithoutACard() {
+        // Everything that is not a lookup shows a card, except: Doddy's own small things that are undone
+        // in one step (`AskFirst.ownSmallActions`: his stopwatch, focus timer and wind-down, adding to or
+        // ticking off one of his lists, following a topic, opening the training plan screen and the
+        // capability-gap category; decision 2026-11-11-asked-for-runs-at-once); translator mode, which
+        // changes no data and starts and stops at once since ADR-619 (owner, 24 Oct 2026); and text_me,
+        // which can reach only the user's own verified number, while Texts from Doddy is on (owner,
+        // 9 Nov 2026, decision 2026-11-09-restaurant-calls-one-tap).
         let withoutCard = Set(ToolCatalog.all.filter { $0.effect != .lookup && $0.approval != .card && $0.approval != .serverApproval }.map(\.name))
-        XCTAssertEqual(withoutCard, [VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe])
+        XCTAssertEqual(withoutCard, [
+            "start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",
+            "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap",
+            VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe,
+        ])
+        XCTAssertEqual(withoutCard, AskFirst.ownSmallActions.union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe]))
         for name in withoutCard { XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .runsNow, name) }
+        // What takes something away, reaches past Doddy's own lists and timers, or starts paid
+        // background work keeps its card.
+        for name in [VoiceToolName.removeFromList, VoiceToolName.parkingSpot, VoiceToolName.saveMemory, VoiceToolName.createList,
+                     VoiceToolName.createCalendarEvent, VoiceToolName.deleteCalendarEvent, VoiceToolName.setTimer, VoiceToolName.setAlarm,
+                     VoiceToolName.remindWhenToLeave, VoiceToolName.handOverErrand, VoiceToolName.makeSomething, VoiceToolName.callPlaces] {
+            XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .card, name)
+        }
     }
 
-    func testLookupsAskFirstExceptPublicOnes() {
-        // ASK-01: reads of the user's own data ask (a spoken yes or a tap). Since ADR-575 only public
-        // lookups, which read nothing of the user's, run at once.
+    func testEveryLookupRunsAtOnce() {
+        // Decision 2026-11-11-asked-for-runs-at-once: what the user asks for is the yes, so every lookup
+        // runs at once: the public ones (ADR-575), the looks at the user's own things on this iPhone, and
+        // every read through Doddy's server. No descriptor is left that asks for a spoken yes.
         for tool in ToolCatalog.all where tool.effect == .lookup {
-            let expected: ToolDescriptor.Approval = AskFirst.publicLookups.contains(tool.name)
-                ? .runsNow : tool.isCloud ? .serverAsk : .askFirst
-            XCTAssertEqual(tool.approval, expected, tool.name)
+            XCTAssertEqual(tool.approval, .runsNow, tool.name)
         }
-        XCTAssertEqual(Set(ToolCatalog.all.filter { $0.approval == .runsNow }.map(\.name)),
-                       AskFirst.publicLookups.union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe]),
-                       "public lookups, translator start and stop (ADR-619), and text_me to the user's own number (decision 2026-11-09-restaurant-calls-one-tap)")
+        XCTAssertEqual(ToolCatalog.all.filter { $0.approval == .askFirst || $0.approval == .serverAsk }.map(\.name), [])
+        let runsNow = Set(ToolCatalog.all.filter { $0.approval == .runsNow }.map(\.name))
+        XCTAssertEqual(runsNow, Set(ToolCatalog.all.map(\.name).filter(AskFirst.runsAtOnce)), "the catalog and AskFirst.runsAtOnce name the same tools")
+        XCTAssertEqual(runsNow,
+                       AskFirst.publicLookups.union(AskFirst.ownLooks).union(AskFirst.ownSmallActions)
+                           .union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe])
+                           .union(CloudToolName.all.subtracting(CloudToolName.writes)),
+                       "public lookups, looks at the user's own things, Doddy's own small actions, every read through Doddy's server, translator start and stop (ADR-619), and text_me to the user's own number (decision 2026-11-09-restaurant-calls-one-tap)")
         XCTAssertEqual(AskFirst.publicLookups, ["calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
                                                 "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"])
         for name in AskFirst.publicLookups { XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .lookup, name) }
+        XCTAssertEqual(AskFirst.ownLooks, ["search_memories", "read_list", "read_calendar", "find_free_time", "lookup_contact", "upcoming_birthdays",
+                                           "find_photos", "look_at_screen", "read_steps", "read_health_week", "list_alarms", "check_stopwatch",
+                                           "check_focus", "check_errands", "find_deals"])
+        for name in AskFirst.ownLooks {
+            XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .lookup, name)
+            XCTAssertEqual(ToolCatalog.descriptor(name)?.isCloud, false, "\(name) is the app's own look")
+        }
+        // The one lookup that hides inside a change tool: `parking_spot` keeps the card of its strictest
+        // action in the catalog, and only its "find" runs at once.
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.parkingSpot)?.approval, .card)
+        XCTAssertEqual(AskFirst.need(for: .parkingSpot(.find)), .runsNow)
+        XCTAssertTrue(AskFirst.needsTap(AskFirst.need(for: .parkingSpot(.clear))))
+        XCTAssertTrue(AskFirst.needsTap(AskFirst.need(for: .parkingSpot(.save(note: nil)))))
     }
 
     func testEveryToolThatAsksRunsOnThePhoneWhereTheAppCanAsk() throws {
-        // ElevenLabs runs web tools itself, so the app could never ask before them (ASK-01). Only
-        // the public lookups that run at once may run there (ADR-575).
+        // ElevenLabs runs web tools itself, so the app could never show a card before them (ASK-01). Only
+        // the public lookups may run there (ADR-575); the other tools that run at once stay on the phone.
         for tool in try spec() where tool.runsOn != .phone {
             XCTAssertEqual(tool.runsOn, .web, tool.name)
             XCTAssertEqual(tool.ask, .runsNow, tool.name)
@@ -106,9 +141,18 @@ final class ToolCatalogTests: XCTestCase {
         XCTAssertEqual(serverApproved, CloudToolName.writes)
     }
 
-    func testHandoffsShowACard() {
-        for tool in ToolCatalog.all where tool.effect == .handoff {
-            XCTAssertEqual(tool.approval, .card, tool.name)
+    func testHandoffsShowACardExceptOpeningThePlanScreen() {
+        // A handoff sends something out of the app or to Doddy's server, so it shows a card. The one
+        // exception since 11 Nov 2026: `open_training_plan` only opens Doddy's own screen, which the
+        // person closes again (`AskFirst.ownSmallActions`).
+        let handoffs = ToolCatalog.all.filter { $0.effect == .handoff }
+        for tool in handoffs {
+            XCTAssertEqual(tool.approval, tool.name == VoiceToolName.openTrainingPlan ? .runsNow : .card, tool.name)
+        }
+        XCTAssertEqual(Set(handoffs.filter { $0.approval == .runsNow }.map(\.name)), [VoiceToolName.openTrainingPlan])
+        for name in [VoiceToolName.handOverErrand, VoiceToolName.makeSomething] {
+            XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .handoff, name)
+            XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .card, name)
         }
     }
 
@@ -142,7 +186,8 @@ final class ToolCatalogTests: XCTestCase {
         XCTAssertFalse(server.isEmpty, "couldn't read CLOUD_TOOLS from catalog.ts")
         // websearch.ts also holds the fixed Monid tools (ADR-489); claude.ts the Claude tools (ADR-564).
         XCTAssertEqual(
-            Set(server.keys).union([CloudToolName.webSearch, "news_search", "find_places", CloudToolName.askClaude, CloudToolName.makeDocument]),
+            Set(server.keys).union([CloudToolName.webSearch, "news_search", "find_places", CloudToolName.askClaude, CloudToolName.makeDocument])
+                .union(CloudToolName.flightTools),
             CloudToolName.all)
         let claude = try String(contentsOf: repoRoot.appendingPathComponent("backend/src/tools/claude.ts"), encoding: .utf8)
         for name in [CloudToolName.askClaude, CloudToolName.makeDocument] {
@@ -150,7 +195,16 @@ final class ToolCatalogTests: XCTestCase {
             XCTAssertFalse(CloudToolName.isWrite(name), "\(name) changes nothing outside Doddy")
             XCTAssertFalse(CloudToolName.needsAccount(name), name)
         }
-        XCTAssertEqual(Set(server.filter { $0.value == "write" }.keys), CloudToolName.writes)
+        // Flights live in backend/src/flights (decision 2026-11-11-flights-kiwi-search-duffel-booking); booking is their one write.
+        XCTAssertEqual(Set(server.filter { $0.value == "write" }.keys), CloudToolName.writes.subtracting([CloudToolName.bookFlight]))
+        XCTAssertTrue(CloudToolName.isWrite(CloudToolName.bookFlight))
+        let flights = try ["kiwi.ts", "duffel.ts", "service.ts"].map {
+            try String(contentsOf: repoRoot.appendingPathComponent("backend/src/flights/\($0)"), encoding: .utf8)
+        }.joined()
+        for name in CloudToolName.flightTools {
+            XCTAssertTrue(flights.contains("\"\(name)\""), "\(name) not in backend/src/flights")
+            XCTAssertFalse(CloudToolName.needsAccount(name), name)
+        }
         let websearch = try String(contentsOf: repoRoot.appendingPathComponent("backend/src/tools/websearch.ts"), encoding: .utf8)
         XCTAssertTrue(websearch.contains("\"\(CloudToolName.webSearch)\""), "web_search not found in websearch.ts")
         for name in ["news_search", "find_places"] { XCTAssertTrue(websearch.contains("\(name): {"), "\(name) not in MONID_TOOLS") }

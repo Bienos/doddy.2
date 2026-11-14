@@ -5,7 +5,9 @@
 //
 // The default transport is node:https with every resolved address checked at connect time (no private or
 // local networks, as in news/safeFetch.ts), so an address from a page can't reach this server's own network.
-// Tests inject a fake `fetch`. Only the robots files are cached (in memory, per origin); pages never are.
+// Tests inject a fake `fetch`. The robots files are cached (in memory, per origin, DoddyBot's rules only, bounded by
+// count and by size, oldest out). Pages are cached only by
+// `CachingFetcher` below, briefly and in memory, so one leaflet read serves the searches of the next hours.
 import { lookup as dnsLookup } from "node:dns";
 import https from "node:https";
 import { pipeline, Readable } from "node:stream";
@@ -27,7 +29,13 @@ export interface FetchPageOptions {
   aiInput?: boolean;
   /** Stops the fetch early (the caller's own deadline). */
   signal?: AbortSignal;
+  /** A larger cap for one page known to be bigger than the fetcher's own (Natura's promotions page was 3.9 MB on
+   * 13 Nov 2026), never above LARGE_PAGE_MAX_BYTES. */
+  maxBytes?: number;
 }
+
+/** The most a caller may raise the cap to, for one page. */
+export const LARGE_PAGE_MAX_BYTES = 8 * 1024 * 1024;
 
 export interface PageFetcher {
   fetchPage(url: string, opts?: FetchPageOptions): Promise<FetchResult>;
@@ -44,6 +52,8 @@ export interface FetcherOptions {
   maxRedirects?: number;
   /** How long a robots.txt that was read stays cached. Default 1 hour. */
   robotsTtlMs?: number;
+  /** What the robots.txt cache may hold in all, by `robotsStateBytes`. Default ROBOTS_CACHE_MAX_BYTES. */
+  robotsCacheBytes?: number;
   now?: () => number;
 }
 
@@ -55,6 +65,14 @@ export const MAX_HEADER_BYTES = 64 * 1024;
 const ROBOTS_MAX_BYTES = 512 * 1024;
 const ROBOTS_RETRY_MS = 5 * 60_000;
 const ROBOTS_MAX_ORIGINS = 256;
+/** Rules kept from one robots.txt, DoddyBot's own (else `*`'s). A file with more for DoddyBot is read as
+ * disallowing every fetch: past the cap a Disallow could be missed, and a disallowed fetch is never made. */
+export const ROBOTS_MAX_RULES = 2000;
+/** What the robots.txt cache may hold in all, by `robotsStateBytes`; past it the oldest files go first. Real
+ * files are a few KB, so 256 origins stay far below. */
+export const ROBOTS_CACHE_MAX_BYTES = 8 * 1024 * 1024;
+/** The Content-Signal keys kept (Cloudflare's three); the fetcher reads `ai-input`. */
+const CONTENT_SIGNALS = new Set(["search", "ai-input", "ai-train"]);
 
 // ---------- robots.txt ----------
 
@@ -102,6 +120,14 @@ function normalisePattern(p: string): string {
 /** Longer patterns, or ones with more `*`, are ignored: they match nothing. Real files stay far below. */
 const ROBOTS_PATTERN_MAX_CHARS = 512;
 const ROBOTS_PATTERN_MAX_STARS = 16;
+const usablePattern = (body: string, pieces: string[]) => body.length <= ROBOTS_PATTERN_MAX_CHARS && pieces.length - 1 <= ROBOTS_PATTERN_MAX_STARS;
+
+/** False for a pattern `robotsPatternMatches` ignores, so a rule with it can be left out. */
+function canMatch(pattern: string): boolean {
+  const p = normalisePattern(pattern);
+  const body = p.endsWith("$") ? p.slice(0, -1) : p;
+  return usablePattern(body, body.split("*"));
+}
 
 /**
  * True when `pattern` (with `*` and a trailing `$`) matches the start of `path`. Plain string search,
@@ -113,7 +139,7 @@ export function robotsPatternMatches(pattern: string, path: string): boolean {
   const anchored = p.endsWith("$");
   const body = anchored ? p.slice(0, -1) : p;
   const pieces = body.split("*");
-  if (body.length > ROBOTS_PATTERN_MAX_CHARS || pieces.length - 1 > ROBOTS_PATTERN_MAX_STARS) return false;
+  if (!usablePattern(body, pieces)) return false;
   const first = pieces[0]!;
   if (!path.startsWith(first)) return false;
   if (pieces.length === 1) return !anchored || path.length === first.length;
@@ -150,11 +176,49 @@ export function robotsAllows(groups: RobotsGroup[], token: string, pathAndQuery:
   return { allowed: best ? best.allow : true, signals };
 }
 
+/** A fresh copy of a string: a slice of the file's text would keep the whole file in memory. */
+const own = (s: string) => Buffer.from(s, "utf8").toString("utf8");
+
+/**
+ * The part of a parsed robots.txt that applies to `token`, as small as it can be: other agents' groups, rules that can
+ * never match and unknown Content-Signal keys are left out, and what is kept is copied out of the file's text.
+ * `robotsAllows(kept, token, …)` answers as `robotsAllows(groups, token, …)` does, for the signals it keeps.
+ * Undefined when more than ROBOTS_MAX_RULES rules apply.
+ */
+export function robotsRulesFor(groups: RobotsGroup[], token: string): RobotsGroup[] | undefined {
+  const kept: RobotsGroup[] = [];
+  let count = 0;
+  for (const g of groupsFor(groups, token)) {
+    const rules = g.rules.filter((r) => canMatch(r.pattern));
+    count += rules.length;
+    if (count > ROBOTS_MAX_RULES) return undefined;
+    kept.push({
+      agents: [...new Set(g.agents.filter((a) => a === "*" || a === token || a.split("/")[0] === token).map((a) => a.split("/")[0] === token ? token : "*"))],
+      rules: rules.map((r) => ({ allow: r.allow, pattern: own(r.pattern) })),
+      signals: Object.fromEntries(Object.entries(g.signals).filter(([k]) => CONTENT_SIGNALS.has(k)).map(([k, v]) => [own(k), own(v.slice(0, 32))])),
+    });
+  }
+  return kept;
+}
+
 type RobotsState =
   | { kind: "rules"; groups: RobotsGroup[] }
   | { kind: "allow_all" } // 4xx: no robots file
   | { kind: "unreachable" } // 5xx, network, timeout: assume everything is disallowed (RFC 9309)
-  | { kind: "blocked"; reason: string }; // 401/403-with-challenge or 429 on robots.txt itself
+  | { kind: "blocked"; reason: string } // 401/403-with-challenge or 429 on robots.txt itself
+  | { kind: "too_large" }; // more than ROBOTS_MAX_RULES rules for DoddyBot: everything is disallowed
+
+/** About what a cached robots.txt keeps on the heap: two bytes a character, and a little for each object. */
+export function robotsStateBytes(state: { kind: string; groups?: RobotsGroup[] }): number {
+  let n = 64;
+  for (const g of state.groups ?? []) {
+    n += 96;
+    for (const a of g.agents) n += 32 + 2 * a.length;
+    for (const r of g.rules) n += 48 + 2 * r.pattern.length;
+    for (const [k, v] of Object.entries(g.signals)) n += 64 + 2 * (k.length + v.length);
+  }
+  return n;
+}
 
 // ---------- the default transport ----------
 
@@ -206,12 +270,27 @@ export const safeHttpsFetch: FetchFn = (url, init) => new Promise<Response>((res
 
 // ---------- the fetcher ----------
 
-const CHALLENGE_MARKERS = [
+const BLOCKED_TITLE_WORDS = /captcha|access denied|dost[eę]p zablokowany/i;
+
+/** A title naming a captcha or a block: what `/<title>[^<]*(captcha|access denied|dost[eę]p zablokowany)[^<]*<\/title>/i`
+ * finds, in linear time (each title's text is read once, up to the next "<"). */
+export function hasBlockedTitle(html: string): boolean {
+  const open = /<title>/gi;
+  for (let m = open.exec(html); m; m = open.exec(html)) {
+    const textEnd = html.indexOf("<", open.lastIndex);
+    if (textEnd < 0) return false;
+    if (/^<\/title>/i.test(html.slice(textEnd, textEnd + 8)) && BLOCKED_TITLE_WORDS.test(html.slice(open.lastIndex, textEnd))) return true;
+    open.lastIndex = textEnd;
+  }
+  return false;
+}
+
+const CHALLENGE_MARKERS: { test(html: string): boolean }[] = [
   /<title>\s*just a moment\.\.\.\s*<\/title>/i, // Cloudflare interstitial
   /_cf_chl_opt|cf-chl-bypass|cf_chl_prog/i,
   /<title>\s*attention required!?\s*\|\s*cloudflare/i,
   /px-captcha|captcha-delivery\.com|\/_incapsula_resource/i,
-  /<title>[^<]*(captcha|access denied|dost[eę]p zablokowany)[^<]*<\/title>/i,
+  { test: hasBlockedTitle },
 ];
 
 /** True for a challenge, captcha or bot-wall page. Only strong markers: the ordinary Cloudflare beacon is not one. */
@@ -263,8 +342,11 @@ export class PoliteFetcher implements PageFetcher {
   private readonly maxBytes: number;
   private readonly maxRedirects: number;
   private readonly robotsTtlMs: number;
+  private readonly robotsCacheBytes: number;
   private readonly now: () => number;
-  private readonly robots = new Map<string, { expires: number; state: Promise<RobotsState> }>();
+  /** Oldest first (an origin read again goes to the end); `bytes` is counted once its file is read. */
+  private readonly robots = new Map<string, { expires: number; state: Promise<RobotsState>; bytes: number }>();
+  private robotsBytes = 0;
 
   constructor(opts: FetcherOptions = {}) {
     this.fetchFn = opts.fetch ?? safeHttpsFetch;
@@ -273,6 +355,7 @@ export class PoliteFetcher implements PageFetcher {
     this.maxBytes = opts.maxBytes ?? DEFAULT_MAX_BYTES;
     this.maxRedirects = opts.maxRedirects ?? 3;
     this.robotsTtlMs = opts.robotsTtlMs ?? 3600_000;
+    this.robotsCacheBytes = opts.robotsCacheBytes ?? ROBOTS_CACHE_MAX_BYTES;
     this.now = opts.now ?? Date.now;
   }
 
@@ -319,12 +402,13 @@ export class PoliteFetcher implements PageFetcher {
           if (body !== "too_large" && body.length && looksLikeChallenge(res.headers, body)) return { kind: "blocked", reason: "challenge" };
           return { kind: "failed", reason: `http_${status}` };
         }
+        const cap = opts.maxBytes && opts.maxBytes > this.maxBytes ? Math.min(opts.maxBytes, LARGE_PAGE_MAX_BYTES) : this.maxBytes;
         const declared = Number(res.headers.get("content-length") ?? "");
-        if (Number.isFinite(declared) && declared > this.maxBytes) {
+        if (Number.isFinite(declared) && declared > cap) {
           discard(res);
           return { kind: "failed", reason: "too_large" };
         }
-        const body = await readCapped(res, this.maxBytes);
+        const body = await readCapped(res, cap);
         if (body === "too_large") return { kind: "failed", reason: "too_large" };
         if (looksLikeChallenge(res.headers, body)) return { kind: "blocked", reason: "challenge" };
         return { kind: "ok", status, contentType: res.headers.get("content-type") ?? "", body, finalUrl: url.toString() };
@@ -349,26 +433,51 @@ export class PoliteFetcher implements PageFetcher {
     if (state.kind === "allow_all") return undefined;
     if (state.kind === "unreachable") return { kind: "disallowed", reason: "robots_unreachable" };
     if (state.kind === "blocked") return { kind: "blocked", reason: `robots_${state.reason}` };
+    if (state.kind === "too_large") return { kind: "disallowed", reason: "robots_too_large" };
     const v = robotsAllows(state.groups, ROBOTS_TOKEN, url.pathname + url.search);
     if (!v.allowed) return { kind: "disallowed", reason: "robots" };
     if (aiInput && v.signals["ai-input"] === "no") return { kind: "disallowed", reason: "content_signal" };
     return undefined;
   }
 
+  /** How many robots.txt files are cached and their size by `robotsStateBytes` (for tests and logs). */
+  robotsCacheStats(): { origins: number; bytes: number } {
+    return { origins: this.robots.size, bytes: this.robotsBytes };
+  }
+
   private robotsFor(origin: string): Promise<RobotsState> {
     const now = this.now();
     const hit = this.robots.get(origin);
     if (hit && hit.expires > now) return hit.state;
+    if (hit) this.dropRobots(origin);
     if (this.robots.size >= ROBOTS_MAX_ORIGINS) {
-      for (const [k, v] of this.robots) if (v.expires <= now) this.robots.delete(k);
-      if (this.robots.size >= ROBOTS_MAX_ORIGINS) this.robots.delete(this.robots.keys().next().value!);
+      for (const [k, v] of this.robots) if (v.expires <= now) this.dropRobots(k);
+      if (this.robots.size >= ROBOTS_MAX_ORIGINS) this.dropRobots(this.robots.keys().next().value!);
     }
     const state = this.loadRobots(origin);
-    const entry = { expires: now + this.robotsTtlMs, state };
+    const entry = { expires: now + this.robotsTtlMs, state, bytes: 0 };
     this.robots.set(origin, entry);
-    // A file that couldn't be read is asked for again sooner than one that could.
-    void state.then((s) => { if (s.kind === "unreachable" || s.kind === "blocked") entry.expires = this.now() + ROBOTS_RETRY_MS; });
+    void state.then((s) => {
+      // A file that couldn't be read is asked for again sooner than one that could.
+      if (s.kind === "unreachable" || s.kind === "blocked") entry.expires = this.now() + ROBOTS_RETRY_MS;
+      if (this.robots.get(origin) !== entry) return; // dropped while it was read
+      entry.bytes = robotsStateBytes(s);
+      this.robotsBytes += entry.bytes;
+      // Past the budget the oldest files go first; the one just read stays, and so do files still being read (they
+      // count nothing yet).
+      for (const [k, v] of this.robots) {
+        if (this.robotsBytes <= this.robotsCacheBytes) break;
+        if (v !== entry && v.bytes > 0) this.dropRobots(k);
+      }
+    });
     return state;
+  }
+
+  private dropRobots(origin: string): void {
+    const entry = this.robots.get(origin);
+    if (!entry) return;
+    this.robotsBytes -= entry.bytes;
+    this.robots.delete(origin);
   }
 
   private async loadRobots(origin: string): Promise<RobotsState> {
@@ -395,7 +504,9 @@ export class PoliteFetcher implements PageFetcher {
         const body = await readCapped(res, ROBOTS_MAX_BYTES, true);
         if (body === "too_large") return { kind: "unreachable" }; // not reached with truncate
         if (looksLikeChallenge(res.headers, body)) return { kind: "blocked", reason: "challenge" };
-        return { kind: "rules", groups: parseRobots(body.toString("utf8")) };
+        // Only DoddyBot's part is kept, and only up to ROBOTS_MAX_RULES rules (see robotsRulesFor).
+        const groups = robotsRulesFor(parseRobots(body.toString("utf8")), ROBOTS_TOKEN);
+        return groups ? { kind: "rules", groups } : { kind: "too_large" };
       }
       return { kind: "allow_all" }; // more than five redirects: RFC 9309 treats it as unavailable (4xx)
     } catch {
@@ -403,5 +514,73 @@ export class PoliteFetcher implements PageFetcher {
     } finally {
       clearTimeout(timer);
     }
+  }
+}
+
+/**
+ * A short-lived page cache in front of a fetcher (11 Nov 2026). On the live server (free plan, one small instance)
+ * each search read every chain's site again: 6 to 9 of 10 chains failed with `timeout` per search (log of 11 Nov,
+ * 08:13 and 08:26 UTC), Biedronka alone fetching about 97 page images inside the 25 s budget. A leaflet changes once a
+ * week, so a page read once now serves the next searches for `ttlMs`. Only successful answers are kept, in memory,
+ * for everyone alike (nothing in it is linked to a person), within `maxBytes`, oldest first out. Two searches asking
+ * for the same page at once share one fetch.
+ */
+export class CachingFetcher implements PageFetcher {
+  private readonly entries = new Map<string, { expires: number; result: Extract<FetchResult, { kind: "ok" }> }>();
+  private readonly inFlight = new Map<string, Promise<FetchResult>>();
+  private bytes = 0;
+
+  constructor(
+    /** The fetcher underneath; the same polite fetcher (one robots.txt cache, one user agent) as everything else. */
+    readonly inner: PageFetcher,
+    private readonly ttlMs = 3 * 3600_000,
+    private readonly maxBytes = 48 * 1024 * 1024,
+    private readonly now: () => number = Date.now,
+  ) {}
+
+  async fetchPage(url: string, opts: FetchPageOptions = {}): Promise<FetchResult> {
+    // The same address asked for with different rules (accept, AI input) is a different request.
+    const key = `${opts.aiInput === true ? "ai" : "-"} ${opts.accept ?? "*/*"} ${url}`;
+    const hit = this.entries.get(key);
+    if (hit && hit.expires > this.now()) {
+      // Most recently used last, so the oldest goes first when the cache is full.
+      this.entries.delete(key);
+      this.entries.set(key, hit);
+      return hit.result;
+    }
+    if (hit) this.drop(key);
+    const pending = this.inFlight.get(key);
+    if (pending) return pending;
+    // A shared fetch is not stopped by one caller's deadline; each caller still stops waiting at its own.
+    const { signal, ...shared } = opts;
+    const started = this.inner.fetchPage(url, shared).then((result) => {
+      if (result.kind === "ok" && result.body.length <= this.maxBytes / 8) this.keep(key, result);
+      return result;
+    }).finally(() => this.inFlight.delete(key));
+    this.inFlight.set(key, started);
+    if (!signal) return started;
+    return new Promise<FetchResult>((resolve) => {
+      const onAbort = () => resolve({ kind: "failed", reason: "timeout" });
+      if (signal.aborted) return onAbort();
+      signal.addEventListener("abort", onAbort, { once: true });
+      started.then((r) => { signal.removeEventListener("abort", onAbort); resolve(r); });
+    });
+  }
+
+  private keep(key: string, result: Extract<FetchResult, { kind: "ok" }>): void {
+    this.drop(key);
+    this.entries.set(key, { expires: this.now() + this.ttlMs, result });
+    this.bytes += result.body.length;
+    for (const [oldest] of this.entries) {
+      if (this.bytes <= this.maxBytes) break;
+      this.drop(oldest);
+    }
+  }
+
+  private drop(key: string): void {
+    const entry = this.entries.get(key);
+    if (!entry) return;
+    this.bytes -= entry.result.body.length;
+    this.entries.delete(key);
   }
 }

@@ -6,9 +6,11 @@ import Foundation
 public enum CapabilityIntroduction {
     public static func text(for catalog: CapabilityCatalog, language: NotificationLanguage = .english) -> String {
         let polish = language == .polish
+        // No "I'm an AI" opener since 11 Nov 2026 (owner: "nie chcę używać słowa AI w ogóle w mówieniu o Dodim").
+        // Asked directly, Doddy still says plainly what he is (DOD-03, voice-agent/instructions.md).
         var sentences = polish
-            ? ["Jestem AI, nie człowiekiem.", "Twoje notatki są przechowywane na tym iPhonie."]
-            : ["I'm an AI assistant, not a person.", "Your notes are kept on this iPhone."]
+            ? ["Twoje notatki są przechowywane na tym iPhonie."]
+            : ["Your notes are kept on this iPhone."]
         if isBuilt(.voiceInput, in: catalog) {
             sentences.append(polish
                 ? "Kiedy rozmawiamy, Twój głos i notatki, z których korzystam, trafiają do ElevenLabs, który obsługuje rozmowę."
@@ -25,10 +27,10 @@ public enum CapabilityIntroduction {
                 ? "W tej wersji nie mogę dodawać przypomnień ani korzystać z innych aplikacji."
                 : "I can't add reminders or use other apps in this build.")
         }
-        // Since 9 Nov 2026 the screen is on Settings › Privacy only (decision 2026-11-09-phone-calls-on-home-menu).
+        // What is sent and where is the Privacy Policy's job (owner, 10 Nov 2026); the sheet links to it.
         sentences.append(polish
-            ? "Ekran Ustawienia › Prywatność › Co opuszcza tego iPhone’a pokazuje wszystko, co jest wysyłane, i dokąd."
-            : "Settings › Privacy › What leaves this iPhone shows everything that is sent, and where.")
+            ? "Co wysyłam i dokąd, opisuje Polityka prywatności."
+            : "What I send, and where, is in the Privacy Policy.")
         return sentences.joined(separator: " ")
     }
 

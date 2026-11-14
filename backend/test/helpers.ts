@@ -45,6 +45,7 @@ export async function harness(
     nowIso?: string;
     verifier?: SessionVerifier;
     health?: HttpDeps["health"];
+    shopify?: HttpDeps["shopify"];
   } = {},
 ): Promise<Harness> {
   const store = await Store.memory();
@@ -69,6 +70,7 @@ export async function harness(
     service,
     verifier: opts.verifier ?? new DevSessionVerifier(),
     ...(opts.health !== undefined ? { health: opts.health } : {}),
+    ...(opts.shopify !== undefined ? { shopify: opts.shopify } : {}),
     appReturnUrl: "doddy-dev://connected-apps/return",
     maxBodyBytes: 8 * 1024,
     now: () => new Date(clock.ms),

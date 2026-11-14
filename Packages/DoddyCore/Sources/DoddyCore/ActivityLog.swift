@@ -29,6 +29,8 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
     case news
     /// The screen the person shares with Doddy (decision 2026-11-09-doddy-looks-at-the-screen).
     case screen
+    /// A food delivery app opened on a card's tap (decision 2026-11-12-food-by-voice).
+    case food
 
     public var title: String {
         switch self {
@@ -55,8 +57,9 @@ public enum ActivityApp: String, Codable, CaseIterable, Sendable {
         case .home: "Home"
         case .health: "Apple Health"
         case .training: "Training plan"
-        case .news: "Following"
+        case .news: "On my radar"
         case .screen: "Your screen"
+        case .food: "Food apps"
         }
     }
 }
@@ -279,6 +282,10 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .photos, title: "Looked through photos", detail: request.text(calendar: calendar), isLookup: true)
         case .openCamera:
             return ActivityRequest(app: .camera, title: "Open the camera", detail: nil, isLookup: false)
+        case .openFoodApp(let handoff):
+            // The title is fixed so it has a Polish one; the app and the search go in the detail.
+            return ActivityRequest(app: .food, title: "Open a food app",
+                                   detail: [handoff.app.name, handoff.search.map { "“\($0)”" }].compactMap { $0 }.joined(separator: " · "), isLookup: false)
         case .lookAtScreen:
             // The question can name someone on the screen, so the log keeps only that Doddy looked.
             return ActivityRequest(app: .screen, title: "Looked at your screen", detail: nil, isLookup: true)
@@ -340,13 +347,25 @@ public struct ActivityRequest: Equatable, Sendable {
         case .cancelAlarm(let clock, let label):
             return ActivityRequest(app: .timers, title: "Turn off alarm", detail: [clock, label.map { "“\($0)”" }].compactMap { $0 }.joined(separator: " · "), isLookup: false)
         case .followNews(let ask):
-            return ActivityRequest(app: .news, title: "Follow in Following", detail: "“\(ask.name)”", isLookup: false)
+            // "Add to radar", the screen's own words since 10 Nov 2026 (decision 2026-11-13-radar-fixes).
+            return ActivityRequest(app: .news, title: "Add to radar", detail: "“\(ask.name)”", isLookup: false)
         case .startStopwatch(let label):
             return ActivityRequest(app: .timers, title: "Start stopwatch", detail: label.map { "“\($0)”" } ?? "Counts up", isLookup: false)
         case .stopStopwatch:
             return ActivityRequest(app: .timers, title: "Stop stopwatch", detail: "Doddy's stopwatch", isLookup: false)
         case .checkStopwatch:
             return ActivityRequest(app: .timers, title: "Read stopwatch", detail: "Doddy's stopwatch", isLookup: true)
+        case .startFocus(let minutes, let label):
+            return ActivityRequest(app: .timers, title: "Start focus",
+                                   detail: ([TimerVoice.length(minutes)] + (label.map { ["“\($0)”"] } ?? [])).joined(separator: " · "), isLookup: false)
+        case .stopFocus:
+            return ActivityRequest(app: .timers, title: "Stop focus", detail: "Doddy's focus timer", isLookup: false)
+        case .checkFocus:
+            return ActivityRequest(app: .timers, title: "Read focus", detail: "Doddy's focus timer", isLookup: true)
+        case .startWindDown(let minutes):
+            return ActivityRequest(app: .timers, title: "Start wind-down", detail: TimerVoice.length(minutes), isLookup: false)
+        case .stopWindDown:
+            return ActivityRequest(app: .timers, title: "Stop wind-down", detail: "Doddy's wind-down", isLookup: false)
         case .deleteCalendarEvents(let range):
             return ActivityRequest(app: .calendar, title: "Delete events", detail: "\(when(range.start, hasTime: true)) – \(when(range.end, hasTime: true))", isLookup: false)
         case .moveReminders(let dueBy, let to):
@@ -432,6 +451,10 @@ public struct ActivityRequest: Equatable, Sendable {
         case CloudToolName.listTodoistTasks: ActivityRequest(app: .todoist, title: "Read your tasks", detail: nil, isLookup: true)
         case CloudToolName.addTodoistTask: ActivityRequest(app: .todoist, title: "Add a task", detail: nil, isLookup: false)
         case CloudToolName.webSearch: ActivityRequest(app: .web, title: "Searched the web", detail: nil, isLookup: true)
+        // Never the route or the names: they say where and with whom the user travels.
+        case CloudToolName.findFlights, CloudToolName.findBookableFlights: ActivityRequest(app: .web, title: "Searched flights", detail: nil, isLookup: true)
+        case CloudToolName.checkFlightBooking: ActivityRequest(app: .web, title: "Checked a flight booking", detail: nil, isLookup: true)
+        case CloudToolName.bookFlight: ActivityRequest(app: .web, title: "Book a flight", detail: nil, isLookup: false)
         // Never the address: it can say what the user was researching.
         case PaymentToolName.payForPage: ActivityRequest(app: .web, title: "Paid for a page", detail: nil, isLookup: false)
         case CloudToolName.checkOutlookEmail: ActivityRequest(app: .outlook, title: "Checked email", detail: nil, isLookup: true)

@@ -14,6 +14,7 @@
 // CloudFront that answers every missing object, robots.txt included, with 403 AccessDenied (no rules either; the
 // polite fetcher treats a 4xx robots.txt as no file), and its page images answer 200 to DoddyBot.
 import { currentWeek, fetchOfficial, isObject, isoDay, officialUrl, str } from "./common.js";
+import { firstElement } from "../../htmlScan.js";
 import type { ChainAdapter, ChainRead, LeafletPage, LeafletRead } from "../types.js";
 
 export const DELIKATESY_HOSTS = ["www.delikatesy.pl", "static.delikatesy.pl"] as const;
@@ -50,10 +51,10 @@ export function bookletPages(raw: unknown): LeafletPage[] {
 
 /** The booklets in the page's __NEXT_DATA__, or undefined when the payload isn't there. */
 function payloadBooklets(html: string): unknown[] | undefined {
-  const m = /<script id="__NEXT_DATA__" type="application\/json"[^>]*>([\s\S]*?)<\/script>/.exec(html);
+  const m = firstElement(html, /<script id="__NEXT_DATA__" type="application\/json"/g, "</script>");
   if (!m) return undefined;
   let data: unknown;
-  try { data = JSON.parse(m[1]!); } catch { return undefined; }
+  try { data = JSON.parse(m.content); } catch { return undefined; }
   const props = isObject(data) && isObject(data.props) && isObject(data.props.pageProps) ? data.props.pageProps : undefined;
   return props && Array.isArray(props.booklets) ? props.booklets : undefined;
 }

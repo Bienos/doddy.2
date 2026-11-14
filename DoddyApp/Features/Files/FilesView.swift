@@ -180,17 +180,33 @@ final class MadeDocumentsModel {
         }
         if case .ready = load {} else { load = .loading }
         do {
-            load = .ready(try await client.documents())
+            set(.ready(try await client.documents()))
         } catch WebLinkError.unauthenticated {
             // A refused session is renewed once; a second refusal is a failure, not another loop.
             guard let renewed = await MadeDocumentsClientFactory.renewed() else {
-                load = .failed(NSLocalizedString("Couldn't reach Doddy's server. Try again in a moment.", comment: ""))
+                fail(NSLocalizedString("Couldn't reach Doddy's server. Try again in a moment.", comment: ""), quietly: !clearingDownloads)
                 return
             }
-            do { load = .ready(try await renewed.documents()) } catch { load = .failed(Self.text(for: error)) }
+            do { set(.ready(try await renewed.documents())) } catch { fail(Self.text(for: error), quietly: !clearingDownloads) }
         } catch {
-            load = .failed(Self.text(for: error))
+            fail(Self.text(for: error), quietly: !clearingDownloads)
         }
+    }
+
+    /// Only a list that changed is set (12 Nov 2026): Messages reads this every 6 or 30 seconds, and setting an
+    /// unchanged list redrew the whole conversation each time ("to się trochę zacina"). Files made before this
+    /// install or before the conversation was deleted are left out (decision 2026-11-12-deleted-files-stay-gone).
+    private func set(_ fresh: Load) {
+        var fresh = fresh
+        if case .ready(let list) = fresh { fresh = .ready(FilesShownSince.visible(list, since: FilesShownSinceStore.since)) }
+        if fresh != load { load = fresh }
+    }
+
+    /// A background re-read that fails keeps the list it had (11 Nov 2026): replacing it made Messages' file cards
+    /// vanish and come back with every poll. A refresh the person asked for still shows the problem.
+    private func fail(_ message: String, quietly: Bool) {
+        if quietly, case .ready = load { return }
+        load = .failed(message)
     }
 
     /// Doddy is making a file for this person right now (as of the last refresh).

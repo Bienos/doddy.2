@@ -233,30 +233,29 @@ final class DealsClientTests: XCTestCase {
         XCTAssertEqual(AskFirst.need(for: parse("{}")), .nothingRuns)
     }
 
-    func testFindDealsAsksFirstWithACardAndIsNotAPublicLookup() {
+    func testFindDealsRunsAtOnceAndIsNotAPublicLookup() {
         let deals = DealsRequest(items: ["masło", "kawa mielona"], chains: [.lidl, .kaufland])
+        // Decision 2026-11-11-asked-for-runs-at-once: the user asked for this week's leaflets, so Doddy
+        // reads them at once. No card, no spoken question.
         let need = AskFirst.need(for: .findDeals(deals))
-        XCTAssertEqual(need, .yesFirst(AskCard(
+        XCTAssertEqual(need, .runsNow)
+        XCTAssertFalse(AskFirst.needsTap(need))
+        XCTAssertTrue(AskFirst.ownLooks.contains(VoiceToolName.findDeals))
+        // The card builder is still there (no longer shown before a search); its words stay exact.
+        XCTAssertEqual(DealsAsk.card(deals), AskCard(
             title: "Check this week's leaflets?",
             lines: [
                 "Items: masło, kawa mielona",
                 "Shops: Lidl, Kaufland (leaflet link only)",
                 "Doddy reads the leaflets on its server. Nothing that identifies you goes to the shops; Rossmann gets the item names as a search.",
             ],
-            confirmLabel: "Yes, check")))
-        XCTAssertFalse(AskFirst.needsTap(need), "a read: a spoken yes or a tap")
+            confirmLabel: "Yes, check"))
         XCTAssertEqual(DealsAsk.card(DealsRequest(items: ["masło"])).lines[1], "Shops: Biedronka, Lidl, Dino, Rossmann, Aldi, Żabka, Delikatesy Centrum, Lewiatan, Natura, Action, pet, shoe and home shops when an item fits")
-        // Whether leaflets run at once is the owner's open decision: until then they ask.
+        // It runs at once as a look the user asked for, not as one of the public lookups (ADR-575).
         XCTAssertFalse(AskFirst.publicLookups.contains(VoiceToolName.findDeals))
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.findDeals)?.effect, .lookup)
-        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.findDeals)?.approval, .askFirst)
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.findDeals)?.approval, .runsNow)
         XCTAssertNil(VoiceConnection.serving(VoiceToolName.findDeals))
-        // One spoken yes runs exactly this request, once.
-        var ledger = AskLedger()
-        let now = Date(timeIntervalSince1970: 1_792_000_000)
-        ledger.asked("c1", request: .findDeals(deals), needsTap: false, at: now)
-        XCTAssertEqual(ledger.answer(.userSaid("tak"), for: "c1", at: now.addingTimeInterval(1)), .granted)
-        XCTAssertFalse(ledger.mayRun("c1", request: .findDeals(DealsRequest(items: ["masło"])), at: now.addingTimeInterval(2)))
     }
 
     func testPauseCarAndWhatDoddyDid() {
@@ -334,6 +333,23 @@ final class DealsClientTests: XCTestCase {
         XCTAssertTrue(text.contains("Not checked: Lidl: its site blocked Doddy's reader; Dino: couldn't be read; Rossmann: no leaflet found for this week; spar: not known whether it was read"))
         XCTAssertFalse(text.contains("Basket"), "no offers, no basket")
         XCTAssertFalse(text.contains("zł"))
+    }
+
+    func testThingsTheLeafletsArentForAreOfferedForOnlineShopsByVoice() {
+        let leaflets = DealsResult(checkedAt: "2026-11-13T06:10:00Z", chains: [
+            DealsChainReport(chain: .biedronka, status: .noMatch), DealsChainReport(chain: .lidl, status: .noMatch),
+        ], items: [DealsItemResult(query: "słuchawki bezprzewodowe", offers: []), DealsItemResult(query: "masło", offers: [])])
+        let text = DealsResultText.forAgent(leaflets)
+        XCTAssertTrue(text.contains("Online shops next: leaflets aren't where \"słuchawki bezprzewodowe\" is usually bought cheapest"), text)
+        XCTAssertTrue(text.contains("hand_over_errand with kind 'shopping'"), text)
+        XCTAssertTrue(text.contains("only on their tap"), text)
+        XCTAssertFalse(text.contains("\"masło\" is usually"), "milk and butter aren't a task for online shops")
+    }
+
+    func testEverydayGroceriesAloneOfferNoOnlineSearch() {
+        let leaflets = DealsResult(checkedAt: "2026-11-13T06:10:00Z", chains: [DealsChainReport(chain: .lidl, status: .noMatch)],
+                                   items: [DealsItemResult(query: "masło", offers: []), DealsItemResult(query: "mleko", offers: [])])
+        XCTAssertFalse(DealsResultText.forAgent(leaflets).contains("Online shops next"))
     }
 
     func testLeafletTextCantCloseTheDataBlockAndTheReplyIsBounded() {

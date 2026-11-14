@@ -1,6 +1,7 @@
 // One Studio job from plan to checked files (ADR-740, STUDIO.md "The pipeline"). Never throws for
-// model, network or file problems: each ends as a failure code. Files made at Anthropic are always
-// deleted there before this returns; any delete not read back as gone is returned as `pending`.
+// model, network or file problems: each ends as a failure code. Files made at Anthropic are written
+// down (`noteFiles`) the moment their ids come back and always deleted there before this returns; any
+// delete not read back as gone is returned as `pending`.
 import Anthropic from "@anthropic-ai/sdk";
 import { collectSources, countToolUses, echoable, languageName, SeenSources, type ResearchTurn } from "../errands/researcher.js";
 import { checkFiles, failed, isKeptFile, type MadeFile } from "./checks.js";
@@ -17,7 +18,15 @@ export const MAX_NOTES_CHARS = 200_000;
 export const MAX_WRITE_ATTEMPTS = 3;
 
 export interface Usage { inputTokens: number; cacheWriteTokens: number; cacheReadTokens: number; outputTokens: number }
-export interface RunStats { usage: Usage; searches: number; fetches: number; containerSeconds: number; costUsd: number; model: string }
+export interface RunStats {
+  usage: Usage; searches: number; fetches: number; containerSeconds: number; costUsd: number; model: string;
+  /**
+   * True when a model request may have spent more than `costUsd` counts: one was cut off once it had started (Cancel,
+   * the time limit, shutdown, a failure at the provider) or came back without its usage. The worker then keeps the
+   * job's whole reservation on the server's day and month (ADR-742).
+   */
+  costUnknown: boolean;
+}
 
 export type StudioOutcome =
   | ({ kind: "made"; state: "ready" | "needs_look"; result: StudioResult; files: MadeFile[]; pending: string[] } & RunStats)
@@ -37,6 +46,12 @@ export interface StudioControl {
   now?: () => Date;
   cancelPollMs?: number;
   log?: (msg: string, extra?: object) => void;
+  /**
+   * Called with the ids of files made at Anthropic as soon as a make request returns them, before anything is
+   * downloaded, so a delete, a reap or a crash before the end still finds them. A failure here is logged; the
+   * job's own clean-up still deletes them.
+   */
+  noteFiles?: (ids: string[]) => Promise<void>;
 }
 
 /** USD with four decimals. Tokens are priced per call with that step's model (models.ts); web search at $10 per 1,000; container time inside the free hours counts $0. */
@@ -63,6 +78,8 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
   /** Token cost so far, each call priced with its own step's model. */
   let tokenUsd = 0;
   let searches = 0, fetches = 0, reportedSearches = 0, reportedFetches = 0, containerMs = 0;
+  /** A request may have spent more than was counted (see RunStats.costUnknown). */
+  let costUnknown = false;
   /** Files made at Anthropic in this job, until each delete is read back. */
   const atAnthropic = new Set<string>();
 
@@ -70,7 +87,7 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     const s = Math.max(searches, reportedSearches);
     return {
       usage: { ...usage }, searches: s, fetches: Math.max(fetches, reportedFetches),
-      containerSeconds: Math.round(containerMs / 1000), costUsd: roundUsd(tokenUsd + s * PER_SEARCH_USD), model: api.model,
+      containerSeconds: Math.round(containerMs / 1000), costUsd: roundUsd(tokenUsd + s * PER_SEARCH_USD), model: api.model, costUnknown,
     };
   };
   const add = (step: StudioStep, u: UsageLike | undefined) => {
@@ -91,8 +108,11 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     if (stats().costUsd > control.jobLimitUsd) throw fail("cost_limit");
   };
 
-  /** One model call with the time limit, Cancel and shutdown wired to an abort. */
-  async function guarded<T>(call: (signal: AbortSignal) => Promise<T>): Promise<T> {
+  /**
+   * One call with the time limit, Cancel and shutdown wired to an abort. `billed`: a model request, whose cost is
+   * unknown when it ends without its answer (Files API calls are free).
+   */
+  async function guarded<T>(call: (signal: AbortSignal) => Promise<T>, billed = true): Promise<T> {
     if (control.signal?.aborted) throw stopFor("interrupted");
     if (now() >= control.deadline) throw stopFor("time_limit");
     if (await control.isCancelled()) throw stopFor("cancelled");
@@ -105,6 +125,8 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     try {
       return await call(controller.signal);
     } catch (err) {
+      // The request went out and ended without its answer: it may have billed tokens and searches nobody counted.
+      if (billed) costUnknown = true;
       if (controller.signal.aborted) throw stopFor(controller.signal.reason as StopReason);
       log("studio request failed", { error: err instanceof Anthropic.APIError ? `api_${err.status ?? "connection"}` : (err as Error)?.name });
       throw fail("provider_error");
@@ -117,6 +139,7 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
 
   const structured = async <T>(step: StudioStep, call: (signal: AbortSignal) => Promise<Structured<T>>): Promise<Structured<T>> => {
     const r = await guarded(call);
+    if (!r.usage) costUnknown = true; // a reply that couldn't be read still ran and billed
     add(step, r.usage);
     if (r.kind === "refused") throw fail("refused");
     return r;
@@ -260,7 +283,9 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
       containerMs += Date.now() - started;
       add("make", m.usage);
       containerId = m.containerId ?? containerId;
-      for (const id of fileIdsOf(m.content)) { ids.push(id); atAnthropic.add(id); }
+      const made = fileIdsOf(m.content);
+      for (const id of made) { ids.push(id); atAnthropic.add(id); }
+      if (made.length) await control.noteFiles?.(made).catch((err) => log("studio files not noted", { error: (err as Error)?.name }));
       turns.push({ role: "assistant", content: m.content });
       withinLimit();
       if (resumable(m.stop_reason, m.content) && turn < MAX_PAUSE_TURNS) continue;
@@ -269,9 +294,9 @@ export async function runStudio(api: StudioModelApi, job: StudioJob, control: St
     }
     const files: MadeFile[] = [];
     for (const id of ids) {
-      const name = await guarded((s) => api.fileName(id, s));
+      const name = await guarded((s) => api.fileName(id, s), false);
       if (!isKeptFile(name)) continue;
-      const bytes = await guarded((s) => api.download(id, s));
+      const bytes = await guarded((s) => api.download(id, s), false);
       files.push({ name, bytes });
     }
     return { containerId, files };

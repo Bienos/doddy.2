@@ -77,6 +77,70 @@ final class CloudActionsTests: XCTestCase {
         XCTAssertEqual(readRuns, 1, "only writes are asked for again")
     }
 
+    private func receipt(_ status: ReceiptStatus, _ errorCode: String?) -> OnlineToolReceipt {
+        OnlineToolReceipt(
+            operationId: UUID(), operation: .write, toolkit: "todoist", tool: task.name, timestamp: "2026-10-10T10:00:00.000Z",
+            mode: .mock, status: status, summary: "Not done.", errorCode: errorCode, providerReference: nil)
+    }
+
+    /// The repeat meets the first try still running, or is itself refused: none of that says what the first try did.
+    func testARepeatThatIsNotTheFirstTrysOutcomeLeavesItUnknown() async throws {
+        let lost = OnlineAccountsError.transport("URLError")
+        let seconds: [OnlineAccountsError] = [
+            .server(code: "busy", message: "Busy.", retryAfterSeconds: 2, receipt: nil),
+            .server(code: "rate_limited", message: "Wait.", retryAfterSeconds: nil, receipt: receipt(.blocked, "rate_limited")),
+            .server(code: "capability_disabled", message: "", retryAfterSeconds: nil, receipt: receipt(.blocked, "confirmation_required")),
+            .server(code: "capability_disabled", message: "", retryAfterSeconds: nil, receipt: receipt(.blocked, "capability_disabled")),
+            .server(code: "capability_disabled", message: "", retryAfterSeconds: nil, receipt: receipt(.outcomeUnknown, "earlier_outcome_unknown")),
+            .server(code: "not_connected", message: "", retryAfterSeconds: nil, receipt: receipt(.blocked, "not_connected")),
+            .server(code: "capability_disabled", message: "", retryAfterSeconds: nil, receipt: nil),
+            .unauthenticated, .notConfigured, .transport("again"), .unreadableResponse,
+        ]
+        for second in seconds {
+            let client = FakeClient([.failure(lost), .failure(second)])
+            let outcome = await CloudRun.confirmed(task, approvalId: UUID(), timeZone: "UTC", client: client, pause: {})
+            XCTAssertEqual(outcome.failureValue, lost, "\(second)")
+            let record = CloudWriteRecord(outcome, tool: task.name, app: .todoist, readAt: Date())
+            XCTAssertTrue(record.reply.hasPrefix("unknown:"), "\(second): \(record.reply)")
+            XCTAssertFalse(record.reply.contains("Nothing was done"), "\(second)")
+            XCTAssertTrue(record.attempted, "still counts as a try that may have run: \(second)")
+            XCTAssertEqual(ActivityEntry.outcome(of: record.reply, isLookup: false).0, .notSure, "\(second)")
+        }
+    }
+
+    func testOnlyTheFirstTrysOwnOutcomeReplacesTheUnknown() async throws {
+        let lost = OnlineAccountsError.unreadableResponse
+        // A result: the first request never arrived and this one ran it, or the server answered from the first try.
+        let replayed = try fixture(RunResult.self, "run-result-draft-replayed")
+        let done = await CloudRun.confirmed(task, approvalId: UUID(), timeZone: "UTC", client: FakeClient([.failure(lost), .success(replayed)]), pause: {})
+        XCTAssertEqual(try done.get(), replayed)
+        let doneRecord = CloudWriteRecord(done, tool: CloudToolName.draftEmail, app: .gmail, readAt: Date(timeIntervalSince1970: 0))
+        XCTAssertTrue(doneRecord.attempted)
+        XCTAssertEqual(doneRecord.receipt?.externalID, replayed.externalId)
+
+        // The server's record that the first try never ran: needs a fresh confirmation, with the first try's `failed` receipt.
+        let firstFailed = OnlineAccountsError.server(code: "capability_disabled", message: "", retryAfterSeconds: nil, receipt: receipt(.failed, "confirmation_required"))
+        let failed = await CloudRun.confirmed(task, approvalId: UUID(), timeZone: "UTC", client: FakeClient([.failure(lost), .failure(firstFailed)]), pause: {})
+        XCTAssertEqual(failed.failureValue, firstFailed)
+        let failedRecord = CloudWriteRecord(failed, tool: task.name, app: .todoist, readAt: Date())
+        XCTAssertEqual(failedRecord.reply, "failed: the first try didn't go through, so nothing was done. Offer to try again.")
+        XCTAssertFalse(failedRecord.attempted, "provably never ran")
+        XCTAssertNil(failedRecord.receipt)
+    }
+
+    func testTheDecisionAfterALostAnswerIsAPureFunction() throws {
+        let lost = OnlineAccountsError.transport("URLError")
+        let busy = OnlineAccountsError.server(code: "busy", message: "", retryAfterSeconds: 2, receipt: nil)
+        XCTAssertEqual(CloudRun.afterLostAnswer(first: lost, second: .failure(busy)).failureValue, lost)
+        let firstFailed = OnlineAccountsError.server(code: "capability_disabled", message: "", retryAfterSeconds: nil, receipt: receipt(.failed, "confirmation_required"))
+        XCTAssertEqual(CloudRun.afterLostAnswer(first: lost, second: .failure(firstFailed)).failureValue, firstFailed)
+        // The same code and words with a `blocked` receipt is a refusal of the repeat, not the first try's record.
+        XCTAssertFalse(CloudRun.isFirstTryFailure(.server(code: "capability_disabled", message: "", retryAfterSeconds: nil, receipt: receipt(.blocked, "confirmation_required"))))
+        XCTAssertFalse(CloudRun.isFirstTryFailure(.server(code: "rate_limited", message: "", retryAfterSeconds: nil, receipt: receipt(.failed, "confirmation_required"))))
+        let draft = try fixture(RunResult.self, "run-result-draft")
+        XCTAssertEqual(try CloudRun.afterLostAnswer(first: lost, second: .success(draft)).get(), draft)
+    }
+
     func testARepeatOfAnUnsureFirstRunIsUnknownNeverExpired() throws {
         let receipt = OnlineToolReceipt(
             operationId: UUID(), operation: .write, toolkit: "todoist", tool: task.name, timestamp: "2026-10-10T10:00:00.000Z",

@@ -20,10 +20,13 @@ describe("call case limits against real Postgres (ADR-705)", { skip: dbSkip }, (
   const nextPhone = () => `+48501${String(100000 + ++seq).slice(-6)}`;
   const nextDestination = () => `+4822${String(3000000 + ++seq).slice(-7)}`;
 
-  interface World { app: FastifyInstance; telephony: FakeTelephony; voice: FakeVoice; ctx: TaskCallContext; settings: NonNullable<TaskTestOptions["settings"]> }
+  interface World {
+    app: FastifyInstance; telephony: FakeTelephony; voice: FakeVoice; ctx: TaskCallContext; settings: NonNullable<TaskTestOptions["settings"]>;
+    logs: { msg: string; extra?: object }[];
+  }
   async function world(opts: TaskTestOptions = {}): Promise<World> {
     const w = await taskTestApp(db, opts);
-    return { app: w.app, telephony: w.telephony, voice: w.voice, ctx: w.app.taskCallContext!, settings: w.settings };
+    return { app: w.app, telephony: w.telephony, voice: w.voice, ctx: w.app.taskCallContext!, settings: w.settings, logs: w.logs };
   }
   async function user(w: World, phone = nextPhone()) {
     const r = await w.app.inject({ method: "POST", url: "/v1/accounts" });
@@ -84,7 +87,9 @@ describe("call case limits against real Postgres (ADR-705)", { skip: dbSkip }, (
         await settle(x.accountId);
         await x.verify(nextPhone());
         const two = (await createCase(v, x.h, d)).json();
-        assert.equal((await approve(v, x.h, two)).json().gate, "limit_destination_user_day");
+        // Every per-number limit answers with one code, so a refusal never says whether others called the number.
+        assert.equal((await approve(v, x.h, two)).json().gate, "limit_destination");
+        assert.ok(v.logs.some((l) => l.msg === "task call limit" && (l.extra as { limit?: string }).limit === "limit_destination_user_day"));
         assert.equal(v.telephony.created.length, 1);
       } finally {
         await v.app.close();

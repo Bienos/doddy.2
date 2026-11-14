@@ -184,6 +184,19 @@ describe("call tasks", { skip: dbSkip }, () => {
     await s.app.close();
   });
 
+  test("the result text quotes the place's words without links, addresses or long numbers", async () => {
+    const s = await setup();
+    const p = (await s.api("POST", "/v1/call-tasks", task([{ name: "Osteria Due", phone: dest() }]))).json();
+    await s.api("POST", `/v1/call-tasks/${p.taskId}/approve`, { digest: p.digest });
+    await answers(s, p.places[0].caseId,
+      "Tak, o 19 jest stolik, proszę potwierdzić na https://osteria-due.example/rez?id=7 albo www.osteria.pl, mail rezerwacje@osteria.pl, tel. 600 123 456, kod 4821937.",
+      "conv_t_links");
+    const [sent] = await texts(s, p.taskId);
+    assert.equal(sent,
+      "Doddy: Osteria Due odpowiada: „Tak, o 19 jest stolik, proszę potwierdzić na … albo …, mail …, tel. …, kod ….”. Szczegóły w aplikacji Doddy.");
+    await s.app.close();
+  });
+
   test("a place that doesn't pick up is skipped; when nobody says yes the text says so", async () => {
     const s = await setup();
     const places = [{ name: "Uno", phone: dest() }, { name: "Due", phone: dest() }];

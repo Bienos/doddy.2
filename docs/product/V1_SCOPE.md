@@ -1,5 +1,7 @@
 # Doddy v1: what ships (proposal for the owner)
 
+> **10 Nov 2026: the beta scope below no longer applies.** The owner said to forget the beta; every feature is shown in every build (decision `docs/decisions/2026-11-10-no-beta-scope.md`). Read the Hide/Cut suggestions in this file as history.
+
 > **PROPOSAL. Not owner-approved.**
 >
 > - Written 2026-10-18 from the code, docs, git history and read-only checks of the live services at `754e5d6` (default branch). Nothing in the app changes because of this file.

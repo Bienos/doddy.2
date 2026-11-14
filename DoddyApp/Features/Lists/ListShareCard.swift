@@ -51,7 +51,7 @@ struct ListShareCardView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .bottom) {
-                Text(card.name)
+                Text(verbatim: card.name)
                     .font(.system(size: 28, weight: .semibold))
                     .lineLimit(2)
                 Spacer(minLength: 12)
@@ -66,7 +66,7 @@ struct ListShareCardView: View {
                 ForEach(Array(card.items.prefix(ListShareCard.maxItems).enumerated()), id: \.offset) { _, item in
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
                         Image(systemName: "square").font(.system(size: 15))
-                        Text(item).font(.system(size: 18))
+                        Text(verbatim: item).font(.system(size: 18))
                     }
                 }
                 if card.items.count > ListShareCard.maxItems {

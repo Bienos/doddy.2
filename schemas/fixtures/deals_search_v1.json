@@ -1,5 +1,5 @@
 {
-  "_comment": "POST /v1/deals/search (docs/implementation/SHOPPING.md, 'Leaflets'). Example data, not real prices. Offers per item best value first (price per kg, l or piece). `pages` only when a chain's leaflet was read in part. Since ADR-661: flags, limit, effective (price per piece under a multi-buy mechanic), cut (against the 30-day low) and promotions without a price. Since ADR-662: similar (products of another kind in the item's family, never the item). Since ADR-666: further (links for the person to open, never fetched: the leaflets of chains Doddy doesn't read that weren't asked for, and each item's search page at the shops set; buyUrl only where an affiliate programme covers the shop).",
+  "_comment": "POST /v1/deals/search (docs/implementation/SHOPPING.md, 'Leaflets'). Example data, not real prices. Offers per item best value first (price per kg, l or piece). `pages` only when a chain's leaflet was read in part. Since ADR-661: flags, limit, effective (price per piece under a multi-buy mechanic), cut (against the 30-day low) and promotions without a price. Since ADR-662: similar (products of another kind in the item's family, never the item). Since ADR-666: further (links for the person to open, never fetched: the leaflets of chains Doddy doesn't read that weren't asked for, and each item's search page at the shops set; buyUrl only where an affiliate programme covers the shop). Since 13 Nov 2026 (decision 2026-11-13-leaflet-results-and-deal-watches): every offer says how it matched (`match`: exact, its words; brand, through its brand or model, such as \"Apple AirPods 4\" for \"słuchawki\"; similar, only in `similar`) and when its source was read (`leafletRead`: readAt, the leaflet's dates, and whether the chain was read whole); a chain answered from the leaflet catalog says when the catalog read it and whether all of it (`readAt`, `complete`).",
   "request": {
     "items": [
       "masło",
@@ -30,7 +30,9 @@
         "pages": {
           "read": 40,
           "of": 97
-        }
+        },
+        "readAt": "2026-10-24T05:45:00.000Z",
+        "complete": false
       },
       {
         "chain": "lidl",
@@ -40,7 +42,9 @@
           "url": "https://www.lidl.pl/l/pl/gazetki/example/ar/0",
           "validFrom": "2026-10-20",
           "validTo": "2026-10-25"
-        }
+        },
+        "readAt": "2026-10-24T05:46:00.000Z",
+        "complete": true
       },
       {
         "chain": "dino",
@@ -50,7 +54,9 @@
           "url": "https://marketdino.pl/gazetki/lista/standard",
           "validFrom": "2026-10-22",
           "validTo": "2026-10-28"
-        }
+        },
+        "readAt": "2026-10-24T05:47:00.000Z",
+        "complete": true
       },
       {
         "chain": "rossmann",
@@ -100,7 +106,14 @@
             "flags": [
               "app"
             ],
-            "limit": 4
+            "limit": 4,
+            "match": "exact",
+            "leafletRead": {
+              "readAt": "2026-10-24T05:45:00.000Z",
+              "validFrom": "2026-10-23",
+              "validTo": "2026-10-29",
+              "complete": false
+            }
           },
           {
             "chain": "lidl",
@@ -125,7 +138,14 @@
               "page": 3
             },
             "readBy": "page_image",
-            "check": true
+            "check": true,
+            "match": "exact",
+            "leafletRead": {
+              "readAt": "2026-10-24T05:46:00.000Z",
+              "validFrom": "2026-10-20",
+              "validTo": "2026-10-25",
+              "complete": true
+            }
           }
         ],
         "similar": [
@@ -152,7 +172,14 @@
               "page": 4
             },
             "readBy": "leaflet_data",
-            "check": false
+            "check": false,
+            "match": "similar",
+            "leafletRead": {
+              "readAt": "2026-10-24T05:47:00.000Z",
+              "validFrom": "2026-10-22",
+              "validTo": "2026-10-28",
+              "complete": true
+            }
           }
         ]
       },
@@ -187,7 +214,14 @@
             "check": false,
             "flags": [
               "app"
-            ]
+            ],
+            "match": "exact",
+            "leafletRead": {
+              "readAt": "2026-10-24T05:46:00.000Z",
+              "validFrom": "2026-10-20",
+              "validTo": "2026-10-25",
+              "complete": true
+            }
           }
         ]
       },
@@ -225,6 +259,13 @@
             },
             "cut": {
               "percent": 13
+            },
+            "match": "exact",
+            "leafletRead": {
+              "readAt": "2026-10-24T05:47:00.000Z",
+              "validFrom": "2026-10-22",
+              "validTo": "2026-10-28",
+              "complete": true
             }
           },
           {
@@ -263,6 +304,13 @@
                 "minor": 6932,
                 "per": "kg"
               }
+            },
+            "match": "exact",
+            "leafletRead": {
+              "readAt": "2026-10-24T05:47:00.000Z",
+              "validFrom": "2026-10-22",
+              "validTo": "2026-10-28",
+              "complete": true
             }
           }
         ],
@@ -283,6 +331,12 @@
             "source": {
               "url": "https://www.biedronka.pl/pl/press,id,example,title,gazetka-od-czwartku",
               "page": 9
+            },
+            "leafletRead": {
+              "readAt": "2026-10-24T05:45:00.000Z",
+              "validFrom": "2026-10-23",
+              "validTo": "2026-10-29",
+              "complete": false
             }
           }
         ]

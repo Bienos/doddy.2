@@ -93,6 +93,23 @@ public enum ScreenLookReadiness: Equatable, Sendable {
     }
 }
 
+/// Whether Home says the screen is shared with Doddy: the "Show screen" capsule turns into "Screen shared", and
+/// after the conversation a small mark stays in Home's header so the person can stop it (owner review, 13 Nov 2026).
+/// iOS shows its own indicator too; this one only says what the extension's state file says, and stops saying it
+/// when that file goes quiet, so an extension iOS ended without a word is never shown as sharing for long.
+public enum ScreenShareIndicator {
+    /// iOS sends the extension no new picture while the screen doesn't change, so this is longer than
+    /// `ScreenShare.freshFor`: a still screen keeps counting as shared for two minutes after its last picture.
+    public static let shownFor: TimeInterval = 120
+
+    public static func isSharing(_ state: ScreenShareState?, now: Date) -> Bool {
+        guard let state, state.live else { return false }
+        let age = now.timeIntervalSince(state.frameAt ?? state.startedAt)
+        // A clock that went backwards a lot is not trusted either (as in `ScreenLookReadiness`).
+        return age <= shownFor && age > -ScreenShare.freshFor
+    }
+}
+
 /// The size the extension scales a screen to: the long edge at most `ScreenShare.frameLongEdge`, never larger
 /// than the screen, whole pixels, aspect kept.
 public enum ScreenFrameSize {
@@ -102,5 +119,38 @@ public enum ScreenFrameSize {
         guard long > longEdge else { return (width, height) }
         let factor = Double(longEdge) / Double(long)
         return (max(1, Int((Double(width) * factor).rounded())), max(1, Int((Double(height) * factor).rounded())))
+    }
+}
+
+/// How long the one picture of the screen stays on disk. The extension deletes it when sharing ends or pauses;
+/// this is the rule for a picture that was left behind (iOS ended the extension without a word, or Doddy was
+/// closed while sharing). The app asks at launch and whenever it comes back to the front, and deletes what the
+/// rule says. The state file holds only times and a size, so it stays; `ScreenShareIndicator` already stops
+/// reading it as sharing once it is old.
+public enum ScreenFrameRetention {
+    public enum Moment: Equatable, Sendable {
+        /// Doddy started. A picture on disk is from before this launch: the extension writes the next one
+        /// within a second if a share is still running.
+        case launch
+        /// Doddy came back to the front.
+        case foreground
+    }
+
+    /// A picture older than this is not kept when Doddy comes to the front: the time after which Home stops
+    /// saying the screen is shared, well past the ten seconds the app would still send it.
+    public static let staleAfter: TimeInterval = ScreenShareIndicator.shownFor
+
+    public static func shouldDeleteFrame(at moment: Moment, frameExists: Bool, state: ScreenShareState?, now: Date) -> Bool {
+        guard frameExists else { return false }
+        switch moment {
+        case .launch:
+            return true
+        case .foreground:
+            // Only the picture of a share that is running, and took it, is kept; anything else is a leftover.
+            guard let state, state.live, let frameAt = state.frameAt else { return true }
+            let age = now.timeIntervalSince(frameAt)
+            // Too old, or stamped so far ahead that the clock can't be trusted (as in `ScreenLookReadiness`).
+            return age > staleAfter || age < -ScreenShare.freshFor
+        }
     }
 }

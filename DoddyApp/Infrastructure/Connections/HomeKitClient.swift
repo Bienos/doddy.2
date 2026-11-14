@@ -35,12 +35,23 @@ final class HomeKitClient: NSObject, HomeControlling, HMHomeManagerDelegate {
 
     // MARK: Permission
 
+    /// False when this build's provisioning profile has no HomeKit entitlement (a free-team build):
+    /// iOS would never answer, so callers say so at once.
+    static var isAvailable: Bool {
+        let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision")
+        // The profile is a signed blob with the entitlements plist inside as plain text.
+        let text = url.flatMap { try? Data(contentsOf: $0) }.map { String(decoding: $0, as: UTF8.self) }
+        return !HomeKitEntitlement.isMissing(profile: text)
+    }
+
     static func access() -> DeviceConnections.Access {
         guard UserDefaults.standard.bool(forKey: askedKey) else { return .notDetermined }
         return map(shared.ensureManager().authorizationStatus)
     }
 
     static func request() async -> DeviceConnections.Access {
+        // No entitlement: no prompt will ever come, so don't wait for one.
+        guard isAvailable else { return .denied }
         UserDefaults.standard.set(true, forKey: askedKey)
         let manager = shared.ensureManager()
         // The prompt is up until the person answers; give it a minute.

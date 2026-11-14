@@ -14,7 +14,9 @@ struct TalkToDoddyControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: Self.kind) {
             ControlWidgetButton(action: TalkButtonIntent()) {
-                Label("Talk to Doddy", systemImage: "waveform")
+                // A round smiling face, like Doddy's face on the small island (owner, 12 Nov 2026: the
+                // waveform looked odd). A control can show only a symbol, not his picture.
+                Label("Talk to Doddy", systemImage: "face.smiling.inverse")
             }
         }
         .displayName("Talk to Doddy")
