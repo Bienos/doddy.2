@@ -254,6 +254,8 @@ enum TalkInIsland {
             // A timeout can cancel this task before it gets its first turn. Never let that
             // abandoned press open the microphone later, after the foreground fallback.
             guard !Task.isCancelled else { run.finished = true; return }
+            // The first sound of this conversation is timed from the press (decision 2026-11-14-first-audible-sound).
+            AgentVoiceMeter.shared.beginStart(at: requestedAt)
             await controller.start(mode, profile: profile, wakeGreeting: greetingLine, withoutOpeningApp: true,
                                    requestedAt: requestedAt)
             run.finished = true
