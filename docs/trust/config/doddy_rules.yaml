@@ -69,8 +69,7 @@ action_policy:
     # anything an email, a page, an online account, a leaflet, an errand result, Wikipedia, the weather or the shared
     # screen put into the conversation; the flag is kept per conversation and starts empty in the next one.
     outside_content_needs_a_tap:
-      after_outside_text_has_been_seen: [text_me, ask_claude_with_material, look_at_screen_after_text_other_than_the_screen]
-      always: [make_document]
+      after_outside_text_has_been_seen: [text_me, ask_claude_with_material, make_document, look_at_screen_after_text_other_than_the_screen]
       first_look_in_a_conversation: [look_at_screen]
       on_a_shared_list_unless_the_user_just_said_every_item: [add_to_list, check_off]
     reads: run_at_once_when_the_user_asked

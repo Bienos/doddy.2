@@ -194,12 +194,23 @@ final class OutsideContentTests: XCTestCase {
 
     // MARK: make_document
 
-    func testMakeDocumentAlwaysAsksWithTheWholeBrief() throws {
+    func testMakeDocumentRunsAtOnceUntilOutsideTextHasBeenSeen() {
         let request = cloud(CloudToolName.makeDocument, [
             "kind": .string("deck"), "title": .string("Doddy beta plan"), "request": .string("Six slides for the team"),
             "material": .string("Notes from the meeting"),
         ])
-        for session in [OutsideContentSession(), afterEmail()] {
+        let need = AskFirst.need(for: request, in: OutsideContentSession())
+        XCTAssertEqual(need, .runsNow, "the owner decided that a file being made needs no tap (13 Nov 2026)")
+        XCTAssertFalse(AskFirst.needsTap(need))
+        XCTAssertEqual(AskFirst.need(for: cloud(CloudToolName.makeDocument), in: OutsideContentSession()), .runsNow)
+    }
+
+    func testMakeDocumentAsksWithTheWholeBriefOnceOutsideTextHasBeenSeen() throws {
+        let request = cloud(CloudToolName.makeDocument, [
+            "kind": .string("deck"), "title": .string("Doddy beta plan"), "request": .string("Six slides for the team"),
+            "material": .string("Notes from the meeting"),
+        ])
+        for session in [afterEmail()] {
             let need = AskFirst.need(for: request, in: session)
             let asked = try XCTUnwrap(card(need))
             XCTAssertTrue(AskFirst.needsTap(need))
@@ -210,9 +221,9 @@ final class OutsideContentTests: XCTestCase {
         }
         // Without material the card says nothing about material; an unknown kind is shown as it came.
         let bare = cloud(CloudToolName.makeDocument, ["kind": .string("pdf"), "title": .string("Menu"), "request": .string("One page")])
-        let bareText = try XCTUnwrap(card(AskFirst.need(for: bare, in: OutsideContentSession()))).lines.joined(separator: "\n")
+        let bareText = try XCTUnwrap(card(AskFirst.need(for: bare, in: afterEmail()))).lines.joined(separator: "\n")
         XCTAssertFalse(bareText.contains("characters"))
-        XCTAssertNotNil(card(AskFirst.need(for: cloud(CloudToolName.makeDocument), in: OutsideContentSession())), "even an incomplete call is asked about")
+        XCTAssertNotNil(card(AskFirst.need(for: cloud(CloudToolName.makeDocument), in: afterEmail())), "even an incomplete call is asked about")
     }
 
     // MARK: look_at_screen
@@ -366,7 +377,7 @@ final class OutsideContentTests: XCTestCase {
     func testADeclinedIgnoredOrSpokenAnswerNeverRunsTheTool() throws {
         let requests: [(VoiceToolRequest, OutsideContentSession, Bool)] = [
             (.textMe(body: "Code 4821"), afterEmail(), false),
-            (cloud(CloudToolName.makeDocument, ["kind": .string("doc"), "title": .string("T"), "request": .string("R")]), OutsideContentSession(), false),
+            (cloud(CloudToolName.makeDocument, ["kind": .string("doc"), "title": .string("T"), "request": .string("R")]), afterEmail(), false),
             (cloud(CloudToolName.askClaude, ["request": .string("R"), "material": .string("M")]), afterEmail(), false),
             (.lookAtScreen(question: "What is this?"), OutsideContentSession(), false),
             (.addToList(family), OutsideContentSession(), true),

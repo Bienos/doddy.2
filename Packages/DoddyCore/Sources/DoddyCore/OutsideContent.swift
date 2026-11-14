@@ -93,7 +93,8 @@ extension AskFirst {
     /// The ask for this call in this conversation: the baseline (`need(for:)`), then the session rule.
     /// - `text_me`, and `ask_claude` with text from the conversation as material: a tap once text from outside
     ///   has been seen.
-    /// - `make_document`: always a tap, with the whole brief on the card.
+    /// - `make_document`: a tap, with the whole brief on the card, once text from outside has been seen. Without
+    ///   it a file is made at once, as the owner decided (`2026-11-13-file-being-made-island-note`).
     /// - `look_at_screen`: a tap for the first look in a conversation, and again for any look after text from
     ///   somewhere other than the screen has been seen.
     /// - `add_to_list` and `check_off` on a shared list (`listIsShared`, decided by the app from the list it
@@ -111,6 +112,7 @@ extension AskFirst {
             guard session.outsideContentSeen else { return baseline }
             return .tapFirst(OutsideContentAsk.textMeCard(body, polish: polish))
         case .cloudTool(let call) where call.name == CloudToolName.makeDocument:
+            guard session.outsideContentSeen else { return baseline }
             return .tapFirst(OutsideContentAsk.makeDocumentCard(call, polish: polish))
         case .cloudTool(let call) where call.name == CloudToolName.askClaude:
             guard session.outsideContentSeen, OutsideContentAsk.material(of: call) != nil else { return baseline }
