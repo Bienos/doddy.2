@@ -18,6 +18,16 @@ parameters instead of a fixed https url.
 ADR-500): no function tools at all, only the end_call and voicemail_detection system tools, its first
 message is the server-built variable, Polish, phone audio, no recording, and the expected values the
 server embeds (server/messaging/src/taskCalls/agentSpec.ts, payload.ts) match this folder.
+
+`--agent task-call-order` checks the food-order agent (voice-agent/task-call-order/, decision
+2026-11-12-food-by-phone) the same way, against TASK_ORDER_AGENT_SPEC and ORDER_AGENT_VARIABLE_NAMES: it may
+say one server-built confirmation line for the approved order, and never pay, open a link or accept anything else.
+`--agent translator` checks the translator-only agent (voice-agent/translator/, decision 2026-11-12-translator-agent): no
+function tools, only the language_detection system tool, the same languages as the app's agent, and one agent id in step with
+the token server (server/voice-token/src/conversations.js) and the app (VoiceConfig.translatorDirectAgentID).
+`--agent task-call-book` checks the booking agent (voice-agent/task-call-book/, decision
+2026-11-12-book-agent) the same way, against TASK_BOOK_AGENT_SPEC and BOOK_AGENT_VARIABLE_NAMES: it may say
+one server-built confirmation line for the approved booking, and never pay or accept anything else.
 """
 import hashlib
 import json
@@ -27,7 +37,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SPEC = ROOT / "voice-agent"
-AGENTS = {"app": SPEC, "phone": SPEC / "phone", "task-call": SPEC / "task-call"}
+AGENTS = {"app": SPEC, "phone": SPEC / "phone", "task-call": SPEC / "task-call", "task-call-book": SPEC / "task-call-book",
+          "task-call-order": SPEC / "task-call-order",
+          "translator": SPEC / "translator"}
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}")
 RUNS_ON = {"phone", "web"}
 SPEAK_BEFORE = {"auto", "force"}
@@ -42,6 +54,23 @@ RUNS_NOW_MODES = {"start_translator", "stop_translator"}
 # A text to the user's own verified number goes at once while Texts from Doddy is on (owner, 9 Nov 2026,
 # decision docs/decisions/2026-11-09-restaurant-calls-one-tap.md). Only on the phone; never to anyone else.
 RUNS_NOW_OWN_TEXT = {"text_me"}
+# Since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once): what the user asks for is the yes. Looks at
+# their own things, and Doddy's own small actions that are undone in one step, run at once. The same two lists
+# are `AskFirst.ownLooks` and `AskFirst.ownSmallActions` in DoddyCore; `ToolCatalogTests` keeps tools.json in step.
+RUNS_NOW_OWN_LOOKS = {"search_memories", "read_list", "read_calendar", "find_free_time", "lookup_contact", "upcoming_birthdays",
+                      "find_photos", "look_at_screen", "read_steps", "read_health_week", "list_alarms", "check_stopwatch",
+                      "check_focus", "check_errands", "find_deals"}
+RUNS_NOW_SMALL_ACTIONS = {"start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",
+                          "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap"}
+# Reads through Doddy's server (an inbox, a calendar, a page, Claude writing something): the server still makes
+# a single-use approval for exactly the call, and the app uses it straight away.
+RUNS_NOW_SERVER_READS = {"check_email", "read_email", "find_drive_file", "search_notion", "read_notion_page", "check_outlook_email",
+                         "read_outlook_email", "read_outlook_calendar", "read_google_calendar", "list_todoist_tasks",
+                         "ask_claude", "make_document",
+                         # Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking): searches and the booking check.
+                         # book_flight is not here: it waits for a tap on the card with the exact booking.
+                         "find_flights", "find_bookable_flights", "check_flight_booking"}
+RUNS_NOW = PUBLIC_LOOKUPS | RUNS_NOW_MODES | RUNS_NOW_OWN_TEXT | RUNS_NOW_OWN_LOOKS | RUNS_NOW_SMALL_ACTIONS | RUNS_NOW_SERVER_READS
 APP_INSTRUCTIONS = SPEC / "instructions.md"
 
 
@@ -139,15 +168,57 @@ def check(tools, session, instructions):
     return errors
 
 
+TRANSLATOR_AGENT_SOURCES = {
+    # The id now lives in conversations.js, which both the token and the deletion of voice conversations use.
+    "the token server": (ROOT / "server" / "voice-token" / "src" / "conversations.js", r'DEFAULT_TRANSLATOR_AGENT_ID = "([^"]+)"'),
+    "the app (VoiceConfig)": (ROOT / "DoddyApp" / "Features" / "Voice" / "VoiceConfig.swift", r'translatorDirectAgentID = "([^"]+)"'),
+}
+
+
+def check_translator(tools, session, instructions):
+    """The translator agent can only talk (owner, 12 Nov 2026: no function while translating), and its one id is the
+    same in the spec, the token server and the app's Debug connection."""
+    errors = []
+    if tools.get("tools"):
+        errors.append(f"tools.json: the translator agent has no function tools, found {[t.get('name') for t in tools['tools']]}")
+    system = [t.get("name") for t in tools.get("system_tools", [])]
+    if system != ["language_detection"]:
+        errors.append(f"tools.json: system_tools must be exactly ['language_detection'] (no end_call, skip_turn, transfer), found {system}")
+    for phrase in ("{{translator_start}}", "you have no tools", "only an interpreter"):
+        if phrase not in instructions.lower():
+            errors.append(f"instructions: must contain {phrase!r}")
+    for banned in ("call stop_translator", "call start_translator", "web_search", "find_places"):
+        if banned in instructions:
+            errors.append(f"instructions: must not mention {banned!r}: the translator agent has no tools")
+    app_languages = json.loads((SPEC / "session.json").read_text(encoding="utf-8")).get("languages", [])
+    if session.get("languages") != app_languages:
+        errors.append("session.json: languages must equal voice-agent/session.json's (the translator offers the same ones)")
+    el = session.get("elevenlabs", {})
+    if el.get("tools") != "none" or el.get("built_in_tools") != ["language_detection"]:
+        errors.append("session.json: elevenlabs.tools must be 'none' and built_in_tools ['language_detection']")
+    agent_id = el.get("agent_id", "")
+    if not re.fullmatch(r"agent_[0-9a-z]{20,}", agent_id):
+        errors.append("session.json: elevenlabs.agent_id must be the translator agent's id")
+    for where, (path, pattern) in TRANSLATOR_AGENT_SOURCES.items():
+        m = re.search(pattern, path.read_text(encoding="utf-8"))
+        if not m:
+            errors.append(f"{where}: the translator agent id is missing ({path.relative_to(ROOT).as_posix()})")
+        elif m.group(1) != agent_id:
+            errors.append(f"{where}: translator agent id {m.group(1)} differs from session.json's {agent_id}")
+    return errors
+
+
 TASK_SYSTEM_TOOLS = {"end_call", "voicemail_detection"}
 # Never on the task-call agent: they would let it act (transfer, press keys) or switch language.
 TASK_FORBIDDEN = {"transfer_to_number", "transfer_to_agent", "play_keypad_touch_tone", "language_detection", "skip_turn"}
 SERVER_TASK = ROOT / "server" / "messaging" / "src" / "taskCalls"
 
 
-def check_task_call(tools, session, instructions, server=SERVER_TASK):
+def check_task_call(tools, session, instructions, server=SERVER_TASK, book=False, order=False):
     """The task-call agent can only talk: no tools that act, fixed first message, and the server's
-    embedded expectations (agentSpec.ts, payload.ts) must equal this folder."""
+    embedded expectations (agentSpec.ts, payload.ts) must equal this folder. book=True checks the
+    booking agent against TASK_BOOK_AGENT_SPEC and BOOK_AGENT_VARIABLE_NAMES; order=True the food-order agent
+    (decision 2026-11-12-food-by-phone) against TASK_ORDER_AGENT_SPEC and ORDER_AGENT_VARIABLE_NAMES."""
     errors = []
     if tools.get("tools"):
         errors.append("tools.json: the task-call agent must have no function tools (it may not act)")
@@ -179,16 +250,24 @@ def check_task_call(tools, session, instructions, server=SERVER_TASK):
     if not isinstance(el.get("max_duration_seconds"), int) or el["max_duration_seconds"] < 320:
         errors.append("session.json: max_duration_seconds must be at least 320 (our server decides when the call ends)")
     low = instructions.lower()
-    for phrase in ("jestem asystentem ai", "{{doddy_callback_line}}", "never agree to anything", "at most one short clarifying question"):
+    phrases = (("jestem asystentem ai", "{{doddy_callback_line}}", "{{doddy_order}}", "{{doddy_order_confirm_line}}",
+                "never pay and never give payment details", "never open, read out or follow a link",
+                "at most one short clarifying question") if order else
+               ("jestem asystentem ai", "{{doddy_callback_line}}", "{{doddy_booking}}", "{{doddy_booking_confirm_line}}",
+                "never pay and never give payment details", "at most one short clarifying question") if book else
+               ("jestem asystentem ai", "{{doddy_callback_line}}", "never agree to anything", "at most one short clarifying question"))
+    for phrase in phrases:
         if phrase not in low:
             errors.append(f"instructions: must contain {phrase!r}")
 
     # The server's embedded copy of these expectations.
     spec_ts = (server / "agentSpec.ts").read_text(encoding="utf-8")
     want_hash = hashlib.sha256(instructions.strip().encode("utf-8")).hexdigest()
-    m = re.search(r'promptSha256:\s*"([0-9a-f]{64})"', spec_ts)
+    const = "TASK_ORDER_AGENT_SPEC" if order else "TASK_BOOK_AGENT_SPEC" if book else "TASK_AGENT_SPEC"
+    block = re.search(r"export const " + const + r" = \{(.*?)\n\} as const;", spec_ts, re.S)
+    m = re.search(r'promptSha256:\s*"([0-9a-f]{64})"', block.group(1) if block else "")
     if not m or m.group(1) != want_hash:
-        errors.append(f"agentSpec.ts: promptSha256 must be {want_hash} (sha256 of instructions.md, trimmed)")
+        errors.append(f"agentSpec.ts: {const}.promptSha256 must be {want_hash} (sha256 of instructions.md, trimmed)")
     for key, value in (("firstMessage", "{{doddy_opening_line}}"), ("language", "pl"), ("audioFormat", "ulaw_8000")):
         if f'{key}: "{value}"' not in spec_ts:
             errors.append(f"agentSpec.ts: {key} must be {value!r}")
@@ -196,8 +275,14 @@ def check_task_call(tools, session, instructions, server=SERVER_TASK):
     if not tools_ts or sorted(re.findall(r'"([a-z_]+)"', tools_ts.group(1))) != sorted(TASK_SYSTEM_TOOLS):
         errors.append(f"agentSpec.ts: systemTools must be {sorted(TASK_SYSTEM_TOOLS)}")
     payload_ts = (server / "payload.ts").read_text(encoding="utf-8")
-    names_ts = re.search(r"AGENT_VARIABLE_NAMES = \[([^\]]*)\]", payload_ts)
+    names_ts = re.search(r"(?<!BOOK_)(?<!ORDER_)AGENT_VARIABLE_NAMES = \[([^\]]*)\]", payload_ts)
     server_vars = set(re.findall(r'"([a-z_]+)"', names_ts.group(1))) if names_ts else set()
+    if book:
+        book_ts = re.search(r"BOOK_AGENT_VARIABLE_NAMES = \[([^\]]*)\]", payload_ts)
+        server_vars |= set(re.findall(r'"([a-z_]+)"', book_ts.group(1))) if book_ts else set()
+    if order:
+        order_ts = re.search(r"ORDER_AGENT_VARIABLE_NAMES = \[([^\]]*)\]", payload_ts)
+        server_vars |= set(re.findall(r'"([a-z_]+)"', order_ts.group(1))) if order_ts else set()
     declared = set(session.get("variables", {})) - {"doddy_attempt"}
     if server_vars != declared:
         errors.append(f"payload.ts: AGENT_VARIABLE_NAMES {sorted(server_vars)} must equal session.json variables {sorted(declared)}")
@@ -222,9 +307,10 @@ def check_app(tools, sources=APP_SOURCES):
             errors.append(f"tool {name}: x_doddy.elevenlabs_tool_id must be the live tool id, or 'not_synced' until it is synced")
         if x.get("runs_on") == "phone" and f'"{name}"' not in swift:
             errors.append(f"tool {name}: runs on the phone but no Swift source names it, so the app would answer it as unsupported")
-        # ASK-01 (ADR-483): every tool asks first, except public lookups that run at once (ADR-575).
-        # The app can only ask for a tool it runs itself, a change needs a tap on a card, and the
-        # agent always says what it is about to do before an ask.
+        # ASK-01 (ADR-483) as it stands since 11 Nov 2026: a tool that changes, sends, deletes, calls or pays asks
+        # first with a card; public lookups (ADR-575) and what the user asks to see or start of their own run at
+        # once (decision 2026-11-11-asked-for-runs-at-once). The app can only ask for a tool it runs itself, a
+        # change needs a tap on a card, and the agent always says what it is about to do before an ask.
         runs_now = x.get("ask") == "runs_now"
         if x.get("runs_on") != "phone" and not runs_now:
             errors.append(f"tool {name}: ASK-01 needs every tool that asks to run on the phone, where the app asks first; only a runs_now lookup may run on the web")
@@ -232,8 +318,10 @@ def check_app(tools, sources=APP_SOURCES):
             errors.append(f"tool {name}: x_doddy.ask must be one of {sorted(ASK)} (ASK-01)")
         if (x.get("ask") == "tap") != bool(x.get("confirm_on_screen")):
             errors.append(f"tool {name}: x_doddy.ask 'tap' and confirm_on_screen go together (ASK-01)")
-        if runs_now and name not in PUBLIC_LOOKUPS | RUNS_NOW_MODES | RUNS_NOW_OWN_TEXT:
-            errors.append(f"tool {name}: only the public lookups {sorted(PUBLIC_LOOKUPS)}, translator start/stop and text_me may run without asking (ADR-575, ADR-619, decision 2026-11-09-restaurant-calls-one-tap)")
+        if runs_now and name not in RUNS_NOW:
+            errors.append(f"tool {name}: only the public lookups, translator start/stop, text_me, looks at the user's own things and Doddy's own small actions may run without asking (ADR-575, ADR-619, decisions 2026-11-09-restaurant-calls-one-tap and 2026-11-11-asked-for-runs-at-once); a tool that changes, sends, deletes, calls or pays keeps its card")
+        if not runs_now and name in RUNS_NOW:
+            errors.append(f"tool {name}: runs at once in the app (decision 2026-11-11-asked-for-runs-at-once), so x_doddy.ask must be 'runs_now'")
         if runs_now and name in RUNS_NOW_OWN_TEXT and x.get("runs_on") != "phone":
             errors.append(f"tool {name}: a text without a card runs only on the phone, after the app checks Texts from Doddy")
         if not runs_now and x.get("speak_before") != "force":
@@ -380,15 +468,19 @@ def main(argv):
     errors = check(tools, session, instructions)
     if agent == "app":
         errors += check_app(tools)
-    if agent == "task-call":
-        errors += check_task_call(tools, session, instructions)
+    if agent in ("task-call", "task-call-book", "task-call-order"):
+        errors += check_task_call(tools, session, instructions, book=agent == "task-call-book", order=agent == "task-call-order")
+    if agent == "translator":
+        errors += check_translator(tools, session, instructions)
     if errors:
         print(f"FAIL voice agent spec ({where})")
         for e in errors:
             print(f"  - {e}")
         return 1
     cmd = argv[1]
-    if cmd == "check" and agent == "task-call":
+    if cmd == "check" and agent == "translator":
+        print(f"PASS voice agent spec ({where}): no function tools; system tool language_detection only; same languages as the app's agent; agent id equals the token server's and the app's")
+    elif cmd == "check" and agent in ("task-call", "task-call-book", "task-call-order"):
         print(f"PASS voice agent spec ({where}): no function tools; system tools {', '.join(t['name'] for t in tools['system_tools'])}; matches the server's agentSpec.ts")
     elif cmd == "check":
         phone = [t["name"] for t in tools["tools"] if t["x_doddy"]["runs_on"] == "phone"]

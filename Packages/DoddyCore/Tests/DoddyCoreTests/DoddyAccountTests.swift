@@ -27,6 +27,23 @@ private final class ScriptedTransport: HTTPTransport, @unchecked Sendable {
     }
 }
 
+/// Answers by the request's path (the last two parts, e.g. `link-device/start`); anything else is 404.
+private final class RoutedTransport: HTTPTransport, @unchecked Sendable {
+    private let lock = NSLock()
+    private var recorded: [HTTPRequest] = []
+    private let answers: [String: (Int, Data)]
+
+    init(_ answers: [String: (Int, Data)]) { self.answers = answers }
+
+    var requests: [HTTPRequest] { lock.withLock { recorded } }
+
+    func send(_ request: HTTPRequest) async throws -> (status: Int, body: Data) {
+        lock.withLock { recorded.append(request) }
+        let key = request.url.pathComponents.suffix(2).joined(separator: "/")
+        return answers[key].map { (status: $0.0, body: $0.1) } ?? (status: 404, body: Data())
+    }
+}
+
 private func json(_ data: Data?) -> [String: AnyHashable] {
     guard let data, let object = try? JSONSerialization.jsonObject(with: data) as? [String: AnyHashable] else { return [:] }
     return object
@@ -259,32 +276,90 @@ final class DoddyAccountTests: XCTestCase {
     private let messaging = URL(string: "https://messaging.example.com")!
     private let deviceToken43 = String(repeating: "A", count: 43)
 
-    func testTheBackendLinkSendsBothSignInsAndReadsEachAnswer() async throws {
-        let transport = ScriptedTransport(body: Data(#"{"linked":true}"#.utf8))
+    private let linkCode = String(repeating: "c", count: 43)
+    private var started: (Int, Data) { (200, Data(#"{"linkCode":"\#(linkCode)","expiresAt":"2026-11-12T10:05:00.000Z"}"#.utf8)) }
+    private func failure(_ code: String) -> Data { Data(#"{"error":{"code":"\#(code)","message":"x"}}"#.utf8) }
+
+    func testTheBackendLinkStartsWithTheDeviceSessionThenLinksWithTheAccountAndTheCode() async throws {
+        let transport = RoutedTransport(["link-device/start": started, "account/link-device": (200, Data(#"{"linked":true}"#.utf8))])
         let linked = await DoddyAccountLink.linkBackend(server: backend, account: account, deviceToken: "ds1.a.b", transport: transport)
         XCTAssertEqual(linked, .linked)
-        let request = try XCTUnwrap(transport.requests.first)
-        XCTAssertEqual(request.url.absoluteString, "https://doddy.example.com/v1/account/link-device")
-        XCTAssertEqual(request.headers["authorization"], "Bearer acc")
-        XCTAssertEqual(json(request.body), ["deviceToken": "ds1.a.b"])
+        XCTAssertEqual(transport.requests.count, 2)
+        let start = transport.requests[0]
+        XCTAssertEqual(start.method, "POST")
+        XCTAssertEqual(start.url.absoluteString, "https://doddy.example.com/v1/account/link-device/start")
+        XCTAssertEqual(start.headers["authorization"], "Bearer ds1.a.b", "the iPhone's own session asks for the code")
+        let link = transport.requests[1]
+        XCTAssertEqual(link.url.absoluteString, "https://doddy.example.com/v1/account/link-device")
+        XCTAssertEqual(link.headers["authorization"], "Bearer acc")
+        XCTAssertEqual(json(link.body), ["linkCode": linkCode], "the code, never the device token")
+    }
 
-        let conflict = Data(#"{"error":{"code":"account_conflict","message":"Accounts are never merged."}}"#.utf8)
-        let answers: [(Int, Data, DoddyAccountLink.Outcome)] = [
-            (409, conflict, .conflict(message: "Accounts are never merged.")),
-            (401, Data(#"{"error":{"code":"unauthenticated","message":"x"}}"#.utf8), .nothingToLink),
-            (503, Data(#"{"error":{"code":"live_not_configured","message":"x"}}"#.utf8), .notSetUp),
+    func testTheBackendLinkReadsEachStepsAnswer() async throws {
+        // The first step: the device session's answer.
+        let starts: [(Int, Data, DoddyAccountLink.Outcome)] = [
+            (401, failure("unauthenticated"), .nothingToLink),
+            (403, failure("permission_insufficient"), .nothingToLink),
+            (503, failure("live_not_configured"), .notSetUp),
+            (404, failure("not_found"), .retryLater),
+            (429, failure("rate_limited"), .retryLater),
             (500, Data(), .retryLater),
-            (429, Data(#"{"error":{"code":"rate_limited","message":"x"}}"#.utf8), .retryLater),
+            (200, Data(#"{"linkCode":"short"}"#.utf8), .retryLater),
         ]
-        for (status, body, expected) in answers {
-            let outcome = await DoddyAccountLink.linkBackend(server: backend, account: account, deviceToken: "ds1.a.b", transport: ScriptedTransport(status: status, body: body))
-            XCTAssertEqual(outcome, expected, "\(status)")
+        for (status, body, expected) in starts {
+            let transport = RoutedTransport(["link-device/start": (status, body), "account/link-device": (200, Data("{}".utf8))])
+            let outcome = await DoddyAccountLink.linkBackend(server: backend, account: account, deviceToken: "ds1.a.b", transport: transport)
+            XCTAssertEqual(outcome, expected, "start \(status)")
+            XCTAssertEqual(transport.requests.count, 1, "nothing is linked without a code")
+        }
+        // The second step: the account's answer.
+        let conflict = Data(#"{"error":{"code":"account_conflict","message":"Accounts are never merged."}}"#.utf8)
+        let links: [(Int, Data, DoddyAccountLink.Outcome)] = [
+            (409, conflict, .conflict(message: "Accounts are never merged.")),
+            (401, failure("unauthenticated"), .retryLater),
+            (400, failure("attempt_invalid"), .retryLater),
+            (503, failure("live_not_configured"), .notSetUp),
+            (500, Data(), .retryLater),
+            (429, failure("rate_limited"), .retryLater),
+        ]
+        for (status, body, expected) in links {
+            let transport = RoutedTransport(["link-device/start": started, "account/link-device": (status, body)])
+            let outcome = await DoddyAccountLink.linkBackend(server: backend, account: account, deviceToken: "ds1.a.b", transport: transport)
+            XCTAssertEqual(outcome, expected, "link \(status)")
         }
         let offline = await DoddyAccountLink.linkBackend(server: backend, account: account, deviceToken: "ds1.a.b", transport: ScriptedTransport(fails: true))
         XCTAssertEqual(offline, .retryLater)
         let none = ScriptedTransport()
         let notADeviceToken = await DoddyAccountLink.linkBackend(server: backend, account: account, deviceToken: "eyJ.not.ds1", transport: none)
         XCTAssertEqual(notADeviceToken, .nothingToLink)
+        XCTAssertTrue(none.requests.isEmpty)
+    }
+
+    func testTheBackendUndoSendsTheDeviceSessionAndReadsTheAnswer() async throws {
+        let transport = RoutedTransport(["link-device/undo": (200, Data(#"{"linked":false}"#.utf8))])
+        let undone = await DoddyAccountLink.undoBackendLink(server: backend, deviceToken: "ds1.a.b", transport: transport)
+        XCTAssertEqual(undone, .unlinked)
+        let request = try XCTUnwrap(transport.requests.first)
+        XCTAssertEqual(request.method, "POST")
+        XCTAssertEqual(request.url.absoluteString, "https://doddy.example.com/v1/account/link-device/undo")
+        XCTAssertEqual(request.headers["authorization"], "Bearer ds1.a.b")
+        let tooLate = Data(#"{"error":{"code":"account_conflict","message":"More than a day ago."}}"#.utf8)
+        let answers: [(Int, Data, DoddyAccountLink.UndoOutcome)] = [
+            (409, tooLate, .tooLate(message: "More than a day ago.")),
+            (401, failure("unauthenticated"), .notAllowed),
+            (403, failure("permission_insufficient"), .notAllowed),
+            (503, failure("live_not_configured"), .notSetUp),
+            (429, failure("rate_limited"), .retryLater),
+            (200, Data(#"{"linked":true}"#.utf8), .retryLater),
+            (500, Data(), .retryLater),
+        ]
+        for (status, body, expected) in answers {
+            let outcome = await DoddyAccountLink.undoBackendLink(server: backend, deviceToken: "ds1.a.b", transport: ScriptedTransport(status: status, body: body))
+            XCTAssertEqual(outcome, expected, "\(status)")
+        }
+        let none = ScriptedTransport()
+        let notADeviceToken = await DoddyAccountLink.undoBackendLink(server: backend, deviceToken: "eyJ.not.ds1", transport: none)
+        XCTAssertEqual(notADeviceToken, .notAllowed)
         XCTAssertTrue(none.requests.isEmpty)
     }
 

@@ -13,7 +13,8 @@ struct DoddyShortcuts: AppShortcutsProvider {
                 "Open \(.applicationName)",
             ],
             shortTitle: "Talk to Doddy",
-            systemImageName: "waveform")
+            // The controls' face, so Action Button › Shortcut shows the same symbol (owner, 12 Nov 2026).
+            systemImageName: "face.smiling.inverse")
         // Turns things off only, so it works with the iPhone locked (ADR-361).
         AppShortcut(
             intent: StopListeningIntent(),

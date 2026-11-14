@@ -10,7 +10,7 @@ import { isIP } from "node:net";
  * cookies, a size cap, and the caller's deadline.
  */
 
-export type UrlRefusal = "not_a_url" | "not_https" | "credentials" | "port" | "address_literal" | "internal_name" | "host_not_allowed" | "too_long";
+export type UrlRefusal = "not_a_url" | "not_https" | "credentials" | "port" | "address_literal" | "internal_name" | "host_not_allowed" | "too_long" | "query";
 
 export class UrlRefused extends Error {
   constructor(readonly reason: UrlRefusal) {
@@ -21,8 +21,14 @@ export class UrlRefused extends Error {
 
 const INTERNAL_SUFFIXES = [".local", ".localhost", ".internal", ".lan", ".home", ".corp", ".intranet", ".home.arpa"];
 
-/** Normalised https URL (no fragment), or a refusal. `allowedHosts` empty = any public host. */
-export function checkSellerUrl(raw: string, allowedHosts: readonly string[] = []): string {
+const hostMatches = (host: string, list: readonly string[]) => list.some((a) => host === a || host.endsWith(`.${a}`));
+
+/**
+ * Normalised https URL (no fragment), or a refusal. `allowedHosts` empty = any public host. When `queryHosts`
+ * is given, a query string (the part after "?") is refused unless the host is on that list: a model-chosen query
+ * could carry what the person said to a site, so only sites the owner listed for it may have one.
+ */
+export function checkSellerUrl(raw: string, allowedHosts: readonly string[] = [], queryHosts?: readonly string[]): string {
   if (raw.length > 2048) throw new UrlRefused("too_long");
   let url: URL;
   try {
@@ -36,8 +42,11 @@ export function checkSellerUrl(raw: string, allowedHosts: readonly string[] = []
   const host = url.hostname.toLowerCase().replace(/\.$/, "");
   if (isIP(host) !== 0 || host.startsWith("[") || /^[0-9.]+$/.test(host) || /^0x[0-9a-f]+$/i.test(host)) throw new UrlRefused("address_literal");
   if (!host.includes(".") || host === "localhost" || INTERNAL_SUFFIXES.some((s) => host.endsWith(s))) throw new UrlRefused("internal_name");
-  if (allowedHosts.length > 0 && !allowedHosts.some((a) => host === a || host.endsWith(`.${a}`))) throw new UrlRefused("host_not_allowed");
+  if (allowedHosts.length > 0 && !hostMatches(host, allowedHosts)) throw new UrlRefused("host_not_allowed");
+  if (queryHosts !== undefined && url.search !== "" && !hostMatches(host, queryHosts)) throw new UrlRefused("query");
   url.hash = "";
+  // A bare "?" with nothing after it is no query: drop it so the address shown is the one opened.
+  if (url.search === "") url.search = "";
   return url.href;
 }
 

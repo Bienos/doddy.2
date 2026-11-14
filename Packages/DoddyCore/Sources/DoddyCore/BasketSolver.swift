@@ -139,20 +139,7 @@ public enum BasketSolver {
                              programs: DealsPrograms = .all, minimumSaving: Int = 0) -> Basket {
         let order = chainOrder(result)
         let rank = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($0.element, $0.offset) })
-        // Per item, per chain: the offer whose line costs least there.
-        var best: [[DealsChain: Candidate]] = []
-        for (itemIndex, item) in result.items.enumerated() {
-            let wanted = itemIndex < quantities.count ? quantities[itemIndex] : nil
-            var perChain: [DealsChain: Candidate] = [:]
-            for (index, offer) in item.offers.enumerated() where counts(offer, currency: currency) && programs.canGet(offer) {
-                if let allowed, !allowed.contains(offer.chain) { continue }
-                let candidate = Candidate(offer: offer, serverIndex: index, chainRank: rank[offer.chain] ?? order.count,
-                                          cost: cost(offer, quantity: pieces(for: wanted, size: offer.size)))
-                if let held = perChain[offer.chain], !candidate.isBetter(than: held) { continue }
-                perChain[offer.chain] = candidate
-            }
-            best.append(perChain)
-        }
+        let best = perChain(result, allowed: allowed, currency: currency, quantities: quantities, programs: programs, rank: rank)
         let usable = order.filter { chain in best.contains { $0[chain] != nil } }
 
         func plan(_ chains: [DealsChain]) -> BasketPlan {
@@ -190,6 +177,42 @@ public enum BasketSolver {
             savings = Money(minor: single.total.minor - pair.total.minor, currency: currency)
         }
         return Basket(bestSingleChain: single, bestPair: pair, everythingCheapest: everything, savings: savings)
+    }
+
+    /// Per item, in the answer's order: its line in each chain that has it (that chain's offer whose line costs
+    /// least for the quantity asked), the cheapest first by the basket's own tie-break. The first line of each item
+    /// is the one `everythingCheapest` takes; the rest are the other shops, for "each item separately"
+    /// (decision 2026-11-13-shopping-one-field). Same arguments and rules as `solve`.
+    public static func options(_ result: DealsResult, chains allowed: Set<DealsChain>? = nil,
+                               currency: String = defaultCurrency, quantities: [ListQuantity?] = [],
+                               programs: DealsPrograms = .all) -> [[BasketPlan.Line]] {
+        let order = chainOrder(result)
+        let rank = Dictionary(uniqueKeysWithValues: order.enumerated().map { ($0.element, $0.offset) })
+        let best = perChain(result, allowed: allowed, currency: currency, quantities: quantities, programs: programs, rank: rank)
+        return result.items.enumerated().map { index, item in
+            best[index].values.sorted { $0.isBetter(than: $1) }.map {
+                BasketPlan.Line(itemIndex: index, query: item.query, offer: $0.offer, cost: $0.cost)
+            }
+        }
+    }
+
+    /// Per item, per chain: the offer whose line costs least there for the quantity asked.
+    static func perChain(_ result: DealsResult, allowed: Set<DealsChain>?, currency: String, quantities: [ListQuantity?],
+                         programs: DealsPrograms, rank: [DealsChain: Int]) -> [[DealsChain: Candidate]] {
+        var best: [[DealsChain: Candidate]] = []
+        for (itemIndex, item) in result.items.enumerated() {
+            let wanted = itemIndex < quantities.count ? quantities[itemIndex] : nil
+            var perChain: [DealsChain: Candidate] = [:]
+            for (index, offer) in item.offers.enumerated() where counts(offer, currency: currency) && programs.canGet(offer) {
+                if let allowed, !allowed.contains(offer.chain) { continue }
+                let candidate = Candidate(offer: offer, serverIndex: index, chainRank: rank[offer.chain] ?? rank.count,
+                                          cost: cost(offer, quantity: pieces(for: wanted, size: offer.size)))
+                if let held = perChain[offer.chain], !candidate.isBetter(than: held) { continue }
+                perChain[offer.chain] = candidate
+            }
+            best.append(perChain)
+        }
+        return best
     }
 
     /// What `quantity` pieces of `offer` cost under its conditions (see the header). Never above

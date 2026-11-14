@@ -3,15 +3,18 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import type { AccountEraser } from "./account.js";
 import { type AccountLinker, accountSubjectOf } from "./accountLinks.js";
 import { ASSIST_MAX_BODY_BYTES, type AssistService } from "./assist.js";
-import { requireFullAccess, type SessionVerifier } from "./auth.js";
+import { type AuthenticatedUser, requireFullAccess, type SessionVerifier } from "./auth.js";
 import { clientAddress } from "./clientAddress.js";
 import { type ErrorResponse, MockScenario } from "./contracts.js";
 import type { DeviceSessionIssuer } from "./deviceSession.js";
 import { type DocumentLinks, serveDocument } from "./documents.js";
+import { issuedAtOf, requestCredential } from "./requestCredential.js";
 import type { Store } from "./store.js";
 import { AppError } from "./errors.js";
 import { PAYMENT_SCENARIOS, type PaymentScenario, type PaymentsService } from "./payments/service.js";
 import type { ConnectedAppsService } from "./service.js";
+import type { ShopifyUcpService } from "./shopify/ucp.js";
+import type { UsageLimiter } from "./policy.js";
 import type { ToolsMockScenario } from "./tools/mock.js";
 import type { CloudToolsService } from "./tools/service.js";
 import type { WebRoutes } from "./web/routes.js";
@@ -30,6 +33,10 @@ export interface HttpDeps {
   tools?: CloudToolsService;
   /** Paying for things (x402). Routes exist only when provided; each says "not set up" until a wallet is. */
   payments?: PaymentsService;
+  /** Live Shopify Shop MCP search and merchant-owned checkout. No payment or order submission. */
+  shopify?: ShopifyUcpService | null;
+  /** Durable, per-user Shopify provider call limits plus provider concurrency slots. */
+  shopifyLimiter?: UsageLimiter;
   verifier: SessionVerifier;
   /** Beta device sign-in (ADR-563). Absent: `POST /v1/session/device` is not found. */
   deviceSessions?: DeviceSessionIssuer | null;
@@ -44,11 +51,11 @@ export interface HttpDeps {
   /** An account taking over an iPhone's earlier data (decision 2026-11-08-required-account). Absent: not found. */
   accountLinker?: AccountLinker | null;
   /**
-   * What `GET /v1/health` checks and reports (engineering audit, 7 Nov 2026): a database round trip,
-   * so a server whose database is gone answers 503 instead of a static "ok", and the commit that is
-   * running (Render's RENDER_GIT_COMMIT), so "what is live" is one request. Absent: health is static.
+   * What `GET /v1/health` checks (engineering audit, 7 Nov 2026): a database round trip, so a server whose
+   * database is gone answers 503 instead of a static "ok". It answers with its status only (12 Nov 2026);
+   * the running commit is in the start log (startLine.ts). Absent: health is static.
    */
-  health?: { ping(): Promise<void>; commit?: string | null } | null;
+  health?: { ping(): Promise<void> } | null;
   appReturnUrl: string;
   maxBodyBytes: number;
   /** Behind one proxy that appends the client to X-Forwarded-For (Render). For per-client limits. */
@@ -92,6 +99,9 @@ export function createHandler(deps: HttpDeps) {
   const { service } = deps;
 
   const routes: Record<string, Handler> = {
+    // Whether this server runs on demo data (mock) or for real (live); Doddy Web's "Demo server" banner
+    // reads it with the browser's session (COOKIE_READABLE). Signed in only: GET /v1/health tells nobody.
+    "GET /v1/server": async () => ({ mode: service.mode }),
     "GET /v1/connected-apps": async ({ userId }) => ({
       mode: service.mode,
       apps: [await service.view(userId)],
@@ -117,6 +127,20 @@ export function createHandler(deps: HttpDeps) {
         "PUT /v1/tools/access": (userId, body) => tools.setAppAccess(userId, body),
         "POST /v1/tools/prepare": (userId, body) => tools.prepare(userId, body),
         "POST /v1/tools/run": (userId, body) => tools.run(userId, body),
+        // Travel, stage 1: the trip screen's own Gmail search, with its own ask-first card (TRAVEL_EMAILS.md).
+        "POST /v1/travel/prepare": (userId, body) => tools.prepareTravelScan(userId, body),
+        "POST /v1/travel/scan": (userId, body) => tools.runTravelScan(userId, body),
+        // The trip planner (TRAVEL_PLANNER.md): words to a brief, then Kiwi.com's flights for it.
+        "POST /v1/travel/plan/understand": (userId, body) => tools.understandTrip(userId, body),
+        "POST /v1/travel/plan/search": (userId, body) => tools.searchTrip(userId, body),
+      }
+    : {};
+
+  const shopify = deps.shopify;
+  const shopifyRoutes: Record<string, (body: unknown) => Promise<unknown>> = shopify
+    ? {
+        "POST /v1/shopify/search": (body) => shopify.search(body),
+        "POST /v1/shopify/checkout": (body) => shopify.prepareCheckout(body),
       }
     : {};
 
@@ -126,6 +150,7 @@ export function createHandler(deps: HttpDeps) {
         "GET /v1/payments": (userId) => payments.status(userId),
         "GET /v1/payments/receipts": async (userId) => ({ receipts: await payments.receipts(userId) }),
         "PUT /v1/payments/switch": (userId, body) => payments.setSwitch(userId, body),
+        "POST /v1/payments/page": (userId, body) => payments.page(userId, body),
         "POST /v1/payments/prepare": (userId, body) => payments.prepare(userId, body),
         "POST /v1/payments/pay": (userId, body) => payments.pay(userId, body),
       }
@@ -153,18 +178,13 @@ export function createHandler(deps: HttpDeps) {
       }
       const key = `${req.method ?? "GET"} ${url.pathname}`;
 
+      // Open to anyone (Render's health check, the iPhone's wake-up ping), so it says nothing but its status:
+      // no mode, version, commit or configuration. A signed-in caller reads the mode at GET /v1/server.
       if (key === "GET /v1/health") {
         route = key;
         const database = deps.health ? await databaseAnswers(deps.health.ping) : undefined;
         status = database === "unavailable" ? 503 : 200;
-        return send(res, status, {
-          status: database === "unavailable" ? "unavailable" : "ok",
-          mode: service.mode,
-          api: "v1",
-          capabilities: ["calendar.listEvents"],
-          ...(database ? { database } : {}),
-          ...(deps.health?.commit ? { commit: deps.health.commit } : {}),
-        });
+        return send(res, status, { status: database === "unavailable" ? "unavailable" : "ok" });
       }
       if (key === "GET /v1/oauth/return" || key === "GET /v1/oauth/verify") {
         route = key;
@@ -213,13 +233,26 @@ export function createHandler(deps: HttpDeps) {
       }
 
       // Decision 2026-11-08-required-account: a Doddy account takes over this iPhone's earlier data,
-      // once, with the iPhone's own device token in the body as proof.
+      // once. The iPhone's own device session starts it (a one-time code), the account's sign-in
+      // finishes it with that code, and for a day the device session can take it back (accountLinks.ts).
+      if (key === "POST /v1/account/link-device/start" && deps.accountLinker) {
+        route = key;
+        const code = await deps.accountLinker.start(header(req, "authorization"), now());
+        status = 200;
+        return send(res, 200, code);
+      }
       if (key === "POST /v1/account/link-device" && deps.accountLinker) {
         route = key;
         const body = await readJson(req, deps.maxBodyBytes);
         const linked = await deps.accountLinker.link(header(req, "authorization"), body, now());
         status = 200;
         return send(res, 200, linked);
+      }
+      if (key === "POST /v1/account/link-device/undo" && deps.accountLinker) {
+        route = key;
+        const undone = await deps.accountLinker.undo(header(req, "authorization"), now());
+        status = 200;
+        return send(res, 200, undone);
       }
 
       // Doddy Web (ADR-600): its own routes, then its pages for anything that isn't the API.
@@ -242,61 +275,86 @@ export function createHandler(deps: HttpDeps) {
       const toolsHandler = toolsRoutes[key];
       const handler = routes[key];
       const paymentsHandler = paymentsRoutes[key];
-      if (!handler && !toolsHandler && !toolkitRoute && !paymentsHandler) throw new AppError("not_found");
+      const shopifyHandler = shopifyRoutes[key];
+      if (!handler && !toolsHandler && !toolkitRoute && !paymentsHandler && !shopifyHandler) throw new AppError("not_found");
       // Route templates only in logs, so the set of values stays small.
       route = toolkitRoute ? `POST /v1/tools/:toolkit/${toolkitRoute[2]}` : key;
 
       const authorization = header(req, "authorization");
       let user = await deps.verifier.verify(authorization, now());
+      // When this sign-in dates from (requestCredential.ts): the token's own date, or when the browser signed in.
+      let issuedAt = user ? issuedAtOf(authorization) : undefined;
       // A browser session may read a few lists (COOKIE_READABLE); every other route needs the
       // iPhone's own session in the Authorization header.
       if (!user && authorization === undefined && web && COOKIE_READABLE.has(key)) {
         const session = await web.auth.fromCookie(req, now());
-        if (session) user = { userId: session.userId };
+        if (session) {
+          user = { userId: session.userId };
+          issuedAt = Math.floor(session.createdAt / 1000);
+        }
       }
       if (!user) throw new AppError("unauthenticated");
       // A guest iPhone (ADR-587) has Ask Doddy only.
       requireFullAccess(user);
 
-      const rawScenario = header(req, "x-doddy-demo-scenario");
-      const scenario = rawScenario === undefined ? undefined : MockScenario.safeParse(rawScenario);
-      if (scenario && !scenario.success) throw new AppError("invalid_request");
+      const serve = async (signedIn: AuthenticatedUser): Promise<void> => {
+        const rawScenario = header(req, "x-doddy-demo-scenario");
+        const scenario = rawScenario === undefined ? undefined : MockScenario.safeParse(rawScenario);
+        if (scenario && !scenario.success) throw new AppError("invalid_request");
 
-      const body = req.method === "POST" || req.method === "PUT" ? await readJson(req, deps.maxBodyBytes) : undefined;
-      if (payments && paymentsHandler) {
-        const rawPayments = header(req, "x-doddy-payments-scenario");
-        if (rawPayments !== undefined) {
-          if (!PAYMENT_SCENARIOS.has(rawPayments)) throw new AppError("invalid_request");
-          payments.applyMockScenario(rawPayments as PaymentScenario);
+        const body = req.method === "POST" || req.method === "PUT" ? await readJson(req, deps.maxBodyBytes) : undefined;
+        if (shopifyHandler) {
+          // Only the iPhone’s full authenticated session reaches the live storefront.
+          // A merchant cart or checkout is never a payment or a placed order.
+          const result = deps.shopifyLimiter
+            ? await (async () => {
+                await deps.shopifyLimiter!.reserveToolRun(signedIn.userId, now().getTime());
+                return deps.shopifyLimiter!.withSlot(signedIn.userId, () => shopifyHandler(body));
+              })()
+            : await shopifyHandler(body); // Legacy harness injects a one-call fake; production always supplies limiter.
+          status = 200;
+          return send(res, 200, result);
         }
-        const paymentsResult = await paymentsHandler(user.userId, body);
+        if (payments && paymentsHandler) {
+          const rawPayments = header(req, "x-doddy-payments-scenario");
+          if (rawPayments !== undefined) {
+            if (!PAYMENT_SCENARIOS.has(rawPayments)) throw new AppError("invalid_request");
+            payments.applyMockScenario(rawPayments as PaymentScenario);
+          }
+          const paymentsResult = await paymentsHandler(signedIn.userId, body);
+          status = 200;
+          return send(res, 200, paymentsResult);
+        }
+        if (tools && (toolsHandler || toolkitRoute)) {
+          const rawTools = header(req, "x-doddy-tools-scenario");
+          if (rawTools !== undefined) {
+            if (!TOOLS_SCENARIOS.has(rawTools as ToolsMockScenario)) throw new AppError("invalid_request");
+            await tools.applyMockScenario(signedIn.userId, rawTools as ToolsMockScenario);
+          }
+          let toolsResult: unknown;
+          if (toolsHandler) toolsResult = await toolsHandler(signedIn.userId, body);
+          else if (toolkitRoute) {
+            const [, toolkitId, action] = toolkitRoute;
+            toolsResult =
+              action === "connect"
+                ? await tools.connect(signedIn.userId, toolkitId!, body)
+                : action === "complete"
+                  ? await tools.complete(signedIn.userId, toolkitId!, body)
+                  : await tools.disconnect(signedIn.userId, toolkitId!, body);
+          }
+          status = 200;
+          return send(res, 200, toolsResult);
+        }
+        if (!handler) throw new AppError("not_found");
+        const result = await handler({ userId: signedIn.userId, body, scenario: scenario?.data });
         status = 200;
-        return send(res, 200, paymentsResult);
-      }
-      if (tools && (toolsHandler || toolkitRoute)) {
-        const rawTools = header(req, "x-doddy-tools-scenario");
-        if (rawTools !== undefined) {
-          if (!TOOLS_SCENARIOS.has(rawTools as ToolsMockScenario)) throw new AppError("invalid_request");
-          await tools.applyMockScenario(user.userId, rawTools as ToolsMockScenario);
-        }
-        let toolsResult: unknown;
-        if (toolsHandler) toolsResult = await toolsHandler(user.userId, body);
-        else if (toolkitRoute) {
-          const [, toolkitId, action] = toolkitRoute;
-          toolsResult =
-            action === "connect"
-              ? await tools.connect(user.userId, toolkitId!, body)
-              : action === "complete"
-                ? await tools.complete(user.userId, toolkitId!, body)
-                : await tools.disconnect(user.userId, toolkitId!, body);
-        }
-        status = 200;
-        return send(res, 200, toolsResult);
-      }
-      if (!handler) throw new AppError("not_found");
-      const result = await handler({ userId: user.userId, body, scenario: scenario?.data });
-      status = 200;
-      send(res, 200, result);
+        send(res, 200, result);
+      };
+      // Everything this request writes for the person is refused if their account is deleted while it
+      // runs (Store.refuseIfCutOff). A sign-in with no date (mock mode's test identities) isn't checked.
+      const signedIn = user;
+      if (issuedAt === undefined) return await serve(signedIn);
+      return await requestCredential.run({ userId: signedIn.userId, issuedAt }, () => serve(signedIn));
     } catch (error) {
       const appError = error instanceof AppError ? error : new AppError("internal");
       status = appError.status;

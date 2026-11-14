@@ -1,0 +1,54 @@
+# The owner of the paths scripts/check_sensitive_paths.sh lists: keep the two in step.
+# GitHub asks the owner to review a pull request that changes one of them (not one the owner opened).
+# It doesn't block a merge by itself: the main ruleset leaves require_code_owner_review off
+# (.github/rulesets/main.json); the `sensitive-paths` check and its label are the gate.
+# Later lines win over earlier ones, as in .gitignore.
+
+# How the app is signed and what it may do.
+*.entitlements                                                  @Bienos
+/Config/*Info.plist                                             @Bienos
+PrivacyInfo.xcprivacy                                           @Bienos
+/project.yml                                                    @Bienos
+/project-*.yml                                                  @Bienos
+/ci_scripts/                                                    @Bienos
+
+# Where and how servers deploy, and which keys they get.
+/render.yaml                                                    @Bienos
+vercel.json                                                     @Bienos
+/secrets/                                                       @Bienos
+.env.op                                                         @Bienos
+/site/api/                                                      @Bienos
+/server/voice-token/                                            @Bienos
+
+# What the live voice agents say and can do; their README notes have no owner, as in the script.
+/voice-agent/                                                   @Bienos
+/voice-agent/README.md
+/voice-agent/*/README.md
+
+# Data on phones and servers.
+/server/messaging/migrations/                                   @Bienos
+/Packages/DoddyCore/Sources/DoddyPersistence/DoddyDatabase.swift @Bienos
+
+# Outside code that builds and runs.
+/Packages/DoddyCore/Package.swift                               @Bienos
+/Packages/DoddyCore/Package.resolved                            @Bienos
+/Config/Package.resolved                                        @Bienos
+package.json                                                    @Bienos
+package-lock.json                                               @Bienos
+
+# The checks and rules themselves.
+/.github/workflows/                                             @Bienos
+/.github/dependabot.yml                                         @Bienos
+/.github/rulesets/                                              @Bienos
+/.github/CODEOWNERS                                             @Bienos
+/scripts/check_sensitive_paths.sh                               @Bienos
+/scripts/check_forbidden_capabilities.sh                        @Bienos
+/scripts/ci*.sh                                                 @Bienos
+/Makefile                                                       @Bienos
+AGENTS.md                                                       @Bienos
+CLAUDE.md                                                       @Bienos
+/docs/trust/                                                    @Bienos
+/.claude/                                                       @Bienos
+/.agents/                                                       @Bienos
+/prompts/                                                       @Bienos
+/studio-skills/                                                 @Bienos

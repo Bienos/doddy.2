@@ -136,11 +136,11 @@ public enum WhatICanDo {
         case (.talk, .english):
             Words(title: "Talk to Doddy",
                   does: "Ask out loud and get a short answer. Doddy can look things up in your notes while you talk.",
-                  youControl: "Your voice is sent only while a conversation is on. What leaves this iPhone shows where.")
+                  youControl: "Your voice is sent only while a conversation is on. The Privacy Policy says where.")
         case (.talk, .polish):
             Words(title: "Porozmawiaj z Doddym",
                   does: "Pytasz na głos i dostajesz krótką odpowiedź. W trakcie rozmowy Doddy może zajrzeć do Twoich notatek.",
-                  youControl: "Głos jest wysyłany tylko w trakcie rozmowy. Dokąd, pokazuje ekran „Co opuszcza tego iPhone’a”.")
+                  youControl: "Głos jest wysyłany tylko w trakcie rozmowy. Dokąd, opisuje Polityka prywatności.")
 
         case (.notes, .english):
             Words(title: "Notes",
@@ -161,13 +161,14 @@ public enum WhatICanDo {
                   youControl: "Ty decydujesz, co na nie trafia.")
 
         case (.reminders, .english):
-            Words(title: "Reminders and calendar",
-                  does: "Ask in a conversation and Doddy prepares a reminder or a calendar event.",
-                  youControl: "Nothing is added until you confirm it on screen.")
+            // Timers, focus, the stopwatch and the wind-down start only by voice since decision 2026-11-10-timers-by-voice.
+            Words(title: "Reminders, calendar and timers",
+                  does: "Ask in a conversation and Doddy prepares a reminder, a calendar event or a timer. Focus, the stopwatch and a wind-down before bed start the same way.",
+                  youControl: "Nothing is added or started until you confirm it on screen.")
         case (.reminders, .polish):
-            Words(title: "Przypomnienia i kalendarz",
-                  does: "Poproś w rozmowie, a Doddy przygotuje przypomnienie albo wydarzenie w kalendarzu.",
-                  youControl: "Nic nie zostanie dodane, dopóki nie potwierdzisz tego na ekranie.")
+            Words(title: "Przypomnienia, kalendarz i minutniki",
+                  does: "Poproś w rozmowie, a Doddy przygotuje przypomnienie, wydarzenie w kalendarzu albo minutnik. Tak samo włączysz skupienie, stoper i wyciszenie przed snem.",
+                  youControl: "Nic nie zostanie dodane ani włączone, dopóki nie potwierdzisz tego na ekranie.")
 
         case (.messages, .english):
             Words(title: "Messages",

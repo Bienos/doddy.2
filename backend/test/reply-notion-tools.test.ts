@@ -132,7 +132,7 @@ test("the reply draft is created in the email's thread, to Gmail's sender, once,
   assert.equal(again.body.replayed, true);
   assert.equal(again.body.externalId, done.body.externalId);
   assert.ok(!/anna|Lunch|1pm/.test(again.body.text), again.body.text);
-  assert.match(again.body.text, /^drafted: .*NOT sent/);
+  assert.equal(again.body.text, "drafted: Gmail reply draft created (not sent). Done on the first try; nothing ran again.");
   assert.equal(slugs(rig).filter((s) => s === "GMAIL_CREATE_EMAIL_DRAFT").length, 1);
   assert.equal(slugs(rig).filter((s) => s === "GMAIL_FETCH_EMAILS").length, 2, "no new lookup for the repeat");
 });

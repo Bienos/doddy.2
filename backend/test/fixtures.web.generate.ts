@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { DECK_PLAN_STEP } from "../src/decks/demo.js";
 import { MockClaudeProvider } from "../src/tools/claude.js";
 import { USER_A } from "./helpers.js";
 import { CHROME_MAC, startWeb } from "./webRig.js";
@@ -24,6 +25,15 @@ claude.makeDocument = async (args) => {
   if (++made === 3) return new Promise(() => {});
   await gate;
   return original(args);
+};
+// A deck is made from Claude's structured answers (decision 2026-11-10-better-presentations): it waits the same way, at its first step.
+const originalStructured = claude.structured.bind(claude);
+claude.structured = async (input) => {
+  if (input.name === DECK_PLAN_STEP) {
+    if (++made === 3) return new Promise(() => {});
+    await gate;
+  }
+  return originalStructured(input);
 };
 const rig = await startWeb({ claude });
 

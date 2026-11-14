@@ -954,6 +954,65 @@
         }
       }
     },
+    "Doddy is locked": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy ist gesperrt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy está bloqueado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy est verrouillé"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy je zaključan"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy è bloccato"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyはロックされています"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy jest zablokowany"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Doddy está bloqueado"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy 已锁定"
+          }
+        }
+      }
+    },
     "Doddy is on a call": {
       "extractionState": "manual",
       "localizations": {
@@ -1521,17 +1580,6 @@
         }
       }
     },
-    "Its button is in Doddy": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jego przycisk jest w Doddym"
-          }
-        }
-      }
-    },
     "Kept in Doddy on this iPhone": {
       "extractionState": "manual",
       "localizations": {
@@ -1971,61 +2019,61 @@
         }
       }
     },
-    "Mute or unmute Doddy": {
+    "Mute Doddy": {
       "extractionState": "manual",
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy stumm/laut schalten"
+            "value": "Doddy stumm schalten"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Silenciar o activar Doddy"
+            "value": "Silenciar a Doddy"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Couper ou rétablir le son de Doddy"
+            "value": "Couper le son de Doddy"
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Utišaj Doddyja ili uključi zvuk"
+            "value": "Utišaj Doddyja"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Silenzia o riattiva l'audio di Doddy"
+            "value": "Silenzia Doddy"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddyの消音／消音解除"
+            "value": "Doddyを消音"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wycisz lub wyłącz wyciszenie Doddy’ego"
+            "value": "Wycisz Doddy’ego"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Silenciar ou reativar o som do Doddy"
+            "value": "Silenciar o Doddy"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "将 Doddy 静音或取消静音"
+            "value": "将 Doddy 静音"
           }
         }
       }
@@ -4681,6 +4729,17 @@
         }
       }
     },
+    "Takes a minute or two": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zajmie minutę lub dwie"
+          }
+        }
+      }
+    },
     "Talk in the Island": {
       "extractionState": "manual",
       "localizations": {
@@ -5222,6 +5281,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "Włącz mikrofon"
+          }
+        }
+      }
+    },
+    "Unmute Doddy": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy laut schalten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activar el sonido de Doddy"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rétablir le son de Doddy"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uključi zvuk Doddyja"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riattiva l'audio di Doddy"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddyの消音を解除"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłącz wyciszenie Doddy’ego"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reativar o som do Doddy"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消 Doddy 静音"
           }
         }
       }

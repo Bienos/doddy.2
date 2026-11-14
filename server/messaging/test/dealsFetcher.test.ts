@@ -2,7 +2,7 @@
 // blocks never worked around, HTTPS only, the size cap and the time limit. Nothing here reaches the network.
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { DODDY_BOT_UA, looksLikeChallenge, parseRobots, PoliteFetcher, robotsAllows, robotsPatternMatches, safeHttpsFetch } from "../src/deals/fetcher.js";
+import { CachingFetcher, DODDY_BOT_UA, type FetchResult, looksLikeChallenge, parseRobots, PoliteFetcher, robotsAllows, robotsPatternMatches, safeHttpsFetch } from "../src/deals/fetcher.js";
 import { FakeWeb, ROBOTS } from "./dealsFakes.js";
 
 const allows = (robots: string, path: string, token = "doddybot") => robotsAllows(parseRobots(robots), token, path).allowed;
@@ -171,6 +171,20 @@ describe("PoliteFetcher", () => {
     assert.equal((await new PoliteFetcher({ fetch: exact.fetch }).fetchPage("https://a.example/x")).kind, "ok");
   });
 
+  test("one page known to be bigger may raise the cap, never above 8 MB, and never lower it (13 Nov 2026)", async () => {
+    const page = Buffer.alloc(4 * 1024 * 1024, 0x61);
+    const web = new FakeWeb().on("https://a.example/x", { body: page });
+    const f = new PoliteFetcher({ fetch: web.fetch });
+    assert.deepEqual(await f.fetchPage("https://a.example/x"), { kind: "failed", reason: "too_large" });
+    assert.equal((await f.fetchPage("https://a.example/x", { maxBytes: 6 * 1024 * 1024 })).kind, "ok");
+    const huge = new FakeWeb().on("https://a.example/y", { headers: { "content-length": String(9 * 1024 * 1024) }, body: Buffer.alloc(16) });
+    assert.deepEqual(await new PoliteFetcher({ fetch: huge.fetch }).fetchPage("https://a.example/y", { maxBytes: 64 * 1024 * 1024 }),
+      { kind: "failed", reason: "too_large" }, "capped at LARGE_PAGE_MAX_BYTES");
+    const small = new FakeWeb().on("https://a.example/z", { body: Buffer.alloc(2 * 1024 * 1024, 0x61) });
+    assert.equal((await new PoliteFetcher({ fetch: small.fetch }).fetchPage("https://a.example/z", { maxBytes: 1024 })).kind, "ok",
+      "a smaller number never lowers the fetcher's own cap");
+  });
+
   test("the time limit covers the whole fetch, and the caller can stop it", async () => {
     const hang = (_u: URL, init: RequestInit) => new Promise<never>((_, reject) => {
       init.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")));
@@ -189,4 +203,57 @@ describe("PoliteFetcher", () => {
     await assert.rejects(safeHttpsFetch("http://example.com/", {}));
     await assert.rejects(safeHttpsFetch("https://localhost:1/", {}), /private address|ECONNREFUSED/);
   });
+});
+
+// ---------- the leaflet page cache (11 Nov 2026) ----------
+
+test("CachingFetcher: a page read once serves the next searches until it expires; failures are never kept", async () => {
+
+  let clock = 0;
+  const calls: string[] = [];
+  const answers: Record<string, () => FetchResult> = {
+    "https://shop.example/a": () => ({ kind: "ok", status: 200, contentType: "text/html", body: Buffer.from("A"), finalUrl: "https://shop.example/a" }),
+    "https://shop.example/down": () => ({ kind: "failed", reason: "timeout" }),
+  };
+  const inner = { fetchPage: async (url: string) => { calls.push(url); return answers[url]!(); } };
+  const cache = new CachingFetcher(inner, 1000, 1024 * 1024, () => clock);
+  assert.equal((await cache.fetchPage("https://shop.example/a")).kind, "ok");
+  assert.equal((await cache.fetchPage("https://shop.example/a")).kind, "ok");
+  assert.deepEqual(calls, ["https://shop.example/a"], "the second search reads nothing");
+  await cache.fetchPage("https://shop.example/a", { aiInput: true });
+  assert.equal(calls.length, 2, "another rule is another request");
+  await cache.fetchPage("https://shop.example/down");
+  await cache.fetchPage("https://shop.example/down");
+  assert.equal(calls.filter((u) => u.endsWith("/down")).length, 2, "a failure is tried again next time");
+  clock = 2000;
+  await cache.fetchPage("https://shop.example/a");
+  assert.equal(calls.filter((u) => u === "https://shop.example/a").length, 3, "expired: read again");
+});
+
+test("CachingFetcher: two searches at once share one fetch; one caller's deadline doesn't stop the other", async () => {
+
+  let release: (r: FetchResult) => void = () => {};
+  let fetches = 0;
+  const inner = { fetchPage: () => { fetches++; return new Promise<FetchResult>((r) => { release = r; }); } };
+  const cache = new CachingFetcher(inner);
+  const late = new AbortController();
+  const first = cache.fetchPage("https://shop.example/p", { signal: late.signal });
+  const second = cache.fetchPage("https://shop.example/p");
+  late.abort();
+  assert.deepEqual(await first, { kind: "failed", reason: "timeout" });
+  release({ kind: "ok", status: 200, contentType: "image/png", body: Buffer.from("P"), finalUrl: "https://shop.example/p" });
+  assert.equal((await second).kind, "ok");
+  assert.equal(fetches, 1);
+});
+
+test("CachingFetcher: the oldest page goes first when the cache is full", async () => {
+
+  const calls: string[] = [];
+  const inner = { fetchPage: async (url: string): Promise<FetchResult> => { calls.push(url); return { kind: "ok", status: 200, contentType: "x", body: Buffer.alloc(100), finalUrl: url }; } };
+  const cache = new CachingFetcher(inner, 60_000, 800);
+  for (const u of ["https://s.example/1", "https://s.example/2", "https://s.example/3", "https://s.example/1"]) await cache.fetchPage(u);
+  assert.equal(calls.length, 3, "1 was still kept");
+  for (let i = 4; i <= 12; i++) await cache.fetchPage(`https://s.example/${i}`);
+  await cache.fetchPage("https://s.example/2");
+  assert.equal(calls.filter((u) => u.endsWith("/2")).length, 2, "2 was pushed out by newer pages");
 });

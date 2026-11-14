@@ -1,3 +1,0 @@
-Doddy Web: Apple or Google on the sign-in page opens the account the iPhone uses for that same sign-in, with nothing to link first; a first sign-in makes the account with that sign-in's own id (decision `2026-11-09-web-sign-in-same-account`). Linking stays for joining a different Apple or Google user. The page's text says so. The owner's `/admin` opens with Apple alone.
-Ran: `backend` `web-social.test.js` 47 of 47 and the whole backend suite (see the pull request), web `vitest` 166 of 166 and `tsc`, `scripts/ci.sh --only checks`. Not run: the real Supabase, Apple or Google, and a device.
-Needs a Render `doddy` deploy (auto-deploy is off) and, for Apple on the web, owner queue 28 (Apple's Services ID and key).

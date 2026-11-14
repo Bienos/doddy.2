@@ -1,3 +1,0 @@
-Memory journey group of the redesign (decision `2026-11-09-remove-old-design-leftovers`): row titles in `StatusRow`, the Connections group headings and the reminder sheet's choices are now looked up in the string catalog when shown, so 25 titles that had Polish lines no longer show in English; the list share card takes its fixed colours from the light tokens; four memory and import errors say what to do next (Polish and eight drafts, `l10n/REVIEW_NOTES.md`).
-Ran on Linux: strings catalog check, `scripts/ci.sh --only checks`. Not run here: any Swift compile (no toolchain). To check on a device: Settings and Connections in Polish (the row titles and group headings), a list shared as a picture.
-No deploy or owner step.

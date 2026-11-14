@@ -24,7 +24,11 @@ export function isRetryableOutcome(outcome: string | null | undefined): boolean 
 }
 export type TranscriptSource = "elevenlabs" | "twilio_live" | "none";
 
-export interface Warning { kind: "possible_commitment" | "unlisted_number" | "pesel_said"; line: number }
+/**
+ * `possible_other_booking`: Doddy said yes (or its booking sentence) while the other side was offering a time, day,
+ * price or condition that isn't on the card, so something other than the card may have been booked or agreed.
+ */
+export interface Warning { kind: "possible_commitment" | "unlisted_number" | "pesel_said" | "possible_other_booking"; line: number }
 export interface NextStep {
   kind: "save_note" | "set_reminder" | "retry" | "call_yourself" | "check_number" | "follow_up" | "none";
   text: string;
@@ -47,10 +51,21 @@ export interface CallResult {
   callbackPromised: boolean;
   takenOverAtSecs: number | null;
   durationSecs: number | null;
+  /**
+   * Booking calls only (decision 2026-11-12-book-agent): Doddy said the approved confirmation sentence.
+   * A booking counts as made only with this, a "yes" from the writer and a quote from the transcript.
+   */
+  bookingConfirmed?: boolean;
 }
 
 /** What the optional model step may say. Everything is checked before use. */
-export interface WriterInput { question: string; goal: string; transcript: Line[] }
+export interface WriterInput {
+  question: string; goal: string; transcript: Line[];
+  /** Booking calls only: the approved booking, one detail per line. "yes" then means booked exactly this. */
+  booking?: string;
+  /** Order calls only: the approved order, one detail per line. "yes" then means ordered exactly this. */
+  order?: string;
+}
 export interface WriterOutput {
   answerLine: number | null;
   answerQuote: string | null;
@@ -80,6 +95,10 @@ export interface ResultFacts {
   source: TranscriptSource;
   voicemailToolUsed: boolean;
   writer?: WriterOutput;
+  /** Booking calls only: the one sentence that accepts the booking. Doddy's lines holding it are not commitment warnings. */
+  bookingConfirmLine?: string;
+  /** Order calls only: the card's highest total in zł; the seller naming a price up to it is not another offer. */
+  maxTotalPln?: number;
 }
 
 const IVR = ["nacisnij", "wcisnij", "wybierz", "aby polaczyc", "witamy w", "infolinia", "prosimy czekac", "prosze czekac",
@@ -87,8 +106,19 @@ const IVR = ["nacisnij", "wcisnij", "wybierz", "aby polaczyc", "witamy w", "info
 const WRONG = ["pomylka", "zly numer", "to nie jest", "nie ma tu", "nie znam", "nie wiem o co chodzi", "zle pan", "zle pani"];
 const HEDGES = ["chyba", "nie wiem", "moze", "prawdopodobnie", "nie jestem pewn", "trudno powiedziec", "nie mam pewnosci", "sprawdze"];
 const GREETINGS = new Set(["halo", "tak", "slucham", "dzien dobry", "prosze", "tak slucham", "slucham pana", "slucham pania", "no", "aha"]);
+/** Agreement on any call, whatever was said before it (the approved booking sentence aside). */
 const COMMIT_WORDS = ["potwierdzam", "zgadzam", "akceptuje", "rezerwuje", "zarezerwuje", "zamawiam", "zamowie", "zaplace",
-  "oplace", "biore", "wezme", "umawiam", "umowie", "zlecam", "zgoda", "przyjmuje", "podpisze"];
+  "oplace", "biore", "wezme", "umawiam", "umowie", "zlecam", "zgoda", "przyjmuje", "podpisze",
+  "prosze zapisac", "prosze nas zapisac", "prosze mnie zapisac", "prosze ja zapisac", "prosze go zapisac", "niech bedzie",
+  "umowmy sie", "jestesmy umowieni", "zarezerwujmy", "rezerwujemy"];
+/**
+ * Saying yes in Polish, short or long. Too common to be a commitment on its own ("Dobrze, dziękuję"), so it counts only
+ * as a reply while the other side offers a time, day, price or condition that isn't on the card (`audit`).
+ */
+const ASSENT_WORDS = ["tak", "dobrze", "pasuje", "moze byc", "ok", "okej", "okay", "w porzadku", "zgoda", "niech bedzie",
+  "swietnie", "super", "jasne", "oczywiscie", "poprosze", "prosze zapisac", "prosze nas zapisac", "zapisuje", "zapisze",
+  "zgadzam", "potwierdzam", "akceptuje", "biore", "wezme", "rezerwuje", "zarezerwuje", "prosze o rezerwacje", "umowmy sie"];
+const ASSENT = new RegExp(`\\b(?:${ASSENT_WORDS.join("|")})\\b`);
 
 const has = (text: string, needles: string[]) => { const f = fold(text); return needles.some((n) => f.includes(n)); };
 const isGreeting = (text: string) => GREETINGS.has(fold(text).replace(/[^a-z ]+/g, " ").replace(/\s+/g, " ").trim());
@@ -97,7 +127,9 @@ const norm = (s: string) => s.normalize("NFC").replace(/\s+/g, " ").trim();
 export function buildCallResult(f: ResultFacts): CallResult {
   const transcript = f.transcript.map((l) => ({ ...l, text: norm(l.text) })).filter((l) => l.text.length > 0);
   const callee = transcript.map((l, i) => ({ ...l, i })).filter((l) => l.speaker === "callee");
-  const warnings = audit(transcript, f.allowedTexts);
+  const warnings = audit(transcript, f.allowedTexts, f.bookingConfirmLine, f.callbackLine, f.maxTotalPln);
+  const bookingConfirmed = f.bookingConfirmLine === undefined ? undefined
+    : transcript.some((l) => l.speaker === "doddy" && saysLine(l.text, f.bookingConfirmLine!));
   const callbackPromised = transcript.some((l) => l.speaker === "doddy" && fold(l.text).includes(fold(f.callbackLine).slice(0, 24)));
   const reasons: string[] = [];
 
@@ -131,9 +163,17 @@ export function buildCallResult(f: ResultFacts): CallResult {
 
   return {
     format: 1, outcome, source: f.source, confidence, confidenceReasons: reasons, summary, summaryBy, quote, transcript,
-    nextStep: nextStepFor(outcome, quote, callbackPromised, f.writer), warnings, callbackPromised,
+    nextStep: nextStepFor(outcome, quote, callbackPromised, f.writer, warnings), warnings, callbackPromised,
     takenOverAtSecs: f.takenOverAtSecs, durationSecs: f.durationSecs,
+    ...(bookingConfirmed === undefined ? {} : { bookingConfirmed }),
   };
+}
+
+/** Whether a spoken line holds the given sentence, ignoring case, diacritics, spacing and punctuation. */
+export function saysLine(spoken: string, sentence: string): boolean {
+  const squash = (x: string) => fold(x).replace(/[^a-z0-9]+/g, " ").trim();
+  const want = squash(sentence);
+  return want.length > 0 && ` ${squash(spoken)} `.includes(` ${want} `);
 }
 
 const rank = (c: Confidence) => ({ none: 0, low: 1, medium: 2, high: 3 })[c];
@@ -185,21 +225,133 @@ export function findSpan(text: string, quote: string): string | undefined {
   return idx >= 0 ? t.slice(idx, idx + q.length) : undefined;
 }
 
-/** Doddy's own lines after the opening: commitment words, numbers it wasn't given, PESEL-like numbers. */
-export function audit(transcript: Line[], allowedTexts: string[]): Warning[] {
-  const allowedDigits = new Set(allowedTexts.flatMap((t) => (t.match(/\d+/g) ?? [])));
+/**
+ * Doddy's own lines after the opening: commitment words, numbers it wasn't given, PESEL-like numbers, and a yes while the
+ * other side offers terms that aren't on the card. An offer stays open until the other side comes back to the card's
+ * own terms or Doddy says it will check with the person (`callbackLine`, which rule 3 of both prompts asks for); any
+ * yes while it is open, the booking sentence included, is `possible_other_booking`.
+ */
+export function audit(transcript: Line[], allowedTexts: string[], bookingConfirmLine?: string, callbackLine?: string, maxPriceZl?: number): Warning[] {
+  // A listed number is allowed as written in pieces ("00", "001") and as the lines below read it, joined across single
+  // spaces and hyphens ("00001"): a postcode or phone number Doddy was given is not "a number it wasn't given".
+  const allowedDigits = new Set(allowedTexts.flatMap((t) => [
+    ...(t.match(/\d+/g) ?? []), ...(t.match(/\d(?:[ \-]?\d)*/g)?.map((d) => d.replace(/\D/g, "")) ?? []),
+  ]));
+  const card = termsIn(allowedTexts.join("\n"));
+  const booking = bookingConfirmLine !== undefined;
+  const deferral = callbackLine ? fold(callbackLine).slice(0, 24) : undefined;
   const warnings: Warning[] = [];
   let first = true;
+  let offerOpen = false;
   transcript.forEach((l, i) => {
-    if (l.speaker !== "doddy") return;
+    if (l.speaker === "callee") {
+      const said = termsIn(l.text);
+      if (otherTerms(said, card, booking, maxPriceZl)) offerOpen = true;
+      else if (anyTerms(said)) offerOpen = false; // back to the card's own time, day or price
+      return;
+    }
     if (first) { first = false; return; } // the first message is ours, spoken word for word
-    const f = fold(l.text);
+    // On a booking call the approved confirmation sentence is the one commitment allowed; any other commitment word still warns.
+    const f = fold(bookingConfirmLine && saysLine(l.text, bookingConfirmLine) ? withoutLine(l.text, bookingConfirmLine) : l.text);
     if (COMMIT_WORDS.some((w) => new RegExp(`\\b${w}\\b`).test(f))) warnings.push({ kind: "possible_commitment", line: i });
     const digits = l.text.match(/\d(?:[ \-]?\d)*/g)?.map((d) => d.replace(/\D/g, "")) ?? [];
     if (digits.some((d) => d.length === 11)) warnings.push({ kind: "pesel_said", line: i });
     else if (digits.some((d) => d.length >= 3 && !allowedDigits.has(d))) warnings.push({ kind: "unlisted_number", line: i });
+    const folded = fold(l.text);
+    const defers = deferral !== undefined && folded.includes(deferral);
+    if (offerOpen && !defers && ASSENT.test(folded)) warnings.push({ kind: "possible_other_booking", line: i });
+    if (defers) offerOpen = false;
   });
   return warnings;
+}
+
+// ---------- times, days and prices in what was said ----------
+
+/** Comparable terms in a text: times as "h%12:mm", days as "w<weekday>", "d<day>.<month>", "m<month>", prices in złoty. */
+export interface Terms { times: Set<string>; days: Set<string>; prices: Set<string>; condition: boolean }
+
+const MONTHS = ["stycznia", "lutego", "marca", "kwietnia", "maja", "czerwca", "lipca", "sierpnia", "wrzesnia", "pazdziernika", "listopada", "grudnia"];
+const WEEKDAYS: [RegExp, number][] = [
+  [/\bniedziel(?:a|e|i)\b/, 0], [/\bponiedzial(?:ek|ku)\b/, 1], [/\bwtor(?:ek|ku)\b/, 2], [/\bsrod(?:a|e|y|zie)\b/, 3],
+  [/\bczwart(?:ek|ku)\b/, 4], [/\bpiat(?:ek|ku)\b/, 5], [/\bsobot(?:a|e|y)\b|\bsobocie\b/, 6],
+];
+/** Hours said as words, in the forms after "o" (-ej) and "na" (-ą, folded to -a). Longest first. */
+const HOUR_WORDS: [string, number][] = [
+  ["dwudziest(?:ej|a) pierwsz(?:ej|a)", 21], ["dwudziest(?:ej|a) drug(?:iej|a)", 22], ["dwudziest(?:ej|a) trzeci(?:ej|a)", 23],
+  ["dwudziest(?:ej|a)", 20], ["dziewietnast(?:ej|a)", 19], ["osiemnast(?:ej|a)", 18], ["siedemnast(?:ej|a)", 17], ["szesnast(?:ej|a)", 16],
+  ["pietnast(?:ej|a)", 15], ["czternast(?:ej|a)", 14], ["trzynast(?:ej|a)", 13], ["dwunast(?:ej|a)", 12], ["jedenast(?:ej|a)", 11],
+  ["dziesiat(?:ej|a)", 10], ["dziewiat(?:ej|a)", 9], ["osm(?:ej|a)", 8], ["siodm(?:ej|a)", 7], ["szost(?:ej|a)", 6], ["piat(?:ej|a)", 5],
+  ["czwart(?:ej|a)", 4], ["trzeci(?:ej|a)", 3], ["drugi(?:ej|a)", 2], ["pierwsz(?:ej|a)", 1],
+];
+const MINUTE_WORDS: [string, number][] = [["czterdziesci piec", 45], ["trzydziesci", 30], ["pietnascie", 15], ["dwadziescia", 20],
+  ["dziesiec", 10], ["czterdziesci", 40], ["piecdziesiat", 50]];
+/** Words that bring a time: "o 19", "na 20", "od 18", "po 21", "przed 9", "godz. 10". Never "do" (until). */
+const AT = String.raw`\b(?:o|na|od|po|przed|godz\.?|godzina|godzinie|godzine)\s+`;
+/** Paying first, a card or a transfer: a condition, never on a booking card. */
+const CONDITIONS = /\b(?:zadat\w*|zaliczk\w*|przedplat\w*|kaucj\w*|oplat\w* rezerwacyjn\w*|numer\w* karty|przelew\w*|(?:platn|zaplac|wplac)\w* z gory|z gory (?:platn|zaplac|wplac)\w*)\b/;
+
+const timeKey = (h: number, m: number) => `${h % 12}:${String(m).padStart(2, "0")}`;
+
+export function termsIn(text: string): Terms {
+  const t = fold(text);
+  const times = new Set<string>();
+  const days = new Set<string>();
+  const prices = new Set<string>();
+  const time = (h: number, m: number) => { if (h <= 24 && m < 60) times.add(timeKey(h, m)); };
+  // 19:30; 19.30 (a date when the second part could be a month and no "o" comes before it).
+  for (const m of t.matchAll(/(?<![\d.:])(?<!\bdo )(\d{1,2})([:.])(\d{2})(?:\.(\d{2,4}))?(?!\d)/g)) {
+    const a = Number(m[1]); const b = Number(m[3]);
+    const before = t.slice(Math.max(0, m.index - 8), m.index);
+    if (m[2] === "." && (m[4] !== undefined || (b >= 1 && b <= 12 && a >= 1 && a <= 31 && !new RegExp(`${AT}$`).test(before)))) {
+      days.add(`d${a}.${b}`); days.add(`m${b}`);
+    } else {
+      time(a, b);
+    }
+  }
+  // "o 19", "na 20", "godz. 10": not a number of people, minutes or złoty.
+  for (const m of t.matchAll(new RegExp(`${AT}(\\d{1,2})(?![\\d:]|[.,]\\d|\\s*(?:os|min|zl|pln|proc))`, "g"))) time(Number(m[1]), 0);
+  // Longest first, each match blanked out, so "dwudziestej pierwszej" is 21 and not 20 as well.
+  const minutes = MINUTE_WORDS.map(([w]) => w).join("|");
+  let rest = t;
+  for (const [word, h] of HOUR_WORDS) {
+    const half = new RegExp(`\\bwpol do (?:${word})\\b`, "g");
+    if (half.test(rest)) { time(h - 1, 30); rest = rest.replace(half, " "); }
+    const at = new RegExp(`${AT}(?:${word})(?:\\s+(${minutes}))?\\b`, "g");
+    for (const m of rest.matchAll(at)) time(h, MINUTE_WORDS.find(([w]) => w === m[1])?.[1] ?? 0);
+    rest = rest.replace(at, " ");
+  }
+  // 14 listopada; listopad named on its own.
+  MONTHS.forEach((month, i) => {
+    for (const m of t.matchAll(new RegExp(`\\b(\\d{1,2})\\s+${month}\\b`, "g"))) days.add(`d${Number(m[1])}.${i + 1}`);
+    if (new RegExp(`\\b${month}\\b`).test(t)) days.add(`m${i + 1}`);
+  });
+  for (const [re, day] of WEEKDAYS) if (re.test(t)) days.add(`w${day}`);
+  for (const m of t.matchAll(/(\d+(?:[ .]\d{3})*)(?:[.,]\d{1,2})?\s*(?:zl|zlote|zlotych|zloty|pln)\b/g)) prices.add(m[1]!.replace(/\D/g, ""));
+  return { times, days, prices, condition: CONDITIONS.test(t) };
+}
+
+const anyTerms = (t: Terms) => t.times.size + t.days.size + t.prices.size > 0 || t.condition;
+
+/**
+ * Whether the other side names terms the card doesn't have: another time or day (when the card names one; on a card
+ * without a time, a time in the answer is the answer), any price or paying condition on a booking call, or a price
+ * other than the card's. Relative days ("jutro") can't be compared with a date, so they are not offers.
+ */
+function otherTerms(said: Terms, card: Terms, booking: boolean, maxPriceZl?: number): boolean {
+  const outside = (a: Set<string>, b: Set<string>) => [...a].some((x) => !b.has(x));
+  if (card.times.size > 0 && outside(said.times, card.times)) return true;
+  if (card.days.size > 0 && outside(said.days, card.days)) return true;
+  // A food order has no price on the card but a highest total (decision 2026-11-12-food-by-phone): the seller naming the
+  // total, or a dish's price, is the answer; only a price above that cap is another offer.
+  if (maxPriceZl !== undefined) { if ([...said.prices].some((p) => Number(p) > maxPriceZl)) return true; }
+  else if ((booking || card.prices.size > 0) && outside(said.prices, card.prices)) return true;
+  return booking && said.condition && !card.condition;
+}
+
+/** The spoken line with the given sentence taken out, compared as saysLine does. */
+function withoutLine(spoken: string, sentence: string): string {
+  const squash = (x: string) => fold(x).replace(/[^a-z0-9]+/g, " ").trim();
+  return ` ${squash(spoken)} `.replace(` ${squash(sentence)} `, " ");
 }
 
 export const OUTCOME_SUMMARY: Record<Exclude<Outcome, "answered" | "taken_over">, string> = {
@@ -216,7 +368,14 @@ export const OUTCOME_SUMMARY: Record<Exclude<Outcome, "answered" | "taken_over">
   unknown: "Nie wiadomo, czy połączenie się odbyło. Doddy nie dzwonił ponownie.",
 };
 
-function nextStepFor(outcome: Outcome, quote: CallResult["quote"], callbackPromised: boolean, writer?: WriterOutput): NextStep {
+/** The next step when Doddy may have agreed to other terms than the card's: the person decides, by calling. */
+export const OTHER_TERMS_NEXT_STEP: NextStep = {
+  kind: "call_yourself",
+  text: "Doddy mógł się zgodzić na inny termin albo warunki niż te z karty. Zadzwoń, żeby odwołać albo potwierdzić.",
+};
+
+function nextStepFor(outcome: Outcome, quote: CallResult["quote"], callbackPromised: boolean, writer?: WriterOutput, warnings: Warning[] = []): NextStep {
+  if ((outcome === "answered" || outcome === "taken_over") && warnings.some((w) => w.kind === "possible_other_booking")) return OTHER_TERMS_NEXT_STEP;
   switch (outcome) {
     case "answered":
       if (callbackPromised) return { kind: "follow_up", text: "Rozmówca pytał o coś spoza karty, a Doddy obiecał oddzwonić. Sprawdź zapis i zdecyduj." };

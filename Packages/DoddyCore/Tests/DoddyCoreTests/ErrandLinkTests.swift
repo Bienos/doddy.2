@@ -173,7 +173,7 @@ final class ErrandLinkTests: XCTestCase {
         XCTAssertFalse(ledger.mayRun("c3", request: request, at: now.addingTimeInterval(4)), "once")
     }
 
-    func testTheSpecAndTheCatalogSayTapForErrands() throws {
+    func testTheSpecAndTheCatalogSayTapForHandingOverAndAtOnceForChecking() throws {
         let descriptor = try XCTUnwrap(ToolCatalog.descriptor(VoiceToolName.handOverErrand))
         XCTAssertEqual(descriptor.approval, .card)
         XCTAssertEqual(descriptor.effect, .handoff)
@@ -183,11 +183,15 @@ final class ErrandLinkTests: XCTestCase {
         let tool = try XCTUnwrap(spec.first { $0.name == VoiceToolName.handOverErrand })
         XCTAssertEqual(tool.ask, .tap)
         XCTAssertTrue(tool.confirmOnScreen)
-        // Checking what a task found stays a read: a spoken yes or a tap.
+        // Checking what a task found, and this week's leaflets, run at once since 11 Nov 2026
+        // (decision 2026-11-11-asked-for-runs-at-once): no card, no spoken question.
         let check = try XCTUnwrap(spec.first { $0.name == VoiceToolName.checkErrands })
-        XCTAssertEqual(check.ask, .yesOrTap)
+        XCTAssertEqual(check.ask, .runsNow)
+        XCTAssertFalse(check.confirmOnScreen)
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.checkErrands)?.approval, .runsNow)
         let deals = try XCTUnwrap(spec.first { $0.name == VoiceToolName.findDeals })
-        XCTAssertEqual(deals.ask, .yesOrTap)
+        XCTAssertEqual(deals.ask, .runsNow)
+        XCTAssertFalse(deals.confirmOnScreen)
     }
 
     func testInTheCarAnErrandWaitsForATapToo() {

@@ -4,6 +4,7 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { inTransaction } from "../db.js";
+import { scheduleDeletion } from "../providerRecords.js";
 import { conversationSchema } from "../providers/taskCalls.js";
 import type { TaskCallContext } from "./context.js";
 import { callFits } from "./hours.js";
@@ -73,15 +74,17 @@ export async function onAnswer(ctx: TaskCallContext, attemptId: string, f: Form)
   };
   if (ctx.settings.killSwitch) return refuse("kill_switch", "kill_switch");
   if (!callFits(now, a.max_duration_secs, 0)) return refuse("gate_refused", "outside_hours");
-  if (ctx.drift.cached().length) return refuse("gate_refused", "agent_drift");
   if (!a.payload_ciphertext) return refuse("gate_refused", "case_closed");
   const payload = decryptPayload(ctx, a.account_id, a.case_id, a.payload_ciphertext);
   if (!payloadDigest(ctx.keys, payload).equals(a.approved_digest)) return refuse("gate_refused", "payload_mismatch");
+  // The agent that talks is chosen by the approved payload's kind; a booking never goes to the ask agent or the reverse.
+  const agentId = ctx.agentIdFor(payload.kind);
+  if (!agentId || ctx.driftFor(payload.kind).cached().length) return refuse("gate_refused", "agent_drift");
   if (field(f, "To") !== payload.twilio.to || field(f, "From") !== payload.twilio.from) return refuse("gate_refused", "number_mismatch");
 
   const registerStarted = Date.now();
   const reg = await ctx.voice.registerCall({
-    agentId: ctx.config.agentId, from: payload.twilio.from, to: payload.twilio.to,
+    agentId, from: payload.twilio.from, to: payload.twilio.to,
     variables: { ...payload.agent.variables, [ATTEMPT_VARIABLE]: a.id },
   });
   const registerMs = Date.now() - registerStarted;
@@ -122,10 +125,11 @@ const FINAL: Record<string, "completed" | "busy" | "no_answer" | "failed" | "can
 export async function onStatus(ctx: TaskCallContext, attemptId: string, f: Form): Promise<void> {
   const a = await attempt(ctx, attemptId);
   if (!a || !ownsCall(ctx, a, f)) {
-    // A call we can't match (or one past its attempt) must not keep running.
-    if (field(f, "AccountSid") === ctx.telephony.accountSid && /^CA[0-9a-f]{32}$/.test(field(f, "CallSid"))
-      && field(f, "CallStatus") === "in-progress") {
-      await ctx.telephony.updateCall(field(f, "CallSid"), { status: "completed" });
+    if (field(f, "AccountSid") === ctx.telephony.accountSid && /^CA[0-9a-f]{32}$/.test(field(f, "CallSid"))) {
+      // A call we can't match (or one past its attempt) must not keep running.
+      if (field(f, "CallStatus") === "in-progress") await ctx.telephony.updateCall(field(f, "CallSid"), { status: "completed" });
+      // Its record goes once it is over, like any task call's (an account deleted mid-call leaves no attempt).
+      if (Object.hasOwn(FINAL, field(f, "CallStatus"))) await scheduleDeletion(ctx.db, "call", field(f, "CallSid"), "task");
     }
     return;
   }
@@ -150,6 +154,9 @@ export async function onStatus(ctx: TaskCallContext, attemptId: string, f: Form)
   }
   const final = FINAL[status];
   if (!final) return;
+  // Twilio's record of the call is deleted on the task account once it has been final for
+  // TWILIO_RECORD_DELETE_AFTER_HOURS (ADR-753), after its price has been read.
+  await scheduleDeletion(ctx.db, "call", field(f, "CallSid"), "task");
   const duration = /^\d+$/.test(field(f, "CallDuration")) ? Number(field(f, "CallDuration")) : null;
   const ended = await inTransaction(ctx.db, async (c) => {
     const answered = a.answered_at !== null || a.voice_connected_at !== null;
@@ -233,7 +240,7 @@ const envelope = z.object({ type: z.string(), data: z.object({ agent_id: z.strin
  */
 export async function onPostCall(ctx: TaskCallContext, json: unknown): Promise<void> {
   const env = envelope.safeParse(json);
-  if (!env.success || env.data.data.agent_id !== ctx.config.agentId) return;
+  if (!env.success || ![ctx.agentIdFor("ask"), ctx.agentIdFor("book"), ctx.agentIdFor("order")].includes(env.data.data.agent_id)) return;
   if (env.data.type !== "post_call_transcription") return;
   const parsed = conversationSchema.safeParse(env.data.data);
   if (!parsed.success) { ctx.log("post-call payload unreadable", {}); return; }

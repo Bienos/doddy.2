@@ -285,6 +285,10 @@ public struct BackupRestorePlan: Equatable, Sendable {
     public let reminders: [BackupContents.Reminder]
     /// The "About you" answers, only when this iPhone has none.
     public let profile: ProfileDraft?
+    /// Which of the notes this restore adds were private when the backup was made (ADR-310). They are marked
+    /// Private before they are added, so no screen, widget or server copy ever sees one as an ordinary note.
+    /// A note already on this iPhone keeps its own state.
+    public let privateIDs: Set<UUID>
 
     public static func make(
         _ contents: BackupContents, existing: [MemoryRecord], profileIsEmpty: Bool, now: Date
@@ -299,9 +303,10 @@ public struct BackupRestorePlan: Equatable, Sendable {
         let photos = contents.photos.filter { added.contains($0.memoryID) }
         let recordings = contents.recordings.filter { added.contains($0.memoryID) && MemoryAudio.isValidDuration($0.durationMilliseconds) }
         let draft = contents.profileDraft
+        let marked = try MemoryRestore.privateIDs(contents.memoriesExport, maxBytes: BackupLimits.maxFileBytes).intersection(added)
         return BackupRestorePlan(
             notes: notes, listItems: items, photos: photos, recordings: recordings, reminders: reminders,
-            profile: profileIsEmpty && !draft.values.isEmpty ? draft : nil)
+            profile: profileIsEmpty && !draft.values.isEmpty ? draft : nil, privateIDs: marked)
     }
 
     public var isEmpty: Bool { notes.isEmpty && profile == nil }

@@ -19,7 +19,7 @@
 // The pages come from the shop's cache at different ages, so a read can see one product twice and another never (seen
 // live on 30 Oct: 168 of 169); fewer distinct products than the listing's count makes the read `incomplete`.
 // Alcohol is skipped.
-import { currentWeek, dayMonth, fetchOfficial, isObject, mapLimit, moneyOf, officialUrl, str } from "./common.js";
+import { currentWeek, dayMonth, fetchOfficial, isObject, mapLimit, moneyOf, nextFlightPushes, officialUrl, str } from "./common.js";
 import { parsePrintedUnitPrice, parseSize, unitPrice, unitPricesAgree } from "../match.js";
 import type { ChainAdapter, ChainRead, Condition, DataProduct, LeafletInfo, Money, Size, SizeUnit, UnitPrice } from "../types.js";
 
@@ -43,9 +43,9 @@ const ALCOHOL = new RegExp(
 /** The JSON rows of a Next.js page's server components payload (rows that aren't JSON are left out). */
 export function flightRows(html: string): unknown[] {
   let text = "";
-  for (const m of html.matchAll(/<script[^>]*>\s*self\.__next_f\.push\((\[[\s\S]*?\])\)\s*;?\s*<\/script>/g)) {
+  for (const push of nextFlightPushes(html)) {
     let chunk: unknown;
-    try { chunk = JSON.parse(m[1]!); } catch { continue; }
+    try { chunk = JSON.parse(push); } catch { continue; }
     if (Array.isArray(chunk) && chunk[0] === 1 && typeof chunk[1] === "string") text += chunk[1];
   }
   const rows: unknown[] = [];

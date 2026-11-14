@@ -360,9 +360,15 @@ struct VoiceView: View {
                                 .id("accountNeeded")
                         }
 
-                        ForEach(controller.documents, id: \.url) { document in
-                            documentCard(document)
+                        // The pop-up card leaves out a file still being made: Home's island says it (owner, 13 Nov 2026).
+                        ForEach(controller.documents.filter { !asCard || MadeFileStart.popsUpCard($0) }, id: \.url) { document in
+                            documentCard(document, about: controller.documentBriefs[document.url], keptInMessages: !controller.isPrivate)
                                 .id("document-\(document.url.absoluteString)")
+                        }
+
+                        if !controller.flightLinks.isEmpty {
+                            flightsCard(controller.flightLinks)
+                                .id("flights")
                         }
 
                         if let card = controller.contactCard {
@@ -382,12 +388,24 @@ struct VoiceView: View {
                             .buttonStyle(SecondaryButtonStyle())
                             .accessibilityIdentifier("voice.showConversation")
                         }
+
+                        // The end of everything above, lines and cards (owner review, 13 Nov 2026).
+                        Color.clear
+                            .frame(height: 1)
+                            .accessibilityHidden(true)
+                            .id(Self.conversationEnd)
                     }
                     .padding(24)
                     .animation(reduceMotion ? nil : .spring(duration: 0.35, bounce: 0.15), value: controller.lines.count)
                 }
+                // A new line scrolls to the end of everything, not to the line: the cards come after the
+                // lines, and scrolling to the last line pushed a card waiting below it off the screen while
+                // Doddy kept talking (owner review, 13 Nov 2026: "karty chowają się pod transkrypcją").
                 .onChange(of: controller.lines.count) { _, _ in
-                    if let last = controller.lines.last { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(last.id, anchor: .bottom) } }
+                    if !controller.lines.isEmpty { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo(Self.conversationEnd, anchor: .bottom) } }
+                }
+                .onChange(of: controller.documents.first?.url) { _, url in
+                    if let url { withAnimation(reduceMotion ? nil : .default) { proxy.scrollTo("document-\(url.absoluteString)", anchor: .bottom) } }
                 }
                 .onChange(of: controller.pendingAction) { _, pending in
                     editingNoteReminderTime = false
@@ -1273,7 +1291,9 @@ struct VoiceView: View {
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
         case .callLater: (NSLocalizedString("Book call", comment: ""), NSLocalizedString("Don't book", comment: ""))
         case .callNow: (NSLocalizedString("Call me", comment: ""), NSLocalizedString("Don't call", comment: ""))
-        case .callTask: (NSLocalizedString("Call them", comment: ""), NSLocalizedString("Don't call", comment: ""))
+        case .callTask(_, let preview):
+            preview.isOrder ? (NSLocalizedString("Call and order", comment: ""), NSLocalizedString("Don't order", comment: ""))
+                            : (NSLocalizedString("Call them", comment: ""), NSLocalizedString("Don't call", comment: ""))
         // A card may name its own other button ("Not now" on a Studio job, ADR-740).
         case .ask(_, let card, _, _, _): (card.confirmLabel, card.declineLabel ?? NSLocalizedString("No", comment: ""))
         case .cloudRead(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("No", comment: ""))
@@ -1300,9 +1320,18 @@ struct VoiceView: View {
     /// comes back. The one tap approves exactly this.
     @ViewBuilder
     private func callTaskContent(_ preview: CallTaskPreview) -> some View {
-        Text(preview.places.count == 1 ? NSLocalizedString("Call this place for you?", comment: "")
-                                       : NSLocalizedString("Call these places for you?", comment: ""))
-            .font(.headline)
+        if preview.isOrder {
+            Text("Order from this place for you?")
+                .font(.headline)
+        } else if preview.isBooking {
+            Text(preview.places.count == 1 ? NSLocalizedString("Book at this place for you?", comment: "")
+                                           : NSLocalizedString("Book at one of these places for you?", comment: ""))
+                .font(.headline)
+        } else {
+            Text(preview.places.count == 1 ? NSLocalizedString("Call this place for you?", comment: "")
+                                           : NSLocalizedString("Call these places for you?", comment: ""))
+                .font(.headline)
+        }
         ForEach(Array(preview.places.enumerated()), id: \.offset) { index, place in
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: "\(index + 1). \(place.callee.name)")
@@ -1317,6 +1346,50 @@ struct VoiceView: View {
         Text("Numbers from Doddy's place search.")
             .font(.footnote)
             .foregroundStyle(Theme.secondaryText)
+        // A booking (decision 2026-11-12-book-agent): exactly what may be booked, and the one sentence that accepts it.
+        if let first = preview.places.first, let booking = first.booking {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Booking")
+                    .font(.footnote.weight(.semibold))
+                if let service = booking.service { Text(verbatim: service) }
+                if let size = booking.partySize {
+                    Text(String(format: NSLocalizedString("People: %d", comment: "booking party size"), size))
+                }
+                Text(verbatim: "\(booking.date), \(booking.time)")
+                    .monospacedDigit()
+                Text(String(format: NSLocalizedString("Under the name %@", comment: "booking name"), booking.name))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("voice.callTask.booking")
+            callTaskConfirmLine(first.confirmLine)
+        }
+        // An order (decision 2026-11-12-food-by-phone): exactly what may be ordered, where it goes, the cap,
+        // that payment is on delivery or pickup only, and the one sentence that accepts it.
+        if let first = preview.places.first, let order = first.order {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Order")
+                    .font(.footnote.weight(.semibold))
+                ForEach(Array(order.lines.enumerated()), id: \.offset) { _, line in
+                    Text(verbatim: "\(line.quantity) × \(line.name)" + (line.note.map { " (\($0))" } ?? ""))
+                }
+                if let delivery = order.delivery {
+                    Text(verbatim: "\(delivery.street)\(delivery.apartment.map { " m. \($0)" } ?? ""), \(delivery.postcode) \(delivery.city)")
+                    Text(String(format: NSLocalizedString("Courier's phone: %@", comment: "order delivery phone"), delivery.phone))
+                        .monospacedDigit()
+                } else {
+                    Text("Pickup at the restaurant")
+                }
+                Text(String(format: NSLocalizedString("Under the name %@", comment: "booking name"), order.name))
+                Text(String(format: NSLocalizedString("Doddy accepts no total above %lld zł", comment: "order cap"), order.maxTotalPln))
+                Text("Payment on delivery or at pickup. Doddy never gives card details.")
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("voice.callTask.order")
+            callTaskConfirmLine(first.confirmLine)
+        }
         if let first = preview.places.first {
             Text("Doddy says:")
                 .font(.footnote.weight(.semibold))
@@ -1334,7 +1407,8 @@ struct VoiceView: View {
             }
         }
         if preview.places.count > 1 {
-            Text("One at a time, in this order. Doddy stops at the first yes.")
+            Text(preview.isBooking ? NSLocalizedString("One at a time, in this order. Doddy stops at the first booking.", comment: "")
+                                   : NSLocalizedString("One at a time, in this order. Doddy stops at the first yes.", comment: ""))
                 .font(.footnote)
         }
         Text(preview.textResult ? NSLocalizedString("You get a notification and a text with the answer.", comment: "")
@@ -1344,6 +1418,22 @@ struct VoiceView: View {
         if preview.callableNow == false {
             Label("It's outside calling hours (8:00 to 23:00), so the first call can't start now.", systemImage: "moon")
                 .font(.footnote)
+        }
+    }
+
+    /// "Doddy accepts only with:" and the one sentence the server built; shared by a booking and an order.
+    @ViewBuilder
+    private func callTaskConfirmLine(_ confirm: String?) -> some View {
+        if let confirm {
+            Text("Doddy accepts only with:")
+                .font(.footnote.weight(.semibold))
+            Text(verbatim: confirm)
+                .font(.body)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(10)
+                .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 10))
+                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.separator, lineWidth: 1))
+                .accessibilityIdentifier("voice.callTask.confirmLine")
         }
     }
 
@@ -1705,17 +1795,85 @@ struct VoiceView: View {
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
     }
 
+    /// The id of the empty view after the last line and card, which a new line scrolls to.
+    private static let conversationEnd = "conversationEnd"
+
     /// ADR-564: a file Claude is making. The link opens in Safari: Quick Look shows the deck,
     /// document or PDF, with Share to save or send it; until it's ready the page says so.
-    private func documentCard(_ document: RunDocument) -> some View {
+    /// `about` is what the person asked for (`ThreadDelivery.madeFileBrief`), so the card says what the file is.
+    /// A file still being made is one quiet line with nothing to tap (owner, 13 Nov 2026): it arrives in Messages.
+    /// In a private conversation nothing reaches Messages, so the line keeps Open: this is the only place the file is.
+    @ViewBuilder
+    private func documentCard(_ document: RunDocument, about: String?, keptInMessages: Bool) -> some View {
+        if MadeFileStart.showsNote(document) {
+            fileBeingMadeRow(document, about: about, keptInMessages: keptInMessages)
+        } else {
+            readyDocumentCard(document, about: about, keptInMessages: keptInMessages)
+        }
+    }
+
+    /// No spinner: the conversation doesn't hear when the file is done, so the row says only where it will be.
+    private func fileBeingMadeRow(_ document: RunDocument, about: String?, keptInMessages: Bool) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "doc.badge.clock")
+                .font(.title3)
+                .foregroundStyle(Theme.secondaryText)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 4) {
+                MadeFileIslandNote.title(document.kind)
+                    .font(.headline)
+                let name = MadeFileStart.shownName(document)
+                if !name.isEmpty {
+                    Text(verbatim: name)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+                if let about {
+                    Text(about)
+                        .font(.callout)
+                        .lineLimit(3)
+                }
+                if keptInMessages {
+                    Text("It lands in Messages when it's ready.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                } else {
+                    Text("This conversation is private, so it isn't kept in Messages. Open it here when it's ready.")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                    Button {
+                        UIApplication.shared.open(document.url)
+                    } label: {
+                        Label("Open", systemImage: "arrow.up.forward.app")
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .accessibilityIdentifier("voice.openDocument")
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+        .accessibilityElement(children: keptInMessages ? .combine : .contain)
+        .accessibilityIdentifier("voice.fileBeingMade")
+    }
+
+    private func readyDocumentCard(_ document: RunDocument, about: String?, keptInMessages: Bool) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Label("\(document.label) from Claude", systemImage: "doc.richtext")
                 .font(.headline)
             Text(document.name)
                 .foregroundStyle(Theme.secondaryText)
-            Text("It takes a minute or two. It also lands in Messages and in Files when it's ready.")
-                .font(.callout)
-                .foregroundStyle(Theme.secondaryText)
+            if let about {
+                Text(about)
+                    .font(.callout)
+                    .lineLimit(4)
+            }
+            if keptInMessages {
+                Text("It's in Messages and in Files too.")
+                    .font(.callout)
+                    .foregroundStyle(Theme.secondaryText)
+            }
             Button {
                 UIApplication.shared.open(document.url)
             } label: {
@@ -1725,6 +1883,29 @@ struct VoiceView: View {
             .accessibilityIdentifier("voice.openDocument")
             MadeFileShareButton(link: document.url)
                 .buttonStyle(SecondaryButtonStyle())
+        }
+        .padding(16)
+        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
+    }
+
+    /// find_flights (decision 2026-11-11-flights-kiwi-search-duffel-booking): each flight opens on Kiwi.com,
+    /// where the user books and pays. Doddy books nothing here.
+    private func flightsCard(_ links: [RunLink]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label("Flights on Kiwi.com", systemImage: "airplane")
+                .font(.headline)
+            Text("Prices from Kiwi.com just now; they can change. You book and pay on Kiwi.com.")
+                .font(.callout)
+                .foregroundStyle(Theme.secondaryText)
+            ForEach(links, id: \.url) { link in
+                Button {
+                    UIApplication.shared.open(link.url)
+                } label: {
+                    Label(link.title, systemImage: "arrow.up.forward.app")
+                }
+                .buttonStyle(SecondaryButtonStyle())
+                .accessibilityIdentifier("voice.openFlight")
+            }
         }
         .padding(16)
         .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18))
@@ -2115,7 +2296,8 @@ struct VoiceView: View {
         switch controller.phase {
         case .idle, .connecting: NSLocalizedString("Connecting…", comment: "")
         case .listening: NSLocalizedString("Listening", comment: "")
-        case .thinking: NSLocalizedString("Working on it…", comment: "")
+        // Named after the tool that runs, "still" after a while (decision 2026-11-12-voice-turn-feedback).
+        case .thinking: controller.turnFeedback.statusText
         case .speaking: NSLocalizedString("Speaking", comment: "")
         case .ended: NSLocalizedString("Conversation ended", comment: "")
         case .microphoneDenied: NSLocalizedString("Microphone is off", comment: "")

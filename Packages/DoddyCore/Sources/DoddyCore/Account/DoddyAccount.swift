@@ -333,12 +333,32 @@ public enum DoddyAccountLink {
         struct Detail: Decodable { let code: String; let message: String? }
     }
 
-    /// Doddy's backend (`POST /v1/account/link-device`): the account takes over the data of the iPhone
-    /// whose device token (`ds1.…`) is sent as proof.
+    /// Doddy's backend, in two steps, so this iPhone takes part each time (a copied device token alone
+    /// links nothing):
+    /// 1. this iPhone's own device session (`ds1.…`) asks for a one-time code that works for five
+    ///    minutes (`POST /v1/account/link-device/start`);
+    /// 2. the account takes over this iPhone's data with that code (`POST /v1/account/link-device`).
+    /// Safe to run again after a lost answer: a new code, and a done link answers `linked`.
     public static func linkBackend(server: URL, account: DoddyAccountSession, deviceToken: String, transport: any HTTPTransport) async -> Outcome {
-        guard deviceToken.hasPrefix("ds1."), deviceToken.count <= 2_048,
-              let body = try? JSONSerialization.data(withJSONObject: ["deviceToken": deviceToken])
-        else { return .nothingToLink }
+        guard deviceToken.hasPrefix("ds1."), deviceToken.count <= 2_048 else { return .nothingToLink }
+        let start = HTTPRequest(
+            method: "POST", url: server.appendingPathComponent("v1/account/link-device/start"),
+            headers: ["authorization": "Bearer \(deviceToken)", "accept": "application/json"], body: nil)
+        guard let started = try? await transport.send(start) else { return .retryLater }
+        let startError = try? JSONDecoder().decode(ServerError.self, from: started.body)
+        switch (started.status, startError?.error.code) {
+        case (200, _): break
+        // The device sign-in isn't valid any more, or it is a guest's, which keeps nothing: nothing to bring.
+        case (401, _), (403, _): return .nothingToLink
+        case (503, "live_not_configured"): return .notSetUp
+        // Also a server from before the two steps (404): ask again once it has them.
+        default: return .retryLater
+        }
+        struct Started: Decodable { let linkCode: String }
+        guard let code = (try? JSONDecoder().decode(Started.self, from: started.body))?.linkCode,
+              code.count == 43, code.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") }),
+              let body = try? JSONSerialization.data(withJSONObject: ["linkCode": code])
+        else { return .retryLater }
         let request = HTTPRequest(
             method: "POST", url: server.appendingPathComponent("v1/account/link-device"),
             headers: ["authorization": account.authorization, "content-type": "application/json", "accept": "application/json"],
@@ -348,7 +368,41 @@ public enum DoddyAccountLink {
         switch (response.status, error?.error.code) {
         case (200, _): return .linked
         case (409, "account_conflict"): return .conflict(message: error?.error.message ?? "This iPhone's earlier data belongs to another Doddy account, so it wasn't added.")
-        case (401, _): return .nothingToLink
+        case (503, "live_not_configured"): return .notSetUp
+        // 401 here is the account's own token, not the earlier data: refreshed before the next try. A used
+        // or late code (400) gets a new one next time.
+        default: return .retryLater
+        }
+    }
+
+    public enum UndoOutcome: Equatable, Sendable {
+        /// This iPhone's earlier data is its own again (also when it wasn't linked).
+        case unlinked
+        /// The link is more than a day old: the iPhone can't take the data back any more. The server's words.
+        case tooLate(message: String)
+        /// The device sign-in isn't valid any more, or it is a guest's: nothing this iPhone can undo.
+        case notAllowed
+        /// This server has no Doddy accounts set up.
+        case notSetUp
+        /// Offline, busy or broken: try again later. Nothing changed.
+        case retryLater
+    }
+
+    /// Doddy's backend (`POST /v1/account/link-device/undo`): within a day of a link, this iPhone's own
+    /// device token takes its earlier data back from the account. No screen offers it yet.
+    public static func undoBackendLink(server: URL, deviceToken: String, transport: any HTTPTransport) async -> UndoOutcome {
+        guard deviceToken.hasPrefix("ds1."), deviceToken.count <= 2_048 else { return .notAllowed }
+        let request = HTTPRequest(
+            method: "POST", url: server.appendingPathComponent("v1/account/link-device/undo"),
+            headers: ["authorization": "Bearer \(deviceToken)", "accept": "application/json"], body: nil)
+        guard let response = try? await transport.send(request) else { return .retryLater }
+        struct Reply: Decodable { let linked: Bool }
+        let error = try? JSONDecoder().decode(ServerError.self, from: response.body)
+        switch (response.status, error?.error.code) {
+        case (200, _):
+            return (try? JSONDecoder().decode(Reply.self, from: response.body))?.linked == false ? .unlinked : .retryLater
+        case (409, "account_conflict"): return .tooLate(message: error?.error.message ?? "This iPhone's earlier data was linked more than a day ago, so it can't be taken back here.")
+        case (401, _), (403, _): return .notAllowed
         case (503, "live_not_configured"): return .notSetUp
         default: return .retryLater
         }

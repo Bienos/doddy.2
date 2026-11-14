@@ -33,8 +33,47 @@ const basicAuth = (c: Pick<TwilioConfig, "accountSid" | "authToken">) =>
 const SID = { message: /^(SM|MM)[0-9a-f]{32}$/i, call: /^CA[0-9a-f]{32}$/i } as const;
 export const isTwilioSid = (kind: keyof typeof SID, sid: string) => SID[kind].test(sid);
 
+/**
+ * Deletes a message or call record from one Twilio account's logs (ADR-753), with that account's own credentials:
+ * the main account's for texts and for calls to and from Doddy's number, the task-call account's (TWILIO_TASK_*,
+ * possibly a subaccount) for the calls Doddy places for the user. Twilio answers 20009 until a record is final, so
+ * that is "retry"; a record Twilio no longer has counts as deleted. Twilio says deleted message bodies can stay in
+ * its backups for up to 30 days.
+ */
+export class TwilioRecordDeleter implements RecordDeleter {
+  private readonly auth: string;
+
+  constructor(
+    private readonly accountSid: string,
+    authToken: string,
+    private readonly timeoutMs = 10_000,
+    private readonly apiBase = "https://api.twilio.com",
+  ) {
+    this.auth = basicAuth({ accountSid, authToken });
+  }
+
+  async deleteRecord(kind: "message" | "call", sid: string): Promise<DeleteOutcome> {
+    if (!isTwilioSid(kind, sid)) return { kind: "failed", code: "bad_sid" };
+    const path = kind === "message" ? "Messages" : "Calls";
+    let res: Response;
+    try {
+      res = await fetch(`${this.apiBase}/2010-04-01/Accounts/${this.accountSid}/${path}/${sid}.json`, {
+        method: "DELETE", headers: { authorization: this.auth }, signal: AbortSignal.timeout(this.timeoutMs),
+      });
+    } catch {
+      return { kind: "retry", code: "twilio_network" };
+    }
+    if (res.status === 204 || res.status === 404) return { kind: "deleted" };
+    const json = (await res.json().catch(() => ({}))) as TwilioError;
+    const code = `twilio_${json.code ?? res.status}`;
+    if (json.code === 20009 || res.status === 429 || res.status >= 500) return { kind: "retry", code };
+    return { kind: "failed", code };
+  }
+}
+
 export class TwilioClient implements SmsSender, PhoneVerifier, RecordDeleter {
   private readonly auth: string;
+  private readonly records: TwilioRecordDeleter;
 
   constructor(
     private readonly config: TwilioConfig,
@@ -43,6 +82,7 @@ export class TwilioClient implements SmsSender, PhoneVerifier, RecordDeleter {
     private readonly apiBase = "https://api.twilio.com",
   ) {
     this.auth = basicAuth(config);
+    this.records = new TwilioRecordDeleter(config.accountSid, config.authToken, timeoutMs, apiBase);
   }
 
   private post(url: string, form: Record<string, string>): Promise<Response> {
@@ -102,27 +142,9 @@ export class TwilioClient implements SmsSender, PhoneVerifier, RecordDeleter {
     });
   }
 
-  /**
-   * Deletes a message or call record from Twilio's logs (ADR-753). Twilio answers 20009 until a
-   * record is final, so that is "retry"; a record Twilio no longer has counts as deleted. Twilio
-   * says deleted message bodies can stay in its backups for up to 30 days.
-   */
-  async deleteRecord(kind: "message" | "call", sid: string): Promise<DeleteOutcome> {
-    if (!isTwilioSid(kind, sid)) return { kind: "failed", code: "bad_sid" };
-    const path = kind === "message" ? "Messages" : "Calls";
-    let res: Response;
-    try {
-      res = await fetch(`${this.apiBase}/2010-04-01/Accounts/${this.config.accountSid}/${path}/${sid}.json`, {
-        method: "DELETE", headers: { authorization: this.auth }, signal: AbortSignal.timeout(this.timeoutMs),
-      });
-    } catch {
-      return { kind: "retry", code: "twilio_network" };
-    }
-    if (res.status === 204 || res.status === 404) return { kind: "deleted" };
-    const json = (await res.json().catch(() => ({}))) as TwilioError;
-    const code = `twilio_${json.code ?? res.status}`;
-    if (json.code === 20009 || res.status === 429 || res.status >= 500) return { kind: "retry", code };
-    return { kind: "failed", code };
+  /** Deletes a record of the main account from Twilio's logs (ADR-753); see TwilioRecordDeleter. */
+  deleteRecord(kind: "message" | "call", sid: string): Promise<DeleteOutcome> {
+    return this.records.deleteRecord(kind, sid);
   }
 
   async start(toE164: string): Promise<void> {

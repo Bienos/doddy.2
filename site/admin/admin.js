@@ -65,6 +65,12 @@ async function api(url, options = {}) {
     signOut("That password didn't work. Try again.");
     throw new Error("unauthorized");
   }
+  if (res.status === 429) {
+    // Too many sign-in attempts from this connection (api/_admin-guard.js); the server says for how long.
+    const minutes = Math.max(1, Math.ceil((Number(res.headers.get("Retry-After")) || 900) / 60));
+    signOut(`Too many tries from this connection. Try again in ${plural(minutes, "minute", "minutes")}.`);
+    throw new Error("unauthorized");
+  }
   return res;
 }
 

@@ -16,7 +16,7 @@ final class ProfileExportTests: XCTestCase {
     private var style: StyleSnapshot {
         StyleSnapshot(
             personality: .playful,
-            voice: VoiceStyle(voice: .wiktor, speed: .slower, expressiveness: .expressive),
+            voice: VoiceStyle(speed: .slower, expressiveness: .expressive),
             language: .polish,
             nickname: "  Pat  ",
             profileUsedInVoice: true,
@@ -42,7 +42,7 @@ final class ProfileExportTests: XCTestCase {
         let settings = try XCTUnwrap(object["settings"] as? [String: Any])
         XCTAssertEqual(settings["humour"] as? String, "playful")
         XCTAssertEqual(settings["energy"] as? String, "lively")
-        XCTAssertEqual(settings["voice"] as? String, "wiktor")
+        XCTAssertNil(settings["voice"], "Doddy has one voice (decision 2026-11-12-one-voice): there is no choice to export")
         XCTAssertEqual(settings["speakingSpeed"] as? String, "slower")
         XCTAssertEqual(settings["expressiveness"] as? String, "expressive")
         XCTAssertEqual(settings["conversationLanguage"] as? String, "polish")
@@ -58,7 +58,7 @@ final class ProfileExportTests: XCTestCase {
         XCTAssertEqual((object["profile"] as? [Any])?.count, 0)
         let settings = try XCTUnwrap(object["settings"] as? [String: Any])
         XCTAssertNil(settings["nickname"])
-        XCTAssertEqual(settings["voice"] as? String, "wiktor")
+        XCTAssertEqual(settings["speakingSpeed"] as? String, "slower")
 
         let text = ProfileExport.plainText(.empty, style: defaults, exportedAt: exportedAt)
         XCTAssertTrue(text.contains("Nothing saved."))
@@ -71,7 +71,8 @@ final class ProfileExportTests: XCTestCase {
         XCTAssertTrue(text.contains("What to call you: Patryk"))
         XCTAssertTrue(text.contains("Current focus: Moving flat in November\n  Saved 2025-09-27T19:06:40Z after your review (revision 2)"))
         XCTAssertTrue(text.contains("Used in voice conversations: yes"))
-        XCTAssertTrue(text.contains("Voice: wiktor"))
+        XCTAssertFalse(text.contains("Voice: "))
+        XCTAssertTrue(text.contains("Speed: slower"))
         XCTAssertTrue(text.contains("What Doddy calls you: Pat"))
         XCTAssertTrue(text.contains("Remember recent conversations: no"))
         XCTAssertLessThan(text.range(of: "What to call you")!.lowerBound, text.range(of: "Current focus")!.lowerBound)

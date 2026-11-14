@@ -124,7 +124,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     const ok = await createCase(w, u.h);
     assert.equal(ok.statusCode, 201);
     const p = ok.json();
-    assert.match(p.openingLine, /^Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny\. Chciałbym zapytać: Czy laptop z serwisu jest gotowy\?$/);
+    assert.match(p.openingLine, /^Dzień dobry, tu Doddy, wirtualny asystent\. Dzwonię w imieniu Anny\. Chciałbym zapytać: Czy laptop z serwisu jest gotowy\?$/);
     assert.equal(p.recordsAudio, false);
     assert.equal(p.notice, "off");
     assert.equal(p.maxDurationSecs, 240);
@@ -257,7 +257,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     const d = await dialled(w, u.h);
     await status(w, d, "ringing", 1);
     await answer(w, d);
-    await say(w, d, "outbound_track", "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny.");
+    await say(w, d, "outbound_track", "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny.");
     await say(w, d, "inbound_track", "Tak, laptop jest gotowy, można odebrać jutro od dziesiątej.");
     const live = (await api(w, "GET", `/v1/call-cases/${d.caseId}/live`, u.h)).json();
     assert.equal(live.attempt.phase, "talking", "the phase still shows");
@@ -266,7 +266,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     await status(w, d, "completed", 3, "41");
     const reply = "Tak, laptop jest gotowy, można odebrać jutro od dziesiątej.";
     w.voice.conversations.set("conv_2", conversation(d.attemptId, "conv_2", [
-      ["agent", "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?"],
+      ["agent", "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?"],
       ["user", reply], ["agent", "Dziękuję bardzo, do widzenia."]]) as never);
     assert.equal((await postCall(w, w.voice.conversations.get("conv_2")!)).statusCode, 200);
     assert.equal(await processResults(w.ctx), 1);
@@ -287,7 +287,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     const d = await dialled(w, u.h);
     await status(w, d, "ringing", 1);
     await answer(w, d);
-    await say(w, d, "outbound_track", "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny.");
+    await say(w, d, "outbound_track", "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny.");
     await say(w, d, "inbound_track", "Tak, laptop jest gotowy, można odebrać jutro od dziesiątej.");
     const live = (await api(w, "GET", `/v1/call-cases/${d.caseId}/live`, u.h)).json();
     assert.equal(live.attempt.phase, "talking");
@@ -298,7 +298,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     await status(w, d, "completed", 3, "41");
     const reply = "Tak, laptop jest gotowy, można odebrać jutro od dziesiątej.";
     w.voice.conversations.set("conv_1", conversation(d.attemptId, "conv_1", [
-      ["agent", "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?"],
+      ["agent", "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?"],
       ["user", reply], ["agent", "Dziękuję bardzo, do widzenia."]]) as never);
     assert.equal((await postCall(w, w.voice.conversations.get("conv_1")!)).statusCode, 200);
     assert.equal(await processResults(w.ctx), 1);
@@ -378,7 +378,9 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     assert.equal(y.telephony.created.length, 1);
     await y.app.close();
 
-    // Same destination from two users within 15 minutes: the second is refused.
+    // Same destination from two users within 15 minutes: the second is refused. The user hears only that this number
+    // has been called enough for now, never that someone else called it: every per-number limit gives one code, and
+    // which one it was stays in the server's log.
     const x = await world();
     const a = await user(x);
     const b = await user(x);
@@ -387,7 +389,12 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     const q = (await createCase(x, b.h, { callee: { name: "Serwis", phone: dest, source: "typed" } })).json();
     const refused = await api(x, "POST", `/v1/call-cases/${q.caseId}/approve`, b.h, { digest: q.digest });
     assert.equal(refused.statusCode, 409);
-    assert.deepEqual([refused.json().error, refused.json().gate], ["gate_refused", "limit_destination_gap"]);
+    assert.deepEqual([refused.json().error, refused.json().gate], ["gate_refused", "limit_destination"]);
+    assert.doesNotMatch(refused.body, /gap|day|recent/);
+    const { rows: stored } = await db.query("SELECT error_code FROM call_attempts WHERE id = $1", [refused.json().attemptId]);
+    assert.deepEqual(stored, [{ error_code: "limit_destination" }]);
+    assert.ok(x.logs.some((l) => l.msg === "task call limit" && (l.extra as { limit?: string }).limit === "limit_destination_gap"),
+      "the operator still sees which limit it was");
     assert.equal(x.telephony.created.length, 1);
     await x.app.close();
   });
@@ -541,7 +548,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     await answer(w, d2);
     await status(w, d2, "completed", 3, "30");
     assert.equal((await postCall(w, conversation(d2.attemptId, "conv_ok", [
-      ["agent", "Dzień dobry, mówi Doddy, asystent AI, dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?"],
+      ["agent", "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?"],
       ["user", "Tak, jest gotowy."]]))).statusCode, 200);
     await processResults(w.ctx);
     const again = await api(w, "POST", `/v1/call-cases/${d2.caseId}/approve`, u.h, { digest: d2.preview.digest, at });

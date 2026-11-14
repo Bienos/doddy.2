@@ -577,7 +577,9 @@ enum CallCaseText {
         case "one_live_call": NSLocalizedString("Another call by Doddy is still on. One at a time. Nothing was dialled.", comment: "")
         case "limit_user_hour", "limit_user_day", "limit_global_day":
             NSLocalizedString("That's the limit for calls by Doddy for now. Nothing was dialled. Try again later.", comment: "")
-        case "limit_destination_user_day", "limit_destination_day", "limit_destination_gap":
+        // The server now sends only "limit_destination" (never which per-number limit, which could say someone else
+        // called it); the older codes stay for servers not yet updated.
+        case "limit_destination", "limit_destination_user_day", "limit_destination_day", "limit_destination_gap":
             NSLocalizedString("Doddy has called this number enough for now. Nothing was dialled. Try again later.", comment: "")
         case "no_verified_phone": NSLocalizedString("Verify your phone number first, in Settings → Notifications and texts.", comment: "")
         default: NSLocalizedString("The server stopped this call before dialling. Nothing was dialled.", comment: "")
