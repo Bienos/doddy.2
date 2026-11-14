@@ -17,6 +17,7 @@ import { z } from "zod";
 import { hmacSha256, sameBytes } from "../crypto.js";
 import { inTransaction, type Db } from "../db.js";
 import { canPush, enqueue, SmsDailyLimit, smsNumber } from "../outbox.js";
+import { quotableWords } from "../untrustedWords.js";
 import { purgePayload } from "./cases.js";
 import type { TaskCallContext } from "./context.js";
 import { callFits } from "./hours.js";
@@ -268,28 +269,15 @@ async function finishTask(c: Q, ctx: TaskCallContext, task: TaskRow, outcome: Ta
   return true;
 }
 
-/** A link, a bare web address on a common domain, or an e-mail address, as a transcript may write one. */
-const WEB_ADDRESS = new RegExp([
-  // Up to the next space, leaving the sentence's own punctuation after it.
-  String.raw`(?:https?:\/\/|www\.)\S*[^\s.,;:!?)”"'»]`,
-  String.raw`[\p{L}\p{N}._%+-]+@[\p{L}\p{N}.-]+\.\p{L}{2,}`,
-  String.raw`(?<![\p{L}\p{N}.@-])[\p{L}\p{N}][\p{L}\p{N}-]*(?:\.[\p{L}\p{N}-]+)*\.(?:pl|com|eu|net|org|info|io|me|ly|co|app|biz|online|site|shop|link|xyz)(?![\p{L}\p{N}])(?:\/\S*)?`,
-].join("|"), "giu");
-/** Six or more digits together, or split by single spaces or hyphens (a phone, card, account or code number). */
-const LONG_NUMBER = /\+?\p{Nd}(?:[  -]?\p{Nd}){5,}/gu;
-
 /**
- * The callee's words as a text may quote them: links, web and e-mail addresses and long numbers become "…". The callee
- * is not the user, so nothing they said reaches the user's phone as a tappable link or a number to call or pay.
+ * The result text, in Polish, built from the approved card and the quote cut from the transcript. At most 640 characters.
+ * The place's words are the only words of someone else in it, and they carry no link, address or long number: the text
+ * comes from Doddy's own number, so what is in it looks as if Doddy wrote it.
  */
-export function quotableWords(words: string): string {
-  return words.replace(WEB_ADDRESS, "…").replace(LONG_NUMBER, "…").replace(/\s{2,}/g, " ").trim();
-}
-
-/** The result text, in Polish, built from the approved card and the quote cut from the transcript. At most 640 characters. */
 async function resultText(c: Q, ctx: TaskCallContext, task: TaskRow, outcome: TaskOutcome,
   x: { accountId: string; caseId: string; result: CallResult }): Promise<string> {
-  const placeName = await calleeName(c, ctx, task.account_id, x.caseId);
+  // The name came from a search result or a contact, not from the person: it is made safe like the quote.
+  const placeName = quotableWords(await calleeName(c, ctx, task.account_id, x.caseId)) || "miejsce";
   const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
   const quote = clip(quotableWords(x.result.quote?.text ?? ""), 300);
   let text: string;
