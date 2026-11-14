@@ -37,7 +37,7 @@ struct ConnectionsView: View {
                     }
                 }
 
-                Text("Your notes are always on this iPhone. Weather and Wikipedia lookups run on ElevenLabs, are always on, and don't work when Home's voice is OpenAI.")
+                Text("Your notes are always on this iPhone. Weather and Wikipedia lookups run on ElevenLabs and are always on.")
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }
@@ -105,7 +105,7 @@ struct ConnectionCard: View {
                 Text(connection.title)
                     .font(.headline)
                     .foregroundStyle(Theme.ink)
-                Text("“\(info.examples[0])”")
+                Text(verbatim: String(format: NSLocalizedString("“%@”", comment: ""), info.examples[0]))
                     .font(.subheadline.italic())
                     .foregroundStyle(Theme.secondaryText)
                     .multilineTextAlignment(.leading)
@@ -119,7 +119,7 @@ struct ConnectionCard: View {
         .overlay(RoundedRectangle(cornerRadius: 20).strokeBorder(Theme.separator, lineWidth: 1))
         .contentShape(RoundedRectangle(cornerRadius: 20))
         .accessibilityElement(children: .combine)
-        .accessibilityHint("Shows what Doddy can do with \(connection.title).")
+        .accessibilityHint(String(format: NSLocalizedString("Shows what Doddy can do with %@.", comment: ""), connection.title))
     }
 }
 
@@ -188,7 +188,7 @@ struct ConnectionSheet: View {
 
                     section(NSLocalizedString("Say something like", comment: "")) {
                         ForEach(info.examples, id: \.self) { example in
-                            Text("“\(example)”")
+                            Text(verbatim: String(format: NSLocalizedString("“%@”", comment: ""), example))
                                 .font(.body.italic())
                         }
                     }
@@ -243,7 +243,7 @@ struct ConnectionSheet: View {
             Button {
                 Task { await turnOn() }
             } label: {
-                Label("Turn on \(title)", systemImage: "checkmark")
+                Label(String(format: NSLocalizedString("Turn on %@", comment: ""), title), systemImage: "checkmark")
             }
             .buttonStyle(PrimaryButtonStyle())
             .disabled(isWorking)
@@ -258,7 +258,7 @@ struct ConnectionSheet: View {
             .buttonStyle(SecondaryButtonStyle(tint: Theme.error))
             .accessibilityIdentifier("connection.turnOff")
         case .blocked:
-            Text("Doddy is switched on, but iPhone doesn't allow \(title) for Doddy any more.")
+            Text(verbatim: String(format: NSLocalizedString("Doddy is switched on, but iPhone doesn't allow %@ for Doddy any more.", comment: ""), title))
                 .foregroundStyle(Theme.secondaryText)
             Button("Open iPhone Settings") {
                 if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
@@ -395,7 +395,7 @@ struct ConnectionInfo {
                     NSLocalizedString("Make the presentation after you tap Make presentation, as a PowerPoint file that Keynote opens", comment: ""),
                     NSLocalizedString("Open the share sheet, so you pick Keynote, Files or someone to send it to", comment: ""),
                 ],
-                leavesPhone: NSLocalizedString("What you ask for and the slides Doddy writes are part of the conversation, which runs on ElevenLabs, or OpenAI if you chose it.", comment: ""),
+                leavesPhone: NSLocalizedString("What you ask for and the slides Doddy writes are part of the conversation, which runs on ElevenLabs.", comment: ""),
                 staysHere: NSLocalizedString("The file is made on this iPhone and kept in Doddy's temporary files until iOS clears them; save it in Keynote or Files to keep it. Doddy can't see what you do with it and never sends it.", comment: ""))
         case .steps:
             // ADR-568: Motion & Fitness, read only. Not Health.
@@ -403,7 +403,7 @@ struct ConnectionInfo {
                 symbol: "figure.walk",
                 examples: [NSLocalizedString("How many steps today?", comment: ""), NSLocalizedString("How far did I walk yesterday?", comment: "")],
                 canDo: [
-                    NSLocalizedString("Read one day's steps, walking distance and floors climbed, after you say yes or tap", comment: ""),
+                    NSLocalizedString("Read one day's steps, walking distance and floors climbed, when you ask", comment: ""),
                     NSLocalizedString("Today and the six days before it, which is what your iPhone keeps", comment: ""),
                 ],
                 leavesPhone: NSLocalizedString("That day's numbers, when Doddy uses them in a conversation.", comment: ""),
@@ -414,7 +414,7 @@ struct ConnectionInfo {
                 symbol: "photo.on.rectangle",
                 examples: [NSLocalizedString("How many photos did I take on Saturday?", comment: ""), NSLocalizedString("Show me my photos from last week", comment: "")],
                 canDo: [
-                    NSLocalizedString("Count the photos and videos you took on a day or over up to a month, after you say yes or tap", comment: ""),
+                    NSLocalizedString("Count the photos and videos you took on a day or over up to a month, when you ask", comment: ""),
                     NSLocalizedString("Show the newest of them on your screen, with a button to open Photos", comment: ""),
                 ],
                 leavesPhone: NSLocalizedString("Only how many there are and when the first and last were taken, when Doddy uses them in a conversation. Never the pictures or where they were taken.", comment: ""),
@@ -428,8 +428,10 @@ struct ConnectionInfo {
                     NSLocalizedString("Open Doddy's camera, after you tap Open camera", comment: ""),
                     NSLocalizedString("Put the photo you keep into a new note, with its text read on this iPhone, for you to check and save", comment: ""),
                 ],
-                leavesPhone: NSLocalizedString("Nothing from the camera. Only the words you save in the note can reach Doddy's voice, like any note.", comment: ""),
-                staysHere: NSLocalizedString("The photo is kept with the note on this iPhone, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note.", comment: ""))
+                // 12 Nov 2026: Home's + › Take a photo sends the photo with a question in Messages (MESSAGES_PHOTOS.md),
+                // and a list's barcode scan sends the barcode's number (ADR-631).
+                leavesPhone: NSLocalizedString("A photo you take to ask Doddy about goes, when you tap Send in Messages, to Doddy's server and Claude (Anthropic) for the answer; neither Doddy's server nor this iPhone keeps it. For a barcode you scan, only its number goes to Open Food Facts. From a photo note, only the words you save can reach Doddy's voice, like any note.", comment: ""),
+                staysHere: NSLocalizedString("A photo for a note is kept with the note on this iPhone, never sent anywhere and never saved to your photo library. You can also tap Take a photo when writing a note.", comment: ""))
         case .home:
             // Needs the HomeKit entitlement (a paid Apple team): HOME_COMMANDS_STATUS.md.
             ConnectionInfo(

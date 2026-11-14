@@ -131,8 +131,8 @@ extension Capability {
         switch self {
         case .memoryStorage: NSLocalizedString("Saving memories", comment: "")
         case .memoryRecall: NSLocalizedString("Finding memories", comment: "")
-        case .cloudAssistant: NSLocalizedString("AI answers", comment: "")
-        case .textAssistant: NSLocalizedString("Typed AI questions", comment: "")
+        case .cloudAssistant: NSLocalizedString("Online answers", comment: "")
+        case .textAssistant: NSLocalizedString("Typed questions", comment: "")
         case .voiceInput: NSLocalizedString("Listening (voice)", comment: "")
         case .voiceOutput: NSLocalizedString("Speaking (voice)", comment: "")
         case .reminders: NSLocalizedString("Reminders", comment: "")
@@ -157,6 +157,7 @@ extension MemorySource {
         case .importedLegacyUnknown: NSLocalizedString("Imported, date unknown", comment: "")
         case .importedFile: NSLocalizedString("Imported from a file", comment: "")
         case .notedByDoddy: NSLocalizedString("Noted by Doddy, saved by you", comment: "")
+        case .conversationRecap: NSLocalizedString("Recap of a conversation, kept by your setting", comment: "")
         case .sampleFixture: NSLocalizedString("Sample", comment: "")
         }
     }

@@ -23,7 +23,7 @@ export interface PushSender {
   send(target: PushTarget, alert: { title: string; body: string }, messageId: string, data?: PushData): Promise<SendOutcome>;
 }
 
-export interface PushData { kind: "call-result" }
+export interface PushData { kind: "call-result" | "errand-result" | "file-ready" | "radar" | "deal-watch" }
 
 export interface SmsSender {
   send(toE164: string, body: string): Promise<SendOutcome>;

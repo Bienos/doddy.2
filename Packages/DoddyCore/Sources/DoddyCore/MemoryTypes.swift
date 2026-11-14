@@ -12,13 +12,18 @@ public enum MemorySource: String, Codable, CaseIterable, Sendable {
     /// A note Doddy took on a phone call that the user then saved
     /// with a tap (ADR-753, owner decision 2026-10-18). Doddy's words, the user's confirmation.
     case notedByDoddy = "noted_by_doddy"
+    /// A recap of a conversation, what was discussed and not the words (decision
+    /// 2026-11-09-conversation-recaps). Saved without a tap only because the person turned on "Remember
+    /// what we talked about": that switch is their explicit yes (DOD-06).
+    case conversationRecap = "conversation_recap"
     case sampleFixture = "sample_fixture"
 
     /// Sources a user can create through an explicit capture action.
     public var isExplicitCapture: Bool {
         switch self {
         // A note Doddy wrote counts: it becomes a memory only through the user's Save tap.
-        case .explicitText, .explicitVoice, .sharedContent, .notedByDoddy: true
+        // A recap counts: it is saved only while the person's own "Remember what we talked about" is on.
+        case .explicitText, .explicitVoice, .sharedContent, .notedByDoddy, .conversationRecap: true
         case .importedLegacyUnknown, .importedFile, .sampleFixture: false
         }
     }

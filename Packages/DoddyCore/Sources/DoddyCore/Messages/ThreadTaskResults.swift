@@ -10,9 +10,12 @@ public enum ThreadTaskResults {
     public static let limit = 3
 
     /// Done or failed tasks (a cancelled one was the person's own choice and needs no card), newest few, oldest first.
-    public static func shown(_ errands: [StoredErrand], now: Date) -> [StoredErrand] {
-        errands
+    /// A task already delivered into the thread as Doddy's message (`ThreadDelivery`, same id) has no second card.
+    public static func shown(_ errands: [StoredErrand], now: Date, thread: [ThreadMessage] = []) -> [StoredErrand] {
+        let delivered = Set(thread.map(\.id))
+        return errands
             .filter { ($0.state == .done || $0.state == .failed) && now.timeIntervalSince($0.updatedAt) <= window }
+            .filter { !delivered.contains($0.id) }
             .sorted { $0.updatedAt > $1.updatedAt }
             .prefix(limit)
             .sorted { $0.updatedAt < $1.updatedAt }

@@ -436,6 +436,13 @@ enum IslandSceneChecks {
         let still = state(.speaking, beat: nil).islandScene(isStale: false)
         expect(still.beatWaveScale == 1, "no beat draws the big island's waves as before")
         expect(still.aurora.count == IslandScene.auroraColumnCount, "21 lines while he talks")
+        expect(IslandScene.auroraColumnCount == 21, "the small island has Home's 21 fine lines (owner, 10 Nov 2026)")
+        // Owner, 9 Nov 2026: one smiling face for the whole conversation, whatever pose the island shows.
+        for shown: IslandPose in [.listening, .wave, .shrug, .kneelingInspect, .reachingHigh, .tiptoe, .yawnStretch] {
+            expect(shown.facePose == .listening && shown.faceAssetName == "WholeDoddy_face_listening",
+                   "\(shown.rawValue) shows the smiling listening face")
+        }
+        expect(IslandPose.shush.facePose == .shush, "muted keeps the shush face")
         expect(state(.speaking, beat: 3, muted: true).islandScene(isStale: false).aurora.isEmpty, "no lines while muted")
         expect(state(.speaking, beat: 3).islandScene(isStale: true).aurora.isEmpty, "no lines when stale")
         expect(state(.thinking, beat: nil).islandScene(isStale: false).aurora.isEmpty, "no lines while working")

@@ -38,6 +38,7 @@ export const defaultPolicy = (over: Partial<PaymentsPolicy> = {}): PaymentsPolic
   userDaily: 1_000_000,
   serviceDaily: 5_000_000,
   allowedHosts: [],
+  queryHosts: [],
   ...over,
 });
 
@@ -107,7 +108,19 @@ export async function startPay(
 
 type Call = Parameters<PayRig["call"]>[2];
 export const enable = (r: PayRig, token = USER_A) => r.call("PUT", "/v1/payments/switch", { token, body: { enabled: true } });
-export const prepare = (r: PayRig, url = SHOP, o: Call = {}) => r.call("POST", "/v1/payments/prepare", { ...o, body: { url } });
+/** Step 1: the card for the page. Nothing is read from it. */
+export const pageCard = (r: PayRig, url = SHOP, o: Call = {}) => r.call("POST", "/v1/payments/page", { ...o, body: { url } });
+/** Step 2 alone: read the price with a read approval (normally the one step 1 gave). */
+export const readPrice = (r: PayRig, approvalId: string, url = SHOP, o: Call = {}) => r.call("POST", "/v1/payments/prepare", { ...o, body: { url, approvalId } });
+/**
+ * Steps 1 and 2 as the app makes them after the person's yes on the page card: the card, then the price with the
+ * card's read approval. A refusal at step 1 is returned as it is (nothing was read).
+ */
+export async function prepare(r: PayRig, url = SHOP, o: Call = {}) {
+  const card = await pageCard(r, url, o);
+  if (card.status !== 200) return card;
+  return readPrice(r, card.body.approvalId, url, o);
+}
 export const pay = (r: PayRig, approvalId: string, url = SHOP, o: Call = {}, confirmAmount?: string) =>
   r.call("POST", "/v1/payments/pay", { ...o, body: { url, approvalId, ...(confirmAmount !== undefined ? { confirmAmount } : {}) } });
 export const status = (r: PayRig, token = USER_A) => r.call("GET", "/v1/payments", { token });

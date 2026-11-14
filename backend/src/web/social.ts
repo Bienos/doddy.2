@@ -1,4 +1,4 @@
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import type { IncomingMessage } from "node:http";
 import { SupabaseSessionVerifier, type FetchJson } from "../auth.js";
 import { clientAddress, clientKey } from "../clientAddress.js";
@@ -11,8 +11,16 @@ import { readCookie, type WebAuth, type WebSessionContext } from "./sessions.js"
 /**
  * Apple and Google sign-in for Doddy Web (ADR-818), through Supabase Auth.
  *
- * A Doddy account is still the iPhone's (ADR-563); Apple or Google is a second way into the same
- * account, and only after the person links it from a place they are already signed in:
+ * Decision 2026-11-09-web-sign-in-same-account: a person's Apple or Google sign-in IS their Doddy
+ * account on every screen. The iPhone signs in to Supabase and this server calls that user's account
+ * its own id (or, when it took over an earlier iPhone's data, that data's id: `account_links`); the
+ * web opens the same one, with nothing to link first. A first sign-in with no account yet makes one
+ * with that same id, so a person who later uses the iPhone with it meets the same account.
+ *
+ * Linking is for joining a DIFFERENT Apple or Google user to an account (ADR-818): an iPhone that
+ * signs in with Apple while the person's web sign-in is Google. A Doddy account is still the iPhone's
+ * (ADR-563); Apple or Google is a second way into the same account, and a different one is linked from
+ * a place the person is already signed in:
  *  - from the iPhone: Settings › Doddy on the web › Link Google (or Apple). The phone gets a
  *    one-time ticket (`POST /v1/web/oauth/tickets`) and opens it in the system sign-in sheet;
  *  - from a browser already signed in with a code: Settings › Sign-in methods › Link.
@@ -25,7 +33,7 @@ import { readCookie, type WebAuth, type WebSessionContext } from "./sessions.js"
  *    can't be confirmed for the sender's account.
  *  - A browser links or unlinks only within LINK_REAUTH_MS of signing in, so a stolen or forgotten
  *    browser session can't add a way back in that outlives signing it out.
- * A Google or Apple account linked to nobody can make a new Doddy account on the web (owner, 3 Nov
+ * A Google or Apple account that is nobody's yet can make a new Doddy account on the web (owner, 3 Nov
  * 2026: "it must be able to create account in web as well"), but only after the person says so on
  * the sign-in page ("Create my Doddy account", `POST /v1/web/signup`); nothing is made by the
  * redirect alone, and with DODDY_WEB_SIGNUP=off it opens nothing. Accounts are never merged behind
@@ -306,7 +314,10 @@ export class SocialSignIn {
       this.log({ event: "web_identity_link", provider, result: linked });
       return back(linked);
     }
-    const userId = await this.store.webIdentityOwner(identityId);
+    // Decision 2026-11-09-web-sign-in-same-account: the account a Supabase user signs in to is the one
+    // the iPhone uses for that same user. Linked on purpose (or made on the web) first; else the one
+    // that took over an iPhone's earlier data; else none yet.
+    const userId = (await this.store.webIdentityOwner(identityId)) ?? (await this.store.linkedUserOf(identityId));
     if (!userId) {
       if (!this.signupOpen) {
         this.log({ event: "web_social_signin", provider, result: "not_linked" });
@@ -349,7 +360,14 @@ export class SocialSignIn {
     const pending = await this.store.consumePendingSignup(stateHash(`signup:${code}`), now.getTime());
     const provider = pending ? this.provider(pending.provider) : null;
     if (!pending || !provider) throw new AppError("not_found", { message: "That sign-in has expired. Choose Continue with Google or Apple again." });
-    const account = await this.store.createWebAccount({ userId: randomUUID(), identityId: pending.identity_id, provider, now: now.getTime() });
+    // The iPhone took this Supabase user's account over an earlier iPhone's data since the person was
+    // sent back: that account is the one to open, so nothing is made here. Signing in again opens it.
+    if (await this.store.linkedUserOf(pending.identity_id)) {
+      throw new AppError("not_found", { message: "That sign-in has expired. Choose Continue with Google or Apple again." });
+    }
+    // The new account's id is the Supabase user's own: the id the iPhone uses for the same sign-in
+    // (LinkedAccountVerifier), so the web and the phone meet in one account without linking.
+    const account = await this.store.createWebAccount({ userId: pending.identity_id, identityId: pending.identity_id, provider, now: now.getTime() });
     if (!account) throw new AppError("not_found");
     const opened = await this.web.openFor(account.userId, req, now);
     this.log({ event: "web_signup", provider, result: account.created ? "created" : "existing" });

@@ -20,6 +20,30 @@ public enum VoiceConnectionMode: Equatable, Sendable {
     }
 }
 
+/// Which ElevenLabs agent a conversation talks to (decision 2026-11-12-translator-agent). Translating gets
+/// its own agent, `voice-agent/translator/`, which has no tools at all (owner, 12 Nov 2026: the agent must not
+/// use any function while translating); everything else talks to the main agent, as before.
+public enum VoiceAgentKind: String, Equatable, Sendable {
+    case main
+    case translator
+
+    /// The body of the token request: none for the main agent (as before 12 Nov 2026, so older servers and
+    /// builds agree), `{"agent":"translator"}` for the translator agent. A server that predates the field
+    /// ignores it and answers with the main agent's token, which still translates (the app refuses every
+    /// tool while it does), so a new app and an old server never fail.
+    public var requestBody: Data? {
+        switch self {
+        case .main: return nil
+        case .translator: return Data(#"{"agent":"translator"}"#.utf8)
+        }
+    }
+
+    /// The agent a conversation needs: the translator agent for a translator start, the main one otherwise.
+    public static func forTranslatorStart(_ isTranslatorStart: Bool) -> VoiceAgentKind {
+        isTranslatorStart ? .translator : .main
+    }
+}
+
 public enum VoiceTokenError: Error, Equatable, Sendable {
     case sessionExpired
     case rateLimited(retryAfterSeconds: Int?)

@@ -5,13 +5,13 @@ import { dispatchDue, enqueue } from "../src/outbox.js";
 import { dbSkip, freshDb, testApp, testCipher } from "./helpers.js";
 
 // The worker queues a finished call's push under `call-result:<attempt>`; the dispatcher must hand the
-// sender a kind for it (so a tap can open the recap) and nothing for any other push.
+// sender a kind for it (so a tap can open the recap); an errand's push opens Messages.
 describe("a call's push carries its kind (real Postgres)", { skip: dbSkip }, () => {
   let db: Db;
   before(async () => { db = await freshDb(); });
   after(async () => { await db?.end(); });
 
-  test("call-result gets a kind, an errand's push gets none, and neither carries words or ids", async () => {
+  test("call-result and an errand's push get their kinds, and neither carries words or ids", async () => {
     const base = await testApp(db, {});
     const made = (await base.app.inject({ method: "POST", url: "/v1/accounts" })).json() as { accountId: string; deviceToken: string };
     const token = await base.app.inject({
@@ -22,12 +22,15 @@ describe("a call's push carries its kind (real Postgres)", { skip: dbSkip }, () 
 
     const due = new Date(Date.now() - 3600_000);
     await enqueue(db, made.accountId, ["push"], "Doddy skończył rozmowę. Odpowiedź czeka w aplikacji.", due, "call-result:attempt-1", { cipher: testCipher });
-    await enqueue(db, made.accountId, ["push"], "Gotowe. Wynik sprawy czeka w aplikacji.", due, "errand-result:e-1", { cipher: testCipher });
+    await enqueue(db, made.accountId, ["push"], "Gotowe. Wynik czeka w Wiadomościach.", due, "errand-result:e-1", { cipher: testCipher });
+    // The radar worker's key (news/radar.ts): a tap opens On my radar (decision 2026-11-13-radar-fixes).
+    await enqueue(db, made.accountId, ["push"], "Na radarze · CPK: „Budowa CPK ruszyła” (TVN24)", due, "radar:alert-1:hit-1", { cipher: testCipher });
     await dispatchDue(db, { push: base.push, cipher: testCipher });
 
     const byBody = new Map(base.push.sent.map((p) => [p.body, p.data]));
     assert.deepEqual(byBody.get("Doddy skończył rozmowę. Odpowiedź czeka w aplikacji."), { kind: "call-result" });
-    assert.equal(byBody.get("Gotowe. Wynik sprawy czeka w aplikacji."), undefined);
-    assert.equal(base.push.sent.length, 2);
+    assert.deepEqual(byBody.get("Gotowe. Wynik czeka w Wiadomościach."), { kind: "errand-result" });
+    assert.deepEqual(byBody.get("Na radarze · CPK: „Budowa CPK ruszyła” (TVN24)"), { kind: "radar" });
+    assert.equal(base.push.sent.length, 3);
   });
 });

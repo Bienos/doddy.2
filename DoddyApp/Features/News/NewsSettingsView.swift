@@ -45,7 +45,7 @@ struct NewsSettingsView: View {
                 StatusRow(title: "Next", value: next)
             }
         } footer: {
-            Text("Once a day, in your current time zone (\(TimeZone.current.identifier)).")
+            Text(verbatim: String(format: NSLocalizedString("Once a day, in your current time zone (%@).", comment: ""), TimeZone.current.identifier))
         }
 
         Section("Send it as") {
@@ -57,7 +57,7 @@ struct NewsSettingsView: View {
                 .foregroundStyle(Theme.secondaryText)
         }
 
-        Section("Topics") {
+        Section {
             ForEach(model.catalog) { topic in
                 Button {
                     model.toggleCatalog(topic.id)
@@ -72,6 +72,12 @@ struct NewsSettingsView: View {
                 }
                 .accessibilityAddTraits(model.selectedCatalog.contains(topic.id) ? .isSelected : [])
             }
+        } header: {
+            Text("Topics")
+        } footer: {
+            // Owner's review, 12 Nov 2026: "Wiadomości dnia" is a second set of topics. Said plainly until the two are
+            // one list (proposal: decision 2026-11-13-radar-fixes).
+            Text("These topics are only for the daily message. What you follow in On my radar (Home › •••) is a separate list.")
         }
 
         Section {
@@ -131,13 +137,15 @@ struct NewsSettingsView: View {
             Section("Recent") {
                 ForEach(model.digests) { digest in
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("\(DateText.full(digest.createdDate))\(digest.aiWritten ? " · written by AI" : "") · \(digest.deliveryText)")
+                        Text(verbatim: DateText.full(digest.createdDate)
+                             + (digest.aiWritten ? NSLocalizedString(" · written by AI", comment: "") : "")
+                             + " · \(digest.deliveryText)")
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                         ForEach(digest.items, id: \.url) { item in
                             if let url = URL(string: item.url) {
                                 Link(destination: url) {
-                                    Text("\(item.line) ") + Text(item.source).foregroundStyle(Theme.secondaryText)
+                                    Text(verbatim: item.line + " ") + Text(item.source).foregroundStyle(Theme.secondaryText)
                                 }
                             }
                         }

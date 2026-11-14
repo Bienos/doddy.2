@@ -1,5 +1,8 @@
 window.DODDY_I18N = {
   " Doddy starts on iPhone; we'll tell you if Android comes later.": "Doddy se pokreće na iPhoneu; javit ćemo ti ako Android dođe kasnije.",
+  "Allow": "Dopusti",
+  "Analytics choice": "Izbor za analitiku",
+  "Can we count your visit with Google Analytics? It sets cookies. Nothing loads from Google unless you say yes, and you can change your mind at the bottom of any page.": "Smijemo li tvoj posjet izbrojiti pomoću Google Analyticsa? On postavlja kolačiće. S Googlea se ništa ne učitava dok ne kažeš da, a predomisliti se možeš na dnu svake stranice.",
   "Close menu": "Zatvori izbornik",
   "Copy the link from the address bar": "Kopiraj poveznicu iz adresne trake",
   "Doddy isn't on this iPhone yet. Join early access above to hear when it's ready.": "Doddy još nije na ovom iPhoneu. Pridruži se ranom pristupu iznad da saznaš kad bude spreman.",
@@ -8,6 +11,7 @@ window.DODDY_I18N = {
   "Long day.": "Dug dan.",
   "Menu": "Izbornik",
   "Nearly done for the day.": "Skoro gotov za danas.",
+  "No thanks": "Ne, hvala",
   "Pick one.": "Odaberi jednu.",
   "Sending…": "Šaljem…",
   "Still here.": "Još sam tu.",

@@ -29,7 +29,8 @@ struct ActivityView: View {
     var body: some View {
         List {
             Section {
-                Text("Everything Doddy looked up or did for you in voice conversations, kept on this iPhone for \(ActivityLog.keepDays) days.")
+                Text(verbatim: String(format: NSLocalizedString("Everything Doddy looked up or did for you in voice conversations, kept on this iPhone for %lld days.", comment: ""),
+                                     ActivityLog.keepDays))
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
                 if let problem = activity.problem ?? checkProblem {
@@ -174,7 +175,7 @@ struct ActivityView: View {
             .accessibilityElement(children: .combine)
             ForEach(steps) { entry in
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text("\(entry.plan?.step ?? 0).")
+                    Text(verbatim: "\(entry.plan?.step ?? 0).")
                         .font(.footnote.monospacedDigit())
                         .foregroundStyle(Theme.secondaryText)
                     row(entry)

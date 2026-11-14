@@ -137,61 +137,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy öffnet die Kamera nur, wenn du auf „Foto aufnehmen“ oder „Kamera öffnen“ tippst. Das Foto, das du behältst, kommt in eine Notiz auf diesem iPhone und sein Text wird hier gelesen; es wird nie irgendwohin gesendet oder in deiner Fotomediathek gespeichert."
+            "value": "Doddy öffnet die Kamera nur, wenn du auf „Foto aufnehmen“, „Kamera öffnen“ oder „Barcode scannen“ tippst. Ein Foto für eine Notiz bleibt in dieser Notiz auf diesem iPhone, und sein Text wird hier gelesen. Bei einem Barcode geht nur seine Nummer an Open Food Facts, und das Foto wird nicht behalten. Ein Foto, das du aufnimmst, um Doddy danach zu fragen, geht, wenn du in „Nachrichten“ auf „Senden“ tippst, an Doddys Server und an Claude von Anthropic, der die Antwort schreibt; weder Doddys Server noch dieses iPhone behält es. Doddy speichert nie ein Foto in deiner Fotomediathek."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy opens the camera only when you tap Take a photo or Open camera. The photo you keep goes into a note on this iPhone and its text is read here; it is never sent anywhere or saved to your photo library."
+            "value": "Doddy opens the camera only when you tap Take a photo, Open camera or Scan a barcode. A photo for a note stays in that note on this iPhone, and its text is read here. For a barcode, only its number goes to Open Food Facts, and the photo isn't kept. A photo you take to ask Doddy about goes, when you tap Send in Messages, to Doddy's server and Anthropic's Claude for the answer; neither Doddy's server nor this iPhone keeps it. Doddy never saves a photo to your photo library."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy abre la cámara solo cuando tocas Hacer una foto o Abrir cámara. La foto que conservas va a una nota en este iPhone y su texto se lee aquí; nunca se envía a ningún sitio ni se guarda en tu fototeca."
+            "value": "Doddy abre la cámara solo cuando tocas Hacer una foto, Abrir cámara o Escanear un código de barras. Una foto para una nota se queda en esa nota en este iPhone y su texto se lee aquí. De un código de barras, solo su número va a Open Food Facts, y la foto no se guarda. Una foto que haces para preguntarle a Doddy va, cuando tocas Enviar en Mensajes, al servidor de Doddy y a Claude, de Anthropic, que escribe la respuesta; ni el servidor de Doddy ni este iPhone la guardan. Doddy nunca guarda una foto en tu fototeca."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy ouvre l’appareil photo seulement quand tu touches Prendre une photo ou Ouvrir l’appareil photo. La photo que tu gardes va dans une note sur cet iPhone et son texte est lu ici ; elle n’est jamais envoyée nulle part ni enregistrée dans ta photothèque."
+            "value": "Doddy ouvre l’appareil photo seulement quand tu touches Prendre une photo, Ouvrir l’appareil photo ou Scanner un code-barres. Une photo pour une note reste dans cette note sur cet iPhone, et son texte est lu ici. Pour un code-barres, seul son numéro va à Open Food Facts, et la photo n’est pas gardée. Une photo que tu prends pour interroger Doddy part, quand tu touches Envoyer dans Messages, vers le serveur de Doddy et Claude d’Anthropic, qui écrit la réponse ; ni le serveur de Doddy ni cet iPhone ne la gardent. Doddy n’enregistre jamais de photo dans ta photothèque."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy otvara kameru samo kad dodirneš Snimi fotografiju ili Otvori kameru. Fotografija koju zadržiš ide u bilješku na ovom iPhoneu, a njezin se tekst čita ovdje; nikad se nikamo ne šalje niti sprema u tvoju knjižnicu fotografija."
+            "value": "Doddy otvara kameru samo kad dodirneš Snimi fotografiju, Otvori kameru ili Skeniraj crtični kod. Fotografija za bilješku ostaje u toj bilješci na ovom iPhoneu, a njezin se tekst čita ovdje. Od crtičnog koda u Open Food Facts ide samo njegov broj, a fotografija se ne čuva. Fotografija koju snimiš da bi pitao Doddyja o njoj ide, kad dodirneš Pošalji u Porukama, na Doddyjev poslužitelj i Claudeu tvrtke Anthropic, koji piše odgovor; ne čuva je ni Doddyjev poslužitelj ni ovaj iPhone. Doddy nikad ne sprema fotografije u tvoju knjižnicu fotografija."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy apre la fotocamera solo quando tocchi Scatta una foto o Apri fotocamera. La foto che tieni finisce in una nota su questo iPhone e il suo testo viene letto qui; non viene mai inviata da nessuna parte né salvata nella tua libreria foto."
+            "value": "Doddy apre la fotocamera solo quando tocchi Scatta una foto, Apri fotocamera o Scansiona un codice a barre. Una foto per una nota resta in quella nota su questo iPhone e il suo testo viene letto qui. Di un codice a barre, solo il numero va a Open Food Facts, e la foto non viene conservata. Una foto che scatti per chiedere a Doddy va, quando tocchi Invia in Messaggi, al server di Doddy e a Claude di Anthropic, che scrive la risposta; né il server di Doddy né questo iPhone la conservano. Doddy non salva mai una foto nella tua libreria foto."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddyがカメラを開くのは、「写真を撮る」または「カメラを開く」をタップしたときだけです。残した写真はこのiPhone上のメモに入り、その文字はここで読み取られます。どこにも送信されず、写真ライブラリにも保存されません。"
+            "value": "Doddyがカメラを開くのは、「写真を撮る」「カメラを開く」「バーコードをスキャン」をタップしたときだけです。メモ用の写真はこのiPhone上のそのメモに残り、その文字はここで読み取られます。バーコードの場合、Open Food Factsに送られるのは番号だけで、写真は保存されません。Doddyに尋ねるために撮った写真は、「メッセージ」で「送信」をタップすると、Doddyのサーバーと、回答を書くAnthropicのClaudeに送られます。Doddyのサーバーもこの iPhoneも、その写真を保存しません。Doddyが写真ライブラリに写真を保存することはありません。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy otwiera aparat tylko wtedy, gdy stukniesz Zrób zdjęcie albo Otwórz aparat. Zdjęcie, które zachowasz, trafia do notatki na tym iPhonie, a jego tekst jest odczytywany tutaj; nigdy nie jest nigdzie wysyłane ani zapisywane w Twojej bibliotece zdjęć."
+            "value": "Doddy otwiera aparat tylko wtedy, gdy stukniesz Zrób zdjęcie, Otwórz aparat albo Zeskanuj kod kreskowy. Zdjęcie do notatki zostaje w tej notatce na tym iPhonie, a jego tekst jest odczytywany tutaj. Przy kodzie kreskowym do Open Food Facts trafia tylko jego numer, a zdjęcie nie jest zachowywane. Zdjęcie zrobione po to, żeby zapytać o nie Doddy'ego, trafia po stuknięciu Wyślij w Wiadomościach na serwer Doddy'ego i do Claude (Anthropic), który pisze odpowiedź; nie przechowuje go ani serwer Doddy'ego, ani ten iPhone. Doddy nigdy nie zapisuje zdjęć w Twojej bibliotece zdjęć."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O Doddy abre a câmera só quando você toca em Tirar foto ou Abrir câmera. A foto que você mantém vai para uma nota neste iPhone e o texto dela é lido aqui; ela nunca é enviada a lugar nenhum nem salva na sua fototeca."
+            "value": "O Doddy abre a câmera só quando você toca em Tirar foto, Abrir câmera ou Escanear código de barras. Uma foto para uma nota fica nessa nota neste iPhone e o texto dela é lido aqui. De um código de barras, só o número vai para o Open Food Facts, e a foto não é guardada. Uma foto que você tira para perguntar ao Doddy vai, quando você toca em Enviar em Mensagens, para o servidor do Doddy e para o Claude, da Anthropic, que escreve a resposta; nem o servidor do Doddy nem este iPhone a guardam. O Doddy nunca salva uma foto na sua fototeca."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "只有在你轻点“拍照”或“打开相机”时，Doddy 才会打开相机。你保留的照片会放进这台 iPhone 上的一条笔记，其中的文字在这里读取；照片绝不会发送到任何地方，也不会存入你的照片图库。"
+            "value": "只有在你轻点“拍照”、“打开相机”或“扫描条形码”时，Doddy 才会打开相机。用于笔记的照片会保留在这台 iPhone 上的那条笔记中，其中的文字在这里读取。扫描条形码时，只有条形码号码会发送给 Open Food Facts，照片不会被保留。你为了问 Doddy 而拍的照片，在你于“信息”中轻点“发送”后，会发送到 Doddy 的服务器和撰写回答的 Anthropic 的 Claude；Doddy 的服务器和这台 iPhone 都不会保留它。Doddy 绝不会把照片存入你的照片图库。"
           }
         }
       }
@@ -332,61 +332,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy liest deine Trainings, Herzfrequenz, Ruheherzfrequenz, Herzfrequenzvariabilität (HRV), deinen Schlaf und VO2max aus Health, um sie dir auf seinem Apple-Health-Bildschirm zu zeigen. Nur eine kurze Wochenzusammenfassung verlässt dieses iPhone, und nur wenn du es erlaubst: in „Nachrichten“, wenn du sie selbst sendest, oder an Doddys Stimme, wenn du fragst und zustimmst. Doddy speichert nichts davon und schreibt nichts in Health. Schalte das unter Einstellungen, Verbindungen, Apple Health oder in der Health-App aus."
+            "value": "Doddy liest deine Trainings, Herzfrequenz, Ruheherzfrequenz, Herzfrequenzvariabilität (HRV), deinen Schlaf und VO2max aus Health, um sie dir auf seinem Apple-Health-Bildschirm zu zeigen. Nur eine kurze Wochenzusammenfassung kann dieses iPhone verlassen, und nur wenn du es erlaubst. In „Nachrichten“ geht sie, wenn du auf „Senden“ tippst, an Doddys Server und an Claude von Anthropic, der die Antwort schreibt; sie bleibt in „Nachrichten“, mit einer Kopie des Textes auf Doddys Server für Doddy im Web, bis du sie löschst. In einem Sprachgespräch geht sie, wenn du fragst und zustimmst, an ElevenLabs, das Doddys Stimme betreibt, und wird mit diesem Gespräch gespeichert. Doddy schreibt nichts in Health. Schalte das unter Einstellungen, Verbindungen, Apple Health oder in der Health-App aus."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week leaves this iPhone, and only when you allow it: in Messages when you send it yourself, or to Doddy's voice when you ask and say yes. Doddy keeps none of it and writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app."
+            "value": "Doddy reads your workouts, heart rate, resting heart rate, heart rate variability, sleep and VO2 max from Health to show them to you on its Apple Health screen. Only a short summary of the week can leave this iPhone, and only when you allow it. In Messages, when you tap Send, it goes to Doddy's server and Anthropic's Claude for the answer, and it stays in Messages, with a copy of the text on Doddy's server for Doddy on the web, until you delete it. In a voice conversation, when you ask and say yes, it goes to ElevenLabs, which runs Doddy's voice, and is kept with that conversation. Doddy writes nothing to Health. Turn this off in Settings, Connections, Apple Health, or in the Health app."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy lee tus entrenamientos, frecuencia cardiaca, frecuencia cardiaca en reposo, variabilidad de la frecuencia cardiaca (VFC), sueño y VO2 máx. de Salud para mostrártelos en su pantalla de Apple Health. Solo un breve resumen de la semana sale de este iPhone, y solo si lo permites: en Mensajes cuando tú mismo lo envías, o a la voz de Doddy cuando preguntas y dices que sí. Doddy no guarda nada y no escribe nada en Salud. Desactívalo en Ajustes, Conexiones, Apple Health, o en la app Salud."
+            "value": "Doddy lee tus entrenamientos, frecuencia cardiaca, frecuencia cardiaca en reposo, variabilidad de la frecuencia cardiaca (VFC), sueño y VO2 máx. de Salud para mostrártelos en su pantalla de Apple Health. Solo un breve resumen de la semana puede salir de este iPhone, y solo si lo permites. En Mensajes, cuando tocas Enviar, va al servidor de Doddy y a Claude, de Anthropic, que escribe la respuesta, y se queda en Mensajes, con una copia del texto en el servidor de Doddy para Doddy en la web, hasta que lo borres. En una conversación de voz, cuando preguntas y dices que sí, va a ElevenLabs, que ejecuta la voz de Doddy, y se guarda con esa conversación. Doddy no escribe nada en Salud. Desactívalo en Ajustes, Conexiones, Apple Health, o en la app Salud."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy lit tes entraînements, ta fréquence cardiaque, ta fréquence cardiaque au repos, ta variabilité de la fréquence cardiaque (VFC), ton sommeil et ta VO2 max dans Santé pour te les montrer sur son écran Apple Health. Seul un court résumé de la semaine quitte cet iPhone, et seulement si tu le permets : dans Messages quand tu l’envoies toi-même, ou à la voix de Doddy quand tu demandes et dis oui. Doddy n’en garde rien et n’écrit rien dans Santé. Désactive ceci dans Réglages, Connexions, Apple Health, ou dans l’app Santé."
+            "value": "Doddy lit tes entraînements, ta fréquence cardiaque, ta fréquence cardiaque au repos, ta variabilité de la fréquence cardiaque (VFC), ton sommeil et ta VO2 max dans Santé pour te les montrer sur son écran Apple Health. Seul un court résumé de la semaine peut quitter cet iPhone, et seulement si tu le permets. Dans Messages, quand tu touches Envoyer, il part vers le serveur de Doddy et Claude d’Anthropic, qui écrit la réponse, et il reste dans Messages, avec une copie du texte sur le serveur de Doddy pour Doddy sur le web, jusqu’à ce que tu le supprimes. Dans une conversation vocale, quand tu demandes et dis oui, il va à ElevenLabs, qui fait tourner la voix de Doddy, et il est gardé avec cette conversation. Doddy n’écrit rien dans Santé. Désactive ceci dans Réglages, Connexions, Apple Health, ou dans l’app Santé."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy čita tvoje treninge, puls, puls u mirovanju, varijabilnost srčanog ritma (HRV), san i VO2 max iz aplikacije Zdravlje da ti ih prikaže na svom zaslonu Apple Health. S ovog iPhonea izlazi samo kratak tjedni sažetak, i to samo kad to dopustiš: u Porukama kad ga sam pošalješ ili Doddyjevu glasu kad pitaš i pristaneš. Doddy ništa ne čuva i ništa ne upisuje u Zdravlje. Isključi to u Postavkama, Veze, Apple Health, ili u aplikaciji Zdravlje."
+            "value": "Doddy čita tvoje treninge, puls, puls u mirovanju, varijabilnost srčanog ritma (HRV), san i VO2 max iz aplikacije Zdravlje da ti ih prikaže na svom zaslonu Apple Health. S ovog iPhonea može izaći samo kratak tjedni sažetak, i to samo kad to dopustiš. U Porukama, kad dodirneš Pošalji, ide na Doddyjev poslužitelj i Claudeu tvrtke Anthropic, koji piše odgovor, i ostaje u Porukama, s kopijom teksta na Doddyjevu poslužitelju za Doddyja na webu, dok ga ne izbrišeš. U glasovnom razgovoru, kad pitaš i pristaneš, ide u ElevenLabs, koji pokreće Doddyjev glas, i čuva se s tim razgovorom. Doddy ništa ne upisuje u Zdravlje. Isključi to u Postavkama, Veze, Apple Health, ili u aplikaciji Zdravlje."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy legge i tuoi allenamenti, la frequenza cardiaca, la frequenza cardiaca a riposo, la variabilità della frequenza cardiaca (HRV), il sonno e il VO2 max da Salute per mostrarteli nella sua schermata Apple Health. Da questo iPhone esce solo un breve riepilogo della settimana, e solo se lo permetti: in Messaggi quando lo invii tu, o alla voce di Doddy quando chiedi e dici di sì. Doddy non conserva nulla e non scrive nulla in Salute. Disattivalo in Impostazioni, Collegamenti, Apple Health, o nell’app Salute."
+            "value": "Doddy legge i tuoi allenamenti, la frequenza cardiaca, la frequenza cardiaca a riposo, la variabilità della frequenza cardiaca (HRV), il sonno e il VO2 max da Salute per mostrarteli nella sua schermata Apple Health. Da questo iPhone può uscire solo un breve riepilogo della settimana, e solo se lo permetti. In Messaggi, quando tocchi Invia, va al server di Doddy e a Claude di Anthropic, che scrive la risposta, e resta in Messaggi, con una copia del testo sul server di Doddy per Doddy sul web, finché non lo elimini. In una conversazione vocale, quando chiedi e dici di sì, va a ElevenLabs, che fa funzionare la voce di Doddy, e viene conservato con quella conversazione. Doddy non scrive nulla in Salute. Disattivalo in Impostazioni, Collegamenti, Apple Health, o nell’app Salute."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddyは、ワークアウト、心拍数、安静時心拍数、心拍変動（HRV）、睡眠、VO2最大値をヘルスケアから読み取り、Doddyの「Apple Health」画面に表示します。このiPhoneの外に出るのは週の短いまとめだけで、それもあなたが許可したときだけです。メッセージであなた自身が送るとき、またはあなたが尋ねて「はい」と答えたときにDoddyの音声に渡されます。Doddyは何も保存せず、ヘルスケアに何も書き込みません。オフにするには、設定の「連携」の「Apple Health」か、ヘルスケアAppを使ってください。"
+            "value": "Doddyは、ワークアウト、心拍数、安静時心拍数、心拍変動（HRV）、睡眠、VO2最大値をヘルスケアから読み取り、Doddyの「Apple Health」画面に表示します。このiPhoneの外に出られるのは週の短いまとめだけで、それもあなたが許可したときだけです。「メッセージ」で「送信」をタップすると、Doddyのサーバーと、回答を書くAnthropicのClaudeに送られ、あなたが削除するまで「メッセージ」に残ります。そのテキストのコピーは、Web版Doddyで表示するためにDoddyのサーバーにも保存されます。音声会話では、あなたが尋ねて「はい」と答えると、Doddyの声を動かすElevenLabsに送られ、その会話とともに保存されます。Doddyはヘルスケアに何も書き込みません。オフにするには、設定の「連携」の「Apple Health」か、ヘルスケアAppを使ってください。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy odczytuje z aplikacji Zdrowie Twoje treningi, tętno, tętno spoczynkowe, zmienność rytmu serca (HRV), sen i VO2 max, żeby pokazać je na swoim ekranie Apple Health. Z tego iPhone’a wychodzi tylko krótkie podsumowanie tygodnia i tylko za Twoją zgodą: w Wiadomościach, gdy sam je wyślesz, albo do głosu Doddy’ego, gdy zapytasz i się zgodzisz. Doddy niczego nie zachowuje i nic nie zapisuje w Zdrowiu. Wyłączysz to w Ustawieniach, w sekcji Połączenia, Apple Health, albo w aplikacji Zdrowie."
+            "value": "Doddy odczytuje z aplikacji Zdrowie Twoje treningi, tętno, tętno spoczynkowe, zmienność rytmu serca (HRV), sen i VO2 max, żeby pokazać je na swoim ekranie Apple Health. Z tego iPhone'a może wyjść tylko krótkie podsumowanie tygodnia i tylko za Twoją zgodą. W Wiadomościach, po stuknięciu Wyślij, trafia na serwer Doddy'ego i do Claude (Anthropic), który pisze odpowiedź. Wiadomość zostaje w Wiadomościach, a kopia jej tekstu na serwerze Doddy'ego, żebyś mógł ją czytać w przeglądarce, dopóki jej nie usuniesz. W rozmowie głosowej, gdy zapytasz i się zgodzisz, podsumowanie trafia do ElevenLabs, które obsługuje głos Doddy'ego, i jest przechowywane razem z tą rozmową. Doddy nic nie zapisuje w Zdrowiu. Wyłączysz to w Ustawieniach, w sekcji Połączenia, Apple Health, albo w aplikacji Zdrowie."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O Doddy lê seus treinos, frequência cardíaca, frequência cardíaca em repouso, variabilidade da frequência cardíaca (VFC), sono e VO2 máx. do app Saúde para mostrá-los na tela Apple Health dele. Só um breve resumo da semana sai deste iPhone, e só se você permitir: em Mensagens quando você mesmo o envia, ou para a voz do Doddy quando você pergunta e diz sim. O Doddy não guarda nada e não escreve nada no Saúde. Desative em Ajustes, Conexões, Apple Health, ou no app Saúde."
+            "value": "O Doddy lê seus treinos, frequência cardíaca, frequência cardíaca em repouso, variabilidade da frequência cardíaca (VFC), sono e VO2 máx. do app Saúde para mostrá-los na tela Apple Health dele. Só um breve resumo da semana pode sair deste iPhone, e só se você permitir. Em Mensagens, quando você toca em Enviar, ele vai para o servidor do Doddy e para o Claude, da Anthropic, que escreve a resposta, e fica em Mensagens, com uma cópia do texto no servidor do Doddy para o Doddy na web, até você apagá-lo. Em uma conversa por voz, quando você pergunta e diz sim, ele vai para a ElevenLabs, que executa a voz do Doddy, e é guardado com essa conversa. O Doddy não escreve nada no Saúde. Desative em Ajustes, Conexões, Apple Health, ou no app Saúde."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy 从“健康”读取你的体能训练、心率、静息心率、心率变异性（HRV）、睡眠和最大摄氧量，并在它的“Apple Health”页面上显示给你看。只有本周的简短摘要会离开这部 iPhone，而且只在你允许时：你在“信息”中自己发送时，或你询问并同意后交给 Doddy 的语音。Doddy 不保存任何数据，也不会向“健康”写入任何内容。可在设置的“连接”中的“Apple Health”或在“健康”App 中关闭。"
+            "value": "Doddy 从“健康”读取你的体能训练、心率、静息心率、心率变异性（HRV）、睡眠和最大摄氧量，并在它的“Apple Health”页面上显示给你看。只有本周的简短摘要可以离开这部 iPhone，而且只在你允许时。在“信息”中轻点“发送”后，它会发送到 Doddy 的服务器和撰写回答的 Anthropic 的 Claude，并保留在“信息”中，文字副本也会保存在 Doddy 的服务器上供网页版 Doddy 显示，直到你删除它。在语音对话中，当你询问并同意后，它会发送给运行 Doddy 语音的 ElevenLabs，并随该对话一起保存。Doddy 不会向“健康”写入任何内容。可在设置的“连接”中的“Apple Health”或在“健康”App 中关闭。"
           }
         }
       }
@@ -592,61 +592,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Um dich zu hören, braucht Doddy das Mikrofon. Doddy hört zu, während du mit ihm redest: nachdem du auf Mit Doddy reden getippt hast, oder sobald du Doddy öffnest, wenn du das in den Einstellungen eingeschaltet hast. Deine Stimme in einem Gespräch wird an ElevenLabs gesendet, um es auszuführen, oder an OpenAI, wenn du die Stimme unter Home auf OpenAI umstellst. Ein Sprachmemo, das du zu einer Notiz aufnimmst, bleibt auf diesem iPhone. Eine Aufnahme, die du mit „Aufnehmen“ startest, bleibt ebenfalls auf diesem iPhone, und Doddy zeigt sie die ganze Zeit an, solange er aufnimmt."
+            "value": "Um dich zu hören, braucht Doddy das Mikrofon. Doddy hört zu, während du mit ihm redest: nachdem du auf Mit Doddy reden getippt hast, oder sobald du Doddy öffnest, wenn du das in den Einstellungen eingeschaltet hast. Deine Stimme in einem Gespräch geht an ElevenLabs, das Doddys Stimme betreibt und von jedem Gespräch eine Aufnahme und ein Transkript speichert; im Übersetzermodus gilt das auch für die Stimme der anderen Person. Ein Sprachmemo, das du zu einer Notiz aufnimmst, bleibt auf diesem iPhone. Eine Aufnahme, die du mit „Aufnehmen“ startest, bleibt ebenfalls auf diesem iPhone, und Doddy zeigt sie die ganze Zeit an, solange er aufnimmt."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation is sent to ElevenLabs to run it, or to OpenAI if you switch Home's voice to OpenAI. A voice memo you record on a note stays on this iPhone. A recording you start with Record stays on this iPhone too, and Doddy shows it the whole time it records."
+            "value": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation goes to ElevenLabs, which runs Doddy's voice and keeps a recording and transcript of each conversation; in translator mode, so does the other person's voice. A voice memo you record on a note stays on this iPhone. A recording you start with Record stays on this iPhone too, and Doddy shows it the whole time it records."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Para oírte, Doddy necesita el micrófono. Doddy escucha mientras hablas con él: después de que toques Hablar con Doddy, o en cuanto abres Doddy si lo activaste en Ajustes. Tu voz en una conversación se envía a ElevenLabs para ejecutarla, o a OpenAI si cambias la voz de Inicio a OpenAI. Una nota de voz que grabes en una nota se queda en este iPhone. Una grabación que inicias con Grabar también se queda en este iPhone, y Doddy lo muestra todo el tiempo que graba."
+            "value": "Para oírte, Doddy necesita el micrófono. Doddy escucha mientras hablas con él: después de que toques Hablar con Doddy, o en cuanto abres Doddy si lo activaste en Ajustes. Tu voz en una conversación va a ElevenLabs, que ejecuta la voz de Doddy y guarda una grabación y una transcripción de cada conversación; en el modo traductor, también la voz de la otra persona. Una nota de voz que grabes en una nota se queda en este iPhone. Una grabación que inicias con Grabar también se queda en este iPhone, y Doddy lo muestra todo el tiempo que graba."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Pour t'entendre, Doddy a besoin du micro. Doddy écoute pendant que tu lui parles : après que tu as touché Parler à Doddy, ou dès que tu ouvres Doddy si tu l’as activé dans Réglages. Ta voix en conversation est envoyée à ElevenLabs pour la mener, ou à OpenAI si tu as choisi OpenAI comme voix sur l’Accueil. Un mémo vocal que tu enregistres sur une note reste sur cet iPhone. Un enregistrement que tu lances avec Enregistrer reste lui aussi sur cet iPhone, et Doddy l’indique pendant tout le temps où il enregistre."
+            "value": "Pour t'entendre, Doddy a besoin du micro. Doddy écoute pendant que tu lui parles : après que tu as touché Parler à Doddy, ou dès que tu ouvres Doddy si tu l’as activé dans Réglages. Ta voix en conversation va à ElevenLabs, qui fait tourner la voix de Doddy et garde un enregistrement et une transcription de chaque conversation ; en mode traducteur, la voix de l’autre personne aussi. Un mémo vocal que tu enregistres sur une note reste sur cet iPhone. Un enregistrement que tu lances avec Enregistrer reste lui aussi sur cet iPhone, et Doddy l’indique pendant tout le temps où il enregistre."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Da bi te čuo, Doddy treba mikrofon. Doddy sluša dok razgovaraš s njim: nakon što dodirneš Razgovaraj s Doddyjem ili čim otvoriš Doddyja ako je to uključeno u Postavkama. Tvoj glas u razgovoru šalje se u ElevenLabs radi vođenja razgovora, ili u OpenAI ako na Početnoj prebaciš glas na OpenAI. Glasovna bilješka koju snimiš uz bilješku ostaje na ovom iPhoneu. Snimka koju pokreneš s Snimaj također ostaje na ovom iPhoneu, a Doddy to prikazuje cijelo vrijeme dok snima."
+            "value": "Da bi te čuo, Doddy treba mikrofon. Doddy sluša dok razgovaraš s njim: nakon što dodirneš Razgovaraj s Doddyjem ili čim otvoriš Doddyja ako je to uključeno u Postavkama. Tvoj glas u razgovoru ide u ElevenLabs, koji pokreće Doddyjev glas i čuva snimku i prijepis svakog razgovora; u načinu prevoditelja to vrijedi i za glas druge osobe. Glasovna bilješka koju snimiš uz bilješku ostaje na ovom iPhoneu. Snimka koju pokreneš s Snimaj također ostaje na ovom iPhoneu, a Doddy to prikazuje cijelo vrijeme dok snima."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Per sentirti, Doddy ha bisogno del microfono. Doddy ascolta mentre parli con lui: dopo che tocchi Parla con Doddy, o appena apri Doddy se l'hai attivato in Impostazioni. La tua voce in una conversazione viene inviata a ElevenLabs per condurla, o a OpenAI se in Home passi la voce a OpenAI. Un memo vocale che registri su una nota resta su questo iPhone. Anche una registrazione che avvii con Registra resta su questo iPhone, e Doddy lo mostra per tutto il tempo in cui registra."
+            "value": "Per sentirti, Doddy ha bisogno del microfono. Doddy ascolta mentre parli con lui: dopo che tocchi Parla con Doddy, o appena apri Doddy se l'hai attivato in Impostazioni. La tua voce in una conversazione va a ElevenLabs, che fa funzionare la voce di Doddy e conserva una registrazione e una trascrizione di ogni conversazione; in modalità traduttore, anche la voce dell'altra persona. Un memo vocale che registri su una nota resta su questo iPhone. Anche una registrazione che avvii con Registra resta su questo iPhone, e Doddy lo mostra per tutto il tempo in cui registra."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "あなたの声を聞くために、Doddyはマイクが必要です。Doddyが聞いているのは、あなたがDoddyと話している間です。「Doddyと話す」をタップした後、または設定でオンにしている場合はDoddyを開いてすぐに聞き始めます。会話中のあなたの声は、会話を処理するためにElevenLabsに送られます。ホームの声をOpenAIに切り替えている場合はOpenAIに送られます。メモに録音したボイスメモは、このiPhoneにとどまります。「録音」で始めた録音も、このiPhoneにとどまります。Doddyは録音中、そのことをずっと表示します。"
+            "value": "あなたの声を聞くために、Doddyはマイクが必要です。Doddyが聞いているのは、あなたがDoddyと話している間です。「Doddyと話す」をタップした後、または設定でオンにしている場合はDoddyを開いてすぐに聞き始めます。会話中のあなたの声は、Doddyの声を動かすElevenLabsに送られます。ElevenLabsは各会話の録音と文字起こしを保存します。翻訳モードでは、相手の声も同じように送られます。メモに録音したボイスメモは、このiPhoneにとどまります。「録音」で始めた録音も、このiPhoneにとどまります。Doddyは録音中、そのことをずっと表示します。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Żeby Cię słyszeć, Doddy potrzebuje mikrofonu. Doddy słucha, gdy z nim rozmawiasz: po stuknięciu Porozmawiaj z Doddym albo od razu po otwarciu aplikacji, jeśli włączysz to w Ustawieniach. Twój głos w rozmowie jest wysyłany do ElevenLabs, żeby ją prowadzić, albo do OpenAI, jeśli przełączysz głos na ekranie głównym na OpenAI. Notatka głosowa, którą nagrasz przy notatce, zostaje na tym iPhonie. Nagranie, które zaczniesz przyciskiem Nagrywaj, też zostaje na tym iPhonie, a Doddy pokazuje to przez cały czas nagrywania."
+            "value": "Żeby Cię słyszeć, Doddy potrzebuje mikrofonu. Doddy słucha, gdy z nim rozmawiasz: po stuknięciu Porozmawiaj z Doddym albo od razu po otwarciu aplikacji, jeśli włączysz to w Ustawieniach. Twój głos w rozmowie trafia do ElevenLabs, które obsługuje głos Doddy'ego i przechowuje nagranie oraz zapis każdej rozmowy; w trybie tłumacza trafia tam także głos drugiej osoby. Notatka głosowa, którą nagrasz przy notatce, zostaje na tym iPhonie. Nagranie, które zaczniesz przyciskiem Nagrywaj, też zostaje na tym iPhonie, a Doddy pokazuje to przez cały czas nagrywania."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Para ouvir você, o Doddy precisa do microfone. O Doddy escuta enquanto você fala com ele: depois que você toca em Falar com o Doddy, ou assim que você abre o Doddy, se ativou isso nos Ajustes. Sua voz em uma conversa é enviada à ElevenLabs para executá-la, ou à OpenAI se você trocar a voz do Início para a OpenAI. Uma gravação de voz que você faz em uma nota fica neste iPhone. Uma gravação que você inicia com Gravar também fica neste iPhone, e o Doddy mostra isso o tempo todo enquanto grava."
+            "value": "Para ouvir você, o Doddy precisa do microfone. O Doddy escuta enquanto você fala com ele: depois que você toca em Falar com o Doddy, ou assim que você abre o Doddy, se ativou isso nos Ajustes. Sua voz em uma conversa vai para a ElevenLabs, que executa a voz do Doddy e guarda uma gravação e uma transcrição de cada conversa; no modo tradutor, a voz da outra pessoa também. Uma gravação de voz que você faz em uma nota fica neste iPhone. Uma gravação que você inicia com Gravar também fica neste iPhone, e o Doddy mostra isso o tempo todo enquanto grava."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "为了听到你，Doddy 需要使用麦克风。Doddy 会在你和他聊天时聆听：在你轻点“和 Doddy 聊聊”之后，或者如果你在设置中开启了相应选项，则在你打开 Doddy 时立即开始。你在对话中的语音会发送给 ElevenLabs 来运行对话，如果你在首页把语音切换为 OpenAI，则发送给 OpenAI。你在笔记上录制的语音备忘录只保留在这台 iPhone 上。 你用“录制”开始的录音同样只保留在这台 iPhone 上，Doddy 会在录音期间一直显示这一点。"
+            "value": "为了听到你，Doddy 需要使用麦克风。Doddy 会在你和他聊天时聆听：在你轻点“和 Doddy 聊聊”之后，或者如果你在设置中开启了相应选项，则在你打开 Doddy 时立即开始。你在对话中的语音会发送给运行 Doddy 语音的 ElevenLabs，ElevenLabs 会保存每次对话的录音和文字记录；在翻译模式下，对方的语音也会如此。你在笔记上录制的语音备忘录只保留在这台 iPhone 上。你用“录制”开始的录音同样只保留在这台 iPhone 上，Doddy 会在录音期间一直显示这一点。"
           }
         }
       }
@@ -657,61 +657,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy liest deine Schritte, die Gehstrecke und die gestiegenen Etagen aus „Bewegung & Fitness“ nur, wenn du danach fragst, für einen Tag der letzten sieben. In einem Sprachgespräch gehen diese Zahlen an ElevenLabs, das die Stimme von Doddy betreibt, oder an OpenAI, wenn du die Stimme auf dem Startbildschirm darauf umstellst. Doddy speichert nichts davon. Schalte das unter Einstellungen, Verbindungen aus."
+            "value": "Doddy liest deine Schritte, die Gehstrecke und die gestiegenen Etagen aus „Bewegung & Fitness“ nur, wenn du danach fragst, für einen Tag der letzten sieben. In einem Sprachgespräch gehen diese Zahlen als Teil des Gesprächs an ElevenLabs, das die Stimme von Doddy betreibt. Doddy speichert sie nirgendwo sonst. Schalte das unter Einstellungen, Verbindungen aus."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, or to OpenAI if you switch Home's voice to it. Doddy keeps none of them. Turn this off in Settings, Connections."
+            "value": "Doddy reads your steps, walking distance and floors climbed from Motion & Fitness only when you ask, for one day of the last seven. In a voice conversation those numbers go to ElevenLabs, which runs Doddy's voice, as part of that conversation. Doddy doesn't save them anywhere else. Turn this off in Settings, Connections."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy lee tus pasos, la distancia caminada y los pisos subidos de Movimiento y forma física solo cuando se lo pides, de un día de los últimos siete. En una conversación de voz, esas cifras van a ElevenLabs, que ejecuta la voz de Doddy, o a OpenAI si cambias a ella la voz de Inicio. Doddy no guarda nada de esto. Desactívalo en Ajustes, Conexiones."
+            "value": "Doddy lee tus pasos, la distancia caminada y los pisos subidos de Movimiento y forma física solo cuando se lo pides, de un día de los últimos siete. En una conversación de voz, esas cifras van a ElevenLabs, que ejecuta la voz de Doddy, como parte de esa conversación. Doddy no las guarda en ningún otro sitio. Desactívalo en Ajustes, Conexiones."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy lit tes pas, la distance parcourue à pied et les étages montés dans Mouvements et forme uniquement quand tu le demandes, pour un jour parmi les sept derniers. Dans une conversation vocale, ces chiffres vont à ElevenLabs, qui fait tourner la voix de Doddy, ou à OpenAI si tu choisis cette voix sur l’écran d’accueil. Doddy n’en garde rien. Désactive ceci dans Réglages, Connexions."
+            "value": "Doddy lit tes pas, la distance parcourue à pied et les étages montés dans Mouvements et forme uniquement quand tu le demandes, pour un jour parmi les sept derniers. Dans une conversation vocale, ces chiffres vont à ElevenLabs, qui fait tourner la voix de Doddy, comme partie de cette conversation. Doddy ne les enregistre nulle part ailleurs. Désactive ceci dans Réglages, Connexions."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy čita tvoje korake, prijeđenu udaljenost i popete katove iz podataka Kretanje i kondicija samo kad to zatražiš, za jedan dan od zadnjih sedam. U glasovnom razgovoru ti brojevi idu u ElevenLabs, koji pokreće Doddyjev glas, ili u OpenAI ako na početnom zaslonu prebaciš glas na njega. Doddy ništa od toga ne čuva. Isključi to u Postavkama, Veze."
+            "value": "Doddy čita tvoje korake, prijeđenu udaljenost i popete katove iz podataka Kretanje i kondicija samo kad to zatražiš, za jedan dan od zadnjih sedam. U glasovnom razgovoru ti brojevi idu u ElevenLabs, koji pokreće Doddyjev glas, kao dio tog razgovora. Doddy ih ne sprema nigdje drugdje. Isključi to u Postavkama, Veze."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy legge i tuoi passi, la distanza percorsa a piedi e i piani saliti da Movimento e fitness solo quando lo chiedi, per un giorno degli ultimi sette. In una conversazione vocale questi numeri vanno a ElevenLabs, che fa funzionare la voce di Doddy, o a OpenAI se scegli quella voce nella schermata Home. Doddy non conserva nulla. Disattivalo in Impostazioni, Collegamenti."
+            "value": "Doddy legge i tuoi passi, la distanza percorsa a piedi e i piani saliti da Movimento e fitness solo quando lo chiedi, per un giorno degli ultimi sette. In una conversazione vocale questi numeri vanno a ElevenLabs, che fa funzionare la voce di Doddy, come parte di quella conversazione. Doddy non li salva da nessun'altra parte. Disattivalo in Impostazioni, Collegamenti."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddyは、あなたが頼んだときだけ、過去7日間のうち1日分の歩数、歩行距離、上った階数を「モーションとフィットネス」から読み取ります。音声会話では、その数値がDoddyの声を動かすElevenLabsに送られます。ホームの音声をOpenAIに切り替えた場合はOpenAIに送られます。Doddyはこれらを保存しません。オフにするには、設定の「連携」を使ってください。"
+            "value": "Doddyは、あなたが頼んだときだけ、過去7日間のうち1日分の歩数、歩行距離、上った階数を「モーションとフィットネス」から読み取ります。音声会話では、その数値が会話の一部として、Doddyの声を動かすElevenLabsに送られます。Doddyはこれらをほかの場所には保存しません。オフにするには、設定の「連携」を使ってください。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy odczytuje Twoje kroki, przebyty dystans i pokonane piętra z danych Ruch i fitness tylko wtedy, gdy o to poprosisz, dla jednego dnia z ostatnich siedmiu. W rozmowie głosowej te liczby trafiają do ElevenLabs, które obsługuje głos Doddy'ego, albo do OpenAI, jeśli przełączysz na nie głos na ekranie głównym. Doddy niczego z tego nie zachowuje. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+            "value": "Doddy odczytuje Twoje kroki, przebyty dystans i pokonane piętra z danych Ruch i fitness tylko wtedy, gdy o to poprosisz, dla jednego dnia z ostatnich siedmiu. W rozmowie głosowej te liczby trafiają, jako część tej rozmowy, do ElevenLabs, które obsługuje głos Doddy'ego. Doddy nie zapisuje ich nigdzie indziej. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O Doddy lê seus passos, a distância caminhada e os andares subidos em Movimento e Condicionamento só quando você pede, de um dia entre os últimos sete. Em uma conversa por voz, esses números vão para a ElevenLabs, que executa a voz do Doddy, ou para a OpenAI se você mudar a voz da tela inicial para ela. O Doddy não guarda nada disso. Desative em Ajustes, Conexões."
+            "value": "O Doddy lê seus passos, a distância caminhada e os andares subidos em Movimento e Condicionamento só quando você pede, de um dia entre os últimos sete. Em uma conversa por voz, esses números vão para a ElevenLabs, que executa a voz do Doddy, como parte dessa conversa. O Doddy não os salva em nenhum outro lugar. Desative em Ajustes, Conexões."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "只有在你提出请求时，Doddy 才会从“运动与健身”读取最近七天中某一天的步数、步行距离和爬楼层数。在语音对话中，这些数字会发送给运行 Doddy 语音的 ElevenLabs；如果你在主屏幕把语音切换为 OpenAI，则发送给 OpenAI。Doddy 不保存这些数据。可在设置的“连接”中关闭。"
+            "value": "只有在你提出请求时，Doddy 才会从“运动与健身”读取最近七天中某一天的步数、步行距离和爬楼层数。在语音对话中，这些数字会作为对话的一部分发送给运行 Doddy 语音的 ElevenLabs。Doddy 不会把它们保存在其他任何地方。可在设置的“连接”中关闭。"
           }
         }
       }
@@ -722,61 +722,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy zählt die Fotos und Videos, die du an den erfragten Tagen aufgenommen hast, und zeigt sie auf deinem Bildschirm. Nur wie viele es sind und wann sie aufgenommen wurden, geht in diesem Gespräch an die Stimme von Doddy (ElevenLabs oder OpenAI, wenn du die Stimme auf dem Startbildschirm darauf umstellst); die Bilder verlassen dieses iPhone nie. Doddy ändert deine Mediathek nie. Schalte das unter Einstellungen, Verbindungen aus."
+            "value": "Doddy zählt die Fotos und Videos, die du an den erfragten Tagen aufgenommen hast, und zeigt sie auf deinem Bildschirm. Nur wie viele es sind und wann sie aufgenommen wurden, geht in diesem Gespräch an ElevenLabs, das die Stimme von Doddy betreibt; diese Bilder verlassen dieses iPhone nicht. Ein Foto, das du selbst in „Nachrichten“ auswählst, um Doddy danach zu fragen, geht verkleinert und ohne Standort an Doddys Server und an Claude von Anthropic, der die Antwort schreibt; weder Doddys Server noch dieses iPhone behält es. Doddy ändert deine Mediathek nie. Schalte das unter Einstellungen, Verbindungen aus."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy counts the photos and videos you took on the days you ask about and shows them on your screen. Only how many there are and when they were taken go to Doddy's voice in that conversation (ElevenLabs, or OpenAI if you switch Home's voice to it); the pictures never leave this iPhone. Doddy never changes your library. Turn this off in Settings, Connections."
+            "value": "Doddy counts the photos and videos you took on the days you ask about and shows them on your screen. Only how many there are and when they were taken go to ElevenLabs, which runs Doddy's voice, in that conversation; these pictures don't leave this iPhone. A photo you pick yourself to ask Doddy about in Messages goes, made smaller and without its location, to Doddy's server and Anthropic's Claude for the answer; neither Doddy's server nor this iPhone keeps it. Doddy never changes your library. Turn this off in Settings, Connections."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy cuenta las fotos y vídeos que hiciste los días que preguntas y los muestra en tu pantalla. Solo cuántos hay y cuándo se hicieron van a la voz de Doddy en esa conversación (ElevenLabs, u OpenAI si cambias a ella la voz de Inicio); las imágenes nunca salen de este iPhone. Doddy nunca cambia tu fototeca. Desactívalo en Ajustes, Conexiones."
+            "value": "Doddy cuenta las fotos y vídeos que hiciste los días que preguntas y los muestra en tu pantalla. Solo cuántos hay y cuándo se hicieron van a ElevenLabs, que ejecuta la voz de Doddy, en esa conversación; esas imágenes no salen de este iPhone. Una foto que tú mismo eliges en Mensajes para preguntarle a Doddy va, reducida y sin su ubicación, al servidor de Doddy y a Claude, de Anthropic, que escribe la respuesta; ni el servidor de Doddy ni este iPhone la guardan. Doddy nunca cambia tu fototeca. Desactívalo en Ajustes, Conexiones."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy compte les photos et vidéos que tu as prises les jours que tu demandes et les affiche sur ton écran. Seuls leur nombre et le moment où elles ont été prises vont à la voix de Doddy dans cette conversation (ElevenLabs, ou OpenAI si tu choisis cette voix sur l’écran d’accueil) ; les images ne quittent jamais cet iPhone. Doddy ne modifie jamais ta photothèque. Désactive ceci dans Réglages, Connexions."
+            "value": "Doddy compte les photos et vidéos que tu as prises les jours que tu demandes et les affiche sur ton écran. Seuls leur nombre et le moment où elles ont été prises vont à ElevenLabs, qui fait tourner la voix de Doddy, dans cette conversation ; ces images ne quittent pas cet iPhone. Une photo que tu choisis toi-même dans Messages pour interroger Doddy part, réduite et sans sa position, vers le serveur de Doddy et Claude d’Anthropic, qui écrit la réponse ; ni le serveur de Doddy ni cet iPhone ne la gardent. Doddy ne modifie jamais ta photothèque. Désactive ceci dans Réglages, Connexions."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy broji fotografije i videozapise snimljene u danima za koje pitaš i prikazuje ih na tvom zaslonu. Samo njihov broj i vrijeme snimanja idu Doddyjevom glasu u tom razgovoru (ElevenLabs ili OpenAI ako na početnom zaslonu prebaciš glas na njega); same slike nikad ne napuštaju ovaj iPhone. Doddy nikad ne mijenja tvoju knjižnicu. Isključi to u Postavkama, Veze."
+            "value": "Doddy broji fotografije i videozapise snimljene u danima za koje pitaš i prikazuje ih na tvom zaslonu. Samo njihov broj i vrijeme snimanja idu u ElevenLabs, koji pokreće Doddyjev glas, u tom razgovoru; te slike ne napuštaju ovaj iPhone. Fotografija koju sam odabereš u Porukama da bi pitao Doddyja o njoj ide, smanjena i bez lokacije, na Doddyjev poslužitelj i Claudeu tvrtke Anthropic, koji piše odgovor; ne čuva je ni Doddyjev poslužitelj ni ovaj iPhone. Doddy nikad ne mijenja tvoju knjižnicu. Isključi to u Postavkama, Veze."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy conta le foto e i video che hai fatto nei giorni che chiedi e li mostra sul tuo schermo. Solo quanti sono e quando sono stati fatti vanno alla voce di Doddy in quella conversazione (ElevenLabs, o OpenAI se scegli quella voce nella schermata Home); le immagini non lasciano mai questo iPhone. Doddy non modifica mai la tua libreria. Disattivalo in Impostazioni, Collegamenti."
+            "value": "Doddy conta le foto e i video che hai fatto nei giorni che chiedi e li mostra sul tuo schermo. Solo quanti sono e quando sono stati fatti vanno a ElevenLabs, che fa funzionare la voce di Doddy, in quella conversazione; queste immagini non lasciano questo iPhone. Una foto che scegli tu in Messaggi per chiedere a Doddy va, rimpicciolita e senza posizione, al server di Doddy e a Claude di Anthropic, che scrive la risposta; né il server di Doddy né questo iPhone la conservano. Doddy non modifica mai la tua libreria. Disattivalo in Impostazioni, Collegamenti."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddyは、あなたが尋ねた日に撮った写真とビデオの数を数え、画面に表示します。その会話でDoddyの声（ElevenLabs、またはホームの音声をOpenAIに切り替えた場合はOpenAI）に送られるのは、枚数と撮影日時だけです。写真そのものがこのiPhoneから出ることはありません。Doddyがライブラリを変更することはありません。オフにするには、設定の「連携」を使ってください。"
+            "value": "Doddyは、あなたが尋ねた日に撮った写真とビデオの数を数え、画面に表示します。その会話でDoddyの声を動かすElevenLabsに送られるのは、枚数と撮影日時だけです。これらの写真がこのiPhoneから出ることはありません。「メッセージ」でDoddyに尋ねるためにあなたが自分で選んだ写真は、縮小され位置情報を除いた状態で、Doddyのサーバーと、回答を書くAnthropicのClaudeに送られます。Doddyのサーバーもこの iPhoneも、その写真を保存しません。Doddyがライブラリを変更することはありません。オフにするには、設定の「連携」を使ってください。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy liczy zdjęcia i filmy zrobione w dniach, o które pytasz, i pokazuje je na Twoim ekranie. Do głosu Doddy'ego w tej rozmowie trafia tylko ich liczba i czas zrobienia (do ElevenLabs albo do OpenAI, jeśli przełączysz na nie głos na ekranie głównym); same zdjęcia nigdy nie opuszczają tego iPhone'a. Doddy nigdy nie zmienia Twojej biblioteki. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
+            "value": "Doddy liczy zdjęcia i filmy zrobione w dniach, o które pytasz, i pokazuje je na Twoim ekranie. Do ElevenLabs, które obsługuje głos Doddy'ego, trafia w tej rozmowie tylko ich liczba i czas zrobienia; te zdjęcia nie opuszczają tego iPhone'a. Zdjęcie, które sam wybierzesz w Wiadomościach, żeby zapytać o nie Doddy'ego, trafia, pomniejszone i bez lokalizacji, na serwer Doddy'ego i do Claude (Anthropic), który pisze odpowiedź; nie przechowuje go ani serwer Doddy'ego, ani ten iPhone. Doddy nigdy nie zmienia Twojej biblioteki. Wyłączysz to w Ustawieniach, w sekcji Połączenia."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O Doddy conta as fotos e vídeos que você fez nos dias sobre os quais pergunta e os mostra na sua tela. Só quantos são e quando foram feitos vão para a voz do Doddy nessa conversa (ElevenLabs, ou OpenAI se você mudar a voz da tela inicial para ela); as imagens nunca saem deste iPhone. O Doddy nunca altera sua fototeca. Desative em Ajustes, Conexões."
+            "value": "O Doddy conta as fotos e vídeos que você fez nos dias sobre os quais pergunta e os mostra na sua tela. Só quantos são e quando foram feitos vão para a ElevenLabs, que executa a voz do Doddy, nessa conversa; essas imagens não saem deste iPhone. Uma foto que você mesmo escolhe em Mensagens para perguntar ao Doddy vai, reduzida e sem a localização, para o servidor do Doddy e para o Claude, da Anthropic, que escreve a resposta; nem o servidor do Doddy nem este iPhone a guardam. O Doddy nunca altera sua fototeca. Desative em Ajustes, Conexões."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy 会统计你在所问日期拍摄的照片和视频，并在你的屏幕上显示。在那次对话中，只有数量和拍摄时间会发送给 Doddy 的语音（ElevenLabs；如果你在主屏幕把语音切换为 OpenAI，则为 OpenAI）；图片本身绝不会离开这台 iPhone。Doddy 绝不会更改你的图库。可在设置的“连接”中关闭。"
+            "value": "Doddy 会统计你在所问日期拍摄的照片和视频，并在你的屏幕上显示。在那次对话中，只有数量和拍摄时间会发送给运行 Doddy 语音的 ElevenLabs；这些图片不会离开这台 iPhone。你在“信息”中自己选择、想问 Doddy 的照片，会被缩小并去除位置信息后发送到 Doddy 的服务器和撰写回答的 Anthropic 的 Claude；Doddy 的服务器和这台 iPhone 都不会保留它。Doddy 绝不会更改你的图库。可在设置的“连接”中关闭。"
           }
         }
       }

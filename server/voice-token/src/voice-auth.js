@@ -12,6 +12,9 @@ import {
 } from "node:crypto";
 import { isIP } from "node:net";
 import { AccountCheckUnavailable, authenticateDoddyAccount } from "./doddy-account.js";
+import {
+  conversationClientFromEnv, conversationIdentity, sweepAccountConversations, validInstallUserId,
+} from "./conversations.js";
 
 const APPLE_ISSUER = "https://appleid.apple.com";
 const APPLE_KEYS_URL = "https://appleid.apple.com/auth/keys";
@@ -95,6 +98,8 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
   }
 
   const key = (kind, id) => `${STORE_PREFIX}${kind}:${id}`;
+  const conversationsKey = (recordKey) => key("conversations", recordKey);
+  const owedKey = `${STORE_PREFIX}conversations-owed`;
   return {
     async createSession({ userId, sessionId, refreshHash, nonceHash, ttlSeconds, nowSeconds }) {
       const script = `
@@ -271,6 +276,73 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
       await exec([["DEL", key("apple-token", userId)]]);
     },
 
+    // ---- Voice conversations at ElevenLabs, per account (decision 2026-11-12-voice-conversations-per-account) ----
+    // One sorted set per account, under the keyed hash `recordKey` (never the account itself): the ids of its
+    // conversations, scored by when they were issued or found. These keys never expire: the owner chose no retention
+    // limit at ElevenLabs, so a record that ran out would leave conversations nobody could delete. Only a confirmed
+    // deletion removes an id. `deleteAccount` below leaves them alone on purpose.
+
+    /** Keeps `conversationId`, and lets go of the oldest ids past `maxEntries`. Returns how many it let go of. */
+    async recordConversation(recordKey, conversationId, nowMs, maxEntries) {
+      const script = `
+        redis.call('ZADD', KEYS[1], ARGV[2], ARGV[1])
+        local extra = redis.call('ZCARD', KEYS[1]) - tonumber(ARGV[3])
+        if extra > 0 then redis.call('ZREMRANGEBYRANK', KEYS[1], 0, extra - 1) else extra = 0 end
+        return extra
+      `;
+      const trimmed = Number(await evalScript(script, [conversationsKey(recordKey)], [conversationId, nowMs, maxEntries]));
+      if (!Number.isSafeInteger(trimmed) || trimmed < 0) throw new VoiceAuthStoreUnavailable();
+      return trimmed;
+    },
+
+    /** At most `limit` recorded ids, oldest first. */
+    async listConversations(recordKey, limit) {
+      const [ids] = await exec([["ZRANGE", conversationsKey(recordKey), 0, limit - 1]]);
+      if (!Array.isArray(ids) || !ids.every((id) => typeof id === "string")) throw new VoiceAuthStoreUnavailable();
+      return ids;
+    },
+
+    async countConversations(recordKey) {
+      const [count] = await exec([["ZCARD", conversationsKey(recordKey)]]);
+      if (!Number.isSafeInteger(Number(count))) throw new VoiceAuthStoreUnavailable();
+      return Number(count);
+    },
+
+    /** Adds ids found at ElevenLabs without touching the ones already recorded. Returns how many were new. */
+    async addConversations(recordKey, ids, nowMs) {
+      if (ids.length === 0) return 0;
+      const [added] = await exec([["ZADD", conversationsKey(recordKey), "NX", ...ids.flatMap((id) => [nowMs, id])]]);
+      return Number(added);
+    },
+
+    /** Forgets ids ElevenLabs confirmed gone. */
+    async removeConversations(recordKey, ids) {
+      if (ids.length === 0) return 0;
+      const [removed] = await exec([["ZREM", conversationsKey(recordKey), ...ids]]);
+      return Number(removed);
+    },
+
+    /** The account still owes deletions: what is needed to look again (user ids), until it owes nothing. */
+    async markOwed(recordKey, record, nowMs) {
+      await exec([["HSET", owedKey, recordKey, JSON.stringify({ ...record, since: nowMs })]]);
+    },
+
+    async clearOwed(recordKey) {
+      await exec([["HDEL", owedKey, recordKey]]);
+    },
+
+    /** Every account that owes deletions: `{ recordKey, record }`. Entries that can't be read are left out. */
+    async listOwed() {
+      const [all] = await exec([["HGETALL", owedKey]]);
+      const pairs = Array.isArray(all)
+        ? Array.from({ length: Math.floor(all.length / 2) }, (_, n) => [all[2 * n], all[2 * n + 1]])
+        : all && typeof all === "object" ? Object.entries(all) : [];
+      return pairs.flatMap(([recordKey, text]) => {
+        const record = typeof recordKey === "string" && typeof text === "string" ? parseJSON(text) : null;
+        return record && typeof record === "object" ? [{ recordKey, record }] : [];
+      });
+    },
+
     async deleteAccount(userId) {
       const script = `
         local sessions = redis.call('SMEMBERS', KEYS[1])
@@ -302,6 +374,11 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
  * and take its access token, not a voice session: `apple-link` (right after Sign in with Apple, keeps
  * Apple's refresh token sealed) and `apple-revoke` (before the account is deleted, tells Apple to end
  * the link). Neither touches the voice account.
+ *
+ * `delete-conversations` also takes a Doddy account's access token (decision
+ * 2026-11-12-voice-conversations-per-account): the account's voice conversations at ElevenLabs are deleted and read
+ * back, and the answer is counts only, `{ deleted, pending }`. `delete-account` does the same for an older Apple
+ * voice account's conversations and adds the counts to its answer.
  */
 export async function handleVoiceAuthRequest(request, env, deps = {}) {
   const now = deps.now ?? Date.now;
@@ -317,7 +394,7 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
   const body = await readBody(request);
   if (!body) return finish(400, "invalid_request");
   action = body.action;
-  if (!["sign-in", "refresh", "sign-out", "delete-account", "apple-link", "apple-revoke"].includes(action)) return finish(400, "unknown_action");
+  if (!["sign-in", "refresh", "sign-out", "delete-account", "apple-link", "apple-revoke", "delete-conversations"].includes(action)) return finish(400, "unknown_action");
 
   let store;
   let signingKey;
@@ -335,7 +412,7 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
     if (action === "sign-in") {
       if (typeof body.identityToken !== "string" || typeof body.rawNonce !== "string"
           || body.identityToken.length > 18_000 || !/^[A-Za-z0-9_-]{40,64}$/.test(body.rawNonce)
-          || (body.provider !== "openai" && body.provider !== "elevenlabs")
+          || body.provider !== "elevenlabs"
           || typeof env.APPLE_BUNDLE_ID !== "string" || !env.APPLE_BUNDLE_ID.trim()) {
         return finish(400, "invalid_request");
       }
@@ -402,6 +479,39 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
       if (rotated?.reused) return finish(401, "session_expired", undefined, {}, { reuse: true });
       if (!rotated) return finish(401, "session_expired");
       return finish(200, null, sessionReply(signingKey, prior.userId, prior.sessionId, nextToken, now()));
+    }
+
+    if (action === "delete-conversations") {
+      let account;
+      try {
+        account = await (deps.authenticateDoddyAccount ?? authenticateDoddyAccount)(
+          request, env, { ...(deps.accountFetch ? { fetch: deps.accountFetch } : {}), now: now() });
+      } catch (error) {
+        // The project's keys couldn't be read: "try again", never "signed out".
+        if (error instanceof AccountCheckUnavailable) return finish(503, "account_check_unavailable");
+        throw error;
+      }
+      if (!account) return finish(401, "session_expired");
+      // The iPhone's old per-install id (what it gave ElevenLabs before the account's own user id): one more
+      // user id to look for. Only the shape the app makes it in; anything else could be someone else's.
+      const installUserId = body.installUserId === undefined || body.installUserId === null ? null : validInstallUserId(body.installUserId);
+      if (body.installUserId !== undefined && body.installUserId !== null && !installUserId) return finish(400, "invalid_request");
+      const identity = conversationIdentity(env, account.userId);
+      if (!identity) return finish(503, "server_not_configured");
+      // Each call can reach ElevenLabs many times, so it counts against the same per-caller limits as a sign-in.
+      const signIns = signInLimits(env);
+      if (!signIns || typeof store.hitSignInLimits !== "function") return finish(503, "server_not_configured");
+      const turn = await store.hitSignInLimits(hmac(signingKey, `delete-conversations:${account.userId}`),
+        signIns.perHour, signIns.perDay, now());
+      if (!turn.allowed) {
+        return finish(429, "rate_limited", undefined, { "retry-after": String(turn.retryAfterSeconds) }, { limit: turn.limit });
+      }
+      const counts = await sweepAccountConversations({
+        store, client: conversationClientFromEnv(env, deps.elevenLabsFetch ?? fetch), recordKey: identity.recordKey,
+        filters: [identity.userId, ...(installUserId ? [installUserId] : [])], now,
+      });
+      // Counts only: never an id, in the answer or the log.
+      return finish(200, null, counts, {}, counts);
     }
 
     if (action === "apple-link" || action === "apple-revoke") {
@@ -473,8 +583,19 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
         : await (deps.revokeAppleToken ?? revokeAppleToken)(appleToken, env, { fetch: deps.fetch ?? fetch, now: now() })
           ? "revoked" : "failed";
     }
+    // The account's voice conversations at ElevenLabs too (decision 2026-11-12-voice-conversations-per-account),
+    // before the session goes. ElevenLabs failing never keeps the account: what isn't confirmed gone stays recorded
+    // as owed and is retried by the daily job, and the answer says how many (`pending`). The store being down does
+    // stop it (503), so nothing is forgotten.
+    const identity = conversationIdentity(env, access.userId);
+    const conversations = identity
+      ? await sweepAccountConversations({
+        store, client: conversationClientFromEnv(env, deps.elevenLabsFetch ?? fetch), recordKey: identity.recordKey,
+        filters: [identity.userId], now,
+      })
+      : { deleted: 0, pending: 0 };
     await store.deleteAccount(access.userId);
-    return finish(200, null, { deleted: true, appleRevoked: apple === "revoked" }, {}, { apple });
+    return finish(200, null, { deleted: true, appleRevoked: apple === "revoked", conversations }, {}, { apple, ...conversations });
   } catch (error) {
     if (error instanceof VoiceAuthStoreUnavailable) return finish(503, "server_not_configured");
     return finish(500, "voice_auth_failed");
@@ -689,10 +810,10 @@ function validStoredSession(value, record) {
 }
 
 function voiceProviderConfigured(provider, env) {
-  return provider === "openai"
-    ? typeof env.OPENAI_API_KEY === "string" && env.OPENAI_API_KEY.trim().length > 0
-    : typeof env.ELEVENLABS_API_KEY === "string" && env.ELEVENLABS_API_KEY.trim().length > 0
-      && typeof env.ELEVENLABS_AGENT_ID === "string" && env.ELEVENLABS_AGENT_ID.trim().length > 0;
+  // ElevenLabs is the only voice (9 Nov 2026), so `provider` is always "elevenlabs" by the time it gets here.
+  return provider === "elevenlabs"
+    && typeof env.ELEVENLABS_API_KEY === "string" && env.ELEVENLABS_API_KEY.trim().length > 0
+    && typeof env.ELEVENLABS_AGENT_ID === "string" && env.ELEVENLABS_AGENT_ID.trim().length > 0;
 }
 
 /**

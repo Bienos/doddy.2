@@ -27,8 +27,6 @@ struct SignInSheet: View {
 
     @Binding var expanded: Bool
     let provider: SignInProviding
-    /// Which voice provider the voice account is created for (the stored choice, ElevenLabs by default).
-    let voiceProvider: VoiceProvider
     let continueWithoutAccount: () -> Void
     /// A sign-in finished (the Doddy account, or without one the voice account): the welcome is over.
     let signedIn: () -> Void
@@ -176,7 +174,7 @@ struct SignInSheet: View {
                 })
             } else {
                 Group {
-                    AppleAccountSignInButton(provider: voiceProvider, usesContinueTitle: true, height: 52,
+                    AppleAccountSignInButton(usesContinueTitle: true, height: 52,
                                              isCapsule: true, adaptsToDarkAppearance: true)
                         .accessibilityIdentifier("welcome.apple")
                     googleButton { Task { await doddyAccount.signInWithGoogle() } }
@@ -244,7 +242,7 @@ struct SignInSheet: View {
                 .padding(.bottom, 4)
                 .accessibilityAddTraits(.isHeader)
             // Apple first, and the same size as the others (Apple's rule): the one that works today.
-            AppleAccountSignInButton(provider: voiceProvider, usesContinueTitle: true, height: 52,
+            AppleAccountSignInButton(usesContinueTitle: true, height: 52,
                                      isCapsule: true, adaptsToDarkAppearance: true)
                 .accessibilityIdentifier("welcome.apple")
             Button { tap(.faceID) } label: {

@@ -54,24 +54,31 @@ enum IslandPose: String, CaseIterable, Sendable {
 
     /// The pose whose face compact and minimal show: at 24 pt only a face reads, and only four
     /// poses show it clearly. Eyes closed (from the stretch) while Doddy waits or is paused.
+    /// While a conversation is on (the greeting wave, connecting, thinking, speaking, a card that
+    /// waits, a plan that runs) it is always the smiling "listening" face (owner, 9 Nov 2026, decision
+    /// `2026-11-09-small-island-call-bars`): the half smile with a raised brow that showed after the Action
+    /// Button was a different Doddy every time the pose changed. The islands of the focus timer,
+    /// reading aloud and the rest keep the face they had.
     var facePose: IslandPose {
         switch self {
-        case .listening: .listening
+        case .listening, .wave, .shrug, .kneelingInspect, .reachingHigh, .tiptoe, .yawnStretch: .listening
         case .shush: .shush
         case .crosslegged, .leaning: .yawnStretch
         default: .crosslegged
         }
     }
 
-    /// Where the head is in a face pose: its centre as fractions of width and height, and its
+    /// Where the face is in a face pose: its centre as fractions of width and height, and its
     /// diameter as a fraction of the width. Nil for poses not used as a face. tools/whole_doddy/
-    /// cut_faces.py cuts the face pictures from these numbers.
+    /// cut_faces.py cuts the face pictures from these numbers: the cream disc of his face and a thin
+    /// rim, so nothing that touches his head (the hand at his ear, a sound mark, arms, neck) is in
+    /// the 26 pt face on the island (12 Nov 2026; before, the whole outline widened by 6 % took them in).
     var head: (x: Double, y: Double, diameter: Double)? {
         switch self {
-        case .listening: (205.0 / 400, 152.0 / 600, 172.0 / 400)
-        case .shush: (203.0 / 400, 140.0 / 600, 190.0 / 400)
-        case .yawnStretch: (201.0 / 400, 212.0 / 600, 160.0 / 400)
-        case .crosslegged: (200.0 / 400, 179.0 / 600, 196.0 / 400)
+        case .listening: (201.3 / 400, 150.7 / 600, 157.3 / 400)
+        case .shush: (204.0 / 400, 140.0 / 600, 208.0 / 400)
+        case .yawnStretch: (200.0 / 400, 186.0 / 600, 149.3 / 400)
+        case .crosslegged: (200.7 / 400, 186.0 / 600, 185.3 / 400)
         default: nil
         }
     }

@@ -1,10 +1,14 @@
 import type { DealsSettings } from "./deals/types.js";
 import { DEFAULT_RESEARCH_BUDGET, type ResearchBudget } from "./errands/budget.js";
 import { DEFAULT_ALLOWED_COUNTRY_CODES, parseCountryCodes } from "./phoneCountries.js";
+import { DEFAULT_NEWS_SUMMARY_CAPS, DEFAULT_NEWS_WRITER_CAPS, type NewsWriterCaps } from "./news/usage.js";
+import type { NewsSummarySettings } from "./news/summary.js";
 import { DEFAULT_NEW_ACCOUNT_HOURS, DEFAULT_NEW_ACCOUNT_POOL } from "./serverUsage.js";
 import { parseAffiliateRules, type AffiliateRule } from "./shopping/affiliate.js";
 import { parseSearchShops, type SearchShop } from "./deals/further.js";
 import { z } from "zod";
+import { MAX_KEY_VERSION } from "./crypto.js";
+import { deployedBecause } from "./deployment.js";
 import { parseClock, QUIET_HOURS_DEFAULT, type QuietHours } from "./quietHours.js";
 import type { StudioSettings } from "./studio/context.js";
 import { PLAN_TIER_NAMES, stepModelsFrom, type PlanTier } from "./studio/models.js";
@@ -32,13 +36,28 @@ const schema = z.object({
   TWILIO_VERIFY_SERVICE_SID: optional,
 
   ELEVENLABS_API_KEY: optional,
+  // Commercial read-only routes: disabled unless explicitly enabled AND both partner secrets exist.
+  JAKDOJADE_ENABLED: z.enum(["0", "1"]).default("0"),
+  JAKDOJADE_LICENSE_KEY: optional,
+  JAKDOJADE_SECRET: optional,
 
   // Doddy accounts (decision 2026-11-08-required-account): the Supabase project whose signed-in users
   // may sign in here (`POST /v1/accounts/sign-in`). Not a secret. Unset: only anonymous accounts, as before.
   SUPABASE_URL: z.string().url().refine((u) => u.startsWith("https://"), "SUPABASE_URL must be https").optional(),
+  // Anonymous accounts (`POST /v1/accounts`, no sign-in). "0" (the default): refused with 403 sign_in_required, so every
+  // new account here belongs to a Doddy account (decision 2026-11-08-required-account). "1": made as before, within the
+  // daily caps below. Accounts and device tokens that already exist keep working either way.
+  ANONYMOUS_ACCOUNTS: z.enum(["0", "1"]).default("0"),
 
   // S2 phone calls
-  MEMORY_ENCRYPTION_KEY: optional, // base64 of 32 random bytes
+  // base64 of 32 random bytes. Required on a deployed server (deployment.ts): without it the server refuses to start.
+  MEMORY_ENCRYPTION_KEY: optional,
+  // Key versions for a rotation (README, "Rotating MEMORY_ENCRYPTION_KEY"): the current key's version (default 1, the
+  // version of every row written before versions could be set) and, only while rows are being rewritten by
+  // scripts/reencrypt.mjs, the previous key with its own version.
+  MEMORY_ENCRYPTION_KEY_VERSION: z.coerce.number().int().min(1).max(MAX_KEY_VERSION).default(1),
+  MEMORY_ENCRYPTION_KEY_PREVIOUS: optional,
+  MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION: z.coerce.number().int().min(1).max(MAX_KEY_VERSION).optional(),
   // Shared with ElevenLabs as a workspace secret; at least 32 characters (openssl rand -base64 32).
   ELEVENLABS_TOOL_SECRET: z.string().min(32, "ELEVENLABS_TOOL_SECRET must be at least 32 characters").optional(),
   // Proxies in front of the server that append to X-Forwarded-For (Render: 1). The client IP is
@@ -46,8 +65,8 @@ const schema = z.object({
   TRUST_PROXY_HOPS: z.coerce.number().int().min(0).max(5).default(1),
   // Verify codes the whole server may start per UTC day (SMS cost cap).
   VERIFY_DAILY_CAP: z.coerce.number().int().positive().default(200),
-  // Abuse limits (security review 4 Nov 2026, ADR-702 to ADR-705). Accounts are free and anonymous, so what they can
-  // spend is capped per client address, per account and for the server. Every one has a safe default and none is
+  // Abuse limits (security review 4 Nov 2026, ADR-702 to ADR-705). Accounts are free (and anonymous ones can be turned
+  // on, ANONYMOUS_ACCOUNTS), so what they can spend is capped per client address, per account and for the server. Every one has a safe default and none is
   // needed at startup. Many phones share one carrier address, so the per-address numbers are generous.
   // Accounts made per UTC day: per client address (IPv6: per /64) and in all, on top of 10 an hour per address.
   ACCOUNTS_DAILY_PER_IP: z.coerce.number().int().min(1).max(100000).default(50),
@@ -68,6 +87,19 @@ const schema = z.object({
   SMS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(30),
   SMS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(300),
   OUTBOUND_CALLS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(10000).default(20),
+  // Calls to Doddy's number put through per account (a rolling 24 hours, like "call me") and for the server per UTC
+  // day; the server's count includes forwarded call-backs. Past either, the caller hears a fixed line.
+  INBOUND_CALLS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(20),
+  INBOUND_CALLS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(200),
+  // Call-backs (decision 2026-11-12-call-back-limits): how many days after Doddy last dialled a number a call from it
+  // is still put through, and how many a day one route puts through.
+  CALLBACK_ROUTE_DAYS: z.coerce.number().int().min(1).max(90).default(7),
+  CALLBACK_FORWARDS_PER_ROUTE_DAY: z.coerce.number().int().min(1).max(20).default(3),
+  // Memory on calls: the encrypted copy one account may keep, and all accounts together, in MB (1,048,576 bytes) of
+  // stored ciphertext. One snapshot replaces an account's copy, so the account's number is also the largest snapshot
+  // (the request body is capped at 8 MB). Over either: 413 memory_copy_too_large or 507 memory_copy_server_full.
+  MEMORY_COPY_MB_PER_ACCOUNT: z.coerce.number().int().min(1).max(8).default(4),
+  MEMORY_COPY_MB_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(400),
   // "1": run the worker loop inside the web process (one service; e.g. Render free/starter).
   RUN_WORKER_IN_WEB: z.enum(["0", "1"]).default("0"),
   ELEVENLABS_PHONE_AGENT_ID: optional,
@@ -76,6 +108,19 @@ const schema = z.object({
   OPENAI_API_KEY: optional, // or OpenAI, when there is no Anthropic key (ADR-197)
   OPENAI_MODEL: optional, // default gpt-5-mini
   GNEWS_API_KEY: optional, // keyword search across news sources (paid plan for commercial use)
+  // Digests the AI writer writes per UTC day (manual, scheduled, and On my radar's daily summaries): per account, for
+  // the whole server, and what accounts still new may use together inside that. Past a cap a digest is plain headlines.
+  NEWS_WRITER_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(DEFAULT_NEWS_WRITER_CAPS.perAccount),
+  NEWS_WRITER_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(DEFAULT_NEWS_WRITER_CAPS.perServer),
+  NEWS_WRITER_DAILY_NEW_ACCOUNTS: z.coerce.number().int().min(0).max(100000).default(DEFAULT_NEW_ACCOUNT_POOL.news),
+  // Article summaries for On my radar (POST /v1/news/summary, owner 13 Nov 2026): "1" lets the app ask for a short summary of
+  // a story's article, written by NEWS_SUMMARY_MODEL from the publisher's page (read politely, robots.txt and the AI-input
+  // content signal honoured). Needs ANTHROPIC_API_KEY too. "0" (the default) answers 503 summary_off. The caps count the
+  // summaries the model writes per UTC day, per account and for the server; a cached summary counts nothing.
+  NEWS_SUMMARY_ENABLED: z.enum(["0", "1"]).default("0"),
+  NEWS_SUMMARY_MODEL: z.string().regex(MODEL_ID).default("claude-haiku-5-5"),
+  NEWS_SUMMARY_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(DEFAULT_NEWS_SUMMARY_CAPS.perAccount),
+  NEWS_SUMMARY_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(DEFAULT_NEWS_SUMMARY_CAPS.perServer),
   // Replies to the user's texts (ADR-753) use ANTHROPIC_API_KEY, with this model (owner decision 7).
   TEXT_REPLY_MODEL: optional, // default claude-opus-5-5
   // Hours after a message or call is final before its record is deleted at Twilio (ADR-753).
@@ -101,6 +146,10 @@ const schema = z.object({
   // The number the callee sees; must belong to that Twilio account. Default DODDY_PHONE_NUMBER.
   TASK_CALL_FROM_NUMBER: z.string().regex(/^\+[1-9][0-9]{6,14}$/).optional(),
   ELEVENLABS_TASK_AGENT_ID: optional,
+  // The booking agent (decision 2026-11-12-book-agent). Absent: "book" tasks answer 503 booking_not_configured.
+  ELEVENLABS_TASK_BOOK_AGENT_ID: optional,
+  // The order agent (decision 2026-11-12-food-by-phone). Absent: "order" tasks answer 503 order_not_configured.
+  ELEVENLABS_TASK_ORDER_AGENT_ID: optional,
   // Secret of the ElevenLabs post-call webhook (HMAC).
   ELEVENLABS_WEBHOOK_SECRET: z.string().min(16).optional(),
   // Spoken after the AI disclosure. "off" until the owner confirms the legal basis (calls.md).
@@ -193,12 +242,50 @@ const schema = z.object({
   // Biedronka, Lidl, Dino, Rossmann, Aldi and Żabka on request (ADR-660) and keeps only counts. "0" answers 503 deals_disabled.
   // Image pages need ANTHROPIC_API_KEY (Claude Haiku reads them); the caps count requests per UTC day.
   DEALS_ENABLED: z.enum(["0", "1"]).default("0"),
+  // On my radar alerts (decision 2026-11-10-radar-alerts): "1" lets the iPhone store follows the person chose to have
+  // checked, and runs the worker that records new matching stories and queues their pushes. "0" (the default)
+  // answers 503 radar_disabled to a new alert, still accepts turning them off, and runs no checks.
+  RADAR_ALERTS_ENABLED: z.enum(["0", "1"]).default("0"),
+  // Deliveries through Uber Direct (decision 2026-11-12-uber-direct-deliveries). Off unless UBER_DIRECT_ENABLED=1 and
+  // all three credentials are set. Uber bills the account these credentials belong to, so the caps below hold for every
+  // account and for the whole server. UBER_DIRECT_MODE=test (the default) asks Uber's sandbox for a simulated courier.
+  UBER_DIRECT_ENABLED: z.enum(["0", "1"]).default("0"),
+  UBER_DIRECT_CLIENT_ID: z.string().min(8).optional(),
+  UBER_DIRECT_CLIENT_SECRET: z.string().min(8).optional(),
+  UBER_DIRECT_CUSTOMER_ID: z.string().regex(/^[A-Za-z0-9_-]{8,64}$/).optional(),
+  UBER_DIRECT_MODE: z.enum(["test", "live"]).default("test"),
+  UBER_DIRECT_MAX_FEE: z.coerce.number().int().min(0).max(100_000).default(6000),
+  UBER_DIRECT_DAILY_PER_ACCOUNT: z.coerce.number().int().min(0).max(50).default(2),
+  UBER_DIRECT_DAILY_PER_SERVER: z.coerce.number().int().min(0).max(1000).default(5),
   // Company registers (ADR-685): CEIDG's JWT, which the owner gets free at biznes.gov.pl (e-service 00_9999_00,
   // signing in with mObywatel or a trusted profile). Not set: GET /v1/registry/ceidg answers 503 registry_disabled.
   CEIDG_API_TOKEN: z.string().min(20).optional(),
   CEIDG_API_BASE: z.string().url().default("https://dane.biznes.gov.pl/api/ceidg/v3"),
   DEALS_VISION_MODEL: z.string().regex(/^[a-z0-9][a-z0-9.\-]{1,63}$/).default("claude-haiku-5-5"),
   DEALS_MAX_PAGES: z.coerce.number().int().min(0).max(100).default(40),
+  // The leaflet catalog (owner, 12 Nov 2026; decision 2026-11-12-leaflet-catalog): "1" lets the worker read each chain's
+  // current leaflets in the background, once for everyone, and answers searches from what it kept; "0" (the default)
+  // reads every chain live on each search, as before. A scan reads only pages it hasn't read before.
+  DEALS_CATALOG_ENABLED: z.enum(["0", "1"]).default("0"),
+  // How often each chain's leaflets are looked at again (new leaflets appear on most chains on Monday and Thursday).
+  DEALS_CATALOG_EVERY_HOURS: z.coerce.number().int().min(1).max(48).default(6),
+  // Pages sent to the reader per chain per scan; the rest wait for the next scan. 0: only the chains' own data.
+  DEALS_CATALOG_MAX_PAGES: z.coerce.number().int().min(0).max(400).default(160),
+  // The scans' daily token budget (13 Nov 2026; decision 2026-11-13-leaflet-results-and-deal-watches): input plus output
+  // tokens per Warsaw day, per chain and for all chains together. Past it, the pages wait for the next day; a page
+  // already read is never read again for the same leaflet. 0: no new page is read.
+  DEALS_CATALOG_DAILY_TOKENS_PER_CHAIN: z.coerce.number().int().min(0).max(50_000_000).default(1_500_000),
+  DEALS_CATALOG_DAILY_TOKENS: z.coerce.number().int().min(0).max(200_000_000).default(6_000_000),
+  // Deal watches (13 Nov 2026, same decision): "let me know when butter is under 5 zł", checked in code against the
+  // catalog after its scans, at most once a day per watch, with no page read. "0" (the default) answers 503
+  // deal_watches_disabled and checks nothing; "1" also needs MEMORY_ENCRYPTION_KEY and DEALS_CATALOG_ENABLED=1.
+  DEAL_WATCHES_ENABLED: z.enum(["0", "1"]).default("0"),
+  DEAL_WATCHES_MAX_PER_ACCOUNT: z.coerce.number().int().min(1).max(50).default(10),
+  DEAL_WATCHES_MAX_PER_SERVER: z.coerce.number().int().min(1).max(1_000_000).default(5000),
+  // Pushes from deal watches per account in any 24 hours; past it, matches are shown in the app only.
+  DEAL_WATCHES_PUSHES_PER_DAY: z.coerce.number().int().min(0).max(20).default(3),
+  // How long a watch lasts; it is deleted, with what it found, when it ends.
+  DEAL_WATCHES_DAYS: z.coerce.number().int().min(1).max(365).default(60),
   DEALS_SCREEN_PAGES: z.coerce.number().int().min(0).max(200).default(120),
   DEALS_DAILY_PER_ACCOUNT: z.coerce.number().int().min(1).max(1000).default(30),
   DEALS_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(1000),
@@ -229,6 +316,10 @@ const schema = z.object({
   ASSISTANT_DAILY_PER_SERVER: z.coerce.number().int().min(1).max(100000).default(1000),
   // Of the server's requests, what accounts still new may use together (ADR-702).
   ASSISTANT_DAILY_NEW_ACCOUNTS: z.coerce.number().int().min(0).max(100000).default(DEFAULT_NEW_ACCOUNT_POOL.assistant),
+
+  // File-ready pushes (9 Nov 2026): the public address of Doddy's backend (where `/v1/documents/<id>` links live), for
+  // example https://doddy-yaci.onrender.com. Only links on this origin may be watched. Unset: the feature is off.
+  DOCUMENTS_ORIGIN: z.url().regex(/^https:\/\/[^/?#]+\/?$/).optional(),
 
   // Studio (ADR-740, docs/implementation/STUDIO.md): research a topic, then make files from it. Off by
   // default; "1" also needs ANTHROPIC_API_KEY, MEMORY_ENCRYPTION_KEY and STUDIO_SKILLS.
@@ -289,7 +380,16 @@ export interface TaskCallPrices {
 export interface TaskCallConfig {
   twilioAccountSid: string; twilioAuthToken: string; fromNumber: string;
   elevenLabsApiKey: string; agentId: string; webhookSecret: string;
+  /** The booking agent (decision 2026-11-12-book-agent); absent while it isn't set up. */
+  bookAgentId?: string;
+  /** The order agent (decision 2026-11-12-food-by-phone); absent while it isn't set up. */
+  orderAgentId?: string;
 }
+
+/** The booking and order agents are optional: calls that only ask work without them (decisions 2026-11-12-book-agent, 2026-11-12-food-by-phone). */
+export const withBookAgent = (c: Omit<TaskCallConfig, "bookAgentId" | "orderAgentId"> | undefined, bookAgentId: string | undefined,
+  orderAgentId?: string | undefined): TaskCallConfig | undefined =>
+  c && { ...c, ...(bookAgentId ? { bookAgentId } : {}), ...(orderAgentId ? { orderAgentId } : {}) };
 
 export interface TaskCallSettings {
   killSwitch: boolean; notice: RecordingNotice; limits: TaskCallLimits; prices: TaskCallPrices; sayVoice: string;
@@ -323,6 +423,13 @@ export interface ShoppingSettings {
 /** Price watches: `enabled` is the env switch only; the cipher and the fetcher are checked where wired. */
 export interface WatchSettings { enabled: boolean; maxOpen: number; checkHours: number }
 
+/** Deal watches (decision 2026-11-13-leaflet-results-and-deal-watches): `enabled` is the env switch only; the cipher and
+ * the catalog are checked where wired. */
+export interface DealWatchSettings { enabled: boolean; maxPerAccount: number; maxPerServer: number; pushesPerDay: number; days: number }
+
+/** Settings for an injected deal-watch context without its own (tests): on, 10 an account, 3 pushes a day, 60 days. */
+export const DEFAULT_DEAL_WATCH_SETTINGS: DealWatchSettings = { enabled: true, maxPerAccount: 10, maxPerServer: 5000, pushesPerDay: 3, days: 60 };
+
 /** Messages switches and caps (ADR-586). `enabled` is the env switch only; the key is checked where wired. */
 export interface AssistantSettings {
   enabled: boolean; model: string; effort: "low" | "medium" | "high"; dailyPerAccount: number; dailyPerServer: number;
@@ -337,16 +444,27 @@ export interface AbuseLimits {
   verifyPerIpDay: number; verifyPerAccountDay: number;
   smsPerAccountDay: number; smsPerServerDay: number;
   outboundCallsPerServerDay: number;
+  /** Calls to Doddy's number put through to the phone agent per account (24 h) and, with call-backs, per server (UTC day). */
+  inboundCallsPerAccountDay: number; inboundCallsPerServerDay: number;
+  /** Call-backs: days a route lasts after the last dial, and calls one route puts through per day (src/callbacks.ts). */
+  callbackRouteDays: number; callbackForwardsPerRouteDay: number;
   /** Calling codes without "+", see phoneCountries.ts. */
   allowedCountryCodes: readonly string[];
+  /** Memory on calls: stored ciphertext one account may keep, and all accounts together, in bytes. */
+  memoryCopyBytesPerAccount: number; memoryCopyBytesPerServer: number;
 }
+
+const MB = 1024 * 1024;
 
 export const DEFAULT_ABUSE_LIMITS: AbuseLimits = {
   accountsPerIpDay: 50, accountsPerServerDay: 1000,
   verifyPerIpDay: 20, verifyPerAccountDay: 6,
   smsPerAccountDay: 30, smsPerServerDay: 300,
   outboundCallsPerServerDay: 20,
+  inboundCallsPerAccountDay: 20, inboundCallsPerServerDay: 200,
+  callbackRouteDays: 7, callbackForwardsPerRouteDay: 3,
   allowedCountryCodes: DEFAULT_ALLOWED_COUNTRY_CODES,
+  memoryCopyBytesPerAccount: 4 * MB, memoryCopyBytesPerServer: 400 * MB,
 };
 
 /** The defaults with whatever a deployment (or a test) sets over them. */
@@ -356,6 +474,8 @@ export interface Config {
   databaseUrl: string;
   /** The Doddy accounts project's origin, or undefined (decision 2026-11-08-required-account). */
   supabaseUrl?: string;
+  /** ANONYMOUS_ACCOUNTS: whether `POST /v1/accounts` still makes accounts without a sign-in. Default false. */
+  anonymousAccounts: boolean;
   port: number;
   trustProxyHops: number;
   verifyDailyCap: number;
@@ -365,6 +485,10 @@ export interface Config {
   apns?: ApnsConfig;
   twilio?: TwilioConfig;
   memoryEncryptionKey?: string;
+  /** The current key's version, stored with every row it writes (default 1). */
+  memoryEncryptionKeyVersion: number;
+  /** The previous key while a rotation's re-encryption runs (MEMORY_ENCRYPTION_KEY_PREVIOUS and its version). */
+  memoryEncryptionKeyPrevious?: { key: string; version: number };
   toolSecret?: string;
   phoneAgent?: PhoneAgentConfig;
   doddyPhoneNumber?: string;
@@ -372,19 +496,44 @@ export interface Config {
   openaiApiKey?: string;
   openaiModel?: string;
   gnewsApiKey?: string;
+  /** Daily caps on digests by the AI writer (NEWS_WRITER_DAILY_*). */
+  newsWriterCaps: Required<NewsWriterCaps>;
+  /** Article summaries for On my radar (NEWS_SUMMARY_*, off by default). */
+  newsSummarySettings: NewsSummarySettings;
   textReplyModel?: string;
   twilioRecordDeleteAfterHours: number;
+  /**
+   * The account the task calls are placed on, whose records are deleted there with its own pair: TWILIO_TASK_ACCOUNT_SID
+   * and TWILIO_TASK_AUTH_TOKEN, falling back to the main pair as the task-call client does. Set whenever a pair is,
+   * also while task calls are off, so records queued earlier still go.
+   */
+  twilioTaskRecords?: { accountSid: string; authToken: string };
   quietHours: QuietHours;
   taskCalls?: TaskCallConfig;
+  /** The workspace post-call webhook's HMAC secret, also when task calls are off (phone-line recaps use it). */
+  elevenLabsWebhookSecret?: string;
   taskCallSettings: TaskCallSettings;
   errandSettings: ErrandSettings;
   shoppingSettings: ShoppingSettings;
   dealsSettings: DealsSettings;
   /** "Search further" under a leaflet answer (ADR-666). */
   dealsSearchShops: SearchShop[];
+  /** Licensed Jakdojade API; missing or disabled means no provider requests. */
+  jakdojade?: { licenseKey: string; secret: string };
   /** CEIDG (ADR-685): only with a token; the base is checked to be CEIDG's own host when the client is made. */
   ceidg?: { token: string; baseUrl: string };
   watchSettings: WatchSettings;
+  /** Deal watches against the leaflet catalog (DEAL_WATCHES_ENABLED, off by default). */
+  dealWatchSettings: DealWatchSettings;
+  /** On my radar alerts (RADAR_ALERTS_ENABLED, off by default): routes store alerts and the worker checks them. */
+  radarAlertsEnabled: boolean;
+  /** Uber Direct (decision 2026-11-12-uber-direct-deliveries): only when enabled and all three credentials are set. */
+  uberDirect?: {
+    clientId: string; clientSecret: string; customerId: string; mode: "test" | "live";
+    limits: { maxFee: number; perAccountDaily: number; perServerDaily: number };
+  };
+  /** Where Doddy's backend serves file links (`DOCUMENTS_ORIGIN`, no trailing slash); null turns file-ready pushes off. */
+  documentsOrigin: string | null;
   assistantSettings: AssistantSettings;
   studioSettings: StudioSettings;
 }
@@ -394,9 +543,28 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const e = schema.parse(Object.fromEntries(Object.entries(env).filter(([, v]) => v !== "")));
   const all = <T extends object>(o: { [K in keyof T]: T[K] | undefined }): T | undefined =>
     Object.values(o).every((v) => v !== undefined) ? (o as T) : undefined;
+  // A deployed server never runs without the key (deployment.ts): it would queue texts readable and hash numbers and
+  // addresses without a key. Names only in the message, never a value.
+  const deployed = deployedBecause(Object.fromEntries(Object.entries(env).filter(([, v]) => v !== "")));
+  if (deployed && !e.MEMORY_ENCRYPTION_KEY) {
+    const why = deployed === "NODE_ENV" ? "NODE_ENV is production" : deployed === "RENDER" ? "RENDER is set" : "PUBLIC_BASE_URL is a public address";
+    throw new Error(`MEMORY_ENCRYPTION_KEY is required: this server is deployed (${why}). Without it texts would be queued readable `
+      + "and phone numbers and addresses hashed without a key. Set it (1Password item memory-encryption-key) on every messaging "
+      + "service, web and worker, and start again.");
+  }
+  if (e.MEMORY_ENCRYPTION_KEY_PREVIOUS) {
+    if (!e.MEMORY_ENCRYPTION_KEY) throw new Error("MEMORY_ENCRYPTION_KEY_PREVIOUS is set without MEMORY_ENCRYPTION_KEY");
+    if (e.MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION === undefined) {
+      throw new Error("MEMORY_ENCRYPTION_KEY_PREVIOUS needs MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION, the version its rows were written with");
+    }
+    if (e.MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION === e.MEMORY_ENCRYPTION_KEY_VERSION) {
+      throw new Error("MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION must differ from MEMORY_ENCRYPTION_KEY_VERSION");
+    }
+  }
   return {
     databaseUrl: e.DATABASE_URL,
     supabaseUrl: e.SUPABASE_URL ? new URL(e.SUPABASE_URL).origin : undefined,
+    anonymousAccounts: e.ANONYMOUS_ACCOUNTS === "1",
     port: e.PORT,
     trustProxyHops: e.TRUST_PROXY_HOPS,
     verifyDailyCap: e.VERIFY_DAILY_CAP,
@@ -405,7 +573,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       verifyPerIpDay: e.VERIFY_DAILY_PER_IP, verifyPerAccountDay: e.VERIFY_DAILY_PER_ACCOUNT,
       smsPerAccountDay: e.SMS_DAILY_PER_ACCOUNT, smsPerServerDay: e.SMS_DAILY_PER_SERVER,
       outboundCallsPerServerDay: e.OUTBOUND_CALLS_DAILY_PER_SERVER,
+      inboundCallsPerAccountDay: e.INBOUND_CALLS_DAILY_PER_ACCOUNT, inboundCallsPerServerDay: e.INBOUND_CALLS_DAILY_PER_SERVER,
+      callbackRouteDays: e.CALLBACK_ROUTE_DAYS, callbackForwardsPerRouteDay: e.CALLBACK_FORWARDS_PER_ROUTE_DAY,
       allowedCountryCodes: e.PHONE_ALLOWED_COUNTRY_CODES,
+      memoryCopyBytesPerAccount: e.MEMORY_COPY_MB_PER_ACCOUNT * MB, memoryCopyBytesPerServer: e.MEMORY_COPY_MB_PER_SERVER * MB,
     },
     runWorkerInWeb: e.RUN_WORKER_IN_WEB === "1",
     publicBaseUrl: e.PUBLIC_BASE_URL?.replace(/\/$/, ""),
@@ -419,6 +590,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       messagingServiceSid: e.TWILIO_MESSAGING_SERVICE_SID, verifyServiceSid: e.TWILIO_VERIFY_SERVICE_SID,
     }),
     memoryEncryptionKey: e.MEMORY_ENCRYPTION_KEY,
+    memoryEncryptionKeyVersion: e.MEMORY_ENCRYPTION_KEY_VERSION,
+    memoryEncryptionKeyPrevious: e.MEMORY_ENCRYPTION_KEY_PREVIOUS && e.MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION !== undefined
+      ? { key: e.MEMORY_ENCRYPTION_KEY_PREVIOUS, version: e.MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION }
+      : undefined,
     toolSecret: e.ELEVENLABS_TOOL_SECRET,
     phoneAgent: all<PhoneAgentConfig>({
       apiKey: e.ELEVENLABS_API_KEY, agentId: e.ELEVENLABS_PHONE_AGENT_ID,
@@ -428,20 +603,33 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     openaiApiKey: e.OPENAI_API_KEY,
     openaiModel: e.OPENAI_MODEL,
     gnewsApiKey: e.GNEWS_API_KEY,
+    newsWriterCaps: {
+      perAccount: e.NEWS_WRITER_DAILY_PER_ACCOUNT, perServer: e.NEWS_WRITER_DAILY_PER_SERVER,
+      newAccountPool: e.NEWS_WRITER_DAILY_NEW_ACCOUNTS, newAccountHours: e.NEW_ACCOUNT_HOURS,
+    },
+    newsSummarySettings: {
+      enabled: e.NEWS_SUMMARY_ENABLED === "1", model: e.NEWS_SUMMARY_MODEL,
+      dailyPerAccount: e.NEWS_SUMMARY_DAILY_PER_ACCOUNT, dailyPerServer: e.NEWS_SUMMARY_DAILY_PER_SERVER,
+    },
     textReplyModel: e.TEXT_REPLY_MODEL,
     twilioRecordDeleteAfterHours: e.TWILIO_RECORD_DELETE_AFTER_HOURS,
+    twilioTaskRecords: all<{ accountSid: string; authToken: string }>({
+      accountSid: e.TWILIO_TASK_ACCOUNT_SID ?? e.TWILIO_ACCOUNT_SID,
+      authToken: e.TWILIO_TASK_AUTH_TOKEN ?? e.TWILIO_AUTH_TOKEN,
+    }),
     quietHours: {
       start: e.QUIET_HOURS_START ? parseClock(e.QUIET_HOURS_START)! : QUIET_HOURS_DEFAULT.start,
       end: e.QUIET_HOURS_END ? parseClock(e.QUIET_HOURS_END)! : QUIET_HOURS_DEFAULT.end,
     },
-    taskCalls: all<TaskCallConfig>({
+    elevenLabsWebhookSecret: e.ELEVENLABS_WEBHOOK_SECRET,
+    taskCalls: withBookAgent(all<Omit<TaskCallConfig, "bookAgentId" | "orderAgentId">>({
       twilioAccountSid: e.TWILIO_TASK_ACCOUNT_SID ?? e.TWILIO_ACCOUNT_SID,
       twilioAuthToken: e.TWILIO_TASK_AUTH_TOKEN ?? e.TWILIO_AUTH_TOKEN,
       fromNumber: e.TASK_CALL_FROM_NUMBER ?? e.DODDY_PHONE_NUMBER,
       elevenLabsApiKey: e.ELEVENLABS_API_KEY,
       agentId: e.ELEVENLABS_TASK_AGENT_ID,
       webhookSecret: e.ELEVENLABS_WEBHOOK_SECRET,
-    }),
+    }), e.ELEVENLABS_TASK_BOOK_AGENT_ID, e.ELEVENLABS_TASK_ORDER_AGENT_ID),
     taskCallSettings: {
       killSwitch: e.TASK_CALLS_KILL_SWITCH === "1",
       notice: e.CALL_RECORDING_NOTICE,
@@ -492,10 +680,29 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       enabled: e.DEALS_ENABLED === "1", visionModel: e.DEALS_VISION_MODEL, maxPages: e.DEALS_MAX_PAGES, screenPages: e.DEALS_SCREEN_PAGES,
       dailyPerAccount: e.DEALS_DAILY_PER_ACCOUNT, dailyPerServer: e.DEALS_DAILY_PER_SERVER,
       dailyForNewAccounts: e.DEALS_DAILY_NEW_ACCOUNTS, newAccountHours: e.NEW_ACCOUNT_HOURS,
+      catalog: {
+        enabled: e.DEALS_CATALOG_ENABLED === "1", everyHours: e.DEALS_CATALOG_EVERY_HOURS, maxPagesPerChain: e.DEALS_CATALOG_MAX_PAGES,
+        dailyTokensPerChain: e.DEALS_CATALOG_DAILY_TOKENS_PER_CHAIN, dailyTokens: e.DEALS_CATALOG_DAILY_TOKENS,
+      },
+    },
+    dealWatchSettings: {
+      enabled: e.DEAL_WATCHES_ENABLED === "1", maxPerAccount: e.DEAL_WATCHES_MAX_PER_ACCOUNT, maxPerServer: e.DEAL_WATCHES_MAX_PER_SERVER,
+      pushesPerDay: e.DEAL_WATCHES_PUSHES_PER_DAY, days: e.DEAL_WATCHES_DAYS,
     },
     dealsSearchShops: e.DEALS_SEARCH_SHOPS,
     ceidg: e.CEIDG_API_TOKEN ? { token: e.CEIDG_API_TOKEN, baseUrl: e.CEIDG_API_BASE } : undefined,
+    jakdojade: e.JAKDOJADE_ENABLED === "1" && e.JAKDOJADE_LICENSE_KEY && e.JAKDOJADE_SECRET
+      ? { licenseKey: e.JAKDOJADE_LICENSE_KEY, secret: e.JAKDOJADE_SECRET } : undefined,
     watchSettings: { enabled: e.WATCHES_ENABLED === "1", maxOpen: e.WATCHES_MAX_OPEN, checkHours: e.WATCHES_CHECK_HOURS },
+    radarAlertsEnabled: e.RADAR_ALERTS_ENABLED === "1",
+    uberDirect: e.UBER_DIRECT_ENABLED === "1" && e.UBER_DIRECT_CLIENT_ID && e.UBER_DIRECT_CLIENT_SECRET && e.UBER_DIRECT_CUSTOMER_ID
+      ? {
+        clientId: e.UBER_DIRECT_CLIENT_ID, clientSecret: e.UBER_DIRECT_CLIENT_SECRET, customerId: e.UBER_DIRECT_CUSTOMER_ID,
+        mode: e.UBER_DIRECT_MODE,
+        limits: { maxFee: e.UBER_DIRECT_MAX_FEE, perAccountDaily: e.UBER_DIRECT_DAILY_PER_ACCOUNT, perServerDaily: e.UBER_DIRECT_DAILY_PER_SERVER },
+      }
+      : undefined,
+    documentsOrigin: e.DOCUMENTS_ORIGIN ? e.DOCUMENTS_ORIGIN.replace(/\/$/, "") : null,
     assistantSettings: {
       enabled: e.ASSISTANT_ENABLED === "1",
       model: e.ASSISTANT_MODEL,

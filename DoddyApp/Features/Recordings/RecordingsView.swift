@@ -7,6 +7,7 @@ import SwiftUI
 
 struct RecordingsView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(MemoryStore.self) private var store
     @State private var model = RecordingsModel()
     @State private var opened: UUID?
     @State private var pendingDelete: UUID?
@@ -74,6 +75,14 @@ struct RecordingsView: View {
                 while !Task.isCancelled {
                     await model.reload()
                     try? await Task.sleep(for: .seconds(3))
+                }
+            }
+            // With "Remember what we talked about" on, a recording written out after it was turned on gets
+            // its recap saved (decision 2026-11-09-conversation-recaps); nothing happens while it is off.
+            .task {
+                while !Task.isCancelled {
+                    await RecapKeeper.rememberRecordings(model.items, store: store)
+                    try? await Task.sleep(for: .seconds(8))
                 }
             }
             .sheet(isPresented: $showNotice) {

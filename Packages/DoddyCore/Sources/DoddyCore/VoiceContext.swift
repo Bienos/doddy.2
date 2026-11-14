@@ -18,7 +18,7 @@ public struct ConversationLog: Equatable, Sendable, Codable, Identifiable {
     public let startedAt: Date
     public let endedAt: Date
     public let lines: [Line]
-    /// Who ran the voice (`VoiceProvider` raw value), for comparing the two in testing (ADR-265).
+    /// Who ran the voice: "elevenlabs" now. Conversations kept from before 9 Nov 2026 may say "openai"; they still load.
     /// Logs kept before ADR-265 have none. Never sent to either provider.
     public let voiceProvider: String?
     /// How it ended (`VoiceSessionEnd.code`, ADR-360): "user", "doddy", "quiet" or "dropped-…".
@@ -80,6 +80,13 @@ public enum VoiceContext {
     public static let defaultNotesBudget = 6000
     public static let defaultConversationsBudget = 4000
     public static let maxLineLength = 400
+    /// What Doddy said is clipped later than what the user said: an answer that lists several
+    /// ideas (names, places) is the part the next conversation most needs, and 400 characters
+    /// cut it off after the first one or two. The conversations budget still bounds the total.
+    public static let maxDoddyLineLength = 1000
+
+    /// Said when only the end of the newest conversation fit the budget.
+    static let cutStartNote = "(The start of this conversation was cut to fit. Its last lines follow.)"
 
     /// Newest first, one line per note: "- [2026-10-09 02:05] text". Stops at the character
     /// budget and reports the cut, so the agent knows to use search_memories for the rest.
@@ -132,10 +139,18 @@ public enum VoiceContext {
         var truncated = false
         for log in newestFirst where !log.lines.isEmpty {
             let header = "Conversation on \(format(log.startedAt, timeZone: timeZone)):"
-            let body = log.lines.map { ($0.fromUser ? "User: " : "Doddy: ") + clip($0.text) }
+            let body = log.lines.map {
+                $0.fromUser ? "User: " + clip($0.text) : "Doddy: " + clip($0.text, limit: maxDoddyLineLength)
+            }
             let block = ([header] + body).joined(separator: "\n")
             if used + block.count + 2 > maxCharacters {
                 truncated = true
+                // The newest conversation alone is longer than the budget (a long planning chat).
+                // Dropping it whole left the next conversation with nothing, so its last lines
+                // are kept instead: the end is what the next conversation carries on from.
+                if kept.isEmpty, let tail = lastLines(of: body, header: header, maxCharacters: maxCharacters) {
+                    kept.append((log.id, tail))
+                }
                 break
             }
             kept.append((log.id, block))
@@ -144,11 +159,26 @@ public enum VoiceContext {
         return (kept, truncated)
     }
 
-    /// One line, no data markers (ToolData), at most `maxLineLength`.
-    static func clip(_ text: String) -> String {
+    /// The header, a note that the start was cut, and as many of the newest lines as fit in
+    /// `maxCharacters` (the same two-character gap between blocks as the whole-block rule). Nil
+    /// when not even the newest line fits.
+    private static func lastLines(of body: [String], header: String, maxCharacters: Int) -> String? {
+        var used = header.count + 1 + cutStartNote.count + 2
+        var tail: [String] = []
+        for line in body.reversed() {
+            guard used + line.count + 1 <= maxCharacters else { break }
+            tail.append(line)
+            used += line.count + 1
+        }
+        guard !tail.isEmpty else { return nil }
+        return ([header, cutStartNote] + tail.reversed()).joined(separator: "\n")
+    }
+
+    /// One line, no data markers (ToolData), at most `limit` characters.
+    static func clip(_ text: String, limit: Int = maxLineLength) -> String {
         let flat = ToolData.clean(text)
-        guard flat.count > maxLineLength else { return flat }
-        return String(flat.prefix(maxLineLength - 1)) + "…"
+        guard flat.count > limit else { return flat }
+        return String(flat.prefix(limit - 1)) + "…"
     }
 
     static func format(_ date: Date, timeZone: TimeZone) -> String {
@@ -187,5 +217,14 @@ public enum ConversationLogExport {
             lines.append("")
         }
         return lines.joined(separator: "\n")
+    }
+}
+
+extension ConversationLog {
+    /// The voice that ran this conversation, for the history screens. ElevenLabs is the only voice
+    /// now (9 Nov 2026); a log kept before then may say OpenAI, which stays true of that conversation.
+    /// Nil for a log that never recorded one.
+    public var voiceName: String? {
+        voiceProvider.map { $0 == "openai" ? "OpenAI" : "ElevenLabs" }
     }
 }

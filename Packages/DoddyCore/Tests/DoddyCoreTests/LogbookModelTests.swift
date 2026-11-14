@@ -66,9 +66,11 @@ final class LogbookModelTests: XCTestCase {
         defaults.removePersistentDomain(forName: suite)
     }
 
-    private func model(_ fake: FakeLogbook?, now: Date = noon) -> LogbookModel {
+    private func model(
+        _ fake: FakeLogbook?, now: Date = noon, gate: @escaping @MainActor () -> LocalDataUpload = { .allowed }
+    ) -> LogbookModel {
         LogbookModel(
-            makeClient: { fake }, renewClient: { fake }, defaults: defaults,
+            makeClient: { fake }, renewClient: { fake }, uploadGate: gate, defaults: defaults,
             now: { now }, calendar: { warsawCalendar })
     }
 
@@ -161,5 +163,69 @@ final class LogbookModelTests: XCTestCase {
         logbook.recordConversation(LogbookConversation(startedAt: old, endedAt: old, ended: "user", language: "pl"))
         logbook.recordConversation(LogbookConversation(startedAt: noon, endedAt: noon, ended: "user", language: "pl"))
         XCTAssertEqual(logbook.storedConversations().map(\.startedAt), [noon], "only what can still be sent")
+    }
+
+    // MARK: Local data belongs to the account that made it (decision 2026-11-12-local-data-owner)
+
+    func testAnotherAccountsCountsAreNeverSent() async {
+        let defaults = self.defaults!
+        defaults.set("account-a", forKey: LocalDataOwner.ownerKey)
+        let fake = FakeLogbook()
+        let logbook = model(fake) { LocalDataOwner.upload(for: "account-b", defaults: defaults) }
+        await logbook.sync(sources: LogbookSources())
+        XCTAssertTrue(fake.days.isEmpty, "no day goes to account B")
+        XCTAssertEqual(logbook.problem, .otherAccountsData)
+        XCTAssertNil(logbook.lastSent)
+        await logbook.setOn(true, sources: LogbookSources())
+        XCTAssertTrue(fake.days.isEmpty)
+
+        let owner = model(fake) { LocalDataOwner.upload(for: "account-a", defaults: defaults) }
+        await owner.sync(sources: LogbookSources())
+        XCTAssertEqual(fake.days.count, 8, "the owner's days go once the owner is signed in")
+    }
+
+    func testNobodySignedInSendsNothing() async {
+        let defaults = self.defaults!
+        let fake = FakeLogbook()
+        let logbook = model(fake) { LocalDataOwner.upload(for: nil, defaults: defaults) }
+        await logbook.sync(sources: LogbookSources())
+        XCTAssertTrue(fake.days.isEmpty)
+        XCTAssertNil(logbook.problem)
+    }
+
+    func testSigningOutForgetsTheAccountsCountsAndKeepsTheSwitch() async {
+        let fake = FakeLogbook()
+        let logbook = model(fake)
+        await logbook.sync(sources: LogbookSources())
+        logbook.recordConversation(LogbookConversation(startedAt: noon, endedAt: noon, ended: "user", language: "pl"))
+        XCTAssertEqual(logbook.storedConversations().count, 1)
+
+        logbook.accountSignedOut()
+        XCTAssertTrue(logbook.isOn, "the person's choice stays; on by default (decision 2026-11-09)")
+        XCTAssertTrue(logbook.storedConversations().isEmpty, "the counts of the account that left go")
+        XCTAssertNil(logbook.lastSent)
+
+        // The next account's server is asked afresh, and the due days are sent to it.
+        let next = model(fake, now: noon.addingTimeInterval(600))
+        let before = fake.calls.count
+        await next.sync(sources: LogbookSources())
+        XCTAssertEqual(fake.calls[before], "state:true")
+        XCTAssertEqual(fake.days.count, 16)
+    }
+
+    /// Off means "delete the counts on the server": a sign-out never carries that to the next account.
+    func testSigningOutWithLogbookOffNeverDeletesTheNextAccountsCounts() async {
+        let fake = FakeLogbook()
+        let logbook = model(fake)
+        await logbook.setOn(false, sources: LogbookSources())
+        XCTAssertEqual(fake.calls.last, "state:false")
+        logbook.accountSignedOut()
+        XCTAssertFalse(logbook.isOn)
+
+        let calls = fake.calls.count
+        let next = model(fake)
+        await next.sync(sources: LogbookSources())
+        XCTAssertEqual(fake.calls.count, calls, "nothing is asked of the next account's server")
+        XCTAssertFalse(next.deletionPending)
     }
 }

@@ -50,8 +50,8 @@ Every gap is a visible `<span class="ph" data-ph="ID">` on the page: `[OWNER: â€
 
 ### Retention
 - [ ] **R1** ElevenLabs retention for recordings and transcripts at release. P `#voice-kept`, `#retention`. **Today the live agent keeps recordings with no time limit** (STATUS.md, read 20 Oct; ADR-057 accepted that for the owner's own phone only). The page says so.
-- [ ] **R2** OpenAI retention for Realtime voice. P `#voice-kept`, `#retention`. The app itself says it "isn't verified in this build" (`DataFlow`).
-- [ ] **R3** How a user asks for ElevenLabs/OpenAI recordings and transcripts to be deleted. P `#voice-kept`, `#deleting`. No app function deletes them.
+- [x] ~~**R2** OpenAI retention for Realtime voice.~~ Withdrawn 9 Nov 2026: OpenAI voice was removed (decision `2026-11-09-elevenlabs-only-voice`), and the placeholder and the OpenAI rows are out of both privacy pages. OpenAI's role as the model behind ElevenLabs stays under D1 and D2.
+- [ ] **R3** How a user asks for ElevenLabs recordings and transcripts (and what its model provider keeps) to be deleted. P `#voice-kept`, `#deleting`. No app function deletes them.
 - [ ] **R4** Waitlist retention. P `#website`, `#retention`. No period in the code; deletion on request through `/admin/`.
 - [ ] **R5** Server log retention at Vercel (site, voice sign-in) and Render. P `#website`, `#retention`.
 - [ ] **R6** Retention of account and connection records on Doddy's server (`backend/`), and how a user deletes them. P `#retention`. There is no account-delete route in `backend/src/http.ts`; the page says "write to us" (C2) instead.
@@ -66,7 +66,7 @@ Every gap is a visible `<span class="ph" data-ph="ID">` on the page: `[OWNER: â€
 
 ### Legal bases (all in P `#legal-bases`, marked "proposed")
 - [ ] **B1** Review the whole table.
-- [ ] **B2** Analytics cookies: Google Analytics runs on every page with no consent step (`site/analytics.js`, owner's choice of 15 Oct). P `#website` and `#legal-bases`. For EU visitors this very likely needs prior consent (ePrivacy rules); decide with the lawyer.
+- [ ] **B2** Analytics cookies: since decision `2026-11-12-site-analytics-after-consent`, Google Analytics loads only after the visitor taps Allow in the site's banner; No thanks means it never loads (`site/analytics.js`; this replaces the owner's 15 Oct choice of no consent step). P `#website` and `#legal-bases`. Confirm with the lawyer that the banner's wording and the consent basis are enough for EU visitors.
 - [ ] **B3** Special-category data users put in notes or say aloud (health etc.): explicit consent as proposed?
 - [ ] **B4** Other people's voices in translator mode (and people near the phone): basis and how they are told.
 - [ ] **B5** Apple Health (sport mode, ADR-621 to 623): reading Health and sending the week summary in Messages or to the voice, each with its own in-app consent (`HealthShareConsent`, `HealthVoiceConsent`, versioned and withdrawable on the Apple Health screen): explicit consent under Art. 9(2)(a) as proposed? P `#health` and `#legal-bases`.

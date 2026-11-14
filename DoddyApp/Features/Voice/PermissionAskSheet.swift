@@ -26,8 +26,8 @@ struct PermissionAskSheet: View {
                         .accessibilityHidden(true)
                     Group {
                         switch request.kind {
-                        case .turnOn: Text("Let Doddy use \(title)?")
-                        case .openSettings: Text("\(title) is off for Doddy in iPhone Settings")
+                        case .turnOn: Text(verbatim: String(format: NSLocalizedString("Let Doddy use %@?", comment: ""), title))
+                        case .openSettings: Text(verbatim: String(format: NSLocalizedString("%@ is off for Doddy in iPhone Settings", comment: ""), title))
                         }
                     }
                     .font(.title3.bold())
@@ -59,12 +59,12 @@ struct PermissionAskSheet: View {
                             .foregroundStyle(Theme.secondaryText)
                     }
                     Button(action: onAllow) {
-                        Label("Allow \(title)", systemImage: "checkmark")
+                        Label(String(format: NSLocalizedString("Allow %@", comment: ""), title), systemImage: "checkmark")
                     }
                     .buttonStyle(PrimaryButtonStyle())
                     .accessibilityIdentifier("permission.allow")
                 case .openSettings:
-                    Text("iPhone has \(title) turned off for Doddy. Only you can turn it back on, in iPhone Settings.")
+                    Text(verbatim: String(format: NSLocalizedString("iPhone has %@ turned off for Doddy. Only you can turn it back on, in iPhone Settings.", comment: ""), title))
                         .foregroundStyle(Theme.secondaryText)
                     Button("Open iPhone Settings", action: onAllow)
                         .buttonStyle(PrimaryButtonStyle())

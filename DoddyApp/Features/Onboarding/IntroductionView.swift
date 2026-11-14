@@ -161,11 +161,11 @@ struct ProfileTextField: View {
                 .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 12))
                 .accessibilityLabel(key.label)
                 .accessibilityIdentifier("profile.field.\(key.rawValue)")
-            Text("\(length) / \(key.maxLength)")
+            Text(verbatim: "\(length) / \(key.maxLength)")
                 .font(.footnote)
                 .monospacedDigit()
                 .foregroundStyle(length > key.maxLength ? Theme.error : Theme.secondaryText)
-                .accessibilityLabel("\(length) of \(key.maxLength) characters")
+                .accessibilityLabel(String(format: NSLocalizedString("%lld of %lld characters", comment: ""), length, key.maxLength))
         }
     }
 }
@@ -269,7 +269,7 @@ struct ProfileFieldsEditor: View {
                             Button(role: .destructive) { draft.remove(key) } label: {
                                 Text("Remove")
                             }
-                            .accessibilityLabel("Remove \(key.label)")
+                            .accessibilityLabel(String(format: NSLocalizedString("Remove %@", comment: ""), key.label))
                             .accessibilityIdentifier("profile.remove.\(key.rawValue)")
                         }
                         ProfileTextField(

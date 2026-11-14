@@ -6,6 +6,14 @@ import Foundation
 public struct NewsCatalogTopic: Equatable, Sendable, Decodable, Identifiable {
     public let id: String
     public let label: String
+    /// The publishers behind the topic (10 Nov 2026); older servers leave it out.
+    public let sources: [String]?
+
+    public init(id: String, label: String, sources: [String]? = nil) {
+        self.id = id
+        self.label = label
+        self.sources = sources
+    }
 }
 
 public struct NewsTopic: Equatable, Sendable, Codable {

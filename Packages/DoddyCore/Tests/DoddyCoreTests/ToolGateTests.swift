@@ -43,17 +43,19 @@ final class ToolGateTests: XCTestCase {
 
     // MARK: The release scope (decision 2026-11-07-release-scope)
 
+    /// A scope that hides some features (none does in a build since 10 Nov 2026, decision 2026-11-10-no-beta-scope):
+    /// the gate machinery still refuses their tools first.
     func testHiddenToolIsRefusedBeforeEverything() {
         // A hidden tool is hidden whatever else is on: translator, Pause all, a switch.
         let timer = #"{"seconds": 300}"#
+        let scope = ReleaseScope(hidden: [.errands, .planCard, .onlineAccounts, .homeKit])
         func decide(_ name: String, _ json: String, translator: Bool = false, pauseAll: Bool = false, on: Bool = true) -> ToolGate.Decision {
             ToolGate.decide(toolName: name, request: request(name, json), translatorOn: translator, pauseAll: pauseAll,
-                            isOn: { _ in on }, scope: .shipping)
+                            isOn: { _ in on }, scope: scope)
         }
-        XCTAssertEqual(decide(VoiceToolName.findDeals, #"{"items":["masło"]}"#), .hidden(.deals))
         XCTAssertEqual(decide(VoiceToolName.handOverErrand, "{}", translator: true, pauseAll: true, on: false), .hidden(.errands))
-        XCTAssertEqual(decide(VoiceToolName.startTranslator, "{}"), .hidden(.translator), "translator mode can't start")
-        XCTAssertEqual(decide(VoiceToolName.stopTranslator, "{}", translator: true), .hidden(.translator))
+        XCTAssertNotEqual(decide(VoiceToolName.startTranslator, "{}"), .hidden(.translator), "translator mode can start")
+        XCTAssertEqual(decide(VoiceToolName.stopTranslator, "{}", translator: true), .run, "and stop")
         XCTAssertEqual(decide(VoiceToolName.proposePlan, "{}"), .hidden(.planCard), "the plan card is hidden before .plan")
         XCTAssertEqual(decide(CloudToolName.draftEmail, Self.draft), .hidden(.onlineAccounts))
         XCTAssertEqual(decide(VoiceToolName.controlHome, #"{"action":"off","name":"Lamp"}"#, on: false), .hidden(.homeKit), "hidden before its switch")
@@ -62,6 +64,16 @@ final class ToolGateTests: XCTestCase {
         XCTAssertEqual(decide(VoiceToolName.setTimer, timer, on: false), .notConnected(.timers))
         // The gate is pure: it still honours the controller's translator flag, whatever the scope.
         XCTAssertEqual(decide(VoiceToolName.searchMemories, #"{"query":"keys"}"#, translator: true), .translatorRefused)
+    }
+
+    func testShippingScopeHidesNoTool() {
+        // Since 10 Nov 2026 every feature is shown: no tool is refused as "not in this version".
+        for name in Self.allToolNames + [VoiceToolName.findDeals, VoiceToolName.handOverErrand, VoiceToolName.proposePlan,
+                                         CloudToolName.draftEmail, VoiceToolName.controlHome, VoiceToolName.startTranslator] {
+            let decision = ToolGate.decide(toolName: name, request: request(name), translatorOn: false, pauseAll: false,
+                                           isOn: { _ in true }, scope: .shipping)
+            if case .hidden = decision { XCTFail("\(name) hidden by the shipping scope") }
+        }
     }
 
     func testEverythingScopeChangesNoDecision() {

@@ -54,7 +54,9 @@ final class DealsOfferDetailsTests: XCTestCase {
         XCTAssertEqual(result.items[2].promotions, [DealPromotion(
             chain: .biedronka, text: "Wszystkie kawy mielone Jacobs", mechanic: "1+1", conditions: ["z aplikacją Moja Biedronka", "max 2 szt."],
             flags: [.app], validFrom: day("2026-10-23"), validTo: day("2026-10-29"),
-            source: .init(url: "https://www.biedronka.pl/pl/press,id,example,title,gazetka-od-czwartku", page: 9))])
+            source: .init(url: "https://www.biedronka.pl/pl/press,id,example,title,gazetka-od-czwartku", page: 9),
+            // 13 Nov 2026: when its page was read (Biedronka's leaflet was read in part).
+            leafletRead: DealsLeafletRead(readAt: "2026-10-24T05:45:00.000Z", validFrom: day("2026-10-23"), validTo: day("2026-10-29"), complete: false))])
         XCTAssertEqual(result.items[0].promotions, [])
     }
 

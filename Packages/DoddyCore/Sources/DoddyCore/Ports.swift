@@ -21,6 +21,8 @@ public protocol MemoryRepository: Sendable {
     func save(_ draft: NewMemory) async throws -> MemoryRecord
     /// Newest first. `nil` limit returns everything.
     func list(limit: Int?) async throws -> [MemoryRecord]
+    /// Small, coherent startup context; private notes are excluded before the limits.
+    func voiceStartupSnapshot(excluding privateIDs: Set<UUID>) async throws -> VoiceStartupSnapshot
     func query(_ query: String, limit: Int) async throws -> [MemoryCandidate]
     func update(id: UUID, currentText: String) async throws -> MemoryRecord
     /// Changes only the note's type. Read back before success; the words, dates and "edited"
@@ -49,6 +51,10 @@ public protocol MemoryRepository: Sendable {
 }
 
 extension MemoryRepository {
+    public func voiceStartupSnapshot(excluding privateIDs: Set<UUID>) async throws -> VoiceStartupSnapshot {
+        throw DoddyError.capabilityUnavailable(.memoryStorage)
+    }
+
     public func restore(_ records: [MemoryRecord], corrections: [MemoryCorrection]) async throws -> [MemoryRecord] {
         throw DoddyError.capabilityUnavailable(.memoryStorage)
     }
@@ -126,6 +132,7 @@ public struct AssistantRequest: Equatable, Sendable {
     public let image: AssistantImage?
     /// A file sent with this question only (Messages, 7 Nov 2026). Never with a photo, never sent again.
     public let file: AssistantFile?
+    public let localActions: LocalMessageActionContext?
 
     public init(
         sessionID: UUID,
@@ -135,7 +142,8 @@ public struct AssistantRequest: Equatable, Sendable {
         locale: String = "en",
         image: AssistantImage? = nil,
         file: AssistantFile? = nil,
-        requestID: UUID = UUID()
+        requestID: UUID = UUID(),
+        localActions: LocalMessageActionContext? = nil
     ) {
         self.requestID = requestID
         self.sessionID = sessionID
@@ -145,6 +153,7 @@ public struct AssistantRequest: Equatable, Sendable {
         self.locale = locale
         self.image = image
         self.file = file
+        self.localActions = localActions
     }
 }
 
@@ -229,12 +238,15 @@ public struct AssistantReply: Equatable, Sendable {
     /// A training plan the person asked for (ADR-626): a goal and maybe days and minutes, checked here. The plan screen
     /// opens only on a tap, and asks the safety questions itself. nil when none was asked for.
     public let planAsk: PlanAsk?
+    public let localAction: LocalMessageAction?
 
-    public init(text: String, citedMemoryIDs: [UUID] = [], proposal: AssistantProposal? = nil, planAsk: PlanAsk? = nil) {
+    public init(text: String, citedMemoryIDs: [UUID] = [], proposal: AssistantProposal? = nil, planAsk: PlanAsk? = nil,
+                localAction: LocalMessageAction? = nil) {
         self.text = text
         self.citedMemoryIDs = citedMemoryIDs
         self.proposal = proposal
         self.planAsk = planAsk
+        self.localAction = localAction
     }
 }
 

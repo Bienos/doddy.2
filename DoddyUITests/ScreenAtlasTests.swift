@@ -80,7 +80,14 @@ final class ScreenAtlasTests: XCTestCase {
             app.buttons["home.more"].tap()
             return self.see(app.buttons["home.capabilities"])
         }
-        visit("2-home-04-menu-focus-and-stopwatch") { app in self.menu(app, ["home.timers"]) && self.see(app.buttons["home.focus"]) }
+        // Focus, the timers and the stopwatch left Home's menu on 10 Nov 2026 (decision 2026-11-10-timers-by-voice):
+        // a conversation starts them and Home shows a running one. The visits below start one with the
+        // `running:` fixture (ScreenFixtures) and open its screen from Home's row, where the menu step used to be.
+        visit("2-home-04-running-focus-row", extra: ["-screenFixture", "running:focus"]) { app in
+            self.allowNotificationsIfAsked()
+            return self.see(app.buttons["home.running.focus"], 10)
+        }
+        clearTimers()
         visit("2-home-05-voice-without-an-account") { app in
             guard self.tap(app.buttons["home.talk"], app, 10) else { return false }
             self.settle(2)
@@ -92,22 +99,23 @@ final class ScreenAtlasTests: XCTestCase {
         visit("2-home-09-tasks") { app in self.menu(app, ["home.tasks"]) && self.see(app.navigationBars["Tasks"]) }
         visit("2-home-10-cheapest-this-week") { app in self.menu(app, ["home.deals"]) }
         visit("2-home-11-translate") { app in self.menu(app, ["home.translate"]) && self.see(app.buttons["translator.start"]) }
-        visit("2-home-12-focus") { app in self.menu(app, ["home.timers", "home.focus"]) && self.see(app.buttons["focus.start"]) }
-        visit("2-home-13-focus-running") { app in
-            guard self.menu(app, ["home.timers", "home.focus"]), self.tap(app.buttons["focus.start"], app) else { return false }
-            // The first start asks iOS for notifications (the first screens run kept the question
-            // over the timer); allow, so the picture shows the timer.
-            let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow"]
-            if allow.waitForExistence(timeout: 4) { allow.tap(); self.settle(0.8) }
-            return self.see(app.buttons["focus.pause"])
+        // The focus start screen: stop the running one from its screen, then "Start another".
+        visit("2-home-12-focus", extra: ["-screenFixture", "running:focus"]) { app in
+            self.allowNotificationsIfAsked()
+            return self.tap(app.buttons["home.running.focus"], app, 10) && self.tap(app.buttons["focus.stop"], app)
+                && self.tap(app.buttons["Start another"], app) && self.see(app.buttons["focus.start"])
         }
-        visit("2-home-14-stopwatch-running") { app in
-            self.menu(app, ["home.timers", "home.stopwatch"]) && self.tap(app.buttons["stopwatch.start"], app)
-                && self.see(app.buttons["stopwatch.pause"])
+        visit("2-home-13-focus-running", extra: ["-screenFixture", "running:focus"]) { app in
+            self.allowNotificationsIfAsked()
+            return self.tap(app.buttons["home.running.focus"], app, 10) && self.see(app.buttons["focus.pause"])
         }
+        visit("2-home-14-stopwatch-running", extra: ["-screenFixture", "running:stopwatch"]) { app in
+            self.tap(app.buttons["home.running.stopwatch"], app, 10) && self.see(app.buttons["stopwatch.pause"])
+        }
+        clearTimers()
         // What leaves this iPhone left Home's menu on 9 Nov 2026 (it is 4-settings-16); Phone calls took its place.
         visit("2-home-15-phone-calls") { app in self.menu(app, ["home.calls"]) }
-        visit("2-home-16-voice-picker") { app in self.menu(app, ["home.voice"]) }
+        // 2-home-16-voice-picker went with the voice picker on 9 Nov 2026; the numbers after it are unchanged.
         visit("2-home-17-recordings") { app in
             self.tap(app.buttons["home.files"], app, 10) && self.tap(app.buttons["files.recordings"], app)
                 && self.see(app.buttons["recordings.record"])
@@ -144,14 +152,14 @@ final class ScreenAtlasTests: XCTestCase {
                 && self.see(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'memory.open.'")).firstMatch)
         }
         visit("3-memory-06-find-a-match", store: store) { app in
-            guard self.menu(app, ["home.find"]) else { return false }
+            guard app.openFind() else { return false }
             let query = app.textFields["memories.query"]
             guard self.see(query) else { return false }
             query.tapAndType("key\n")
             return self.see(app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'memory.open.'")).firstMatch)
         }
         visit("3-memory-07-find-nothing", store: store) { app in
-            guard self.menu(app, ["home.find"]) else { return false }
+            guard app.openFind() else { return false }
             let query = app.textFields["memories.query"]
             guard self.see(query) else { return false }
             query.tapAndType("wifi password at the cabin\n")
@@ -202,9 +210,8 @@ final class ScreenAtlasTests: XCTestCase {
     func test4aSettings() {
         let pages: [(String, [String])] = [
             ("4-settings-01-settings", []),
-            ("4-settings-02-voice", ["settings.voice"]),
-            ("4-settings-03-voice-and-personality", ["settings.voice", "settings.personality"]),
-            ("4-settings-04-voice-list", ["settings.voice", "settings.personality", "settings.voice.choice"]),
+            // One page since 12 Nov 2026 (decision 2026-11-12-settings-one-voice-page): the personality is on it, not behind it.
+            ("4-settings-02-voice-and-personality", ["settings.voice"]),
             ("4-settings-05-siri-and-back-tap", ["settings.voice", "settings.ways"]),
             ("4-settings-06-ways-to-open-doddy", ["settings.voice", "settings.ways", "settings.backTap"]),
             ("4-settings-07-doddys-memory", ["settings.memory"]),
@@ -277,7 +284,8 @@ final class ScreenAtlasTests: XCTestCase {
             ("5-notify-04-alarms", ["settings.notifications", "settings.alarms"]),
             ("5-notify-05-birthdays", ["settings.notifications", "settings.birthdays"]),
             ("5-notify-06-daily-news", ["settings.notifications", "settings.news"]),
-            ("5-notify-07-phone-calls", ["settings.notifications", "settings.calls"]),
+            // On Settings' first page since 12 Nov 2026, no longer under Notifications.
+            ("5-notify-07-phone-calls", ["settings.calls"]),
             ("5-notify-08-morning-check-in", ["settings.notifications", "settings.routines", "settings.checkinOpen"]),
             ("5-notify-09-evening-wrap-up", ["settings.notifications", "settings.routines", "settings.wrapUpOpen"]),
             ("5-notify-10-weekly-plan", ["settings.notifications", "settings.routines", "settings.weeklyPlanOpen"]),
@@ -384,7 +392,26 @@ final class ScreenAtlasTests: XCTestCase {
         return true
     }
 
-    /// Home's ••• menu, then each item in turn ("home.timers" opens Focus and stopwatch).
+    /// The timer visits' focus asks iOS for notifications the first time (the first screens run kept the
+    /// question over the timer); allow, so the picture shows the timer.
+    @MainActor
+    private func allowNotificationsIfAsked() {
+        let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow"]
+        if allow.waitForExistence(timeout: 5) { allow.tap(); settle(0.8) }
+    }
+
+    /// Stops the timers the `running:` visits started: the app keeps them in UserDefaults, so otherwise every
+    /// later picture would show their row on Home and their island. A launch with no picture.
+    @MainActor
+    private func clearTimers() {
+        let app = XCUIApplication()
+        app.launchArguments = UITestLaunch.arguments(store: .inMemory, appearance: "light") + ["-screenFixture", "running:none"]
+        app.launch()
+        settle(4)
+        app.terminate()
+    }
+
+    /// Home's ••• menu, then each item in turn.
     @MainActor
     private func menu(_ app: XCUIApplication, _ path: [String]) -> Bool {
         let more = app.buttons["home.more"]

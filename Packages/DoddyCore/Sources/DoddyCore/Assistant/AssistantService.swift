@@ -6,10 +6,12 @@ public struct AssistantPolicy: Equatable, Sendable {
     public let consentGranted: Bool
     /// Relevant saved notes may be sent along. Off means nothing from the notes leaves the device.
     public let includeNotes: Bool
+    public let localActionsEnabled: Bool
 
-    public init(consentGranted: Bool, includeNotes: Bool) {
+    public init(consentGranted: Bool, includeNotes: Bool, localActionsEnabled: Bool = false) {
         self.consentGranted = consentGranted
         self.includeNotes = includeNotes
+        self.localActionsEnabled = localActionsEnabled
     }
 }
 
@@ -84,7 +86,8 @@ public struct AssistantService: Sendable {
             recentTurns: Self.prepare(history),
             locale: Self.safeLocale(locale),
             image: image,
-            file: file)
+            file: file,
+            localActions: policy.localActionsEnabled ? LocalMessageActionContext() : nil)
 
         let reply = try await send(request)
         let verified = try CitationVerifier.verify(reply, for: request)

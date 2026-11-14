@@ -93,19 +93,25 @@ extension ServerKeychainStore {
     static let installMarkerKey = "serverKeychainInstalled"
 
     /// iOS keeps Keychain items after the app is deleted. Called once at launch, before anything
-    /// reads them: on a fresh install the messaging-server token and the Connected Apps session
-    /// token left by an earlier install are removed, as `KeychainCredentialStore` does for the
-    /// gateway items, so a reinstall really starts anew (DOD-11).
+    /// reads them: on a fresh install the messaging-server token, the Connected Apps session
+    /// token, the Doddy account's session and the voice account's session left by an earlier
+    /// install are removed, as `KeychainCredentialStore` does for the gateway items, so a reinstall
+    /// really starts anew (DOD-11): the welcome asks to sign in again instead of saying "Continue"
+    /// with the old account (owner, 12 Nov 2026; decision 2026-11-12-deleted-files-stay-gone).
+    /// The device id (`DeviceSession`) stays: it is what the server knows this iPhone by.
     ///
     /// The marker lives in UserDefaults, which go with the app. An install updating to this
     /// version already has the gateway's marker and keeps its tokens: dropping the messaging token
-    /// would orphan its server account, and any memory copy on it, with no way to delete it.
+    /// would orphan its server account, and any memory copy on it, with no way to delete it, and
+    /// an update must not sign anyone out.
     static func clearLeftoversOnFreshInstall(defaults: UserDefaults = .standard) {
         guard !defaults.bool(forKey: installMarkerKey) else { return }
         if !defaults.bool(forKey: KeychainCredentialStore.installMarkerKey) {
             // Not marked if the delete failed, so it is tried again next launch.
             guard (try? ServerKeychainStore().delete()) != nil else { return }
             KeychainSessionStore.delete()
+            DoddyAccountKeychain().delete()
+            VoiceSessionKeychain.delete()
         }
         defaults.set(true, forKey: installMarkerKey)
     }

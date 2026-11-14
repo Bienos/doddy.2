@@ -51,7 +51,7 @@ const NOTICE: Record<Language, { missed: Notice; quiet: Notice; limit: Notice; c
   },
 };
 
-const reasonAad = (accountId: string, id: string) => `${accountId}:call_reason:${id}`;
+export const reasonAad = (accountId: string, id: string) => `${accountId}:call_reason:${id}`;
 
 export interface ScheduledCallDeps {
   db: Db;

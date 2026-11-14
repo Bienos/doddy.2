@@ -67,6 +67,8 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     if (opts.pin) assert.equal((await call("PUT", "/v1/calls/pin", h, { pin: opts.pin })).statusCode, 204);
     if (opts.inbound) assert.equal((await call("PUT", "/v1/calls/settings", h, { inboundEnabled: true })).statusCode, 204);
     if (opts.memories) {
+      // Memory on calls needs a Doddy account (test/accountQuotas.test.ts): linked as POST /v1/accounts/sign-in does.
+      await db.query("UPDATE accounts SET auth_subject = $2 WHERE id = $1", [accountId, randomUUID()]);
       assert.equal((await call("PUT", "/v1/memory-copy", h, { enabled: true })).statusCode, 204);
       // Uppercase ids, as iOS's UUID.uuidString sends them.
       const items = opts.memories.map((text) => ({ id: randomUUID().toUpperCase(), text, capturedAt: "2026-09-01T10:00:00Z" }));
@@ -154,6 +156,31 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
       assert.equal(await status("CAseq"), ours, twilio);
     }
     assert.equal((await report("CAnobody", "completed")).statusCode, 204);
+  });
+
+  test("inbound calls are capped per account and for the server per day; a refused call hears why and leaves no row", async () => {
+    await db.query("DELETE FROM server_daily_usage WHERE feature = 'inbound_calls'");
+    const capped = await testApp(db, { limits: { accountsPerIpDay: 100_000, inboundCallsPerAccountDay: 2, inboundCallsPerServerDay: 3 } });
+    const on = { app: capped.app, registrar: capped.registrar };
+    const a = await user("+48500000060", { pin: "258025", inbound: true });
+    const b = await user("+48500000061", { pin: "258025", inbound: true });
+    const rows = async (accountId: string) =>
+      Number((await db.query("SELECT count(*) AS n FROM calls WHERE account_id = $1", [accountId])).rows[0].n);
+
+    assert.equal((await dial("+48500000060", on)).twiml, CONNECT_TWIML);
+    assert.equal((await dial("+48500000060", on)).twiml, CONNECT_TWIML);
+    const third = await dial("+48500000060", on);
+    assert.match(third.twiml, /Na dziś to już limit rozmów.*That's the limit of calls for today/s);
+    assert.equal(third.agent, undefined, "the phone agent is never asked");
+    assert.equal(await rows(a.accountId), 2);
+
+    // The account's cap refused the third without using the server's day: one slot is left, for b.
+    assert.equal((await dial("+48500000061", on)).twiml, CONNECT_TWIML);
+    const full = await dial("+48500000061", on);
+    assert.match(full.twiml, /That's the limit of calls for today/);
+    assert.equal(full.agent, undefined);
+    assert.equal(await rows(b.accountId), 1);
+    await capped.app.close();
   });
 
   test("inbound: memories only after the right PIN; wrong PINs lock", async () => {
@@ -302,6 +329,7 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
     const own = await testApp(db);
     const r = await own.app.inject({ method: "POST", url: "/v1/accounts" });
     const { accountId, deviceToken } = r.json() as { accountId: string; deviceToken: string };
+    await db.query("UPDATE accounts SET auth_subject = $2 WHERE id = $1", [accountId, randomUUID()]);
     const snapshot = (payload: object) => own.app.inject({
       method: "PUT", url: "/v1/memory-copy/snapshot", headers: { authorization: `Bearer ${deviceToken}` }, payload,
     });
@@ -413,8 +441,17 @@ describe("phone calls against real Postgres", { skip: dbSkip }, () => {
 
     await consent(h, true);
     outbound.next = [{ kind: "rejected", code: "twilio_21215" }];
-    const refused = await call("POST", "/v1/calls/outbound", h);
+    const lines: string[] = [];
+    const realLog = console.log;
+    console.log = (line: unknown) => { lines.push(String(line)); };
+    let refused;
+    try { refused = await call("POST", "/v1/calls/outbound", h); } finally { console.log = realLog; }
     assert.equal(refused.statusCode, 502);
+    // The refusal's code is logged with the call id, and never the number.
+    const logged = lines.map((l) => { try { return JSON.parse(l); } catch { return {}; } }).find((l) => l.msg === "outbound call");
+    assert.deepEqual({ id: logged?.id, state: logged?.state, code: logged?.code },
+      { id: refused.json().callId, state: "failed", code: "twilio_21215" });
+    assert.equal(lines.some((l) => l.includes("500000021")), false);
     assert.deepEqual((await db.query("SELECT status, error_code FROM calls WHERE id = $1", [refused.json().callId])).rows[0],
       { status: "failed", error_code: "twilio_21215" });
   });

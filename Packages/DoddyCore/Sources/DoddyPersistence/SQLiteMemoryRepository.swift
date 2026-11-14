@@ -54,6 +54,38 @@ public final class SQLiteMemoryRepository: MemoryRepository {
         try await dbQueue.read { db in try Self.allRecords(db, limit: limit) }
     }
 
+    public func voiceStartupSnapshot(excluding privateIDs: Set<UUID>) async throws -> VoiceStartupSnapshot {
+        // One bound JSON value avoids SQLite's variable-count limit for a large private-note set.
+        let excluded = String(decoding: try JSONEncoder().encode(privateIDs.map(\.uuidString)), as: UTF8.self)
+        return try await dbQueue.read { db in
+            let notes = try Row.fetchAll(db, sql: """
+                SELECT * FROM memories
+                WHERE category != ? AND source != ? AND id NOT IN (SELECT value FROM json_each(?))
+                ORDER BY captured_at_ms DESC, rowid DESC LIMIT ?
+                """, arguments: [MemoryCategory.list.rawValue, MemorySource.sampleFixture.rawValue,
+                                  excluded, VoiceStartupSnapshot.notesLimit + 1]).map(Self.record(from:))
+            let rows = try Row.fetchAll(db, sql: """
+                SELECT m.id, m.current_text,
+                       (SELECT COUNT(*) FROM list_items i WHERE i.list_id = m.id AND i.done_at_ms IS NULL) AS open_count,
+                       (SELECT COUNT(*) FROM list_items i WHERE i.list_id = m.id AND i.done_at_ms IS NOT NULL) AS done_count
+                FROM memories m
+                WHERE m.category = ? AND m.source != ? AND m.id NOT IN (SELECT value FROM json_each(?))
+                ORDER BY m.captured_at_ms DESC, m.rowid DESC LIMIT ?
+                """, arguments: [MemoryCategory.list.rawValue, MemorySource.sampleFixture.rawValue,
+                                  excluded, VoiceStartupSnapshot.listsLimit + 1])
+            // Newest lists are the likeliest to be asked about, so a cut drops the oldest (up to 50 lists may exist,
+            // ListLimits.lists). Shown oldest first, the order the Lists screen and the old full prompt used.
+            let lists = try rows.prefix(VoiceStartupSnapshot.listsLimit).reversed().map { row -> VoiceStartupSnapshot.ListSummary in
+                let value: String = row["id"]
+                guard let id = UUID(uuidString: value) else { throw MemoryStoreError.corruptRecord(value) }
+                return .init(id: id, name: row["current_text"], open: row["open_count"], done: row["done_count"])
+            }
+            return VoiceStartupSnapshot(notes: Array(notes.prefix(VoiceStartupSnapshot.notesLimit)), lists: lists,
+                                        notesTruncated: notes.count > VoiceStartupSnapshot.notesLimit,
+                                        listsTruncated: rows.count > VoiceStartupSnapshot.listsLimit)
+        }
+    }
+
     private static func allRecords(_ db: Database, limit: Int? = nil) throws -> [MemoryRecord] {
         var sql = "SELECT * FROM memories ORDER BY captured_at_ms IS NULL, captured_at_ms DESC, rowid DESC"
         if let limit { sql += " LIMIT \(max(0, limit))" }

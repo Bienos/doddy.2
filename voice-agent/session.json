@@ -1,6 +1,6 @@
 {
   "format": "doddy-voice-session/1",
-  "note": "Session settings in provider-neutral terms, with how each maps to ElevenLabs (live now) and OpenAI Realtime (later). Values under 'elevenlabs' mirror the live agent as read on 2026-10-09.",
+  "note": "Session settings in provider-neutral terms, with how each maps to ElevenLabs (live now; OpenAI Realtime was removed from the app on 9 Nov 2026). Values under 'elevenlabs' mirror the live agent as read on 2026-10-09.",
   "first_message": {
     "en": "{{opening_line}}",
     "pl": "{{opening_line}}",
@@ -38,14 +38,66 @@
     "be": "Прывітанне, гэта Doddy. Як справы?",
     "cy": "Helo, Doddy sy 'ma. Sut mae?",
     "gl": "Ola, son Doddy. Que tal?",
-    "lb": "Moien, hei ass den Doddy. Wéi geet et?"
+    "lb": "Moien, hei ass den Doddy. Wéi geet et?",
+    "ar": "{{opening_line}}",
+    "zh": "{{opening_line}}",
+    "ja": "{{opening_line}}",
+    "ko": "{{opening_line}}",
+    "hi": "{{opening_line}}",
+    "bn": "{{opening_line}}",
+    "ur": "{{opening_line}}",
+    "fa": "{{opening_line}}",
+    "he": "{{opening_line}}",
+    "vi": "{{opening_line}}",
+    "th": "{{opening_line}}",
+    "id": "{{opening_line}}",
+    "ms": "{{opening_line}}",
+    "fil": "{{opening_line}}",
+    "sw": "{{opening_line}}",
+    "ka": "{{opening_line}}",
+    "af": "{{opening_line}}",
+    "hy": "{{opening_line}}",
+    "as": "{{opening_line}}",
+    "ast": "{{opening_line}}",
+    "az": "{{opening_line}}",
+    "my": "{{opening_line}}",
+    "yue": "{{opening_line}}",
+    "gu": "{{opening_line}}",
+    "ha": "{{opening_line}}",
+    "jv": "{{opening_line}}",
+    "kn": "{{opening_line}}",
+    "kk": "{{opening_line}}",
+    "ky": "{{opening_line}}",
+    "ml": "{{opening_line}}",
+    "mi": "{{opening_line}}",
+    "mr": "{{opening_line}}",
+    "mn": "{{opening_line}}",
+    "ne": "{{opening_line}}",
+    "oc": "{{opening_line}}",
+    "or": "{{opening_line}}",
+    "ps": "{{opening_line}}",
+    "pa": "{{opening_line}}",
+    "sd": "{{opening_line}}",
+    "so": "{{opening_line}}",
+    "tg": "{{opening_line}}",
+    "ta": "{{opening_line}}",
+    "te": "{{opening_line}}",
+    "uz": "{{opening_line}}",
+    "yo": "{{opening_line}}",
+    "am": "{{opening_line}}",
+    "lo": "{{opening_line}}",
+    "lg": "{{opening_line}}",
+    "sn": "{{opening_line}}",
+    "ckb": "{{opening_line}}",
+    "wo": "{{opening_line}}",
+    "zu": "{{opening_line}}"
   },
   "first_message_variable": {
     "name": "opening_line",
     "placeholder": "I'm here. What's up?",
     "note": "ADR-254. Not in 'variables' because the prompt doesn't use it. The app sends opening_line with every conversation: the greeting after \"Hey Doddy\" (\"Hey Pat, what's up?\", WakeGreeting.line) or the usual opening (\"Hey, it's Doddy. What's up?\" / \"Hej, tu Doddy. Co słychać?\", WakeGreeting.openingLine). On ElevenLabs the placeholder must be set as the agent's dynamic-variable placeholder for opening_line, so builds that don't send it still start. The placeholder is the live English first message as read on 2026-10-11 (the owner's dashboard text \"Hey, it's Doddy. what's up?\"; this file's older \"What's on your mind?\" had drifted). Applied to the live agent 2026-10-11 (owner: \"you do it\"): English and Polish first message {{opening_line}}, placeholder opening_line as above; the other 35 language presets and all placeholders unchanged. Versions agtvrsn_5701m4m4268zfx2s83k8xcdg5bgm (before) -> agtvrsn_2701m4mc8sejfzkbjmekv9nczdrp -> agtvrsn_6701m4mc9b7wekgb2jeg1c6pwnyv. Read again 2026-10-11 after later syncs (version agtvrsn_8201m4mf5fqhf9087wkrjz8kjenp): still {{opening_line}} for English and Polish with this placeholder. ADR-556 (20 Oct 2026, Brand Guidelines V2.2 p.53): the app now sends \"Hi, I'm Doddy. What's on your mind?\" for the user's first conversation and \"I'm here. What's up?\" after that (Polish drafts: \"Cześć, tu Doddy. Co ci chodzi po głowie?\" / \"Jestem. Co słychać?\"), and this placeholder follows the familiar return. Applied to the live agent on 20 Oct 2026 (version agtvrsn_8701m5ct8dxsf8htebwpdykppqbv, rollback agtvrsn_9601m5cg7h2jf0ctpbggw15zzq4n); the live first message is still {{opening_line}}."
   },
-  "languages": ["en", "pl", "de", "fr", "es", "it", "pt", "nl", "sv", "da", "no", "fi", "cs", "sk", "hu", "ro", "bg", "el", "hr", "sl", "lv", "lt", "uk", "ru", "tr", "et", "ca", "sr", "is", "ga", "mt", "mk", "bs", "be", "cy", "gl", "lb"],
+  "languages": ["en", "pl", "de", "fr", "es", "it", "pt", "nl", "sv", "da", "no", "fi", "cs", "sk", "hu", "ro", "bg", "el", "hr", "sl", "lv", "lt", "uk", "ru", "tr", "et", "ca", "sr", "is", "ga", "mt", "mk", "bs", "be", "cy", "gl", "lb", "ar", "zh", "ja", "ko", "hi", "bn", "ur", "fa", "he", "vi", "th", "id", "ms", "fil", "sw", "ka", "af", "hy", "as", "ast", "az", "my", "yue", "gu", "ha", "jv", "kn", "kk", "ky", "ml", "mi", "mr", "mn", "ne", "oc", "or", "ps", "pa", "sd", "so", "tg", "ta", "te", "uz", "yo", "am", "lo", "lg", "sn", "ckb", "wo", "zu"],
   "max_duration_secs": 600,
   "variables": {
     "saved_notes": "Saved notes, newest first, bounded (VoiceContext.savedNotes)",
@@ -68,7 +120,7 @@
     "temperature": 0.5,
     "timezone": "Europe/Warsaw",
     "turn": {"turn_eagerness": "eager", "speculative_turn": true, "turn_model": "turn_v3", "turn_timeout": 7},
-    "language_presets": "One preset per non-English language in 'languages', each overriding only the first message (ADR-212). The built-in language_detection tool (only_at_conversation_start false) switches between them at any point in a conversation.",
+    "language_presets": "One preset per language in 'languages' besides the agent's own Polish (88 since 12 Nov 2026, version agtvrsn_8101m783vmeae5h8rn6wz8xwjpbx), each overriding only the first message ({{opening_line}}) and the soft timeout (ADR-212, decision 2026-11-12-translator-more-languages). The built-in language_detection tool (only_at_conversation_start false) switches between them at any point in a conversation.",
     "tts": {"model_id": "eleven_v4_turbo", "voice_id": "oDULUm0GMltHA6mVZkWh", "speed": 1.0, "stability": 0.5},
     "client_overrides": {"tts": ["voice_id", "speed", "stability"], "agent": ["language"], "note": "Settings, Voice and personality (VoiceStyle, ADR-105); only changed values are sent"},
     "asr": {"provider": "scribe_realtime", "quality": "high"},
@@ -90,20 +142,5 @@
       "translator_start": "none",
       "user_profile": "(The user has not shared their introduction answers with voice conversations.)"
     }
-  },
-  "openai_realtime": {
-    "status": "built for testing behind Home's voice switch (ADR-265): OpenAIRealtimeWire (DoddyCore) and OpenAIRealtimeSession (app); not yet heard on a device",
-    "session_update": {
-      "type": "realtime",
-      "instructions": "voice-agent/instructions.md with {{variables}} filled in by the app (RealtimeInstructions.render)",
-      "tools": "voice-agent/tools.json 'tools' array without x_doddy",
-      "tool_choice": "auto",
-      "audio": {
-        "input": {"turn_detection": {"type": "semantic_vad", "eagerness": "high", "create_response": true, "interrupt_response": true}},
-        "output": {"voice": "set by the token server (OPENAI_REALTIME_VOICE, default marin); the app does not change it"}
-      }
-    },
-    "web_tools": "OpenAI sends every function call to the client. Tools with runs_on 'web' (place lookup, weather, Wikipedia) are not executed in the ADR-265 test: the app answers them as unavailable so Doddy says so. Running them would mean the app or the token server making those requests (x_doddy.http).",
-    "auth": "Server mints a short-lived client secret; the API key never ships in the app (ADR-034)."
   }
 }

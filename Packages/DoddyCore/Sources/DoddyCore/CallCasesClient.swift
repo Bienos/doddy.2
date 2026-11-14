@@ -16,6 +16,10 @@ public enum CallCaseError: Error, Equatable, Sendable {
     /// The approval doesn't match (`digest_mismatch`), the time is outside the hours, an attempt is open...
     case notApprovable(String)
     case callsDisabled
+    /// The booking agent isn't set up on the server (decision 2026-11-12-book-agent).
+    case bookingNotConfigured
+    /// The order agent isn't set up on the server (decision 2026-11-12-food-by-phone).
+    case orderNotConfigured
 }
 
 extension DoddyServerClient {
@@ -92,6 +96,41 @@ extension DoddyServerClient {
         return body.deletions
     }
 
+    // MARK: Call tasks (decision 2026-11-09-restaurant-calls-one-tap)
+
+    /// Sends up to three places and one question; gets back the one card the tap approves.
+    public func createCallTask(_ body: CallTaskBody) async throws -> CallTaskPreview {
+        let response = try await authorized(.post, "/v1/call-tasks", body: try Self.json(body))
+        guard response.status == 201, let preview = try? JSONDecoder().decode(CallTaskPreview.self, from: response.body)
+        else { throw Self.callCaseError(from: response) }
+        return preview
+    }
+
+    /// The one tap: approves exactly the task with this digest, and the first place is called now.
+    /// May start a call, so an answer that never came back is `unknown` and nothing is redialled,
+    /// as for a single case (ADR-672).
+    public func approveCallTask(_ taskId: UUID, digest: String) async throws -> CallApproval {
+        let unknown = CallApproval(attemptId: nil, state: "unknown")
+        let response: ServerResponse
+        do {
+            response = try await authorized(.post, "/v1/call-tasks/\(Self.id(taskId))/approve",
+                                            body: try Self.json(TaskApproveBody(digest: digest)), startsSomething: true, timeout: 30)
+        } catch is OutcomeUnknown {
+            return unknown
+        }
+        if Self.mayHaveStarted(response.status) { return unknown }
+        guard response.status == 202 else { throw Self.callCaseError(from: response) }
+        guard let body = try? JSONDecoder().decode(ApprovalReply.self, from: response.body) else { return unknown }
+        return CallApproval(attemptId: body.attemptId, state: body.state)
+    }
+
+    /// No more places are called and the waiting ones' briefs are deleted. A call already ringing
+    /// is ended from its own page (Zakończ).
+    public func cancelCallTask(_ taskId: UUID) async throws {
+        let response = try await authorized(.post, "/v1/call-tasks/\(Self.id(taskId))/cancel", body: nil)
+        guard response.status == 204 else { throw Self.callCaseError(from: response) }
+    }
+
     public func cancelCallCase(_ caseId: UUID) async throws {
         let response = try await authorized(.post, "/v1/call-cases/\(Self.id(caseId))/cancel", body: nil)
         guard response.status == 204 else { throw Self.callCaseError(from: response) }
@@ -115,18 +154,22 @@ extension DoddyServerClient {
         switch (response.status, body?.error ?? "") {
         case (400, "brief_refused"): return .briefRefused(field: body?.field ?? "", reason: body?.reason ?? "")
         case (400, "destination_refused"): return .destinationRefused(reason: body?.reason ?? "")
+        case (400, "duplicate_place"): return .destinationRefused(reason: "duplicate_place")
         case (409, "gate_refused"): return .gateRefused(gate: body?.gate ?? "")
         case (409, let code) where ["digest_mismatch", "outside_hours", "attempt_open", "already_answered", "no_more_attempts",
                                     "not_approvable", "not_live", "taken_over", "not_takeoverable", "result_mismatch",
-                                    "call_live", "no_more_tries", "phone_not_supported", "too_many_open_cases"].contains(code):
+                                    "call_live", "no_more_tries", "phone_not_supported", "too_many_open_cases", "part_of_task"].contains(code):
             return .notApprovable(code)
         case (503, "calls_disabled"): return .callsDisabled
+        case (503, "booking_not_configured"): return .bookingNotConfigured
+        case (503, "order_not_configured"): return .orderNotConfigured
         default: return .server(error(from: response))
         }
     }
 }
 
 private struct ApproveBody: Encodable { let digest: String; let at: String? }
+private struct TaskApproveBody: Encodable { let digest: String }
 private struct ApprovalReply: Decodable { let attemptId: UUID?; let state: String }
 private struct TakeoverReply: Decodable { let state: String }
 private struct AckBody: Encodable { let attemptId: String; let resultDigest: String }

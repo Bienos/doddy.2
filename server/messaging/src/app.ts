@@ -1,8 +1,8 @@
-import { createHash } from "node:crypto";
 import Fastify, { type FastifyInstance, type FastifyReply } from "fastify";
 import formbody from "@fastify/formbody";
 import rateLimit from "@fastify/rate-limit";
 import type { z } from "zod";
+import { isDeviceHook, rateLimitKey } from "./auth.js";
 import type { AccountVerifier } from "./doddyAccount.js";
 import type { AbuseLimits } from "./config.js";
 import type { Db } from "./db.js";
@@ -11,6 +11,7 @@ import type { CallRegistrar, OutboundCaller, PhoneVerifier, PushSender, SmsSende
 import { callRoutes } from "./routes/calls.js";
 import { elevenLabsRoutes } from "./routes/elevenlabs.js";
 import { newsRoutes } from "./routes/news.js";
+import { radarRoutes } from "./routes/radar.js";
 import type { NewsDeps } from "./news/digest.js";
 import type { QuietHours } from "./quietHours.js";
 import { accountRoutes } from "./routes/account.js";
@@ -26,15 +27,27 @@ import { taskCallWebhookRoutes } from "./routes/taskCallWebhooks.js";
 import { taskCallContext, type TaskCallContext, type TaskCallDeps } from "./taskCalls/context.js";
 import { errandRoutes } from "./routes/errands.js";
 import { errandContext, type ErrandContext, type ErrandDeps } from "./errands/context.js";
+import { fileWatchRoutes } from "./routes/fileWatches.js";
 import { studioRoutes } from "./routes/studio.js";
+import { fileWatchContext, type FileWatchContext, type FileWatchDeps } from "./fileWatches.js";
 import { studioContext, type StudioContext, type StudioDeps } from "./studio/context.js";
 import { assistantRoutes } from "./routes/assistant.js";
+import { screenRoutes } from "./routes/screen.js";
 import { dealsRoutes } from "./routes/deals.js";
 import { registryRoutes } from "./routes/registry.js";
+import { jakdojadeRoutes } from "./routes/jakdojade.js";
+import type { JakdojadePartnerClient } from "./integrations/jakdojade.js";
 import type { CeidgClient } from "./registry/ceidg.js";
 import type { DealsDeps } from "./deals/service.js";
 import type { AssistantDeps } from "./assistant/deps.js";
+import type { PhoneRecapDeps } from "./phoneRecaps.js";
+import { phoneRecapRoutes } from "./routes/phoneRecaps.js";
 import { watchRoutes } from "./routes/watches.js";
+import { dealWatchRoutes } from "./routes/dealWatches.js";
+import { dealWatchContextFor, type DealWatchContext } from "./deals/dealWatches.js";
+import type { DealWatchSettings } from "./config.js";
+import { deliveryRoutes } from "./routes/deliveries.js";
+import type { DeliveryDeps } from "./delivery/deliveries.js";
 import { watchContext, type WatchContext, type WatchDeps } from "./watches/context.js";
 
 declare module "fastify" {
@@ -45,8 +58,12 @@ declare module "fastify" {
     errandContext: ErrandContext | null;
     /** The Studio context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
     studioContext: StudioContext | null;
+    /** The file-ready push context (null without MEMORY_ENCRYPTION_KEY or DOCUMENTS_ORIGIN); tests run worker passes on it. */
+    fileWatchContext: FileWatchContext | null;
     /** The price-watch context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run worker passes on it. */
     watchContext: WatchContext | null;
+    /** The deal-watch context the routes use (null without MEMORY_ENCRYPTION_KEY); tests run its checks on it. */
+    dealWatchContext: DealWatchContext | null;
   }
 }
 
@@ -54,6 +71,8 @@ export interface Deps {
   db: Db;
   /** Checks a Doddy account's token for `POST /v1/accounts/sign-in` (decision 2026-11-08-required-account). Absent: that route says "not set up". */
   accounts?: AccountVerifier | null;
+  /** ANONYMOUS_ACCOUNTS: `POST /v1/accounts` makes an account without a sign-in. Absent or false: 403 sign_in_required. */
+  anonymousAccounts?: boolean;
   push?: PushSender;
   sms?: SmsSender;
   verifier?: PhoneVerifier;
@@ -72,6 +91,8 @@ export interface Deps {
   quietHours?: QuietHours;
   /** News digests: feeds always; keyword search and AI writer when configured. */
   news?: NewsDeps;
+  /** On my radar alerts (decision 2026-11-10-radar-alerts): RADAR_ALERTS_ENABLED. Off: nothing new is stored. */
+  radar?: { enabled: boolean };
   logger?: boolean;
   /** Proxies in front that append to X-Forwarded-For (Render: 1). Default 1. */
   trustProxyHops?: number;
@@ -79,6 +100,8 @@ export interface Deps {
   verifyDailyCap?: number;
   /** Account, verification, text and call caps and the countries whose numbers are allowed (ADR-702, ADR-704). Defaults: DEFAULT_ABUSE_LIMITS. */
   limits?: Partial<AbuseLimits>;
+  /** The clock call-back routes are read by (they are dated by the task-call dial's clock). Default: the system clock. */
+  now?: () => Date;
   /** Calls Doddy places for the user (ADR-500). Needs `cipher` and `publicBaseUrl` too. */
   taskCalls?: TaskCallDeps;
   /** Where task-call log lines go (tests capture them); default: the request logger. */
@@ -89,16 +112,27 @@ export interface Deps {
   deals?: DealsDeps;
   /** Company registers (ADR-685): CEIDG with the owner's token; absent answers 503 registry_disabled. */
   ceidg?: CeidgClient;
+  /** Opt-in, licensed, read-only transport API. Never configured without a partner secret. */
+  jakdojade?: JakdojadePartnerClient;
   /** Where errand log lines go (tests capture them); default: the request logger. */
   errandLog?: (msg: string, extra?: object) => void;
   /** Studio (ADR-740): settings and the model API (needs an Anthropic key and Doddy's skills). Needs `cipher` too. */
   studio?: StudioDeps;
+  /** File-ready pushes (9 Nov 2026): the backend's address and, in tests, a fake fetch and clock. Needs `cipher` too. */
+  fileWatches?: FileWatchDeps;
   /** Where Studio log lines go (tests capture them); default: the request logger. */
   studioLog?: (msg: string, extra?: object) => void;
   /** Messages (ADR-586): the typed conversation asks Claude here. Needs an Anthropic key and the switch on. */
   assistant?: AssistantDeps;
+  /** Recaps of calls to Doddy's phone line (decision 2026-11-09-conversation-recaps, step 5). Needs `cipher` and an Anthropic key. */
+  phoneRecaps?: PhoneRecapDeps;
   /** Price watches (shopping stage 2, SHOPPING_WATCH.md): settings and the polite fetcher. Needs `cipher` too. */
   watches?: WatchDeps;
+  /** Deal watches against the leaflet catalog (decision 2026-11-13-leaflet-results-and-deal-watches). Needs `cipher` and the
+   * catalog on (`deals.settings.catalog.enabled`). `now`: a fixed clock for tests. */
+  dealWatches?: { settings: DealWatchSettings; now?: () => Date };
+  /** Deliveries through Uber Direct (decision 2026-11-12-uber-direct-deliveries): off unless configured and enabled. Needs `cipher` too. */
+  deliveries?: DeliveryDeps;
   /** Where price-watch log lines go (tests capture them); default: the request logger. */
   watchLog?: (msg: string, extra?: object) => void;
   /** Where texting-Doddy log lines go (tests capture them); default: the request logger. */
@@ -122,12 +156,42 @@ export function requestLogFields(request: { method: string; url: string; id?: st
   };
 }
 
+/** The body limit of every route that doesn't set its own. Routes above it check the device token before the body. */
+export const BODY_LIMIT = 16 * 1024;
+
+/**
+ * How long a request may take to arrive, headers and body (Node checks every 30 s, so a slow one is cut between
+ * 120 and 150 s). Webhooks from Twilio and ElevenLabs arrive in well under a second; the largest upload, an 8 MB
+ * memory snapshot, needs about 0.55 Mbit/s to make it, which a phone on a weak mobile connection still has.
+ */
+export const REQUEST_TIMEOUT_MS = 120_000;
+
+/** The limit of a signed-in route that sets none: one request a second on average, per device and route. */
+export const DEVICE_ROUTE_LIMIT = { max: 3600, timeWindow: "1 hour" } as const;
+
+const hookList = (hooks: unknown): unknown[] => (Array.isArray(hooks) ? hooks : hooks ? [hooks] : []);
+
+/**
+ * Sent with every response, errors and "not found" included: HTTPS only for a year once a browser has seen
+ * the server (Render serves it over HTTPS only), and no guessing a body's type from its bytes. The backend
+ * sends the same nosniff on every answer and the same HSTS on Doddy Web's pages.
+ */
+export const SECURITY_HEADERS = {
+  "strict-transport-security": "max-age=31536000",
+  "x-content-type-options": "nosniff",
+} as const;
+
 export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const app = Fastify({
     // Render terminates TLS and appends to X-Forwarded-For. Trusting a fixed number of hops reads
     // the client IP from the right, so a client-supplied X-Forwarded-For can't change it (ADR-175).
     trustProxy: (_address: string, hop: number) => hop < (deps.trustProxyHops ?? 1),
-    bodyLimit: 16 * 1024,
+    bodyLimit: BODY_LIMIT,
+    requestTimeout: REQUEST_TIMEOUT_MS,
+    // No idle-socket limit (Fastify's default, said here on purpose): it would also cut a request while its
+    // handler waits, and Messages waits on Claude for up to 45 s. Slow bodies are bounded by requestTimeout,
+    // slow headers by Node's headersTimeout (60 s), idle keep-alive sockets by Fastify's keepAliveTimeout (72 s).
+    connectionTimeout: 0,
     logger: deps.logger === false ? false : {
       level: "info",
       // Never log bearer tokens or signatures. Request bodies are not logged at all.
@@ -136,16 +200,28 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
       serializers: { req: requestLogFields },
     },
   });
+  // First, on the root instance, so every route, the 404 answer and the error handler's answers get them.
+  app.addHook("onSend", async (_req, reply, payload) => {
+    reply.headers(SECURITY_HEADERS);
+    return payload;
+  });
+  // Added before the rate limiter, whose own onRoute hook then sees the limit set here.
+  app.addHook("onRoute", (route) => {
+    const signedIn = [route.onRequest, route.preParsing, route.preHandler].some((hooks) => hookList(hooks).some(isDeviceHook));
+    if (!signedIn) return;
+    // A route that reads a large body must refuse an unknown token first (requireDeviceBeforeBody), not after.
+    if ((route.bodyLimit ?? BODY_LIMIT) > BODY_LIMIT && hookList(route.preHandler).some(isDeviceHook)) {
+      throw new Error(`${route.method} ${route.url}: a route with a bodyLimit above ${BODY_LIMIT} bytes checks the device token before the body (preParsing: requireDeviceBeforeBody)`);
+    }
+    if (route.config?.rateLimit === undefined) route.config = { ...route.config, rateLimit: { ...DEVICE_ROUTE_LIMIT } };
+  });
   await app.register(formbody);
   await app.register(rateLimit, {
     global: false,
-    // Signed-in routes count per bearer token (requests with a made-up token get their own bucket
-    // but are refused by auth before they do anything). Routes without auth must set
-    // keyGenerator: byIp, or a made-up Authorization header would buy a fresh bucket.
-    keyGenerator: (req) => {
-      const auth = req.headers.authorization;
-      return auth ? "auth:" + createHash("sha256").update(auth).digest("hex") : "ip:" + req.ip;
-    },
+    // Signed-in routes count per bearer token once it is known to belong to a device; a missing,
+    // malformed or unknown token counts against the client's address. Routes that never take a
+    // device token set keyGenerator: byIp and skip the lookup.
+    keyGenerator: rateLimitKey(deps.db),
   });
 
   app.setErrorHandler((err: Error & { statusCode?: number }, req, reply) => {
@@ -175,9 +251,14 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   const studioCtx = studioContext(deps.db, deps.studio, deps.cipher, deps.push,
     deps.studioLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
   app.decorate("studioContext", studioCtx ?? null);
+  const fileWatchCtx = fileWatchContext(deps.db, deps.fileWatches, deps.cipher, deps.push,
+    deps.studioLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
+  app.decorate("fileWatchContext", fileWatchCtx ?? null);
   const watchCtx = watchContext(deps.db, deps.watches, deps.cipher, deps.push,
     deps.watchLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
   app.decorate("watchContext", watchCtx ?? null);
+  const dealWatchCtx = dealWatchContextFor(deps, deps.watchLog ?? ((msg, extra = {}) => app.log.info(extra, msg)));
+  app.decorate("dealWatchContext", dealWatchCtx ?? null);
 
   await app.register(accountRoutes(deps, taskCtx));
   await app.register(phoneRoutes(deps));
@@ -190,14 +271,21 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(scheduledCallRoutes(deps));
   await app.register(elevenLabsRoutes(deps));
   await app.register(newsRoutes(deps));
+  await app.register(radarRoutes(deps));
   await app.register(callCaseRoutes(deps, taskCtx));
   await app.register(taskCallWebhookRoutes(deps, taskCtx));
   await app.register(errandRoutes(deps, errandCtx));
   await app.register(studioRoutes(deps, studioCtx));
+  await app.register(fileWatchRoutes(deps, fileWatchCtx));
   await app.register(assistantRoutes(deps));
+  await app.register(screenRoutes(deps));
+  await app.register(phoneRecapRoutes(deps));
   await app.register(dealsRoutes(deps));
   await app.register(registryRoutes(deps));
+  await app.register(jakdojadeRoutes(deps));
   await app.register(watchRoutes(deps, watchCtx));
+  await app.register(dealWatchRoutes(deps, dealWatchCtx));
+  await app.register(deliveryRoutes(deps));
   return app;
 }
 

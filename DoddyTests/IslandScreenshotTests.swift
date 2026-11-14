@@ -71,6 +71,21 @@ final class IslandScreenshotTests: XCTestCase {
         XCTAssertGreaterThan(lit[2], 0, "while he hears you the lines are there, calm")
     }
 
+    /// 12 Nov 2026 (owner: the island "switches from big to small"): iOS sizes the small island to its
+    /// content, so the conversation's right side is the same size in every state, the waves' own,
+    /// and the island keeps one width through connecting, listening, thinking, speaking and a card.
+    @MainActor
+    func testTheSmallIslandKeepsOneWidthThroughAConversation() throws {
+        let expected = (width: Int(IslandAuroraView.size.width) * 3, height: Int(IslandAuroraView.size.height) * 3)
+        for sample in Self.samples {
+            let scene = Self.scene(sample.status, muted: sample.muted, moment: sample.moment)
+            let right = try XCTUnwrap(pixels(IslandVoiceCompactTrailingView(scene: scene, startedAt: Date())
+                .background(Color.islandBlack)), sample.name)
+            XCTAssertEqual(right.width, expected.width, "\(sample.name): the waves' width")
+            XCTAssertEqual(right.height, expected.height, "\(sample.name): the waves' height")
+        }
+    }
+
     /// Small island: his head only, a 26 pt circle, never the whole of him at 30 pt (ADR-615).
     @MainActor
     func testTheCompactIslandShowsOnlyHisHead() throws {

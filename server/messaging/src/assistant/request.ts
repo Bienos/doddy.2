@@ -28,10 +28,15 @@ const text = (max: number) => z.string().refine((v) => !/^\s*$/.test(v) && scala
 const base64 = /^[A-Za-z0-9+/]+={0,2}$/;
 const uuid = z.string().regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/);
 
+/** Every source a note on the iPhone can have, as in `schemas/memory.schema.json`, except `sample_fixture` (never
+ * the person's own note, so never sent). A test keeps the two in step: a note with a source missing here made the
+ * whole request fail. */
+export const MEMORY_SOURCES = ["explicit_text", "explicit_voice", "shared_content", "imported_legacy_unknown", "imported_file", "noted_by_doddy", "conversation_recap"] as const;
+
 const memory = z.strictObject({
   id: uuid,
   text: text(LIMITS.memoryText),
-  source: z.enum(["explicit_text", "explicit_voice", "shared_content", "imported_legacy_unknown"]),
+  source: z.enum(MEMORY_SOURCES),
   capturedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/).optional(),
 });
 
@@ -43,6 +48,11 @@ export const AssistRequest = z.strictObject({
   userText: text(LIMITS.userText),
   turns: z.array(z.strictObject({ role: z.enum(["user", "assistant"]), text: text(LIMITS.turnText) })).max(LIMITS.turns).default([]),
   memories: z.array(memory).max(LIMITS.memories).default([]),
+  localActions: z.strictObject({
+    version: z.literal(1),
+    localNow: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/),
+    timeZone: z.string().min(1).max(80).refine(v => { try { new Intl.DateTimeFormat("en", { timeZone: v }); return true; } catch { return false; } }),
+  }).optional(),
   /** A photo sent with this question only (Messages, 28 Oct 2026). Passed to the model and never stored or logged. */
   image: z.strictObject({
     mediaType: z.literal("image/jpeg"),

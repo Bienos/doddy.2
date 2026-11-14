@@ -125,6 +125,8 @@ enum RestoreCopy {
             return "Note \(position) in that file repeats another one with different text, so nothing from it was added."
         case .unreadableCorrection(let position):
             return "Correction \(position) in that file is damaged, so nothing from it was added."
+        case .unreadablePrivateMarks:
+            return NSLocalizedString("The list of private notes in that file is damaged, so nothing from it was added.", comment: "")
         }
     }
 }
@@ -154,7 +156,8 @@ struct ProfileTextExport: Transferable {
     }
 }
 
-/// Markdown file for the share sheet (`MarkdownExport`, ADR-203). Built when shared.
+/// Markdown file for the share sheet (`MarkdownExport`, ADR-203). Built when shared. With private notes in it,
+/// Face ID is asked first and the file says which notes are private (`PrivateExportGate`).
 struct MarkdownFileExport: Transferable {
     let records: [MemoryRecord]
     let lists: [DoddyList]
@@ -162,13 +165,32 @@ struct MarkdownFileExport: Transferable {
 
     static var transferRepresentation: some TransferRepresentation {
         DataRepresentation(exportedContentType: UTType(filenameExtension: "md", conformingTo: .plainText) ?? .plainText) { export in
-            Data(MarkdownExport.markdown(export.records, lists: export.lists, corrections: export.corrections, exportedAt: Date()).utf8)
+            let marked = try await PrivateExportGate.markedIDs(for: export.records + export.lists.map(\.record))
+            return Data(MarkdownExport.markdown(
+                export.records, lists: export.lists, corrections: export.corrections, privateIDs: marked, exportedAt: Date()).utf8)
         }
         .suggestedFileName("doddy-memories.md")
     }
 }
 
-/// JSON export file for the share sheet (format: `MemoryExport.json`).
+/// The notes as plain text for the share sheet (`MemoryExport.plainText`). Built when shared, with the same Face ID
+/// question as the other exports when private notes are in it.
+struct PlainTextExport: Transferable {
+    let records: [MemoryRecord]
+    let lists: [DoddyList]
+    let corrections: [MemoryCorrection]
+
+    static var transferRepresentation: some TransferRepresentation {
+        ProxyRepresentation(exporting: { (export: PlainTextExport) async throws -> String in
+            let marked = try await PrivateExportGate.markedIDs(for: export.records + export.lists.map(\.record))
+            return MemoryExport.plainText(
+                export.records, lists: export.lists, corrections: export.corrections, privateIDs: marked, exportedAt: Date())
+        })
+    }
+}
+
+/// JSON export file for the share sheet (format: `MemoryExport.json`). With private notes in it, Face ID is asked
+/// first and the file names them, so a restore marks them private again (`PrivateExportGate`).
 struct JSONExport: Transferable {
     let records: [MemoryRecord]
     /// List items (ADR-216); their lists are among `records`.
@@ -177,59 +199,31 @@ struct JSONExport: Transferable {
 
     static var transferRepresentation: some TransferRepresentation {
         DataRepresentation(exportedContentType: .json) { export in
-            try MemoryExport.json(export.records, listItems: export.listItems, corrections: export.corrections, exportedAt: Date())
+            let marked = try await PrivateExportGate.markedIDs(for: export.records)
+            return try MemoryExport.json(
+                export.records, listItems: export.listItems, corrections: export.corrections, privateIDs: marked, exportedAt: Date())
         }
         .suggestedFileName("doddy-memories.json")
     }
 }
 
-/// Who runs Doddy's voice, and for OpenAI which model (ADR-265, ADR-442). Same notes, lists, tools
-/// and cards either way; it takes effect when the next conversation starts, and Settings › What
-/// leaves this iPhone follows it. Always in Settings › Voice; on Home only after the first
-/// conversation (ADR-325, ADR-443), so a new user's Home keeps to Talk to Doddy.
-struct VoiceProviderPicker: View {
-    /// "home" or "settings", for the UI tests' identifiers.
-    let idPrefix: String
-    /// Empty until the user chooses; then ElevenLabs (ADR-546).
-    @AppStorage(VoiceProvider.preferenceKey) private var voiceProvider = ""
-    @AppStorage(OpenAIRealtimeModel.preferenceKey) private var realtimeModel = OpenAIRealtimeModel.default.rawValue
-
+/// The voice sign-in and how voice is connected: the "Voice" section of Settings › Account (it was the bottom section of
+/// Settings › Voice until 12 Nov 2026, decision `2026-11-12-settings-one-voice-page`, where "Your Doddy account" showed
+/// twice).
+struct VoiceAccountSection: View {
     var body: some View {
-        let provider = VoiceProvider.effective(stored: voiceProvider, tokenServerSet: true)
-        VStack(alignment: .leading, spacing: 6) {
-            Picker("Voice", selection: Binding(get: { provider.rawValue }, set: { voiceProvider = $0 })) {
-                ForEach(VoiceProvider.allCases) { option in
-                    Text(verbatim: option.shortName).tag(option.rawValue)
-                }
-            }
-            .pickerStyle(.segmented)
-            .accessibilityIdentifier("\(idPrefix).voiceProvider")
-            if provider == .openAIRealtime {
-                Picker("OpenAI model", selection: $realtimeModel) {
-                    ForEach(OpenAIRealtimeModel.allCases) { option in
-                        Text(verbatim: option.shortName).tag(option.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .accessibilityIdentifier("\(idPrefix).realtimeModel")
-            }
-            Text(verbatim: provider == .openAIRealtime
-                ? "OpenAI Realtime \(OpenAIRealtimeModel(stored: realtimeModel).shortName) runs your next conversation, through the token server. Weather and Wikipedia don't work with it."
-                : "ElevenLabs runs your next conversation.")
-                .font(.caption2).foregroundStyle(Theme.secondaryText)
-            // ADR-633: a Debug build's developer connection reaches ElevenLabs only, so OpenAI asks for
-            // Sign in with Apple, which needs a paid Apple team (not `make project-iphone`).
-            if provider == .openAIRealtime && VoiceConfig.openAIWithoutAccount {
-                // ADR-726: this Debug build asks for OpenAI with no voice account. The server must allow it.
-                Text(verbatim: "This build asks for OpenAI without a Doddy voice account. It works only while the token server allows it; otherwise sign in with Apple.")
-                    .font(.caption2).foregroundStyle(Theme.secondaryText)
-                    .accessibilityIdentifier("\(idPrefix).openAIWithoutAccount")
-            } else if provider == .openAIRealtime && VoiceConfig.directVoiceEnabled {
-                Text(verbatim: "OpenAI needs your Doddy voice account: Sign in with Apple, which needs a paid Apple team. The developer connection only reaches ElevenLabs.")
-                    .font(.caption2).foregroundStyle(Theme.secondaryText)
-                    .accessibilityIdentifier("\(idPrefix).openAINeedsAccount")
-            }
+        Section("Voice") {
+            VoiceAccountSettings()
+            StatusRow(title: "Connection", value: Self.connectionText)
+                .accessibilityIdentifier("settings.voiceConnection")
         }
+    }
+
+    static var connectionText: String {
+        if VoiceSessionKeychain.refreshToken() != nil { return NSLocalizedString("Doddy voice account", comment: "") }
+        // Decision 2026-11-08-required-account: the Doddy account also opens voice.
+        if DoddyAccountModel.shared.isSignedIn { return NSLocalizedString("Your Doddy account", comment: "") }
+        return NSLocalizedString("Sign in on first use", comment: "")
     }
 }
 

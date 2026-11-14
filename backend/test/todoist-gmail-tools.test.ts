@@ -176,13 +176,13 @@ test("move: the approval is bound to the task, the new date and the user, and wo
   assert.deepEqual(writes.map((w) => w.arguments), [{ task_id: "t1", due_string: "tomorrow 9am" }], "exactly the approved arguments, once");
 
   // Used once: a repeat (the phone lost the answer) gets the first answer back and runs nothing
-  // (ADR-322). It says only what is known without the task as it was: no title, no date.
+  // (ADR-322). It says only what the first run recorded (its result word and receipt): no title, no date.
   const lookups = () => rig.provider.executed.filter((e) => e.slug === "TODOIST_GET_TASK2").length;
   const lookupsBefore = lookups();
   const again = await run(rig, "move_todoist_task", args, { approvalId });
   assert.equal(again.status, 200, again.text);
   assert.equal(again.body.replayed, true);
-  assert.equal(again.body.text, "moved: the Todoist task from the first try has its new due date.");
+  assert.equal(again.body.text, "moved: Todoist task due date changed. Done on the first try; nothing ran again.");
   assert.equal(rig.provider.executed.filter((e) => e.slug === "TODOIST_UPDATE_TASK").length, 1, "single use: nothing ran again");
   assert.equal(lookups(), lookupsBefore, "and no lookup for the repeat");
 });

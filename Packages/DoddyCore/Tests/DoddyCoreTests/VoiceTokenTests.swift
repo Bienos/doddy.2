@@ -20,6 +20,18 @@ final class VoiceTokenTests: XCTestCase {
         }
     }
 
+    func testTranslatingTalksToItsOwnAgentAndEverythingElseToTheMainOne() throws {
+        // Owner, 12 Nov 2026: no function while translating, so translating has an agent with no tools.
+        XCTAssertEqual(VoiceAgentKind.forTranslatorStart(true), .translator)
+        XCTAssertEqual(VoiceAgentKind.forTranslatorStart(false), .main)
+        // The main agent's request is exactly what it was before: no body.
+        XCTAssertNil(VoiceAgentKind.main.requestBody)
+        let body = try XCTUnwrap(VoiceAgentKind.translator.requestBody)
+        XCTAssertEqual(try JSONSerialization.jsonObject(with: body) as? [String: String], ["agent": "translator"])
+        // The body names an agent kind, never an id, an account, a language or anything said.
+        XCTAssertEqual(String(decoding: body, as: UTF8.self), #"{"agent":"translator"}"#)
+    }
+
     func testTokenReplies() {
         XCTAssertEqual(VoiceTokenServer.token(status: 200, body: Data(#"{"token":"jwt"}"#.utf8)), .success("jwt"))
         XCTAssertEqual(VoiceTokenServer.token(status: 200, body: Data(#"{"token":""}"#.utf8)), .failure(.badResponse))
@@ -113,11 +125,11 @@ final class VoiceTokenTests: XCTestCase {
         for bad in [nil, "", "0", "-3", "soon", "1.5", "Wed, 21 Oct 2026 07:28:00 GMT"] {
             XCTAssertNil(VoiceTokenServer.retryAfterSeconds(bad), bad ?? "nil")
         }
-        // Both providers' token replies read it for a 429.
+        // The token reply reads it for a 429.
         let body = Data(#"{"error":"rate_limited"}"#.utf8)
         XCTAssertEqual(VoiceTokenServer.token(status: 429, body: body, retryAfter: "39600"), .failure(.rateLimited(retryAfterSeconds: 39_600)))
-        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 429, body: body, retryAfter: "1800"), .failure(.rateLimited(retryAfterSeconds: 1_800)))
-        XCTAssertEqual(VoiceTokenServer.openAIGrant(status: 429, body: body), .failure(.rateLimited(retryAfterSeconds: nil)))
+        XCTAssertEqual(VoiceTokenServer.token(status: 429, body: body, retryAfter: "1800"), .failure(.rateLimited(retryAfterSeconds: 1_800)))
+        XCTAssertEqual(VoiceTokenServer.token(status: 429, body: body), .failure(.rateLimited(retryAfterSeconds: nil)))
     }
 
     func testAThrottledSignInIsNotAVerificationFailure() {

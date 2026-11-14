@@ -1,9 +1,10 @@
 import DoddyCore
 import SwiftUI
 
-/// Home → Focus (ADR-241): pick 15, 25 or 45 minutes and, if you like, a line saying what it's
+/// The focus timer (ADR-241): pick 15, 25 or 45 minutes and, if you like, a line saying what it's
 /// for. While it runs the island shows the owner's Tiny Promise board; this screen shows the
-/// same drawing, the time left and Pause / Stop.
+/// same drawing, the time left and Pause / Stop. Since decision 2026-11-10-timers-by-voice it starts
+/// by voice (`start_focus`) and this screen opens from Home's row while one runs.
 struct FocusView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
@@ -60,7 +61,7 @@ struct FocusView: View {
                 .font(.title2.weight(.medium))
                 .accessibilityAddTraits(.isHeader)
             Picker("Minutes", selection: $minutes) {
-                ForEach(FocusSession.presetMinutes, id: \.self) { Text("\($0) min").tag($0) }
+                ForEach(FocusSession.presetMinutes, id: \.self) { Text(verbatim: String(format: NSLocalizedString("%lld min", comment: ""), $0)).tag($0) }
             }
             .pickerStyle(.segmented)
             .accessibilityIdentifier("focus.minutes")

@@ -21,11 +21,11 @@ struct DoddyMemorySettingsView: View {
         Form {
             Section {
                 Button { openMemories(.notes) } label: {
-                    StatusRow(title: NSLocalizedString("Notes", comment: ""), value: "\(store.memories.count)")
+                    SettingsRow(icon: "note.text", title: NSLocalizedString("Notes", comment: ""), value: "\(store.memories.count)")
                 }
                 .accessibilityIdentifier("settings.memory.notes")
                 Button { openMemories(.lists) } label: {
-                    StatusRow(title: NSLocalizedString("Lists", comment: ""), value: "\(store.lists.count)")
+                    SettingsRow(icon: "list.bullet", title: NSLocalizedString("Lists", comment: ""), value: "\(store.lists.count)")
                 }
                 .accessibilityIdentifier("settings.memory.lists")
                 // "Find something" was a third row; Find is on the notes screen itself (7 Nov 2026).
@@ -37,9 +37,9 @@ struct DoddyMemorySettingsView: View {
                 NavigationLink {
                     AboutYouSettingsView()
                 } label: {
-                    StatusRow(title: NSLocalizedString("My profile", comment: ""),
-                              value: profiles.profile.isEmpty ? NSLocalizedString("Not set", comment: "")
-                                  : (profiles.profile.value(.name) ?? NSLocalizedString("Saved", comment: "")))
+                    SettingsRow(icon: "person.crop.circle", title: NSLocalizedString("My profile", comment: ""),
+                                value: profiles.profile.isEmpty ? NSLocalizedString("Not set", comment: "")
+                                    : (profiles.profile.value(.name) ?? NSLocalizedString("Saved", comment: "")))
                 }
                 .accessibilityIdentifier("settings.profile")
                 // The learning loop waits for the beta's result (decision 2026-11-07-release-scope, M6): hidden with its row.
@@ -47,16 +47,19 @@ struct DoddyMemorySettingsView: View {
                     NavigationLink {
                         KnowledgeSettingsView()
                     } label: {
-                        Text("What Doddy knows")
+                        SettingsRow(icon: "lightbulb", title: NSLocalizedString("What Doddy knows", comment: ""))
                     }
                     .accessibilityIdentifier("settings.knowledge")
                 }
                 NavigationLink {
                     MemoriesSettingsView()
                 } label: {
-                    Text("Export, backup and delete")
+                    SettingsRow(icon: "square.and.arrow.up", title: NSLocalizedString("Export, backup and delete", comment: ""))
                 }
                 .accessibilityIdentifier("settings.memories")
+            } footer: {
+                // Was Settings' first-page header until 12 Nov 2026; it is about memory, so it is said here.
+                Text("You choose each saved memory. See the original, edit it or remove it.")
             }
         }
         .settingsPage()
@@ -69,7 +72,7 @@ struct DoddyMemorySettingsView: View {
 struct ConnectionsSettingsView: View {
     @AppStorage(ConnectionPause.preferenceKey) private var pauseAllConnections = false
     @AppStorage(HealthConnectionView.preferenceKey) private var appleHealthOn = false
-    @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = false
+    @AppStorage(PreferenceKey.assistantConsent) private var assistantConsent = PreferenceKey.assistantConsentDefault
     @State private var connections = ConnectionController()
 
     private var activityLog: ActivityLogStore { .shared }
@@ -126,7 +129,7 @@ struct ConnectionsSettingsView: View {
                     .accessibilityIdentifier("settings.invoices")
                 }
                 // ADR-735: USDC for pages that ask for payment. Off until the server has a wallet and the person turns it on.
-                // Hidden in the beta with its voice tool. Home's "a payment wasn't confirmed" banner stays in every build.
+                // Shown since 10 Nov 2026 (decision 2026-11-10-no-beta-scope); payments are off on the server by flag and say so. Home's "a payment wasn't confirmed" banner stays in every build.
                 if scope.shows(.payments) {
                     NavigationLink {
                         PaymentsScreen()
@@ -218,7 +221,8 @@ struct ConnectionsSettingsView: View {
 }
 
 /// Settings › Notifications (ADR-633): everything that can reach the user without opening Doddy.
-/// A row whose feature the build hides is left out (decision 2026-11-07-release-scope).
+/// A row whose feature the build hides is left out (decision 2026-11-07-release-scope). Phone calls moved to Settings'
+/// first page on 12 Nov 2026 (decision `2026-11-12-settings-one-voice-page`); the rows have the first page's tiles.
 struct NotificationsSettingsView: View {
     private var scope: ReleaseScope { ReleaseScopeStore.current }
 
@@ -229,14 +233,14 @@ struct NotificationsSettingsView: View {
                     NavigationLink {
                         UpdatesSettingsView()
                     } label: {
-                        Text("Notifications and texts")
+                        SettingsRow(icon: "bell.badge", title: NSLocalizedString("Notifications and texts", comment: ""))
                     }
                     .accessibilityIdentifier("settings.updates")
                 }
                 NavigationLink {
                     RoutinesSettingsView()
                 } label: {
-                    Text("Check-ins and reminders")
+                    SettingsRow(icon: "checklist", title: NSLocalizedString("Check-ins and reminders", comment: ""))
                 }
                 .accessibilityIdentifier("settings.routines")
             }
@@ -244,14 +248,14 @@ struct NotificationsSettingsView: View {
                 NavigationLink {
                     AlarmsView()
                 } label: {
-                    Text("Alarms")
+                    SettingsRow(icon: "alarm", title: NSLocalizedString("Alarms", comment: ""))
                 }
                 .accessibilityIdentifier("settings.alarms")
                 if scope.shows(.birthdays) {
                     NavigationLink {
                         BirthdaysView()
                     } label: {
-                        Text("Birthdays")
+                        SettingsRow(icon: "gift", title: NSLocalizedString("Birthdays", comment: ""))
                     }
                     .accessibilityIdentifier("settings.birthdays")
                 }
@@ -259,17 +263,9 @@ struct NotificationsSettingsView: View {
                     NavigationLink {
                         NewsSettingsView()
                     } label: {
-                        Text("Daily news")
+                        SettingsRow(icon: "newspaper", title: NSLocalizedString("Daily news", comment: ""))
                     }
                     .accessibilityIdentifier("settings.news")
-                }
-                if scope.shows(.phoneCalls) {
-                    NavigationLink {
-                        CallsSettingsView()
-                    } label: {
-                        Text("Phone calls")
-                    }
-                    .accessibilityIdentifier("settings.calls")
                 }
             }
         }

@@ -129,7 +129,7 @@ export async function ackResult(ctx: TaskCallContext, accountId: string, caseId:
 
 /** Drops a case's payload (the brief) and closes it. */
 export async function purgePayload(c: Client, accountId: string, caseId: string, state: "finished" | "cancelled" | "expired",
-  reason: "acked" | "cancelled" | "expired", now: Date): Promise<boolean> {
+  reason: "acked" | "cancelled" | "expired" | "processed", now: Date): Promise<boolean> {
   const { rowCount } = await c.query(
     `UPDATE call_cases SET payload_ciphertext = NULL, payload_key_version = NULL, payload_purged_at = $3, state = $2, updated_at = $3
      WHERE id = $1 AND payload_ciphertext IS NOT NULL`, [caseId, state, now]);

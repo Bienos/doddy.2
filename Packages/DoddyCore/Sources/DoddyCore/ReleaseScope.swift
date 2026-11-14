@@ -1,6 +1,6 @@
 import Foundation
 
-/// A feature the release scope can hide (decision 2026-11-07-release-scope). Hiding is "no way in": the row in Settings, the
+/// A feature the release scope can hide (decision 2026-11-07-release-scope; nothing is hidden since 10 Nov 2026). Hiding is "no way in": the row in Settings, the
 /// card or menu item on Home, the icon's quick action and the voice tool all go; the code and the
 /// person's data stay. Nothing here deletes or changes what the person saved.
 ///
@@ -16,8 +16,6 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     case translator
     /// Several changes on one card, `propose_plan` (ADR-204).
     case planCard
-    /// ElevenLabs or OpenAI Realtime, chosen on Home and in Settings › Voice (ADR-442, ADR-546).
-    case voiceProviderPicker
 
     // Memory, beyond notes and lists
     /// "Close in meaning" results from on-device embeddings (ADR-227).
@@ -70,6 +68,8 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     case onlineAccounts
     /// The web, the news and places, looked up through the server (ADR-575).
     case webSearch
+    /// Flights: Kiwi.com search and Duffel booking through the server (decision 2026-11-11-flights-kiwi-search-duffel-booking).
+    case flights
     /// Claude on the server: summaries, rewrites, and files it makes (ADR-574).
     case claudeDocuments
     /// This week's leaflets, "Cheapest this week" (ADR-609).
@@ -78,6 +78,9 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     case errands
     /// "Pilnuj ceny" (ADR-614).
     case priceWatch
+    /// Shopify shops: product search and a merchant-owned checkout, through Doddy's server and Shopify's Shop service
+    /// (docs/implementation/SHOPPING.md "Shopify"). Nothing is paid or ordered in Doddy. No voice tool yet.
+    case shopifyShopping
     /// The feed of what the person follows (ADR-656).
     case following
     /// The daily digest by push or text (ADR-174).
@@ -125,7 +128,9 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .birthdays: [VoiceToolName.upcomingBirthdays]
         case .steps: [VoiceToolName.readSteps]
         case .onlineAccounts: CloudToolName.all.subtracting(Feature.webSearch.tools).subtracting(Feature.claudeDocuments.tools)
+            .subtracting(Feature.flights.tools)
         case .webSearch: [CloudToolName.webSearch, "news_search", "find_places"]
+        case .flights: CloudToolName.flightTools
         case .claudeDocuments: [CloudToolName.askClaude, CloudToolName.makeDocument]
         case .deals: [VoiceToolName.findDeals]
         case .errands: [VoiceToolName.handOverErrand, VoiceToolName.checkErrands]
@@ -137,17 +142,22 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .presentations: [VoiceToolName.makePresentation]
         case .photosAndCamera: [VoiceToolName.findPhotos, VoiceToolName.openCamera]
         // Doddy's own phone number (ADR-750 to 755): a text to the person's own number goes with the
-        // texts, a call booked for later with the calls.
+        // texts, a call now or booked for later with the calls.
         case .updates: [VoiceToolName.textMe]
-        case .phoneCalls: [VoiceToolName.callMeLater]
+        case .phoneCalls: [VoiceToolName.callMeLater, VoiceToolName.callMeNow]
         case .invoices: [VoiceToolName.draftInvoice]
         case .studio: [VoiceToolName.makeSomething]
         case .payments: [PaymentToolName.payForPage]
         case .lostWallet: [VoiceToolName.lostWallet]
-        case .voiceProviderPicker, .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning,
+        case .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning,
              .recordings, .sharedLists, .shoppingModeLockScreen, .placeReminders, .eveningWrapUp, .weeklyLookBack,
-             .weeklyPlan, .messages, .files, .doddyWeb, .cloudMemory, .priceWatch, .dailyNews, .callCases, .parcels:
+             .weeklyPlan, .files, .doddyWeb, .cloudMemory, .priceWatch, .shopifyShopping, .dailyNews, .parcels:
             []
+        // "What's on my screen?" asks the Messages route's Claude, with its key, switch and daily caps
+        // (decision 2026-11-09-doddy-looks-at-the-screen), so it comes and goes with Messages.
+        case .messages: [VoiceToolName.lookAtScreen]
+        // Calls Doddy makes for the user, started from a conversation (decision 2026-11-09-restaurant-calls-one-tap).
+        case .callCases: [VoiceToolName.callPlaces]
         }
     }
 
@@ -180,15 +190,15 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
     }
 }
 
-/// Which features a build shows (decision 2026-11-07-release-scope; `docs/implementation/RELEASE_SCOPE.md`). One list, read
+/// Which features a build shows (decision 2026-11-07-release-scope, reversed by 2026-11-10-no-beta-scope: every build
+/// shows everything; `docs/implementation/RELEASE_SCOPE.md`). One list, read
 /// by every way in: the voice tool gate, Home's menu and bottom bar, the Settings rows, the icon's
 /// quick actions, the language picker and the capability catalog. There was no switch for "Hide"
 /// before this (`GO_LIVE_CHECKLIST.md` B2): a feature could only be shipped or deleted.
 ///
-/// The scope is decided by the build, never by a server or a remote flag: the app ships
-/// `ReleaseScope.shipping`; a Debug build can show everything through Settings › About › Advanced
-/// (`previewEverythingKey`), so the owner can try a hidden feature on their phone. A Release build
-/// ignores that key.
+/// The scope is decided by the build, never by a server or a remote flag. Everything is shown since
+/// 10 Nov 2026, so `hidden` is empty in `shipping` and in `everything`; the machinery stays for a
+/// future decision to hide something again.
 public struct ReleaseScope: Equatable, Sendable {
     public let hidden: Set<Feature>
 
@@ -199,31 +209,23 @@ public struct ReleaseScope: Equatable, Sendable {
     /// Every feature, as the code was built until decision 2026-11-07-release-scope.
     public static let everything = ReleaseScope(hidden: [])
 
-    /// The v1 beta (`docs/product/V1_SCOPE.md`, `PRZEGLAD_FUNKCJI_2026-11-07.md` §6): the
-    /// conversation, memory, Apple Calendar, Reminders and Contacts, timers, alarms, the stopwatch,
-    /// sums, the weather and Wikipedia, photo notes and camera, Face ID, backup and export, Messages
-    /// behind its own consent. Everything that needs a server the beta doesn't keep, a vendor, a
-    /// permission the beta doesn't ask for, or that has never run on a phone, is hidden. The list
-    /// is the owner's to change: edit it here, and the tests say what the agent must lose.
-    public static let shipping = ReleaseScope(hidden: [
-        .translator, .planCard, .voiceProviderPicker,
-        .meaningSearch, .noteImport, .voiceMemos, .tidyUp, .spotlight, .learning, .recordings, .sharedLists,
-        .shoppingModeLockScreen, .placeReminders,
-        .leaveBy, .parking, .birthdays, .eveningWrapUp, .weeklyLookBack, .weeklyPlan, .steps,
-        .files, .doddyWeb, .cloudMemory, .onlineAccounts, .webSearch, .claudeDocuments, .deals, .errands, .priceWatch,
-        .following, .dailyNews, .updates, .phoneCalls, .callCases, .studio, .payments,
-        .health, .trainingPlan, .homeKit, .blik, .presentations, .invoices, .parcels, .lostWallet,
-    ])
+    /// What a Release or TestFlight build shows: everything, since 10 Nov 2026 (owner: "forget the beta as
+    /// if it didn't exist"; decision `2026-11-10-no-beta-scope`, which reverses
+    /// `2026-11-07-release-scope`). The old list of about 40 hidden features is gone; a feature that
+    /// needs a server, a permission or an entitlement the build doesn't have says so itself (status
+    /// rows, "needs setup", "not available") instead of being hidden. To hide a feature again, build
+    /// a scope with `ReleaseScope(hidden:)`: the type, the gate and the tests still work.
+    public static let shipping = everything
 
     /// The Debug-only preference that shows everything on the owner's phone. A Release build never reads it.
     public static let previewEverythingKey = "releaseScope.previewEverything"
 
-    /// A Debug build shows every feature until the switch is turned off (owner, 8 Nov 2026, decision
-    /// 2026-11-08-debug-shows-every-feature). A Release or TestFlight build is always `shipping`.
+    /// A Debug build shows every feature (decision 2026-11-08-debug-shows-every-feature). Since 10 Nov 2026
+    /// `shipping` is `everything` too, so the switch no longer changes what is shown.
     public static let debugShowsEverythingByDefault = true
 
-    /// The scope of a Debug build, from the preference: nil (never set) or true shows everything,
-    /// false shows what the beta ships.
+    /// The scope of a Debug build, from the preference. Both answers are `everything` now (kept so the
+    /// preference key and its callers keep working).
     public static func debug(showEverything: Bool?) -> ReleaseScope {
         (showEverything ?? debugShowsEverythingByDefault) ? .everything : .shipping
     }
@@ -247,9 +249,9 @@ public struct ReleaseScope: Equatable, Sendable {
         hidden.flatMap(\.tools).sorted()
     }
 
-    /// The languages the picker offers. The beta ships Polish and English, the two anyone has read
-    /// (`l10n/REVIEW_NOTES.md`); the machine drafts come back one at a time after a native read
-    /// (V1 decision 2). Voice answers in whatever language the person speaks regardless.
+    /// The languages the picker offers: all of them in `everything` (so in every build since 10 Nov 2026);
+    /// a scope that is anything else offers Polish and English, the two a native speaker has read
+    /// (`l10n/REVIEW_NOTES.md`), the others being machine drafts. Voice answers in whatever language the person speaks regardless.
     public var languages: [AppLanguage] {
         self == .everything ? AppLanguage.allCases : AppLanguage.allCases.filter { Self.shippedLanguages.contains($0) }
     }
@@ -275,9 +277,15 @@ public struct ReleaseScope: Equatable, Sendable {
         VoiceToolName.moveReminders, VoiceToolName.undoLast,
         VoiceToolName.setTimer, VoiceToolName.setAlarm, VoiceToolName.listAlarms, VoiceToolName.cancelAlarm,
         VoiceToolName.startStopwatch, VoiceToolName.stopStopwatch, VoiceToolName.checkStopwatch,
+        // The focus timer and the wind-down by voice (decision 2026-11-10-timers-by-voice): Home's menu no longer
+        // starts them, so in every scope a conversation is their way in.
+        VoiceToolName.startFocus, VoiceToolName.stopFocus, VoiceToolName.checkFocus,
+        VoiceToolName.startWindDown, VoiceToolName.stopWindDown,
         VoiceToolName.lookupContact, VoiceToolName.draftMessage,
         VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency,
         VoiceToolName.openMap, VoiceToolName.runShortcut,
+        // Home's Food button is in every scope, so opening a food app by voice is too (decision 2026-11-12-food-by-voice).
+        VoiceToolName.openFoodApp,
         VoiceToolName.noteCapabilityGap,
     ]).union(ToolCatalog.webLookups)
 }

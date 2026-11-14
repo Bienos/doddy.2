@@ -19,8 +19,8 @@ public enum CarDecision: Equatable, Sendable {
 public enum CarProfile {
     public static func decision(for request: VoiceToolRequest) -> CarDecision {
         switch request {
-        case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .readSteps, .readHealthWeek, .findPhotos, .calculate, .convertUnits,
-             .convertCurrency, .readList, .listAlarms, .checkStopwatch, .needsClarification, .unsupported, .invalid:
+        case .searchMemories, .readCalendar, .findFreeTime, .upcomingBirthdays, .readSteps, .readHealthWeek, .findPhotos, .lookAtScreen, .calculate, .convertUnits,
+             .convertCurrency, .readList, .listAlarms, .checkStopwatch, .checkFocus, .needsClarification, .unsupported, .invalid:
             return .run
         case .noteCapabilityGap:
             // Bookkeeping on the iPhone (ADR-440): one category, none of the user's data, nothing to undo.
@@ -53,11 +53,18 @@ public enum CarProfile {
             // Money (ADR-510): a card to check and a bank app to send from, so never while driving.
             return .refuse(reason: "A BLIK transfer is shown on the iPhone for the user to check and send in their bank app, so it waits until they aren't driving.")
         case .textMe:
-            // Leaves the iPhone through Doddy's server and Twilio (ADR-750 U2).
-            return .refuse(reason: "A text from Doddy's number needs a tap on the iPhone, so it waits until the user isn't driving.")
+            // Leaves the iPhone through Doddy's server and Twilio (ADR-750 U2), so not while driving (owner, 2026-10-11),
+            // even though it needs no tap since decision 2026-11-09-restaurant-calls-one-tap.
+            return .refuse(reason: "A text from Doddy's number leaves the iPhone, so it waits until the user isn't driving.")
+        case .callPlaces:
+            // Calls to places in the user's name, approved on a card (decision 2026-11-09-restaurant-calls-one-tap).
+            return .refuse(reason: "Calling places for the user needs a tap on the iPhone, so it waits until the user isn't driving.")
         case .callMeLater:
             // A call booked through Doddy's server (ADR-754): the card is the approval.
             return .refuse(reason: "Booking a call from Doddy needs a tap on the iPhone, so it waits until the user isn't driving.")
+        case .callMeNow:
+            // The card is the approval, and the phone would ring while the user drives.
+            return .refuse(reason: "A call from Doddy needs a tap on the iPhone, so it waits until the user isn't driving.")
         case .draftInvoice:
             // An invoice is checked line by line on the screen (ADR-677), so not while driving.
             return .refuse(reason: "An invoice draft is checked on the iPhone's screen, so it waits until the user isn't driving.")
@@ -65,9 +72,15 @@ public enum CarProfile {
             return .askAloud(readBack: CarConfirmation.readBack(saving: text))
         case .addToList(let request):
             return .askAloud(readBack: CarConfirmation.readBack(adding: request.items, to: request.list))
-        case .leaveBy, .createCalendarEvent, .createReminder, .remindAboutNote, .lookupContact, .addIngredients, .undoLast,
-             .setTimer, .setAlarm, .cancelAlarm, .followNews, .startStopwatch, .stopStopwatch, .openTrainingPlan, .openMap, .runShortcut, .draftMessage, .makePresentation, .openCamera, .controlHome, .startTranslator,
-             .stopTranslator, .checkOff, .removeFromList, .createList, .changeCalendarEvent, .changeReminder,
+        // Since 11 Nov 2026 these run at once outside the car (decision 2026-11-11-asked-for-runs-at-once); in the car
+        // they still wait, because each shows something on the iPhone's screen or starts something there. Whether
+        // some of them should run while driving is an owner decision; the reason the agent hears says only what is true.
+        case .lookupContact, .followNews, .startStopwatch, .stopStopwatch, .startFocus, .stopFocus, .startWindDown, .stopWindDown,
+             .openTrainingPlan, .checkOff:
+            return .refuse(reason: "This shows on the iPhone's screen, so it waits until the user isn't driving.")
+        case .leaveBy, .createCalendarEvent, .createReminder, .remindAboutNote, .addIngredients, .undoLast,
+             .setTimer, .setAlarm, .cancelAlarm, .openMap, .openFoodApp, .runShortcut, .draftMessage, .makePresentation, .openCamera, .controlHome, .startTranslator,
+             .stopTranslator, .removeFromList, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders:
             return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")
         }

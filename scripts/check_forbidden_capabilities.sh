@@ -3,8 +3,8 @@
 #  - the app's own networking lives in four files: the voice token client (DODDY's session and the
 #    provider-token requests, all to the token server; ADR-494), Connected Apps' transport (to the Doddy server), the typed-assistant
 #    transport (to the M2 gateway, ADR-110) and the messaging server transport (server/messaging,
-#    ADR-148); the ElevenLabs SDK does the voice connection, except the OpenAI Realtime test voice
-#    (ADR-265), whose WebSocket lives in one file in Features/Voice, the exchange-rate client
+#    ADR-148); the ElevenLabs SDK does the voice connection (OpenAI Realtime, which had its own
+#    WebSocket file, was removed on 9 Nov 2026), the exchange-rate client
 #    (ADR-300), which downloads only the ECB's public rates file, and the Open Food Facts client
 #    (ADR-631), which asks only the address DoddyCore builds from a checked barcode, and the InPost
 #    tracking client (ADR-641), which asks only the address DoddyCore builds from a checked parcel number;
@@ -63,6 +63,10 @@
 #    can never pick another paid endpoint),
 #  - the messaging server's background workers declare only their pinned tools: errands Anthropic's web
 #    search and web fetch (ADR-570), Studio those two and code execution (ADR-740),
+#  - flights (decision 2026-11-11-flights-kiwi-search-duffel-booking): Kiwi.com's MCP server only in
+#    backend/src/flights/kiwi.ts (one fixed tool, search-flight), Duffel only in backend/src/flights/duffel.ts,
+#    and a Duffel order (the one booking write) created only from backend/src/flights/service.ts, after an
+#    approval bound to the exact booking,
 #  - payments (x402): Coinbase's API only in backend/src/payments/coinbase.ts, the HTTPS client for sellers
 #    only in backend/src/payments/net.ts, wallet signing called only from the payments service (after an
 #    approval bound to the exact terms), and no wallet, key or payment-signing code anywhere in the app.
@@ -70,14 +74,13 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-dirs=(DoddyApp DoddyWidgets DoddyShare DoddyNotificationContent DoddyWatch DoddyWatchWidgets DoddyMac DoddyMacWidgets Shared Packages/DoddyCore/Sources)
+dirs=(DoddyApp DoddyWidgets DoddyShare DoddyScreen DoddyNotificationContent DoddyWatch DoddyWatchWidgets DoddyMac DoddyMacWidgets Shared Packages/DoddyCore/Sources)
 voice_dir=DoddyApp/Features/Voice
 connections_dir=DoddyApp/Infrastructure/Connections
 anywhere='NWConnection|import Network|import FirebaseCore|import Sentry|import Analytics'
 sharing_dir=DoddyApp/Features/Sharing
 sharing_only='import CloudKit|CKContainer|CKDatabase|UICloudSharingController'
 token_client=DoddyApp/Features/Voice/VoiceTokenClient.swift
-openai_voice=DoddyApp/Features/Voice/OpenAIRealtimeSession.swift
 network_file=DoddyApp/Infrastructure/URLSessionTransport.swift
 assistant_transport=DoddyApp/Infrastructure/Network/AppHTTPTransport.swift
 messaging_transport=DoddyApp/Infrastructure/Server/ServerHTTPTransport.swift
@@ -145,7 +148,7 @@ home_never='HMEventTrigger|HMTimerTrigger|HMCameraProfile|HMCameraStream|HMAcces
 camera_and_library_never='AVCaptureSession|AVCapturePhotoOutput|AVCaptureVideoDataOutput|AVCaptureMovieFileOutput|PHAssetChangeRequest|PHAssetCreationRequest|UIImageWriteToSavedPhotosAlbum|NSPhotoLibraryAddUsageDescription|performChanges'
 location_tracking='requestAlwaysAuthorization|NSLocationAlways|allowsBackgroundLocationUpdates|startMonitoringSignificantLocationChanges|startMonitoringVisits|CLBackgroundActivitySession|UIBackgroundModes.*location'
 messaging_secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|AC[0-9a-f]{32}|SK[0-9a-f]{32}|BEGIN (RSA |EC )?PRIVATE KEY|(KEY|TOKEN|SECRET)=[^[:space:]]{8,})'
-secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY|CDP_(API_KEY|WALLET)_SECRET[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9+/=]{20,})'
+secrets='(sk-[A-Za-z0-9]{20,}|sk_[A-Za-z0-9]{20,}|ak_[A-Za-z0-9_-]{20,}|monid_(live|test)_[A-Za-z0-9_-]{16,}|duffel_(live|test)_[A-Za-z0-9_-]{16,}|xi-api-key|api[_-]?key[[:space:]]*[:=][[:space:]]*"[^"]+"|BEGIN (RSA |EC )?PRIVATE KEY|CDP_(API_KEY|WALLET)_SECRET[[:space:]]*[:=][[:space:]]*["'"'"']?[A-Za-z0-9+/=]{20,})'
 allowed_permissions='NSHomeKitUsageDescription|NSHealthShareUsageDescription|NSHealthUpdateUsageDescription|NSAlarmKitUsageDescription|NSMicrophoneUsageDescription|NSSpeechRecognitionUsageDescription|NSCalendarsFullAccessUsageDescription|NSRemindersFullAccessUsageDescription|NSContactsUsageDescription|NSMotionUsageDescription|NSCameraUsageDescription|NSPhotoLibraryUsageDescription|NSLocationWhenInUseUsageDescription|NSFaceIDUsageDescription'
 backend_src=backend/src
 # Drops comment-only lines from `grep -n` output (file:line:   // …, /// …, * …).
@@ -157,6 +160,10 @@ tools_catalog=backend/src/tools/catalog.ts
 tools_mock=backend/src/tools/mock.ts
 # Web search: the only file that may talk to Monid.
 websearch=backend/src/tools/websearch.ts
+# Flights: the only files that may talk to Kiwi.com and Duffel, and the one service that may book.
+flights_kiwi=backend/src/flights/kiwi.ts
+flights_duffel=backend/src/flights/duffel.ts
+flights_service=backend/src/flights/service.ts
 # Payments (x402): the Coinbase wallet adapter, the seller HTTPS client, and the one service that may sign.
 payments_wallet=backend/src/payments/coinbase.ts
 payments_net=backend/src/payments/net.ts
@@ -170,8 +177,8 @@ status=0
 if grep -RInE --include='*.swift' --include='*.plist' "$anywhere" "${dirs[@]}" Config; then
   echo "FAIL: forbidden capability code found (see matches above)." >&2; status=1
 fi
-if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$openai_voice:" -e "^$rates_client:" -e "^$off_client:" -e "^$inpost_client:" -e "^$vat_register_client:" -e "^$voice_auth:"; then
-  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $voice_auth, $openai_voice, $rates_client, $off_client, $inpost_client and $vat_register_client." >&2; status=1
+if grep -RInE --include='*.swift' "$network_only" "${dirs[@]}" | code_only | grep -v -e "^$network_file:" -e "^$token_client:" -e "^$assistant_transport:" -e "^$messaging_transport:" -e "^$rates_client:" -e "^$off_client:" -e "^$inpost_client:" -e "^$vat_register_client:" -e "^$voice_auth:"; then
+  echo "FAIL: networking code outside $network_file, $assistant_transport, $messaging_transport, $token_client, $voice_auth, $rates_client, $off_client, $inpost_client and $vat_register_client." >&2; status=1
 fi
 # The Keychain only where a token or key already lives (ADR-640).
 if grep -RInE --include='*.swift' "$keychain_only" "${dirs[@]}" | code_only | grep -vE "$keychain_files"; then
@@ -223,32 +230,33 @@ fi
 if grep -RInE --include='*.swift' "$apple_sign_in_other" "${dirs[@]}" | code_only; then
   echo "FAIL: password, passkey or credential-provider APIs; only Sign in with Apple is allowed (ADR-494)." >&2; status=1
 fi
-# ASK-01 (ADR-483): a tool without a way to ask first fails here. Only the public lookups of
-# ADR-575 (web, weather, Wikipedia, news, places, sums, conversions) and translator start and
-# stop (ADR-619, run on the phone) may run at once.
-if ! python3 -I - voice-agent/tools.json <<'PY'
+# ASK-01 (ADR-483) as it stands since 11 Nov 2026 (decision 2026-11-11-asked-for-runs-at-once): a tool that changes,
+# sends, deletes, calls or pays must run on the phone behind a card ('tap' with confirm_on_screen). Only the tools in
+# scripts/voice_agent_spec.py's RUNS_NOW may run at once: ADR-575's public lookups, translator start and stop
+# (ADR-619), text_me to the user's own number, looks at the user's own things, reads through Doddy's server and
+# Doddy's own small actions. RUNS_NOW mirrors AskFirst.runsAtOnce in DoddyCore, which ToolCatalogTests pins.
+if ! python3 -I - voice-agent/tools.json scripts <<'PY'
 import json, sys
-PUBLIC = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
-          "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"}
-MODES = {"start_translator", "stop_translator"}
+sys.path.insert(0, sys.argv[2])
+from voice_agent_spec import RUNS_NOW, RUNS_NOW_MODES, RUNS_NOW_OWN_TEXT, PUBLIC_LOOKUPS
+PHONE_ONLY = RUNS_NOW - PUBLIC_LOOKUPS
 bad = []
 for t in json.load(open(sys.argv[1], encoding="utf-8"))["tools"]:
     x = t.get("x_doddy", {})
+    name = t.get("name")
     if x.get("ask") == "runs_now":
-        # ADR-575: public lookups run at once; they may never be a change.
-        # ADR-619: translator start and stop run at once, on the phone, with no card.
-        name = t.get("name")
-        if x.get("confirm_on_screen") or not (name in PUBLIC or (name in MODES and x.get("runs_on") == "phone")):
+        # Never a card, and never anything outside the list; everything but the public lookups runs on the phone.
+        if x.get("confirm_on_screen") or name not in RUNS_NOW or (name in PHONE_ONLY and x.get("runs_on") != "phone"):
             bad.append(name)
         continue
-    if x.get("runs_on") != "phone" or x.get("ask") not in ("yes_or_tap", "tap") or (x.get("ask") == "tap") != bool(x.get("confirm_on_screen")):
-        bad.append(t.get("name"))
+    if x.get("runs_on") != "phone" or x.get("ask") != "tap" or not x.get("confirm_on_screen"):
+        bad.append(name)
 if bad:
     print("tools without an ask:", ", ".join(map(str, bad)))
     sys.exit(1)
 PY
 then
-  echo "FAIL: ASK-01: every voice tool must run on the phone and ask first (x_doddy.ask; 'tap' with confirm_on_screen), except ADR-575's public lookups and ADR-619's translator start and stop." >&2; status=1
+  echo "FAIL: ASK-01: every voice tool that changes something must run on the phone behind a card (x_doddy.ask 'tap' with confirm_on_screen); only voice_agent_spec.py's RUNS_NOW may run at once (decision 2026-11-11-asked-for-runs-at-once)." >&2; status=1
 fi
 voice_controller=DoddyApp/Features/Voice/VoiceSessionController.swift
 if [ -f "$voice_controller" ] && ! { grep -q 'AskFirst.need(for: request)' "$voice_controller" && grep -q 'askLedger.mayRun(' "$voice_controller"; }; then
@@ -347,6 +355,19 @@ fi
 if grep -RInE "$camera_and_library_never" "${dirs[@]}" project.yml Config | code_only; then
   echo "FAIL: a capture session or a write to the photo library; Doddy only reads the library and uses iOS's camera screen (ADR-569)." >&2; status=1
 fi
+# Decision 2026-11-09-doddy-looks-at-the-screen: the screen is read only by the broadcast extension, which the
+# person starts from iOS's own sheet (iOS shows it is running). No in-app screen recorder anywhere, and the
+# extension and its shared file code have no network and no database: the app sends a picture only after a yes.
+if grep -RInE --include='*.swift' 'RPScreenRecorder|RPBroadcastSampleHandler' "${dirs[@]}" | code_only | grep -vE '^DoddyScreen/'; then
+  echo "FAIL: screen capture outside DoddyScreen/; only the broadcast extension the person starts may see the screen (decision 2026-11-09-doddy-looks-at-the-screen)." >&2; status=1
+fi
+# Sharing starts only from iOS's own sheet, opened by the one picker file (a button, or the person's spoken ask).
+if grep -RInE --include='*.swift' 'RPSystemBroadcastPickerView' "${dirs[@]}" | code_only | grep -v '^DoddyApp/Features/Voice/ScreenSharePicker.swift:'; then
+  echo "FAIL: iOS's screen-sharing sheet opened outside DoddyApp/Features/Voice/ScreenSharePicker.swift (decision 2026-11-09-doddy-looks-at-the-screen)." >&2; status=1
+fi
+if grep -RInE --include='*.swift' 'URLSession|URLRequest|NWConnection|DatabaseQueue|DatabasePool|import DoddyPersistence|import GRDB' DoddyScreen Shared/Screen | code_only; then
+  echo "FAIL: the screen-sharing extension may not use the network or a database; it only leaves one picture in the App Group (decision 2026-11-09-doddy-looks-at-the-screen)." >&2; status=1
+fi
 if grep -RInE "$location_tracking" "${dirs[@]}" project.yml | code_only; then
   echo "FAIL: \"Always\" or background location is not allowed; place reminders use \"While Using\" only." >&2; status=1
 fi
@@ -417,6 +438,20 @@ PY
   fi
   if grep -RInE '/v1/(discover|inspect)|monid_(discover|inspect|run)' --include='*.ts' "$backend_src"; then
     echo "FAIL: Monid endpoint discovery in the backend; web search must stay one fixed endpoint." >&2; status=1
+  fi
+  # Flights. Kiwi.com and Duffel are each reached from one file, Kiwi only through its one fixed tool, and
+  # only the flights service may create a Duffel order (after an approval bound to the exact booking).
+  if grep -RInE 'mcp\.kiwi\.com|search-flight' --include='*.ts' "$backend_src" | code_only | grep -v "^$flights_kiwi:"; then
+    echo "FAIL: Kiwi.com called outside $flights_kiwi." >&2; status=1
+  fi
+  if grep -RInE 'api\.duffel\.com|/air/(orders|offer_requests|offers|payments)' --include='*.ts' "$backend_src" | code_only | grep -v "^$flights_duffel:"; then
+    echo "FAIL: Duffel called outside $flights_duffel." >&2; status=1
+  fi
+  if grep -RInE '\.createOrder\(' --include='*.ts' "$backend_src" | code_only | grep -v "^$flights_service:"; then
+    echo "FAIL: a Duffel order is created outside $flights_service." >&2; status=1
+  fi
+  if [ -f "$flights_service" ] && ! grep -q 'ask.allows(binding, request.approvalId, "use")' "$flights_service"; then
+    echo "FAIL: ASK-01: a flight booking must use up an approval bound to the exact booking ($flights_service)." >&2; status=1
   fi
   # Payments (x402). Coinbase is reached from one file; sellers from one file; and only the payments
   # service may ask a wallet to sign (it does so after a single-use approval bound to the exact terms).
@@ -491,5 +526,5 @@ if [ -d server/messaging/src/studio ]; then
     echo "FAIL: the Studio worker declares a tool beyond web search, web fetch and code execution (ADR-740): $extra" >&2; status=1
   fi
 fi
-[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the OpenAI test voice, the ECB rates client, the Open Food Facts client, the InPost client and the VAT register client (one address each) and nothing that talks to inFakt, the Keychain only in the files that hold a token or key (a key the person pasted in is read only by the inFakt client, which isn't built), web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice, Voice memos and Recordings, on-device speech recognition only in Voice memos and Recordings (nothing in Recordings sends anything), calendar, contacts, location and Motion & Fitness only in Connections, Apple Health read only and only in HealthReader, HomeKit only in HomeKitClient (lights, outlets, fans and scenes of those; no triggers, cameras, locks, garage doors or alarms), photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, Apple Health (read), camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution; the errands worker declares only web search and web fetch and the Studio worker only those and code execution; payments (x402): Coinbase only in the wallet adapter, seller HTTPS only in the address-checking client, wallet signing only from the payments service, and no wallet or signing code in the app."
+[ "$status" -eq 0 ] && echo "PASS: ASK-01: every voice tool and every server tool asks first through one gate; networking only in the token client, the voice account sign-in, URLSessionTransport, the assistant transport, the messaging transport, the ECB rates client, the Open Food Facts client, the InPost client and the VAT register client (one address each) and nothing that talks to inFakt, the Keychain only in the files that hold a token or key (a key the person pasted in is read only by the inFakt client, which isn't built), web auth only in Connected Apps, Sign in with Apple only in the voice account sign-in and no password or passkey APIs, ElevenLabs only in Voice, audio only in Voice, Voice memos and Recordings, on-device speech recognition only in Voice memos and Recordings (nothing in Recordings sends anything), calendar, contacts, location and Motion & Fitness only in Connections, Apple Health read only and only in HealthReader, HomeKit only in HomeKitClient (lights, outlets, fans and scenes of those; no triggers, cameras, locks, garage doors or alarms), photo reading and the photo picker only in Photos, the photo library read only in PhotoLibrarySearch and the camera only through iOS's camera screen (no capture session, no library writes), no Always/background location, no analytics, no secrets, no 1Password code in the app or SDK in the servers, AlarmKit only in Alarms, CloudKit only in Sharing, permissions limited to alarms, microphone, speech recognition, calendar, reminders, contacts, Motion & Fitness, Apple Health (read), camera, photo library (read), While Using location and Face ID (LocalAuthentication only in the app lock); backend has no write tools beyond the reviewed Gmail draft and reply draft, the Outlook draft and Todoist add, complete and move, and no proxy execution; the errands worker declares only web search and web fetch and the Studio worker only those and code execution; payments (x402): Coinbase only in the wallet adapter, seller HTTPS only in the address-checking client, wallet signing only from the payments service, and no wallet or signing code in the app."
 exit "$status"

@@ -172,9 +172,28 @@ extension TimerBanners {
         let requestID = response.notification.request.identifier
         // A call Doddy made for the person has its answer ready (ADR-730): the tap opens Files › Calls,
         // where the recap is. The push says only that (the server sends a kind, never words or ids).
-        if ServerPushKind.parse(response.notification.request.content.userInfo) == .callResult {
+        let serverPush = ServerPushKind.parse(response.notification.request.content.userInfo)
+        if serverPush == .callResult {
             if action != UNNotificationDismissActionIdentifier {
                 await MainActor.run { ShortcutRouter.shared.callRecapsOpened() }
+            }
+            return
+        }
+        // A task or a file Doddy finished (owner, 10 Nov 2026): Messages opens, where his message about it is. A task's
+        // result is fetched at the same time (12 Nov 2026), so it is in the thread even if the app hadn't asked yet;
+        // Messages shows it as it arrives.
+        if serverPush?.opensMessages == true {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.messagesOpened() }
+                if serverPush == .errandResult { await Task { @MainActor in await ErrandsModel.shared.refresh() }.value }
+            }
+            return
+        }
+        // A story Doddy's server spotted for something on the radar (decision 2026-11-13-radar-fixes): On my radar opens,
+        // where "Doddy spotted" lists it. The push says only its kind, never the follow or the story.
+        if serverPush?.opensRadar == true {
+            if action != UNNotificationDismissActionIdentifier {
+                await MainActor.run { ShortcutRouter.shared.radarOpened() }
             }
             return
         }

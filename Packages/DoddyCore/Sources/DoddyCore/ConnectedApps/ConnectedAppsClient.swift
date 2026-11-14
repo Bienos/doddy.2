@@ -7,6 +7,15 @@ public struct HTTPRequest: Equatable, Sendable {
     public let url: URL
     public let headers: [String: String]
     public let body: Data?
+
+    /// Used by app adapters to call only their known Doddy backend routes.
+    /// The core package's memberwise initializer is internal across modules.
+    public init(method: String, url: URL, headers: [String: String], body: Data?) {
+        self.method = method
+        self.url = url
+        self.headers = headers
+        self.body = body
+    }
 }
 
 public protocol HTTPTransport: Sendable {

@@ -6,7 +6,9 @@ final class CapabilityIntroductionTests: XCTestCase {
     func testShippingBuildMentionsRemindersAndConfirmationNotTheOldDenial() {
         for serverConfigured in [true, false] {
             let text = CapabilityIntroduction.text(for: .shipping(serverConfigured: serverConfigured))
-            XCTAssertTrue(text.hasPrefix("I'm an AI assistant, not a person."))
+            XCTAssertTrue(text.hasPrefix("Your notes are kept on this iPhone."))
+            // Owner, 11 Nov 2026: no "AI" label for Doddy in the app's words.
+            XCTAssertFalse(text.contains(" AI"))
             XCTAssertTrue(text.contains("I can add a reminder"))
             XCTAssertTrue(text.contains("only after you confirm each one on screen"))
             // ADR-578: apps are allowed from the conversation, the first time one is needed.
@@ -25,9 +27,37 @@ final class CapabilityIntroductionTests: XCTestCase {
         XCTAssertFalse(text.contains("I can add a reminder"))
     }
 
-    func testAlwaysPointsToTheDataFlowScreen() {
+    func testAlwaysPointsToThePrivacyPolicy() {
         for catalog in [CapabilityCatalog.m0, .v1Voice, .shipping(serverConfigured: true)] {
-            XCTAssertTrue(CapabilityIntroduction.text(for: catalog).hasSuffix("Settings › What leaves this iPhone shows everything that is sent, and where."))
+            // Owner, 10 Nov 2026: what is sent belongs in the Privacy Policy, linked under the paragraph.
+            XCTAssertTrue(CapabilityIntroduction.text(for: catalog).hasSuffix("What I send, and where, is in the Privacy Policy."))
+        }
+    }
+
+    func testPolishSaysTheSameThings() {
+        let english = CapabilityIntroduction.text(for: .shipping(serverConfigured: true))
+        let polish = CapabilityIntroduction.text(for: .shipping(serverConfigured: true), language: .polish)
+        XCTAssertNotEqual(polish, english)
+        XCTAssertTrue(polish.hasPrefix("Twoje notatki są przechowywane na tym iPhonie."))
+        XCTAssertFalse(polish.contains(" AI"))
+        XCTAssertTrue(polish.contains("ElevenLabs"))
+        XCTAssertTrue(polish.contains("potwierdzasz na ekranie"))
+        XCTAssertTrue(polish.hasSuffix("Co wysyłam i dokąd, opisuje Polityka prywatności."))
+        XCTAssertTrue(CapabilityIntroduction.text(for: .m0, language: .polish)
+            .contains("W tej wersji nie mogę dodawać przypomnień ani korzystać z innych aplikacji."))
+        XCTAssertFalse(CapabilityIntroduction.text(for: .m0, language: .polish).contains("ElevenLabs"))
+    }
+
+    /// Doddy is an AI character: the Polish never uses a gendered first-person form ("sam", "byłem", "byłam").
+    func testPolishHasNoGenderedFirstPerson() {
+        for catalog in [CapabilityCatalog.m0, .shipping(serverConfigured: true)] {
+            let words = CapabilityIntroduction.text(for: catalog, language: .polish)
+                .split(whereSeparator: { !$0.isLetter }).map { $0.lowercased() }
+            // Gendered forms Doddy could slip into here. A suffix rule would also catch the present tense
+            // ("wysyłam"), so the forms are listed.
+            let gendered: Set<String> = ["sam", "sama", "byłem", "byłam", "mogłem", "mogłam", "dodałem", "dodałam",
+                                         "gotowy", "gotowa", "pewien", "pewna", "asystentem", "asystentką"]
+            for word in words { XCTAssertFalse(gendered.contains(word), word) }
         }
     }
 }

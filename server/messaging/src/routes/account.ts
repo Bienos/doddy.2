@@ -48,6 +48,9 @@ export const accountRoutes = (deps: Deps, taskCtx?: TaskCallContext): FastifyPlu
   const ipSecret = deps.cipher?.derivedKey("client-address");
 
   // Anonymous account: no email, no name. The app keeps the returned token in the Keychain.
+  // Off unless ANONYMOUS_ACCOUNTS=1 (decision 2026-11-08-required-account): every new account here then comes from
+  // a sign-in with a Doddy account (`POST /v1/accounts/sign-in`), and this answers 403 sign_in_required. Device tokens
+  // already given out keep working.
   // Limited per client IP only: no Authorization header can buy a fresh bucket here (ADR-175).
   // On top of 10 an hour per address (counted in memory), accounts per UTC day are capped per address and for the whole
   // server, counted in the database in the same transaction that makes the account (ADR-702): accounts cost nothing,
@@ -55,6 +58,7 @@ export const accountRoutes = (deps: Deps, taskCtx?: TaskCallContext): FastifyPlu
   app.post("/v1/accounts", {
     config: { rateLimit: { max: 10, timeWindow: "1 hour", keyGenerator: (req) => "ip:" + req.ip } },
   }, async (req, reply) => {
+    if (!deps.anonymousAccounts) return reply.code(403).send({ error: "sign_in_required" });
     const accountId = randomUUID();
     const deviceId = randomUUID();
     const { token, hash } = newDeviceToken();

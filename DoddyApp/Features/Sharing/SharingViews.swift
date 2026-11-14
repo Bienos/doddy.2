@@ -15,6 +15,19 @@ final class ShareAcceptSceneDelegate: NSObject, UIWindowSceneDelegate {
         if let shortcutItem = connectionOptions.shortcutItem {
             QuickActions.handle(shortcutItem)
         }
+        // Opened by a link (a widget, the island's Show button, `doddy://`): noted before the app is active, so
+        // "Start listening when I open Doddy" doesn't start a conversation on top of where the link points.
+        if !connectionOptions.urlContexts.isEmpty {
+            OpeningLinks.linkOpened()
+        }
+    }
+
+    /// A link while Doddy was already running or in the background. Only the note is made here: SwiftUI's
+    /// `onOpenURL` still does the opening.
+    func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) {
+        if !URLContexts.isEmpty {
+            OpeningLinks.linkOpened()
+        }
     }
 
     /// The icon's long-press menu while Doddy was already running (ADR-339).
@@ -86,9 +99,10 @@ struct SharedListInviteView: View {
     var body: some View {
         NavigationStack {
             VStack(alignment: .leading, spacing: 16) {
-                JourneyHeading(eyebrow: "Shared list", title: invite.title)
+                // The list's name is another person's own words: shown as written, never as a key or Markdown.
+                JourneyHeading(eyebrow: "Shared list", title: invite.title, titleIsVerbatim: true)
                 if let owner = invite.owner {
-                    Text(String(format: NSLocalizedString("Shared by %@ through iCloud.", comment: ""), owner))
+                    Text(verbatim: String(format: NSLocalizedString("Shared by %@ through iCloud.", comment: ""), owner))
                         .foregroundStyle(Theme.secondaryText)
                 }
                 Text("Joining adds this list to Doddy on this iPhone. Its items, and the changes anyone makes, go through iCloud to everyone who shares it. Your notes and other lists aren't shared.")
@@ -182,14 +196,14 @@ struct SharedPlaceRow: View {
                 Button("Share this place with everyone on the list") { run { try await sharing.setSharedPlace(place, for: list.id) } }
                     .disabled(isWorking)
                     .accessibilityIdentifier("list.sharePlace")
-                Text("They see the place you picked (“\(place.name)”) and can choose to be reminded there too. Not where you are.")
+                Text(verbatim: String(format: NSLocalizedString("They see the place you picked (“%@”) and can choose to be reminded there too. Not where you are.", comment: ""), place.name))
                     .font(.footnote).foregroundStyle(Theme.secondaryText)
             case .remindMeToo(let shared, let by):
                 Group {
                     if let by {
-                        Text(String(format: NSLocalizedString("%@ shared a reminder at “%@”.", comment: ""), by, shared.place.name))
+                        Text(verbatim: String(format: NSLocalizedString("%@ shared a reminder at “%@”.", comment: ""), by, shared.place.name))
                     } else {
-                        Text(String(format: NSLocalizedString("Someone on the list shared a reminder at “%@”.", comment: ""), shared.place.name))
+                        Text(verbatim: String(format: NSLocalizedString("Someone on the list shared a reminder at “%@”.", comment: ""), shared.place.name))
                     }
                 }
                 .font(.subheadline)
@@ -202,7 +216,7 @@ struct SharedPlaceRow: View {
                     Text("This replaces your own reminder for this list.").font(.footnote).foregroundStyle(Theme.secondaryText)
                 }
             case .shared(let shared, let byMe):
-                Text(String(format: NSLocalizedString("Everyone on the list can be reminded at “%@”.", comment: ""), shared.place.name))
+                Text(verbatim: String(format: NSLocalizedString("Everyone on the list can be reminded at “%@”.", comment: ""), shared.place.name))
                     .font(.footnote).foregroundStyle(Theme.secondaryText)
                 if byMe {
                     Button("Stop sharing this place") { run { try await sharing.setSharedPlace(nil, for: list.id) } }

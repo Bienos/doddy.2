@@ -5,7 +5,7 @@ import { readFileSync } from "node:fs";
 import http from "node:http";
 import { after, before, beforeEach, describe, test } from "node:test";
 import { answerJsonSchema, answerSchema, buildInput, buildInstructions, readPlanOffer, readProposal } from "../src/assistant/prompt.js";
-import { AssistRequest, LIMITS } from "../src/assistant/request.js";
+import { AssistRequest, LIMITS, MEMORY_SOURCES } from "../src/assistant/request.js";
 import { ClaudeAssistantResponder, type AssistantResponder, type AssistOutcome } from "../src/assistant/responder.js";
 import { reserve } from "../src/assistant/usage.js";
 import { DEFAULT_ASSISTANT_SETTINGS, type AssistantSettings } from "../src/config.js";
@@ -71,6 +71,20 @@ describe("Messages route against real Postgres", { skip: dbSkip }, () => {
     assert.equal(w.responder!.seen[0]!.userText, "Kiedy mam dentystę?");
     const { rows } = await db.query("SELECT requests, input_tokens, output_tokens FROM assistant_usage WHERE account_id = $1", [a.accountId]);
     assert.deepEqual(rows.map((r) => [r.requests, Number(r.input_tokens), Number(r.output_tokens)]), [[1, 120, 18]]);
+  });
+
+  test("local proposal crosses the route only when this phone opted in", async () => {
+    const w = await world();
+    const a = await w.account();
+    const localAction = { name: "save_memory" as const, parametersJSON: JSON.stringify({ text: "Exact note" }) };
+    const result = async (): Promise<AssistOutcome> => ({ kind: "ok", answer: "Confirm the card", sources: [], usage: { inputTokens: 1, outputTokens: 1 }, localAction });
+    w.responder!.steps.push(result, result);
+    const opted = await w.ask(a.h, wire({ localActions: { version: 1, localNow: "2026-11-09T19:30", timeZone: "Europe/Warsaw" } }));
+    assert.equal(opted.statusCode, 200);
+    assert.deepEqual(opted.json().localAction, localAction);
+    const legacy = await w.ask(a.h, wire());
+    assert.equal(legacy.statusCode, 200);
+    assert.ok(!("localAction" in legacy.json()));
   });
 
   test("a file the model offers is passed on as `proposal`; with none asked for the key is absent", async () => {
@@ -258,6 +272,18 @@ describe("Messages route against real Postgres", { skip: dbSkip }, () => {
 const fixture = (name: string) => JSON.parse(readFileSync(new URL(`../../../../schemas/fixtures/${name}`, import.meta.url), "utf8"));
 
 describe("the shared wire fixtures", () => {
+  test("every source a note on the iPhone can have is accepted, as listed in schemas/memory.schema.json", () => {
+    // Before 9 Nov 2026 a note Doddy took on a phone call ("noted_by_doddy") or one imported from a file made
+    // the whole question fail, because this list was shorter than the app's.
+    const schema = JSON.parse(readFileSync(new URL("../../../../schemas/memory.schema.json", import.meta.url), "utf8"));
+    const own: string[] = schema.properties.source.enum.filter((s: string) => s !== "sample_fixture");
+    assert.deepEqual([...MEMORY_SOURCES].sort(), [...own].sort());
+    for (const source of own) {
+      assert.ok(AssistRequest.safeParse(wire({ memories: [{ id: ID1, text: "Notatka", source }] })).success, source);
+    }
+    assert.equal(AssistRequest.safeParse(wire({ memories: [{ id: ID1, text: "x", source: "sample_fixture" }] })).success, false);
+  });
+
   test("the request the app sends is accepted as it is", () => {
     const request = fixture("assist_request_v1.json");
     assert.ok(AssistRequest.safeParse(request).success, JSON.stringify(AssistRequest.safeParse(request).error?.issues));

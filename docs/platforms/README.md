@@ -11,7 +11,7 @@ Each platform builds from its own XcodeGen spec into its own Xcode project. Gene
 
 **Apple Watch and Mac development are paused (ADR-572, 21 Oct 2026).** Their source stays in the repo, untouched; only the build wiring is parked. No target in `project.yml`, no CI job and no step of `scripts/ci.sh` builds or tests them, and `make` refuses to generate their projects unless you set `ENABLE_WATCH=1` / `ENABLE_MAC=1`. How to turn them back on: "Re-enabling" in `watch.md` and `mac.md`.
 
-`make project` and `make project-iphone` also copy `Config/Package.resolved`, the app's locked package versions, into the new project (`scripts/install_package_resolved.sh`). That file is not committed yet (7 Nov 2026), so for now they print "No Config/Package.resolved yet" and Xcode resolves the packages afresh, starting from the two exact versions in `project.yml` (ElevenLabs and LiveKit). `make update-packages` (Mac) resolves the packages afresh and writes the file.
+`make project` and `make project-iphone` also copy `Config/Package.resolved`, the app's locked package versions (7 packages, committed), into the new project (`scripts/install_package_resolved.sh`), so Xcode resolves exactly those versions; `ci_scripts/ci_post_clone.sh` and `scripts/ci.sh` do the same. `make update-packages` (Mac) resolves the packages afresh and writes the file; commit it with the `project.yml` change that needed it.
 
 `project-iphone.yml` includes `project.yml` and repeats the app's dependency list, less the widget and share extensions. `scripts/check_platform_specs.py`, which runs in `scripts/ci.sh`, fails if the lists drift, if a Watch or Mac target is back in `project.yml`, if the dormant specs drift from it, or if a target sits in the wrong spec.
 

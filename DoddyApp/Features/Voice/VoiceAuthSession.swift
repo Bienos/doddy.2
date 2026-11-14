@@ -32,6 +32,10 @@ final class VoiceAuthSession {
         }
     }
 
+    /// Seconds of life left in this older voice session's access token; nil when it isn't signed in.
+    /// For `TalkStartAccount`, which decides whether a start restores it.
+    var voiceSessionSecondsLeft: TimeInterval? { isSignedIn ? accessTokenExpiresAt.timeIntervalSinceNow : nil }
+
     func restore() async {
         if isSignedIn, accessTokenExpiresAt.timeIntervalSinceNow > 30 { return }
         // One restore at a time (ADR-672): a second caller waits for the one in flight. Returning at
@@ -86,13 +90,13 @@ final class VoiceAuthSession {
     }
 
     func finishAppleSignIn(identityToken: String, rawNonce: String, authorizationCode: String? = nil,
-                           userID: String, provider: VoiceProvider) async {
+                           userID: String) async {
         isLoading = true
         message = nil
         defer { isLoading = false }
         do {
             let reply = try await VoiceAuthAPI.shared.signIn(identityToken, rawNonce: rawNonce,
-                                                             authorizationCode: authorizationCode, provider: provider.rawValue)
+                                                             authorizationCode: authorizationCode, provider: "elevenlabs")
             save(reply, userID: userID)
         } catch {
             lastFailure = (error as? VoiceAuthFailure) ?? .rejected
@@ -107,10 +111,18 @@ final class VoiceAuthSession {
         throw lastFailure ?? .sessionExpired
     }
 
+    /// Ends the session on this iPhone at once, then tells the voice server (best effort), so nothing here uses it
+    /// while the server answers. Also called when the Doddy account signs out (decision 2026-11-12-local-data-owner).
     func signOut() async {
-        if let token = try? await bearerToken() { try? await VoiceAuthAPI.shared.signOut(token) }
+        // A restore already on its way finishes first, so it can't save a session again after this one ends.
+        if let restoreTask { await restoreTask.value }
+        let live = accessTokenExpiresAt.timeIntervalSinceNow > 30 ? accessToken : nil
+        let refreshToken = VoiceSessionKeychain.refreshToken()
         clearLocalSession()
         message = nil
+        var token = live
+        if token == nil, let refreshToken { token = try? await VoiceAuthAPI.shared.refresh(refreshToken).accessToken }
+        if let token { try? await VoiceAuthAPI.shared.signOut(token) }
     }
 
     func deleteAccount() async {
@@ -203,6 +215,8 @@ final class VoiceAuthSession {
         accessToken = nil
         accessTokenExpiresAt = .distantPast
         isSignedIn = false
+        // A token fetched ahead for this login never outlives it (decision 2026-11-10-action-button-start).
+        VoiceTokenWarmer.shared.clear()
     }
 }
 
@@ -290,15 +304,22 @@ enum AppleSignInNonce {
     }
 }
 
+/// The person's yes to sending voice data to ElevenLabs. ElevenLabs is the only voice (9 Nov 2026), so
+/// there is one consent. Its key is the one that was kept for ElevenLabs before, so a yes already given
+/// still counts. The old OpenAI consent has no use any more; `reset` removes it too.
 enum VoiceProviderConsent {
-    static func key(for provider: VoiceProvider) -> String { "voice.providerConsent.\(provider.rawValue).v1" }
-    static func isGranted(for provider: VoiceProvider) -> Bool {
-        UserDefaults.standard.bool(forKey: key(for: provider))
+    static let key = "voice.providerConsent.elevenlabs.v1"
+    private static let retiredOpenAIKey = "voice.providerConsent.openai.v1"
+    static func isGranted() -> Bool {
+        UserDefaults.standard.bool(forKey: key)
     }
-    static func grant(for provider: VoiceProvider) {
-        UserDefaults.standard.set(true, forKey: key(for: provider))
+    static func grant() {
+        UserDefaults.standard.set(true, forKey: key)
     }
     static func reset() {
-        for provider in VoiceProvider.allCases { UserDefaults.standard.removeObject(forKey: key(for: provider)) }
+        UserDefaults.standard.removeObject(forKey: key)
+        UserDefaults.standard.removeObject(forKey: retiredOpenAIKey)
+        // Consent withdrawn: a token fetched ahead goes too (decision 2026-11-10-action-button-start).
+        Task { @MainActor in VoiceTokenWarmer.shared.clear() }
     }
 }

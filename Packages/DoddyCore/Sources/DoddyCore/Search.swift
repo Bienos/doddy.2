@@ -82,14 +82,20 @@ public enum MemoryExport {
         /// Every correction of the exported notes (ADR-252); left out when there are none. Added
         /// within format 1: older readers ignore it and restore the notes without their history.
         let corrections: [MemoryCorrection]?
+        /// Which of `memories` are private notes (ADR-310), so a restore brings the mark back with the note. Left
+        /// out when none is. Added within format 1: an older reader ignores it and restores the notes as ordinary ones.
+        let privateNoteIds: [UUID]?
     }
 
+    /// `privateIDs` are the notes the person marked Private. Only those among `records` are written.
     public static func json(
-        _ records: [MemoryRecord], listItems: [ListItem] = [], corrections: [MemoryCorrection] = [], exportedAt: Date
+        _ records: [MemoryRecord], listItems: [ListItem] = [], corrections: [MemoryCorrection] = [],
+        privateIDs: Set<UUID> = [], exportedAt: Date
     ) throws -> Data {
         let ids = Set(records.map(\.id))
         let history = corrections.filter { ids.contains($0.memoryID) }
             .sorted { ($0.memoryID.uuidString, $0.number) < ($1.memoryID.uuidString, $1.number) }
+        let marked = ids.intersection(privateIDs).sorted { $0.uuidString < $1.uuidString }
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         return try encoder.encode(Envelope(
@@ -97,7 +103,8 @@ public enum MemoryExport {
             exportedAtMs: EpochMilliseconds.rounded(exportedAt),
             memories: records,
             listItems: listItems.isEmpty ? nil : listItems,
-            corrections: history.isEmpty ? nil : history))
+            corrections: history.isEmpty ? nil : history,
+            privateNoteIds: marked.isEmpty ? nil : marked))
     }
 
     /// Wordings between the original and the current one, oldest first (ADR-252).
@@ -105,8 +112,10 @@ public enum MemoryExport {
         MemoryHistory(record: record, corrections: byNote[record.id] ?? []).versions.filter { !$0.isOriginal && !$0.isCurrent }
     }
 
+    /// `privateIDs`: a note or list named here gets a "Private: yes" line.
     public static func plainText(
-        _ records: [MemoryRecord], lists: [DoddyList] = [], corrections: [MemoryCorrection] = [], exportedAt: Date
+        _ records: [MemoryRecord], lists: [DoddyList] = [], corrections: [MemoryCorrection] = [],
+        privateIDs: Set<UUID> = [], exportedAt: Date
     ) -> String {
         let byNote = Dictionary(grouping: corrections, by: \.memoryID)
         let iso = ISO8601DateFormatter()
@@ -115,6 +124,7 @@ public enum MemoryExport {
             lines.append("## \(record.currentText)")
             lines.append("Saved: \(record.capturedAt.map(iso.string(from:)) ?? "date unavailable")")
             lines.append("Source: \(record.source.rawValue) · Category: \(record.category.rawValue)")
+            if privateIDs.contains(record.id) { lines.append("Private: yes") }
             if record.userEdited {
                 lines.append("Corrected: \(record.updatedAt.map(iso.string(from:)) ?? "date unavailable")")
                 for version in inBetween(record, byNote).reversed() {
@@ -130,6 +140,7 @@ public enum MemoryExport {
             lines.append("")
             for list in lists {
                 lines.append("## \(list.name)")
+                if privateIDs.contains(list.id) { lines.append("Private: yes") }
                 lines.append(contentsOf: list.open.map { "[ ] \($0.text)" })
                 lines.append(contentsOf: list.done.map { "[x] \($0.text)" })
                 lines.append("ID: \(list.id.uuidString)")

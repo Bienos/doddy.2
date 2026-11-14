@@ -1,8 +1,9 @@
 import Foundation
 
-// Provider-neutral voice layer shaped after the OpenAI Realtime API, so ElevenLabs (today) and
-// OpenAI Realtime (later) plug into the same app code. The spec lives in voice-agent/
-// (instructions.md, tools.json, session.json); see voice-agent/README.md for the mapping.
+// Provider-neutral voice layer shaped after the OpenAI Realtime API's vocabulary, so the app's voice
+// code doesn't depend on one SDK. ElevenLabs is the only voice that runs on it (OpenAI voice was
+// removed, 9 Nov 2026). The spec lives in voice-agent/ (instructions.md, tools.json, session.json);
+// see voice-agent/README.md for the mapping.
 
 /// What a provider reports during a conversation, in Realtime terms. Adapters translate their
 /// SDK's callbacks into these; nothing here is inferred from timers.

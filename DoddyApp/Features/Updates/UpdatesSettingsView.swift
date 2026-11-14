@@ -150,7 +150,7 @@ struct UpdatesSettingsView: View {
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 case .enterCode(let phone):
-                    Text("Enter the code sent to \(phone).")
+                    Text(verbatim: String(format: NSLocalizedString("Enter the code sent to %@.", comment: ""), phone))
                     TextField("Code", text: $codeInput)
                         .keyboardType(.numberPad)
                         .textContentType(.oneTimeCode)

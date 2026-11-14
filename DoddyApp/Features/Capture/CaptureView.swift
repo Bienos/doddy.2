@@ -110,7 +110,7 @@ struct CaptureView: View {
                             ProblemView(message: takenPhotoProblem).accessibilityIdentifier("capture.takenPhotoProblem")
                         }
                         CapturePhotoPicker(text: $text, prepared: $photo, isDisabled: isSaving)
-                        // A second microphone path; hidden in the beta (decision 2026-11-07-release-scope).
+                        // A second microphone path; shown in every build since 10 Nov 2026 (decision 2026-11-10-no-beta-scope).
                         if ReleaseScopeStore.current.shows(.voiceMemos) {
                             CaptureVoiceMemo(text: $text, draft: $memo, isDisabled: isSaving)
                         }
@@ -342,7 +342,8 @@ private struct DuplicateNoticeView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("You saved this already, \(DateText.full(record.capturedAt)).", systemImage: "doc.on.doc")
+            Label(String(format: NSLocalizedString("You saved this already, %@.", comment: ""), DateText.full(record.capturedAt)),
+                  systemImage: "doc.on.doc")
                 .font(.subheadline.weight(.medium))
             Text(record.currentText).font(.footnote).foregroundStyle(Theme.secondaryText).lineLimit(3)
             NavigationLink(value: record.id) {

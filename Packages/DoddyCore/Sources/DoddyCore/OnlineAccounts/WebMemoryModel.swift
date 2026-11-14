@@ -25,6 +25,9 @@ public final class WebMemoryModel {
         case offline
         case unreadable
         case server
+        /// The notes and conversations on this iPhone were made with another Doddy account, so nothing is sent
+        /// to the signed-in one (decision 2026-11-12-local-data-owner).
+        case otherAccountsData
     }
 
     public enum NotesStatus: Equatable, Sendable {
@@ -53,21 +56,26 @@ public final class WebMemoryModel {
 
     private let makeClient: @Sendable () async -> (any WebMemoryClient)?
     private let renewClient: @Sendable () async -> (any WebMemoryClient)?
+    /// Whether this iPhone's data may go to the signed-in account now (`LocalDataOwner`), asked before every send.
+    private let uploadGate: @MainActor () -> LocalDataUpload
     private let defaults: UserDefaults
     private let now: @Sendable () -> Date
     private var client: (any WebMemoryClient)?
     private var pending: Task<Void, Never>?
 
     /// `makeClient` signs the phone in first if needed; `renewClient` gets a fresh session after the
-    /// server said this one isn't valid (ADR-563), tried once per action.
+    /// server said this one isn't valid (ADR-563), tried once per action. `uploadGate` has no default: every
+    /// caller says whose data may be sent (`LocalDataOwner.upload(for:)` in the app).
     public init(
         makeClient: @escaping @Sendable () async -> (any WebMemoryClient)?,
         renewClient: @escaping @Sendable () async -> (any WebMemoryClient)?,
+        uploadGate: @escaping @MainActor () -> LocalDataUpload,
         defaults: UserDefaults = .standard,
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.makeClient = makeClient
         self.renewClient = renewClient
+        self.uploadGate = uploadGate
         self.defaults = defaults
         self.now = now
         notesOn = defaults.bool(forKey: Self.notesKey)
@@ -81,6 +89,12 @@ public final class WebMemoryModel {
     /// whether the server confirmed.
     @discardableResult
     public func setKept(_ kind: Kind, on: Bool, records: [MemoryRecord], privateNotes: PrivateNotes) async -> Bool {
+        // Turning a kind on starts sending this iPhone's data: not to an account that doesn't own it. Off is
+        // always allowed (it deletes that kind from the signed-in account on the server).
+        if on, let refusal = Self.refusal(uploadGate()) {
+            problem = refusal
+            return false
+        }
         working = true
         problem = nil
         defer { working = false }
@@ -128,6 +142,13 @@ public final class WebMemoryModel {
     /// Sends the whole current list now and waits for the server's answer. Does nothing while notes are off.
     public func sendNotes(_ records: [MemoryRecord], privateNotes: PrivateNotes) async {
         guard notesOn else { return }
+        let gate = uploadGate()
+        guard gate == .allowed else {
+            // Kept as due, so the list goes once this iPhone's data may be sent again.
+            needsNotesRetry = true
+            if gate == .otherAccount { notesStatus = .failed(.otherAccountsData) }
+            return
+        }
         notesStatus = .sending
         needsNotesRetry = true
         let items = KeptNote.from(records, excluding: privateNotes)
@@ -178,6 +199,8 @@ public final class WebMemoryModel {
     /// Sends one finished conversation, once it ends, if the person keeps conversations on the server and
     /// it isn't private. A send that fails is remembered and tried again by `retryConversations`.
     public func sendConversation(_ log: ConversationLog, language: String?, isPrivate: Bool) async {
+        // Not remembered for later either: it belongs to this iPhone's data, which isn't the signed-in account's.
+        guard uploadGate() == .allowed else { return }
         guard KeptConversation.mayBeSent(keptOnServer: conversationsOn, isPrivate: isPrivate, lineCount: log.lines.count),
               let conversation = KeptConversation.from(log, language: language, now: now())
         else { return }
@@ -194,10 +217,38 @@ public final class WebMemoryModel {
 
     /// At launch: conversations that couldn't be sent, if this iPhone still has them (the last ten).
     public func retryConversations(from logs: [ConversationLog], language: String?) async {
-        guard conversationsOn else { return }
+        guard conversationsOn, uploadGate() == .allowed else { return }
         let waiting = Set(loadPending())
         for log in logs where waiting.contains(log.id.uuidString) {
             await sendConversation(log, language: language, isPrivate: false)
+        }
+    }
+
+    // MARK: - signing out
+
+    /// The Doddy account signed out (decision 2026-11-12-local-data-owner): nothing more is sent from this
+    /// iPhone. Both switches go off here without asking the server (it is the account's, and the account has
+    /// left this iPhone), and conversations waiting to be sent are forgotten. What the account already keeps on
+    /// Doddy's server stays there, with the account, until it is deleted from it. Signed in again, the person
+    /// turns each kind on again; the server is asked then, as always.
+    public func accountSignedOut() {
+        pending?.cancel()
+        apply(notes: false, conversations: false)
+        needsNotesRetry = false
+        sentSinceLaunch = false
+        notesStatus = .idle
+        problem = nil
+        savePending([])
+        client = nil
+    }
+
+    /// What a closed gate means for a switch being turned on. Nil when sending is allowed.
+    static func refusal(_ gate: LocalDataUpload) -> Problem? {
+        switch gate {
+        case .allowed: nil
+        // Nobody signed in, or the owner isn't recorded yet: as a refused session, "try again in a moment".
+        case .waiting: .signedOut
+        case .otherAccount: .otherAccountsData
         }
     }
 

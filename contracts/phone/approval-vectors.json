@@ -118,6 +118,22 @@
         "1"
       ],
       "sha256": "bdadc507a9618270dfb1a25578eee6e0b5a6a0c5796ee7fda3cbc59b2c4d0e16"
+    },
+    {
+      "description": "delivery: Polish addresses, a flat number, the multiplication sign and an empty note (decision 2026-11-12-uber-direct-deliveries)",
+      "fields": [
+        "doddy-approval-1",
+        "delivery",
+        "11111111-1111-4111-8111-111111111111",
+        "1999",
+        "PLN",
+        "Pat, Lipowy Dwór 41c, 14-200 Iława, PL",
+        "Ola, Długa 5 m. 3, 00-001 Warszawa, PL",
+        "+48600700800",
+        "1× keys (small)",
+        ""
+      ],
+      "sha256": "238bed464681102067be12a3918fc9d642576cfbc5ade8c6070ff0c821eac8b4"
     }
   ]
 }

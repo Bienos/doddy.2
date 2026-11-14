@@ -55,7 +55,7 @@ struct HealthConnectionView: View {
                 }
 
                 section(Text("What leaves your phone")) {
-                    Text("Only a short summary of the week, and only when you allow it: in Messages when you send it yourself (to Doddy's server and Claude), or to Doddy's voice when you ask and say yes (ElevenLabs with an OpenAI model, or OpenAI directly). Never the raw data.")
+                    Text("Only a short summary of the week, and only when you allow it: in Messages when you send it yourself (to Doddy's server and Claude), or to Doddy's voice when you ask and say yes (ElevenLabs, with an OpenAI model). Never the raw data.")
                 }
 
                 section(Text("What stays here")) {
@@ -218,7 +218,7 @@ struct HealthConnectionView: View {
     private var voiceSection: some View {
         section(Text("Doddy's voice")) {
             if HealthVoiceConsent.isGranted(storedVersion: voiceConsentVersion) {
-                Text("When you ask \"How did my week go?\", Doddy asks first, then his voice hears this week's summary. It runs on ElevenLabs with an OpenAI model, or on OpenAI directly if you chose it.")
+                Text("When you ask \"How did my week go?\", Doddy asks first, then his voice hears this week's summary. It runs on ElevenLabs with an OpenAI model.")
                 Button("Stop Doddy's voice hearing Health") {
                     voiceConsentVersion = 0
                     voiceConsentAt = 0
@@ -493,17 +493,18 @@ struct HealthShareConsentSheet: View {
                     VStack(alignment: .leading, spacing: 10) {
                         if kind == .messages {
                             point(Text("Only the summary you see goes: the week's numbers, no raw data from Health."))
-                            point(Text("It goes to Doddy's server and to Claude (Anthropic), which writes the answer. Doddy's server doesn't keep or log what you write, only how many questions you asked."))
-                            point(Text("Your message and the answer are saved in Messages on this iPhone until you delete them."))
+                            // HealthShareConsent version 2 (12 Nov 2026): the Messages copy for the web (ThreadSync) is said.
+                            point(Text("It goes to Doddy's server and to Claude (Anthropic), which writes the answer. The server that asks Claude doesn't keep or log what you write, only how many questions you asked."))
+                            point(Text("Your message and the answer stay in Messages on this iPhone until you delete them. A copy of their text is kept, encrypted, on Doddy's server so Doddy on the web can show it; deleting the conversation in Messages deletes it there too."))
                             point(Text("Nothing is sent by itself: each time, Messages opens with the text and you tap Send."))
                         } else {
                             point(Text("When you ask something like \"How did my week go?\", Doddy asks first, and only after your yes does his voice hear the same summary: the week's numbers, no raw data from Health."))
-                            point(Text("Doddy's voice runs on ElevenLabs, which answers with an OpenAI model, or on OpenAI directly if you chose it on Home. Both get the summary as part of the conversation."))
+                            point(Text("Doddy's voice runs on ElevenLabs, which answers with an OpenAI model. Both get the summary as part of the conversation."))
                             point(Text("ElevenLabs keeps each conversation's recording and transcript. Doddy's settings there keep them with no time limit for now."))
                         }
                         point(Text("You can take this back on the Apple Health screen at any time."))
                     }
-                    Text("Doddy is an AI, not a doctor or a coach. For pain, dizziness or anything that worries you, see a doctor.")
+                    Text("Doddy isn't a doctor or a coach. For pain, dizziness or anything that worries you, see a doctor.")
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                     Button("Allow") { answer(true) }

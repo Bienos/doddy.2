@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { argumentDigest } from "../src/policy.js";
-import { bindsTimeZone, CLOUD_TOOLS, type CloudToolDefinition, cloudTool } from "../src/tools/catalog.js";
+import { bindsTimeZone, CLOUD_TOOLS, type CloudToolDefinition } from "../src/tools/catalog.js";
 import { connect, type Rig, runRaw, start } from "./toolsRig.js";
 
 /**
@@ -57,11 +57,12 @@ test("the same yes with another time zone is refused for every calendar write, a
     const replay = await runRaw(rig, tool, args, { approvalId: card.body.approvalId, timeZone: HOME });
     assert.equal(replay.status, 200, `${tool}: ${replay.text}`);
     assert.equal(replay.body.replayed, true, tool);
-    // In another zone: a write with no lookup no longer matches its yes (403); one with a lookup is matched
-    // to its first run without the digest (the target can't be read again), so it only repeats the first answer.
+    // In another zone the repeat asks for something else than the first try did, with or without a lookup
+    // (the first run's request, zone included, is kept): it no longer matches its yes (403) and hears nothing of the first try.
     const replayAway = await runRaw(rig, tool, args, { approvalId: card.body.approvalId, timeZone: AWAY });
-    if (cloudTool(tool)!.resolve) assert.equal(replayAway.body.replayed, true, tool);
-    else assert.equal(replayAway.status, 403, tool);
+    assert.equal(replayAway.status, 403, `${tool}: ${replayAway.text}`);
+    assert.equal(replayAway.body.error.receipt.errorCode, "confirmation_required", tool);
+    assert.equal(replayAway.body.replayed, undefined, tool);
     assert.equal(writes(rig).length, before + 1, `${tool}: never written twice`);
   }
 });

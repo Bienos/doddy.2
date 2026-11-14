@@ -98,7 +98,7 @@ afterEach(async () => {
   rig = undefined;
 });
 
-async function socialRig(o: { providers?: ("google" | "apple")[]; signup?: boolean; deleteUser?: DeleteCall; devices?: boolean } = {}) {
+async function socialRig(o: { providers?: ("google" | "apple")[]; signup?: boolean; deleteUser?: DeleteCall; devices?: boolean; owners?: string[] } = {}) {
   let r!: WebRig;
   const supabase = fakeSupabase(() => r.clock.ms);
   r = await startWeb({
@@ -111,6 +111,7 @@ async function socialRig(o: { providers?: ("google" | "apple")[]; signup?: boole
       ...(o.deleteUser ? { deleteUser: o.deleteUser } : {}),
     },
     ...(o.devices ? { devices: Buffer.alloc(32, 9) } : {}),
+    ...(o.owners ? { owner: { accounts: o.owners } } : {}),
   });
   rig = r;
   return { rig: r, supabase };
@@ -552,7 +553,9 @@ test("Create my Doddy account makes a new account, links Google to it and signs 
   assert.ok(session);
   assert.match(created!.headers.get("set-cookie")!, new RegExp(`${SIGNUP_COOKIE}=; Path=/; Max-Age=0`), "the one-time cookie is removed");
   const owner = await r.store.webIdentityOwner(GOOGLE_PERSON);
-  assert.match(owner!, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  // Decision 2026-11-09-web-sign-in-same-account: the account is the Supabase user's own id, which is
+  // the id the iPhone uses for the same sign-in, so the two meet in one account.
+  assert.equal(owner, GOOGLE_PERSON);
   assert.notEqual(owner, DEV_IDENTITIES[USER_A]);
   assert.notEqual(owner, DEV_IDENTITIES[USER_B]);
   // A real, empty workspace of its own.
@@ -607,6 +610,79 @@ test("a Google account already linked to an iPhone's account signs in to it, nev
   assert.equal(done.location, "/");
   assert.equal(cookieValue(done.setCookie, SIGNUP_COOKIE), null);
   assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), DEV_IDENTITIES[USER_A]);
+});
+
+test("a Supabase account that took over an iPhone's earlier data opens that account on the web, without being asked or linked", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true });
+  const iphone = DEV_IDENTITIES[USER_A]!;
+  assert.equal(await r.store.linkAccount(GOOGLE_PERSON, iphone, r.clock.ms), "linked");
+  const done = await googleSignIn(r, supabase, GOOGLE_PERSON);
+  assert.equal(done.location, "/", "straight in: no 'make an account' question");
+  assert.equal(cookieValue(done.setCookie, SIGNUP_COOKIE), null);
+  const session = cookieValue(done.setCookie, COOKIE);
+  assert.ok(session, done.setCookie);
+  assert.equal((await r.call("GET", "/v1/web/session", { cookie: session })).status, 200);
+  // The iPhone's own list shows this browser: it is the same account.
+  assert.equal((await r.call("GET", "/v1/web/sessions", { token: USER_A })).body.sessions.length, 1);
+  // Nothing was made: no second account, and the iPhone's account is not marked as made on the web.
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null);
+  assert.equal(await r.store.isWebAccount(iphone), false);
+  // Another Supabase user gets none of it.
+  const other = await googleSignIn(r, supabase, OTHER_PERSON);
+  assert.equal(other.location, "/sign-in?signin=new_account&provider=google");
+  assert.equal(cookieValue(other.setCookie, COOKIE), null);
+});
+
+test("two different Supabase users get two different accounts, each its own id, and neither opens the other's", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true });
+  const first = await signupWithGoogle(r, supabase, GOOGLE_PERSON);
+  const second = await signupWithGoogle(r, supabase, OTHER_PERSON);
+  assert.equal(first.created!.status, 200);
+  assert.equal(second.created!.status, 200);
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), GOOGLE_PERSON);
+  assert.equal(await r.store.webIdentityOwner(OTHER_PERSON), OTHER_PERSON);
+  const a = cookieValue(first.created!.headers.get("set-cookie"), COOKIE)!;
+  const b = cookieValue(second.created!.headers.get("set-cookie"), COOKIE)!;
+  assert.equal((await r.call("GET", "/v1/web/sessions", { cookie: a })).body.sessions.length, 1);
+  assert.equal((await r.call("GET", "/v1/web/sessions", { cookie: b })).body.sessions.length, 1);
+});
+
+test("if the iPhone took the account over meanwhile, the button makes nothing: signing in again opens the iPhone's account", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true });
+  const { pending } = await signupWithGoogle(r, supabase, GOOGLE_PERSON, { press: false });
+  assert.ok(pending);
+  assert.equal(await r.store.linkAccount(GOOGLE_PERSON, DEV_IDENTITIES[USER_A]!, r.clock.ms), "linked");
+  const pressed = await r.call("POST", "/v1/web/signup", { body: {}, browser: true, headers: { cookie: `${SIGNUP_COOKIE}=${pending}`, "user-agent": CHROME_MAC } });
+  assert.equal(pressed.status, 404);
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null, "no web account was made");
+  assert.equal(await r.store.isWebAccount(GOOGLE_PERSON), false);
+  assert.equal((await googleSignIn(r, supabase, GOOGLE_PERSON)).location, "/");
+});
+
+test("unlinking the only sign-in of a web account and signing in with it again opens that same account, never an error", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true });
+  const first = await signupWithGoogle(r, supabase, GOOGLE_PERSON);
+  const session = cookieValue(first.created!.headers.get("set-cookie"), COOKIE)!;
+  const gone = await r.call("DELETE", `/v1/web/identities/${GOOGLE_PERSON}`, { cookie: session, browser: true });
+  assert.equal(gone.status, 200, gone.text);
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), null);
+  // The account's row stays; the same Supabase user is asked again and gets its own account back.
+  const again = await signupWithGoogle(r, supabase, GOOGLE_PERSON);
+  assert.equal(again.created!.status, 200, again.created!.text);
+  assert.equal(await r.store.webIdentityOwner(GOOGLE_PERSON), GOOGLE_PERSON);
+  assert.equal(await r.store.isWebAccount(GOOGLE_PERSON), true);
+});
+
+test("the owner's own Apple or Google sign-in opens the admin dashboard on the web, no other account does", async () => {
+  const { rig: r, supabase } = await socialRig({ signup: true, owners: [GOOGLE_PERSON] });
+  const mine = await signupWithGoogle(r, supabase, GOOGLE_PERSON);
+  const cookie = cookieValue(mine.created!.headers.get("set-cookie"), COOKIE)!;
+  const yes = await r.call("GET", "/v1/web/owner", { cookie });
+  assert.equal(yes.status, 200, yes.text);
+  assert.deepEqual(yes.body, { owner: true });
+  const theirs = await signupWithGoogle(r, supabase, OTHER_PERSON);
+  const no = await r.call("GET", "/v1/web/owner", { cookie: cookieValue(theirs.created!.headers.get("set-cookie"), COOKIE)! });
+  assert.equal(no.status, 404);
 });
 
 test("with DODDY_WEB_SIGNUP=off an unlinked Google account opens nothing, as before", async () => {
@@ -732,7 +808,7 @@ test("a Supabase removal that failed at the deletion is retried by the hourly sw
     now += 6 * 60_000;
     await eraser.sweep(["supabase_auth"]);
     assert.equal(calls.length, 2);
-    assert.deepEqual(await store.cleanupsToRetry(["supabase_auth"], now, 99, 10), [], "done, dequeued");
+    assert.deepEqual(await store.cleanupsToRetry(["supabase_auth"], now, 10), [], "done, dequeued");
   } finally {
     await store.close();
   }

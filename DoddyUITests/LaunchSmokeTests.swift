@@ -109,12 +109,12 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["home.firstHint"].exists)
         XCTAssertFalse(app.buttons["home.backTap.setup"].exists, "held back until the first conversation")
         XCTAssertFalse(app.buttons["today.openSettings"].exists, "nothing connected yet, so no Today card")
-        XCTAssertFalse(app.segmentedControls["home.voiceProvider"].exists, "the voice picker waits for the first conversation (ADR-443)")
+        XCTAssertFalse(app.segmentedControls["home.voiceProvider"].exists, "the voice picker was removed (9 Nov 2026)")
 
-        // In Home's ••• menu (ADR-545); before the first conversation it has no Today or Voice.
+        // In Home's ••• menu (ADR-545); before the first conversation it has no Today.
         app.buttons["home.more"].tap()
         XCTAssertFalse(app.buttons["home.today"].waitForExistence(timeout: 2), "nothing connected yet, so no Today")
-        XCTAssertFalse(app.buttons["home.voice"].exists, "the voice picker waits for the first conversation (ADR-443)")
+        XCTAssertFalse(app.buttons["home.voice"].exists, "the voice picker was removed (9 Nov 2026)")
         // What leaves this iPhone is on Settings › Privacy only since 9 Nov 2026 (decision 2026-11-09-phone-calls-on-home-menu;
         // testWhatLeavesThisIPhoneFollowsSettings opens it there). What I can do stays on the menu and points to it.
         XCTAssertFalse(app.buttons["home.dataFlow"].exists, "moved to Settings › Privacy")
@@ -125,20 +125,20 @@ final class LaunchSmokeTests: XCTestCase {
         app.buttons["Done"].tap()
         XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForNonExistence(timeout: 5))
 
-        // Settings › Voice has the picker from the start.
+        // Settings › Voice has no provider picker either: ElevenLabs is the only voice.
         app.goToTab("settings")
         app.openSettingsPage("settings.voice")
-        XCTAssertTrue(app.reveal(app.segmentedControls["settings.voiceProvider"]))
+        XCTAssertFalse(app.segmentedControls["settings.voiceProvider"].exists)
     }
 
     @MainActor
-    func testVoicePickerIsOnHomeAfterTheFirstConversation() {
-        // ADR-443: the provider (and OpenAI's model) picker from ADR-442, once there has been a conversation.
+    func testThereIsNoVoicePickerOnHomeAfterTheFirstConversation() {
+        // The picker (ADR-442, ADR-443) was removed on 9 Nov 2026: ElevenLabs is the only voice.
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
-        // In Home's ••• menu (ADR-545).
-        app.tapHomeMenuItem("home.voice")
-        XCTAssertTrue(app.segmentedControls["home.voiceProvider"].waitForExistence(timeout: 5))
+        app.buttons["home.more"].tap()
+        XCTAssertTrue(app.buttons["home.capabilities"].waitForExistence(timeout: 5), "the menu is open")
+        XCTAssertFalse(app.buttons["home.voice"].exists)
         XCTAssertFalse(app.staticTexts["home.firstHint"].exists)
     }
 
@@ -151,6 +151,24 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForExistence(timeout: 5))
         app.buttons["Done"].tap()
         XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForNonExistence(timeout: 5))
+    }
+
+    @MainActor
+    func testWhatICanDoOpensPhoneCalls() {
+        // Decision 2026-11-09-what-i-can-do: a row opens its feature; Phone calls opens inside the sheet.
+        // UI tests show every feature, so the row is there; its status never claims calls work.
+        let app = launch(onboardingDone: true)
+        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        app.tapHomeMenuItem("home.capabilities")
+        XCTAssertTrue(app.staticTexts["capabilities.introduction"].waitForExistence(timeout: 5))
+        let calls = app.descendants(matching: .any)["capabilities.row.phoneCalls"].firstMatch
+        XCTAssertTrue(app.reveal(calls), "the Phone calls row")
+        // Never claimed to work: "Not tried on a real call yet", or "Needs setup" in a build without a server
+        // address, as here (WhatICanDoTests covers each rule).
+        XCTAssertTrue(calls.label.contains("Not tried on a real call yet") || calls.label.contains("Needs setup"), calls.label)
+        XCTAssertFalse(calls.label.contains("Ready") || calls.label.contains("In testing"), calls.label)
+        calls.tap()
+        XCTAssertTrue(app.navigationBars["Phone calls"].waitForExistence(timeout: 5))
     }
 
     @MainActor
@@ -168,20 +186,22 @@ final class LaunchSmokeTests: XCTestCase {
     }
 
     @MainActor
-    func testAskDoddyIsOffByDefaultAndSaysWhyWithoutAnyNetworkCall() {
+    func testMessagesWorkWithoutTurningAnythingOnInSettings() {
+        // Messages is on unless the person turned it off (decision 2026-11-09-messages-on-by-default).
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.buttons["home.ask"].waitForExistence(timeout: 5))
         app.buttons["home.ask"].tap()
 
         XCTAssertTrue(app.textFields["ask.input"].waitForExistence(timeout: 5))
+        // The disclosure stays on screen; the "turn it on in Settings" card is gone.
         XCTAssertTrue(app.staticTexts["ask.disclosure"].exists)
-        XCTAssertTrue(app.staticTexts["Turn on Ask Doddy in Settings first. It sends your question to a server."].exists)
-        // Nothing to send yet, so Send stays disabled.
+        XCTAssertFalse(app.staticTexts["Turn on Ask Doddy in Settings first. It sends your question to a server."].exists)
+        // Nothing typed yet, so Send stays disabled.
         XCTAssertFalse(app.buttons["ask.send"].isEnabled)
     }
 
     @MainActor
-    func testSettingsShowsAskDoddyOffUntilTheUserTurnsItOn() {
+    func testSettingsShowsAskDoddyOnUntilTheUserTurnsItOff() {
         let app = launch(onboardingDone: true)
         XCTAssertTrue(app.waitForTab("settings", timeout: 5))
         app.goToTab("settings")
@@ -189,11 +209,11 @@ final class LaunchSmokeTests: XCTestCase {
         let consent = app.switches["settings.assistantConsent"]
         // The long Settings form creates rows lazily; scroll until the section is on screen.
         XCTAssertTrue(app.reveal(consent))
-        XCTAssertEqual(consent.value as? String, "0")
+        XCTAssertEqual(consent.value as? String, "1")
         // The status row sits below the toggles, so it may not be built yet.
         let status = app.descendants(matching: .any)["settings.assistantStatus"].firstMatch
         XCTAssertTrue(app.reveal(status))
-        XCTAssertTrue(status.label.contains("Off"), status.label)
+        XCTAssertFalse(status.label.contains("Off"), status.label)
     }
 
     @MainActor
@@ -297,11 +317,11 @@ final class LaunchSmokeTests: XCTestCase {
         XCTAssertTrue(app.reveal(link))
         link.tap()
         XCTAssertTrue(app.navigationBars["What leaves this iPhone"].waitForExistence(timeout: 5))
-        // Ask Doddy starts off, so it is listed under "Not sent right now". Each row reads as one
-        // element (destination and note combined), so the note is checked in the row's label.
+        // Ask Doddy starts on (decision 2026-11-09-messages-on-by-default), so its row says so. Each row reads
+        // as one element (destination and note combined), so the note is checked in the row's label.
         let askRow = app.descendants(matching: .any)["dataFlow.askDoddy"].firstMatch
         XCTAssertTrue(app.reveal(askRow))
-        XCTAssertTrue(askRow.label.contains("Ask Doddy is off, so nothing goes there."), askRow.label)
+        XCTAssertFalse(askRow.label.contains("Ask Doddy is off, so nothing goes there."), askRow.label)
     }
 
     @MainActor

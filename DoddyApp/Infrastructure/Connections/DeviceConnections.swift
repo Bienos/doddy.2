@@ -171,6 +171,7 @@ final class DeviceConnections {
     // MARK: Photos and camera (ADR-569)
 
     var cameraAvailable: Bool { CameraAccess.isAvailable }
+    var homeAvailable: Bool { HomeKitClient.isAvailable }
 
     func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound {
         PhotoLibrarySearch.find(request, now: now)
@@ -857,6 +858,8 @@ protocol DeviceConnecting: ReminderStore, CalendarEventWriter, TimerWriter, Send
     var stepCountingAvailable: Bool { get }
     func steps(on day: StepDay, now: Date) async throws -> StepTotals
     var cameraAvailable: Bool { get }
+    /// False on a build without the HomeKit entitlement.
+    var homeAvailable: Bool { get }
     func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound
     func changeEvent(_ plan: EventChangePlan) throws -> DeviceConnections.ChangeOutcome
     func undo(_ undo: ActivityUndo) async -> UndoResult
@@ -885,6 +888,7 @@ extension DeviceConnecting {
     var stepCountingAvailable: Bool { false }
     func steps(on day: StepDay, now: Date) async throws -> StepTotals { throw DeviceConnections.Failure.stepsNotAllowed }
     var cameraAvailable: Bool { false }
+    var homeAvailable: Bool { true }
     func findPhotos(_ request: PhotoSearchRequest, now: Date) -> PhotoSearchFound { .empty }
     func readEvents(in range: VoiceTimeRange) async -> [CalendarEventSummary] { events(in: range) }
     func readContacts(named name: String) async throws -> [DeviceConnections.ContactMatch] { try findContacts(named: name) }
@@ -916,7 +920,16 @@ final class TimerBanners: NSObject, UNUserNotificationCenterDelegate, @unchecked
     static let shared = TimerBanners()
 
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-        [.banner, .list, .sound]
+        let request = notification.request
+        // Doddy's server says a task finished while the app is open (owner, 12 Nov 2026): the result is saved in Messages
+        // now, not the next time the app comes to the front. Its banner is left out only when the app's own notice about
+        // a result showed a moment ago (DoddyCore `ResultNotice`), so the person isn't told twice.
+        if let kind = ServerPushKind.parse(request.content.userInfo), kind == .errandResult, !ResultNotice.isLocal(identifier: request.identifier) {
+            Task { @MainActor in await ErrandsModel.shared.refresh() }
+            let delivered = await center.deliveredNotifications().map(ResultNoticePoster.delivered)
+            guard ResultNotice.shouldPresentServerPush(kind: kind, delivered: delivered, now: Date()) else { return [] }
+        }
+        return [.banner, .list, .sound]
     }
 }
 

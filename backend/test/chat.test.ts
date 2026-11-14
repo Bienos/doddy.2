@@ -90,7 +90,7 @@ async function connect(r: WebRig, toolkit: string, token = USER_A) {
 }
 
 async function makeDocument(r: WebRig, title: string, token = USER_A) {
-  const args = { kind: "pdf", title, request: "A one-page summary" };
+  const args = { kind: "pdf", title, request: "A one-page summary for the owner" };
   const asked = await r.call("POST", "/v1/tools/prepare", { token, body: { tool: "make_document", arguments: args } });
   assert.equal(asked.status, 200, asked.text);
   const ran = await r.call("POST", "/v1/tools/run", { token, body: { tool: "make_document", arguments: args, timeZone: "Europe/Warsaw", approvalId: asked.body.approvalId } });
@@ -329,7 +329,8 @@ test("an Anthropic error becomes a status, its error type and a fixed hint; the 
       ["provider_unavailable", { status: 401, type: "authentication_error", hint: "api_key" }],
       ["provider_unavailable", { status: 400, type: "invalid_request_error", hint: "credit_balance" }],
       ["provider_unavailable", { status: 404, type: "not_found_error", hint: "model" }],
-      ["provider_unavailable", { status: 400, type: "invalid_request_error", hint: null }],
+      // No fixed hint fits: only the API's own words are kept, never the planted one.
+      ["provider_unavailable", { status: 400, type: "invalid_request_error", hint: "words:messages_content_allowed" }],
       ["provider_unavailable", { status: 400, type: null, hint: null }],
       ["provider_unavailable", { status: 500, type: null, hint: null }],
       ["rate_limited", { status: 429, type: "rate_limit_error", hint: null }],

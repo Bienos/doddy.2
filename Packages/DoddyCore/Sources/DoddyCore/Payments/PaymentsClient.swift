@@ -58,14 +58,18 @@ public enum PaymentsError: Error, Equatable, Sendable {
     }
 }
 
-/// Doddy-owned payments API. The app can ask for exactly four things: the status, the person's own
-/// switch, the terms for one page, and (with an approval) to pay that page. There is no call that
-/// takes an amount, a recipient or a wallet: the server decides everything but the page.
+/// Doddy-owned payments API. The app can ask for exactly five things: the status, the person's own
+/// switch, the card for one page, (with the page's approval) the terms for that page, and (with the
+/// terms' approval) to pay that page. There is no call that takes an amount, a recipient or a wallet:
+/// the server decides everything but the page.
 public protocol PaymentsClient: Sendable {
     func status() async throws(PaymentsError) -> PaymentStatus
     func setSwitch(enabled: Bool) async throws(PaymentsError) -> PaymentSwitchResult
-    /// Shows exactly what would be paid and returns a single-use approval for those terms. Pays nothing.
-    func prepare(url: String) async throws(PaymentsError) -> PaymentPrepared
+    /// The site and page Doddy would open, and a single-use approval to read that one address. Reads nothing.
+    func page(url: String) async throws(PaymentsError) -> PaymentPageCard
+    /// After the person's yes to the page card: reads the page's price with the card's approval, shows exactly
+    /// what would be paid and returns a single-use approval for those terms. Pays nothing.
+    func prepare(url: String, approvalId: UUID) async throws(PaymentsError) -> PaymentPrepared
     /// Pays once. Never call it twice for one approval, and never retry it: see `PaymentsError.mightHaveBeenPaid`.
     /// `confirmAmount` is what the person typed, sent only when the terms asked for it.
     func pay(url: String, approvalId: UUID, confirmAmount: String?) async throws(PaymentsError) -> PaymentResult
@@ -98,8 +102,12 @@ public struct BackendPaymentsClient: PaymentsClient {
         try await call("PUT", "v1/payments/switch", body: SwitchBody(enabled: enabled))
     }
 
-    public func prepare(url: String) async throws(PaymentsError) -> PaymentPrepared {
-        try await call("POST", "v1/payments/prepare", body: PrepareBody(url: url))
+    public func page(url: String) async throws(PaymentsError) -> PaymentPageCard {
+        try await call("POST", "v1/payments/page", body: PageBody(url: url))
+    }
+
+    public func prepare(url: String, approvalId: UUID) async throws(PaymentsError) -> PaymentPrepared {
+        try await call("POST", "v1/payments/prepare", body: PrepareBody(url: url, approvalId: approvalId.uuidString.lowercased()))
     }
 
     public func pay(url: String, approvalId: UUID, confirmAmount: String?) async throws(PaymentsError) -> PaymentResult {
@@ -117,8 +125,13 @@ public struct BackendPaymentsClient: PaymentsClient {
         let enabled: Bool
     }
 
+    struct PageBody: Encodable, Equatable {
+        let url: String
+    }
+
     struct PrepareBody: Encodable, Equatable {
         let url: String
+        let approvalId: String
     }
 
     struct PayBody: Encodable, Equatable {
@@ -165,7 +178,8 @@ public struct UnconfiguredPaymentsClient: PaymentsClient {
     public init() {}
     public func status() async throws(PaymentsError) -> PaymentStatus { throw .notConfigured }
     public func setSwitch(enabled: Bool) async throws(PaymentsError) -> PaymentSwitchResult { throw .notConfigured }
-    public func prepare(url: String) async throws(PaymentsError) -> PaymentPrepared { throw .notConfigured }
+    public func page(url: String) async throws(PaymentsError) -> PaymentPageCard { throw .notConfigured }
+    public func prepare(url: String, approvalId: UUID) async throws(PaymentsError) -> PaymentPrepared { throw .notConfigured }
     public func pay(url: String, approvalId: UUID, confirmAmount: String?) async throws(PaymentsError) -> PaymentResult { throw .notConfigured }
     public func receipts() async throws(PaymentsError) -> [PaymentReceipt] { throw .notConfigured }
 }

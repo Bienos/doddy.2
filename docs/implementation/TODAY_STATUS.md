@@ -29,3 +29,18 @@ a server or anywhere else. Event notes and locations, and reminder notes, are no
 App compile (EventKit reminder fetch callback marked `@Sendable`; notification APIs as the timers code uses them);
 the card with real iCloud/Google calendars synced to the phone; a nudge firing on time with the banner while Doddy is
 open; replace/remove; the moved-event note; Dynamic Type and VoiceOver on the card; the new UI-test line.
+
+## 10 Nov 2026: the day at a glance (decision `docs/decisions/2026-11-10-today-at-a-glance.md`)
+| Where | Behaviour |
+|---|---|
+| Header | In the sheet (`Features/Today/TodaySheet.swift`, moved out of `HomeView.swift`): Doddy and the date. In the morning check-in: "Today". Under it one line from the counts, e.g. "3 events left, the next at 14:00 · 2 reminders, 1 overdue" (`TodayGlanceText.summary`, Polish and English); a source that is off is never described as empty |
+| On now, Next up | What has started and until when; the next timed event with the time to go (by the minute), start–end, the nudge bell, and its location with Open in Maps when it is a place |
+| Later today | Up to six more events, "And N more in Calendar.", and free time of 30 minutes or more between events (ADR-332's gap rules, only gaps with an event on both sides) |
+| Reminders | Due today or overdue (five, then "And N more"), each with a tick. The tick re-reads the reminder and writes only if it still has the title and due shown (`ReminderTick`), then `changeReminder(_, .complete)` reads it back: "Ticked off" only when Reminders shows it done. Undo reopens it the same way |
+| Tomorrow | The first three things, then "And N more tomorrow." Read only |
+
+Privacy since 10 Nov: tomorrow's events and reminders and the next event's location are read too, on the iPhone only; the location goes to Apple Maps only when the person taps Open in Maps. The "Event notes and locations … are not read" line above is out of date for the next event's location.
+
+Code: `Packages/DoddyCore/Sources/DoddyCore/TodayGlance.swift` (`TodayGlance`, `NextUpStatus`, `ReminderTick`, `TodayGlanceText`), tests `TodayGlanceTests` (11); `DoddyApp/Features/Today/TodayModel.swift` (reads, nudges, tick and Undo), `TodayCard.swift` (the view), `TodaySheet.swift`.
+
+Verified on Linux (Swift 6.1.2): DoddyCore tests, `scripts/ci.sh --only swift,checks`, `swiftc -parse` on the app files. Not compiled; not seen on a device (the tick against real Reminders, repeating reminders, the Maps link, Dynamic Type, VoiceOver, dark mode).

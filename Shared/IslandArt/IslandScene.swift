@@ -140,7 +140,9 @@ extension IslandScene {
         return 0.75 + 0.25 * strength
     }
 
-    /// How many lines the small island's aurora has.
+    /// How many lines the small island's aurora has: Home's fine lines (ADR-683, option C). The seven
+    /// call-style bars of 9 Nov 2026 were taken back by the owner on 10 Nov 2026 (decision
+    /// `2026-11-10-island-fine-lines-back`).
     static let auroraColumnCount = 21
 
     /// How strongly the aurora is drawn, 0 to 1: calm while he hears you (Home's listening level),
@@ -442,7 +444,8 @@ extension IslandResult {
     var island: IslandWords {
         switch self {
         case .document: IslandWords(label: islandWord("READY"), title: "Your document is ready", subtitle: "Show opens it in Doddy")
-        case .documentStarted: IslandWords(label: islandWord("DOCUMENT"), title: "Making your document", subtitle: "Its button is in Doddy")
+        // No button to point at while it's made (owner, 13 Nov 2026): it lands in Messages, or the transcript if private.
+        case .documentStarted: IslandWords(label: islandWord("DOCUMENT"), title: "Making your document", subtitle: "Takes a minute or two")
         case .presentation: IslandWords(label: islandWord("READY"), title: "Your slides are ready", subtitle: "Show opens them in Doddy")
         case .photos: IslandWords(label: islandWord("PHOTOS"), title: "Photos to look at", subtitle: "Show opens them in Doddy")
         }

@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { conversationIdentity } from "../src/conversations.js";
 import { handleTokenRequest } from "../src/handler.js";
+import { fakeConversationStore } from "./conversation-fakes.js";
 
 const USER_ID = "opaque-account-id";
 const ENV = {
@@ -8,12 +10,13 @@ const ENV = {
   DODDY_SESSION_SIGNING_KEY: "server-only-session-key-for-tests-000000000000000",
   ELEVENLABS_API_KEY: "elevenlabs-server-secret",
   ELEVENLABS_AGENT_ID: "agent_test",
-  OPENAI_API_KEY: "openai-server-secret",
 };
 
 function store({ allowed = true, limit = undefined } = {}) {
   const calls = [];
   return {
+    // Every token is tied to its account (test/conversations.test.js covers that in full).
+    ...fakeConversationStore(),
     calls,
     async hitLimits(userId, perUserLimit, globalLimit, now, perUserDailyLimit) {
       calls.push({ userId, perUserLimit, globalLimit, now, perUserDailyLimit });
@@ -51,7 +54,8 @@ async function run(req, options = {}) {
 test("valid DODDY session exchanges only a short-lived provider credential and never logs secrets", async () => {
   const { response, body, logs, calls } = await run(request(null));
   assert.equal(response.status, 200);
-  assert.deepEqual(body, { token: "provider-credential" });
+  // The token, and the keyed user id the app gives ElevenLabs as the conversation's user: nothing else.
+  assert.deepEqual(body, { token: "provider-credential", userId: conversationIdentity(ENV, USER_ID).userId });
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.equal(calls[0].url, "https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=agent_test");
   assert.equal(calls[0].init.headers["xi-api-key"], "elevenlabs-server-secret");
@@ -99,7 +103,7 @@ test("an account's daily cap defaults to 150, can be set, and a bad value fails 
 
 test("a refusal says which limit it was in the log, as a fixed word, and sets Retry-After", async () => {
   for (const limit of ["user_hour", "user_day", "global"]) {
-    const { response, body, logs, calls } = await run(request({ provider: "openai", model: "gpt-realtime-2.1-mini" }), {
+    const { response, body, logs, calls } = await run(request({ provider: "elevenlabs" }), {
       authStore: store({ allowed: false, limit }),
     });
     assert.equal(response.status, 429);
@@ -111,52 +115,13 @@ test("a refusal says which limit it was in the log, as a fixed word, and sets Re
   }
 });
 
-// ADR-712: the app's voice picker offers both models in every build, so both stay allowed by default;
-// the owner can narrow the list without a code change.
-test("the OpenAI model allowlist: both models by default, and OPENAI_ALLOWED_MODELS replaces the list", async () => {
-  const upstream = () => Response.json({ value: "openai-short-secret", session: {} });
-  for (const model of ["gpt-realtime-2.1", "gpt-realtime-2.1-mini"]) {
-    const { response } = await run(request({ provider: "openai", model }), { upstream: upstream() });
-    assert.equal(response.status, 200, model);
-  }
-  const mini = { ...ENV, OPENAI_ALLOWED_MODELS: " gpt-realtime-2.1-mini " };
-  const allowed = await run(request({ provider: "openai", model: "gpt-realtime-2.1-mini" }), { environment: mini, upstream: upstream() });
-  assert.equal(allowed.response.status, 200);
-  const pricier = await run(request({ provider: "openai", model: "gpt-realtime-2.1" }), { environment: mini });
-  assert.equal(pricier.response.status, 400);
-  assert.deepEqual(pricier.body, { error: "unknown_model" });
-  assert.equal(pricier.calls.length, 0, "nothing is sent upstream and no limit is used");
-  assert.equal((await run(request({ provider: "openai", model: "gpt-4o" }), { environment: mini })).response.status, 400);
-
-  // The setting can allow another id, or several; it never widens beyond what it lists.
-  const both = { ...ENV, OPENAI_ALLOWED_MODELS: "gpt-realtime-2.1-mini,gpt-realtime-next" };
-  assert.equal((await run(request({ provider: "openai", model: "gpt-realtime-next" }), { environment: both, upstream: upstream() })).response.status, 200);
-  assert.equal((await run(request({ provider: "openai", model: "gpt-realtime-2.1" }), { environment: both })).response.status, 400);
-  // ElevenLabs doesn't read it at all.
-  assert.equal((await run(request(null), { environment: { ...ENV, OPENAI_ALLOWED_MODELS: "!!!" } })).response.status, 200);
-});
-
-test("an OPENAI_ALLOWED_MODELS setting that doesn't parse fails closed for OpenAI and sends nothing upstream", async () => {
-  for (const bad of [",", " , ", "gpt realtime", "gpt-realtime-2.1;drop", "model/with/slash", `x${"y".repeat(70)}`]) {
-    const environment = { ...ENV, OPENAI_ALLOWED_MODELS: bad };
-    for (const body of [{ provider: "openai", model: "gpt-realtime-2.1-mini" }, { provider: "openai" }]) {
-      const authStore = store();
-      const { response, body: reply, calls } = await run(request(body), { environment, authStore });
-      assert.equal(response.status, 500, JSON.stringify(bad));
-      assert.deepEqual(reply, { error: "server_not_configured" });
-      assert.equal(calls.length, 0);
-      assert.equal(authStore.calls.length, 0);
-    }
-  }
-});
-
 test("missing provider configuration and shared storage fail closed", async () => {
   const missingProvider = await run(request(null), { environment: { ...ENV, ELEVENLABS_API_KEY: "" } });
   assert.equal(missingProvider.response.status, 500);
   assert.deepEqual(missingProvider.body, { error: "server_not_configured" });
   assert.equal(missingProvider.calls.length, 0);
   const storeUnavailable = await run(request(null), {
-    authStore: { async hitLimits() { throw new Error("store unreachable"); } },
+    authStore: { ...store(), async hitLimits() { throw new Error("store unreachable"); } },
   });
   assert.equal(storeUnavailable.response.status, 503);
   assert.deepEqual(storeUnavailable.body, { error: "server_not_configured" });
@@ -179,21 +144,20 @@ test("upstream failures map to useful errors without leaking provider response b
   }
 });
 
-test("OpenAI grant is short-lived and restricted to the model allowlist", async () => {
-  const upstream = Response.json({ value: "openai-short-secret", session: { model: "gpt-realtime-2.1-mini" } });
-  const { response, body, calls, logs } = await run(request({ provider: "openai", model: "gpt-realtime-2.1-mini" }), { upstream });
-  assert.equal(response.status, 200);
-  assert.deepEqual(body, { token: "openai-short-secret", provider: "openai", model: "gpt-realtime-2.1-mini" });
-  assert.equal(calls[0].url, "https://api.openai.com/v1/realtime/client_secrets");
-  assert.equal(calls[0].init.headers.authorization, "Bearer openai-server-secret");
-  const sent = JSON.parse(calls[0].init.body);
-  assert.deepEqual(sent.expires_after, { anchor: "created_at", seconds: 120 });
-  assert.equal(sent.session.instructions, undefined);
-  assert.equal(sent.session.tools, undefined);
-  assert.ok(!JSON.stringify(logs).includes("openai-short-secret"));
-  const bad = await run(request({ provider: "openai", model: "gpt-4o" }));
-  assert.equal(bad.response.status, 400);
-  assert.equal(bad.calls.length, 0);
+// Owner decision, 9 Nov 2026: ElevenLabs is the only voice. An app build from before that asks for
+// OpenAI and gets a plain 400, whatever the server's settings and whether or not the session is valid.
+test("a request for OpenAI is refused and sends nothing upstream, counts no limit, and needs no OpenAI setting", async () => {
+  for (const body of [{ provider: "openai" }, { provider: "openai", model: "gpt-realtime-2.1-mini" }]) {
+    for (const environment of [ENV, { ...ENV, OPENAI_API_KEY: "left-over-key", OPENAI_OPEN_ACCESS: "1" }]) {
+      const authStore = store();
+      const { response, body: reply, calls, logs } = await run(request(body), { environment, authStore });
+      assert.equal(response.status, 400);
+      assert.deepEqual(reply, { error: "unknown_provider" });
+      assert.equal(calls.length, 0);
+      assert.equal(authStore.calls.length, 0, "nothing is counted against anyone");
+      assert.ok(!JSON.stringify(logs).includes("left-over-key"));
+    }
+  }
 });
 
 test("a request for the removed Picovoice key is refused and sends nothing upstream (ADR-549)", async () => {
@@ -217,52 +181,80 @@ test("only POST and bounded valid provider requests are accepted", async () => {
   assert.equal(oversized.calls.length, 0);
 });
 
-test("OpenAI without a voice account is refused unless OPENAI_OPEN_ACCESS is on (ADR-726)", async () => {
-  for (const environment of [ENV, { ...ENV, OPENAI_OPEN_ACCESS: "" }, { ...ENV, OPENAI_OPEN_ACCESS: "0" }, { ...ENV, OPENAI_OPEN_ACCESS: "yes please" }]) {
-    const { response, body, calls } = await run(request({ provider: "openai" }), {
-      environment, authenticateSession: async () => null,
-      upstream: Response.json({ value: "ek_test", session: { model: "gpt-realtime-2.1-mini" } }),
-    });
-    assert.equal(response.status, 401);
-    assert.deepEqual(body, { error: "session_expired" });
+test("ElevenLabs without a voice session is refused, even with a leftover OPENAI_OPEN_ACCESS setting", async () => {
+  const eleven = await run(request(null, ""), {
+    environment: { ...ENV, OPENAI_OPEN_ACCESS: "1" }, authenticateSession: async () => null,
+  });
+  assert.equal(eleven.response.status, 401);
+  assert.deepEqual(eleven.body, { error: "session_expired" });
+  assert.equal(eleven.calls.length, 0);
+});
+
+// Owner, 12 Nov 2026 (decision 2026-11-12-translator-agent): translating talks to its own agent, which has no tools.
+const TRANSLATOR_ID = "agent_8901m787fgppedy9kkvg7memny34";
+
+test("a translator request gets a token for the translator-only agent, by default with no setting on Vercel", async () => {
+  const { response, body, calls, logs } = await run(request({ agent: "translator" }));
+  assert.equal(response.status, 200);
+  assert.deepEqual(body, { token: "provider-credential", userId: conversationIdentity(ENV, USER_ID).userId });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, `https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=${TRANSLATOR_ID}`);
+  assert.equal(calls[0].init.headers["xi-api-key"], "elevenlabs-server-secret");
+  // The log says which kind, never an id, a token or a credential.
+  assert.equal(logs.at(-1).agent, "translator");
+  const logged = JSON.stringify(logs);
+  for (const secret of ["provider-credential", "doddysession", "elevenlabs-server-secret", USER_ID, TRANSLATOR_ID, "agent_test"]) {
+    assert.ok(!logged.includes(secret), `log leaked ${secret}`);
+  }
+});
+
+test("ELEVENLABS_TRANSLATOR_AGENT_ID overrides the translator agent, and a request without a body still gets the main agent", async () => {
+  const environment = { ...ENV, ELEVENLABS_TRANSLATOR_AGENT_ID: "agent_translator_test" };
+  const translator = await run(request({ agent: "translator", provider: "elevenlabs" }), { environment });
+  assert.equal(translator.calls[0].url, "https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=agent_translator_test");
+  for (const body of [null, {}, { agent: "main" }, { provider: "elevenlabs" }]) {
+    const main = await run(request(body), { environment });
+    assert.equal(main.response.status, 200);
+    assert.equal(main.calls[0].url, "https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=agent_test");
+    assert.equal(main.logs.at(-1).agent, "main");
+  }
+});
+
+test("an unknown agent is refused before anything is counted or sent", async () => {
+  for (const agent of ["other", "", "Translator", 7, {}, ["translator"], "agent_test", TRANSLATOR_ID]) {
+    const { response, body, calls } = await run(request({ agent }));
+    assert.equal(response.status, 400, JSON.stringify(agent));
+    assert.deepEqual(body, { error: "unknown_agent" });
     assert.equal(calls.length, 0);
   }
 });
 
-test("with OPENAI_OPEN_ACCESS on, OpenAI works without a session, in one shared limit bucket", async () => {
-  const authStore = store();
-  const { response, body, calls, logs } = await run(request({ provider: "openai" }, ""), {
-    environment: { ...ENV, OPENAI_OPEN_ACCESS: "1" }, authStore, authenticateSession: async () => null,
-    upstream: Response.json({ value: "ek_test", session: { model: "gpt-realtime-2.1-mini" } }),
-  });
-  assert.equal(response.status, 200);
-  assert.equal(body.token, "ek_test");
-  assert.equal(calls.length, 1);
-  assert.equal(authStore.calls[0].userId, "open-access-openai");
-  assert.ok(!JSON.stringify(logs).includes("ek_test"));
+test("a translator request counts against the same limits as any other, and a missing key still fails closed", async () => {
+  const limited = await run(request({ agent: "translator" }), { limits: { allowed: false, limit: "user_hour" } });
+  assert.equal(limited.response.status, 429);
+  assert.equal(limited.calls.length, 0);
+  const spent = store();
+  await run(request({ agent: "translator" }), { authStore: spent });
+  assert.equal(spent.calls.length, 1);
+  assert.equal(spent.calls[0].userId, USER_ID);
+  const noKey = await run(request({ agent: "translator" }), { environment: { ...ENV, ELEVENLABS_API_KEY: "" } });
+  assert.equal(noKey.response.status, 500);
+  assert.deepEqual(noKey.body, { error: "server_not_configured" });
+  assert.equal(noKey.calls.length, 0);
 });
 
-test("with OPENAI_OPEN_ACCESS on, the limits still apply to the shared bucket", async () => {
-  const { response, body, calls } = await run(request({ provider: "openai" }, ""), {
-    environment: { ...ENV, OPENAI_OPEN_ACCESS: "true" }, authenticateSession: async () => null,
-    limits: { allowed: false, limit: "hour" },
-  });
-  assert.equal(response.status, 429);
-  assert.equal(body.error, "rate_limited");
+test("the translator agent works even where the main agent's id is not set, and the main one still fails closed", async () => {
+  const { ELEVENLABS_AGENT_ID, ...withoutMain } = ENV;
+  assert.ok(ELEVENLABS_AGENT_ID);
+  assert.equal((await run(request({ agent: "translator" }), { environment: withoutMain })).response.status, 200);
+  const main = await run(request(null), { environment: withoutMain });
+  assert.equal(main.response.status, 500);
+  assert.equal(main.calls.length, 0);
+});
+
+test("the translator agent also needs a Doddy account session", async () => {
+  const { response, body, calls } = await run(request({ agent: "translator" }, ""), { authenticateSession: async () => null });
+  assert.equal(response.status, 401);
+  assert.deepEqual(body, { error: "session_expired" });
   assert.equal(calls.length, 0);
-});
-
-test("OPENAI_OPEN_ACCESS never opens ElevenLabs, and a valid session keeps its own bucket", async () => {
-  const environment = { ...ENV, OPENAI_OPEN_ACCESS: "1" };
-  const eleven = await run(request(null, ""), { environment, authenticateSession: async () => null });
-  assert.equal(eleven.response.status, 401);
-  assert.equal(eleven.calls.length, 0);
-
-  const authStore = store();
-  const signedIn = await run(request({ provider: "openai" }), {
-    environment, authStore,
-    upstream: Response.json({ value: "ek_test", session: { model: "gpt-realtime-2.1-mini" } }),
-  });
-  assert.equal(signedIn.response.status, 200);
-  assert.equal(authStore.calls[0].userId, USER_ID);
 });

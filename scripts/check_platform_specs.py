@@ -41,11 +41,12 @@ def main():
 
     if iphone.get("include") != ["project.yml"]:
         problems.append("project-iphone.yml must include exactly project.yml")
-    # A free Apple team signs only the app (owner, 23 Oct 2026): the widgets and Save to Doddy, which
-    # can't work without App Groups anyway, are left out, so Xcode asks for a team once.
-    extensions = ("DoddyWidgets", "DoddyShare")
+    # A free Apple team signs only the app (owner, 23 Oct 2026): the widgets, Save to Doddy and screen sharing
+    # (decision 2026-11-09-doddy-looks-at-the-screen), which can't work without App Groups anyway, are left out,
+    # so Xcode asks for a team once.
+    extensions = ("DoddyWidgets", "DoddyShare", "DoddyScreen")
     if iphone["targets"]["Doddy"]["dependencies:REPLACE"] != [d for d in app_deps if d.get("target") not in extensions]:
-        problems.append("project-iphone.yml: Doddy's dependencies must be project.yml's without DoddyWidgets and DoddyShare")
+        problems.append("project-iphone.yml: Doddy's dependencies must be project.yml's without DoddyWidgets, DoddyShare and DoddyScreen")
     if iphone.get("schemes:REPLACE", {}).get("Doddy") != full["schemes"]["Doddy"]:
         problems.append("project-iphone.yml: the Doddy scheme must equal project.yml's")
 

@@ -520,7 +520,7 @@ struct PlanResultView: View {
 struct PlanSafetyNote: View {
     var body: some View {
         PlanSection(title: Text("Safety")) {
-            Text("Doddy is an AI, not a doctor or a coach, and this plan isn't medical advice. Stop at once if you get pain in your chest, neck, jaw or arm, feel faint or dizzy, are unusually short of breath, or your heart races. In an emergency call 112.")
+            Text("Doddy isn't a doctor or a coach, and this plan isn't medical advice. Stop at once if you get pain in your chest, neck, jaw or arm, feel faint or dizzy, are unusually short of breath, or your heart races. In an emergency call 112.")
         }
     }
 }

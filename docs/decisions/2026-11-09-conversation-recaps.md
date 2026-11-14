@@ -1,0 +1,76 @@
+# Doddy remembers what was discussed after a conversation: a recap, without the transcript
+
+- **Date:** 2026-11-09
+- **Decided by:** owner, in Polish:
+  - "co do recap to tak chcę, żeby Doddy pamiętał, zrobić recap po rozmowie z kimś bez transkryptu ale co zostało omówione"
+  - then four answers in one session: all four kinds of conversation; the recap is written by "Oba" (Apple on the iPhone where it can, otherwise Claude on Doddy's server after a yes); saving is "Raz włączam, potem samo"
+- **Status:** accepted. Applied in steps, one pull request each (see "Order of work"). Step 1 (#292) is this decision and the shared rules in DoddyCore; step 2 adds the switch and calls Doddy made for you.
+- **Replaces:** for Recordings only, the part of ADR-588 that says a recording's words never leave the iPhone. They still never leave without a yes (below). ADR-591 is answered: (c) on-device first, (a) the server after a yes.
+
+## Why
+- **What the owner asked for:** after a conversation, Doddy should remember what was discussed, not the words.
+- **What exists today:**
+  - The one recap Doddy has is the text file for a call Doddy made for the person (`CallRecap`, Files). It is not kept in memory.
+  - Nothing in the app or on the servers summarises a conversation. `RecordingIntelligence` has no provider, and ADR-591 was still open.
+  - Conversations with Doddy are kept as raw lines: 10 at most in `ConversationLogStore`. "Logs never become memory records."
+
+## Decision
+**The four conversations:**
+
+| Kind (`ConversationRecapKind`) | Where it comes from | Who writes the recap |
+|---|---|---|
+| `voice_conversation` | a conversation with Doddy in the app | Apple on the iPhone, or Doddy's server after a yes |
+| `recording` | a conversation with someone, recorded in Recordings (iOS gives no app the audio of an ordinary phone call) | Apple on the iPhone, or Doddy's server after a yes |
+| `phone_line` | a call to or from Doddy's phone line (`call me now`, `call_me_later`) | Doddy's server, which has the call. It keeps no transcript: the recap goes to the iPhone like a call note, then the server deletes it |
+| `call_for_you` | a call Doddy made for the person (CallCases) | the rules, from the brief and the answer card. No model and no transcript |
+
+**What a recap is:**
+- Three short lists: what was discussed, what was agreed, what is left to do.
+- A title: who it was with and when.
+- What wrote it: `on_device`, `server` or `rules`.
+
+**What a recap is not:** the transcript. Code enforces this, not a prompt (`RecapRules` in DoddyCore):
+- At most 6 points per list, at most 240 characters per point, one line each.
+- At least one point in all.
+- Refused if any point copies 10 or more words in a row from the conversation.
+- The recap's text has to fit in a note (5,000 characters).
+- If the model's output breaks a rule, the recap is refused and nothing is saved. It is never cut down to fit.
+
+**Remembering ("Raz włączam, potem samo"):**
+- **The switches:** Settings › What Doddy knows, "Remember what we talked about" and, under it, "Recaps on Doddy's server" (always shown) (`RecapSettings.rememberKey`). It is **off** until the person turns it on, per `memory_policy.explicit_long_term_memory_opt_in_default`. The switch is the explicit act DOD-06 asks for.
+- **After that:** each recap is saved as a note with source `conversation_recap` and no tap. The app says "Saved" only after the store read the note back (DOD-08, `MemoryStore.save`). The note can be opened, corrected and deleted like any note.
+- **Never:**
+  - for a Private conversation (ADR-310 private mode);
+  - for a conversation too short to have content (fewer than 30 words from the person);
+  - while the switch is off;
+  - in the car profile without a screen (none of these flows has one).
+- **Only after the switch:** a conversation that ended before the switch was last turned on is never recapped (`RecapSettings.rememberSinceKey`). Turning it on is not a yes for the past.
+- **Once:** each conversation is recapped once (`RecapLedger`); its key is stored only after the note was read back, so a failed save is tried again and a deleted recap never comes back.
+- **Turning the switch off** stops new recaps. Recaps already saved stay notes until the person deletes them, like any note.
+
+**Who writes it ("Oba"):**
+- **Apple on the iPhone first:** Apple's Foundation Models, on the device, where the iPhone has it. Nothing leaves the phone.
+- **Otherwise Doddy's server**, only after a separate yes (`RecapSettings.serverWriterKey`, off until the person agrees on a card that says the words go to Doddy's server and to Anthropic, are not stored there, and what comes back). Without that yes, and without Apple's model, there is no recap, and the app says why once.
+- **A Recordings recording** goes to the server only with that same yes. ADR-588's guard (no networking in `DoddyApp/Features/Recordings`) stays. The upload is made by the recap writer outside that folder, from text the person's yes released.
+
+## Order of work (one pull request each)
+1. This decision. DoddyCore: `ConversationRecap`, `RecapRules`, `RecapPolicy`, `RecapSettings`, `RecapMemoryText`, the model input and output (`RecapModelIO`), the call-for-you recap (`CallCaseRecap`), the `conversation_recap` source (schema, both servers' lists, Doddy Web). No screen yet.
+2. The switch in Settings › What Doddy knows, and `call_for_you` saving its recap when the calls list sees an answered call (`RecapKeeper`); the answer card says when its recap is in the notes.
+3. The writers, in two parts. **3a:** Apple's Foundation Models on the iPhone (`OnDeviceRecapWriter`) and `voice_conversation` at the end of a conversation (`VoiceSessionController.keepLog` → `RecapKeeper.recapConversation`). Without Apple Intelligence in the person's language there is no recap yet. **3b:** `POST /v1/recaps` on the messaging server (Messages' model, key, switch and daily caps; nothing stored), the yes as a second switch under the first ("Recaps on Doddy's server", off by default, its own row in What leaves this iPhone), and the server as the fallback when the iPhone can't write one.
+4. `recording` (step 4): a recording's page has a "Write a recap" button (the tap stands in for the "Remember what we talked about" switch, never for the server yes) and a "Save as a note" tap; with the switch on, a recording written out after it was turned on is recapped without a tap (`RecapKeeper+Recordings`). The note is linked to its recording. The words of a recording leave the iPhone only with "Recaps on Doddy's server" on, which is now shown whether or not the first switch is on; ADR-588's guard on the Recordings folder is unchanged, because the upload is made from `Features/Recaps`.
+5. `phone_line` (step 5): after a call to or from Doddy's phone line, ElevenLabs' post-call webhook brings the transcript to the messaging server (the same workspace webhook the task calls use; the server reads only the phone agent's payloads). For an account that turned recaps on (`PUT /v1/calls/recaps/settings`, set from the "Remember what we talked about" switch), Claude writes the three lists with the app's own instructions and the server stores ONLY those, encrypted (`phone_recaps`, migration 025), until the iPhone saves them as a note, reads it back and deletes the server's copy (`DELETE /v1/calls/recaps/:callId`), or for 30 days. The transcript lives in memory for that one call; it is never stored on the messaging server and the log keeps counts only. The phone agent's own conversation record at ElevenLabs is outside this and keeps the retention set for it (`voice-agent/phone/session.json`). The iPhone fetches the waiting recaps when the Calls screens open and right after the switch is turned on (a fetch on every app start comes with a later change to `RootView.swift`).
+
+## Consequences
+- **Notes about conversations without the words:** the person keeps the content, not the transcript. Raw lines still follow their own rules (ADR-603, `ConversationLogStore`).
+- **Cost:** a server recap is one Claude Haiku call. It is capped per person and per day on the server (step 3).
+- **Privacy:**
+  - With the server yes, the text of a conversation leaves the iPhone for a few seconds to be summarised.
+  - For a Recordings recording that is new, so the privacy policy draft and the App Store privacy answers need a line before outside testers (owner queue, step 3).
+  - Apple's on-device model needs a recent iPhone. Its Polish may be weaker than Claude's.
+- **Risk:** a summary can be wrong. It is labelled with what wrote it, shown in full when saved, and editable.
+
+## Evidence
+Step 1:
+- `make test-core`: the new `ConversationRecapTests`.
+- The servers' tests compare their source lists with `schemas/memory.schema.json` (#291).
+- Nothing on a device yet.

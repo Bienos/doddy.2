@@ -7,8 +7,10 @@
 //   - every gate (kill switch, hours, destination, limits, agent drift) runs again at dial time.
 import { randomUUID } from "node:crypto";
 import type pg from "pg";
+import { rememberCallbackRoute } from "../callbacks.js";
 import { sameBytes } from "../crypto.js";
 import { inTransaction, type Db } from "../db.js";
+import { bookingDateAllowed } from "./booking.js";
 import { briefSchema, checkBriefContent, type Brief, type ContentRefusal } from "./brief.js";
 import type { TaskCallContext } from "./context.js";
 import { callFits } from "./hours.js";
@@ -41,7 +43,7 @@ export type Refusal =
   | { status: 409; error: "no_verified_phone" | "too_many_open_cases" | "not_approvable" | "digest_mismatch" | "outside_hours"
       | "attempt_open" | "already_answered" | "no_more_attempts" | "not_live" | "taken_over" | "not_takeoverable" | "result_mismatch"
       | "part_of_task" | "call_in_progress" }
-  | { status: 503; error: "calls_disabled" | "not_configured" };
+  | { status: 503; error: "calls_disabled" | "not_configured" | "booking_not_configured" | "order_not_configured" };
 
 const ms = (minutes: number) => minutes * 60_000;
 const plus = (d: Date, millis: number) => new Date(d.getTime() + millis);
@@ -94,6 +96,13 @@ export async function compileCase(ctx: TaskCallContext, accountId: string, body:
     return { refusal: { status: 400, error: "invalid_request", fields: parsed.error.issues.map((i) => fieldPrefix + i.path.join(".")) } as Refusal };
   }
   const brief = parsed.data;
+  // Booking needs its own agent (decision 2026-11-12-book-agent); without one nothing is stored.
+  if (brief.kind === "book" && !ctx.config.bookAgentId) return refuse(503, "booking_not_configured");
+  // Likewise a food order (decision 2026-11-12-food-by-phone).
+  if (brief.kind === "order" && !ctx.config.orderAgentId) return refuse(503, "order_not_configured");
+  if (brief.booking && !bookingDateAllowed(brief.booking, ctx.now())) {
+    return { refusal: { status: 400, error: "brief_refused", field: `${fieldPrefix}booking.date`, reason: "booking_date" } as Refusal };
+  }
   const problem = checkBriefContent(brief);
   if (problem) return { refusal: { status: 400, error: "brief_refused", field: fieldPrefix + problem.field, reason: problem.reason } as Refusal };
   if (brief.maxDurationSecs > ctx.settings.limits.maxDurationSecs) {
@@ -119,10 +128,10 @@ export async function insertCase(ctx: TaskCallContext, c: Q, accountId: string, 
     `INSERT INTO call_cases (id, account_id, kind, language, state, payload_format, payload_key_version, payload_ciphertext,
        payload_digest, destination_hash, destination_kind, destination_source, max_duration_secs, approvable_until, created_at, updated_at,
        task_id, task_position)
-     VALUES ($1, $2, 'ask', 'pl', 'awaiting_approval', 1, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11, $12, $13)`,
+     VALUES ($1, $2, $14, 'pl', 'awaiting_approval', 1, $3, $4, $5, $6, $7, $8, $9, $10, $11, $11, $12, $13)`,
     [cc.caseId, accountId, ctx.cipher.keyVersion, ctx.cipher.encrypt(canonicalJson(cc.payload), payloadAad(accountId, cc.caseId)),
       cc.digest, destinationHash(ctx.keys, cc.e164), cc.kind, cc.brief.callee.source, cc.brief.maxDurationSecs, approvableUntil, now,
-      task?.id ?? null, task?.position ?? null]);
+      task?.id ?? null, task?.position ?? null, cc.payload.kind]);
 }
 
 export async function openCaseCount(c: Q, accountId: string): Promise<number> {
@@ -216,8 +225,10 @@ export type DialOutcome =
 
 /** The only code that asks Twilio to place a task call. */
 export async function dialAttempt(ctx: TaskCallContext, attemptId: string): Promise<DialOutcome> {
-  // Network check before taking locks: the live agent must still match its spec.
-  const drift = await ctx.drift.problems();
+  // Network check before taking locks: the live agent for this call's kind must still match its spec.
+  const { rows: kindRows } = await ctx.db.query<{ kind: string }>(
+    "SELECT c.kind FROM call_attempts a JOIN call_cases c ON c.id = a.case_id WHERE a.id = $1", [attemptId]);
+  const drift = await ctx.driftFor(kindRows[0]?.kind === "order" ? "order" : kindRows[0]?.kind === "book" ? "book" : "ask").problems();
   const now = ctx.now();
   const claim = await inTransaction(ctx.db, async (c) => {
     // One dial claim at a time across the server: limits are counted and recorded atomically.
@@ -259,7 +270,11 @@ export async function dialAttempt(ctx: TaskCallContext, attemptId: string): Prom
     const callerPhone = callerPhoneHash(ctx.keys, own);
     const callerAccount = callerAccountHash(ctx.keys, a.account_id);
     const limit = await limitReached(ctx, c, callerPhone, callerAccount, a.destination_hash, now);
-    if (limit) return gate(limit);
+    if (limit) {
+      // Which limit it was stays in the log; the user hears the public code (publicLimit).
+      ctx.log("task call limit", { attemptId, limit });
+      return gate(publicLimit(limit));
+    }
     // One call at a time per account (also a unique index; checked here so it is a clear refusal).
     const { rows: live } = await c.query(
       `SELECT 1 FROM call_attempts WHERE account_id = $1 AND id <> $2
@@ -275,6 +290,8 @@ export async function dialAttempt(ctx: TaskCallContext, attemptId: string): Prom
       [attemptId, a.account_id, plus(now, ms(24 * 60)), plus(now, ms(2)), ["twilio_call", "twilio_transcription", "elevenlabs_voice"]]);
     await c.query("INSERT INTO call_dial_log (destination_hash, caller_phone_hash, caller_account_hash, dialed_at) VALUES ($1, $2, $3, $4)",
       [a.destination_hash, callerPhone, callerAccount, now]);
+    // A call-back from this number may reach this user for a while (src/callbacks.ts, decision 2026-11-12-call-back-limits).
+    await rememberCallbackRoute(c, a.destination_hash, a.account_id, now);
     return { kind: "claimed" as const, payload, accountId: a.account_id };
   });
   if (claim.kind !== "claimed") return claim;
@@ -340,6 +357,24 @@ async function limitReached(ctx: TaskCallContext, c: Q, caller: Buffer, account:
   if (r.dest_day >= l.destinationPerDay) return "limit_destination_day";
   if (r.dest_recent > 0) return "limit_destination_gap";
   return undefined;
+}
+
+/**
+ * The code a refusal shows the user. The per-number limits count other users' calls too (3 a day in all, 15 minutes
+ * apart), so naming which one was reached would tell a user that someone else called that number lately: all three
+ * are `limit_destination`, "this number has been called enough for now". The others are the user's own or the server's.
+ */
+export function publicLimit(limit: string): string {
+  return limit.startsWith("limit_destination") ? "limit_destination" : limit;
+}
+
+/** The limits above read the last day of the dial log (the longest gap is a day too); a second day is margin. */
+export const DIAL_LOG_KEEP_DAYS = 2;
+
+/** Deletes dial-log rows no limit reads any more; run by the worker's hourly tidy. */
+export async function pruneDialLog(db: Q, now: Date = new Date()): Promise<number> {
+  const r = await db.query("DELETE FROM call_dial_log WHERE dialed_at < $1::timestamptz - make_interval(days => $2)", [now, DIAL_LOG_KEEP_DAYS]);
+  return r.rowCount ?? 0;
 }
 
 // ---------- end ----------

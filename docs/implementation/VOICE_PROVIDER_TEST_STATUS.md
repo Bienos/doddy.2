@@ -1,5 +1,7 @@
 # Voice provider: ElevenLabs (default) or OpenAI Realtime (ADR-265, ADR-442, ADR-546)
 
+> **History, 9 Nov 2026.** OpenAI Realtime, the voice picker and the call rehearsal were removed from the app and the token server (owner: "only ElevenLabs, from now on we can delete OpenAI"; decision `2026-11-09-elevenlabs-only-voice`). Nothing below describes the current build.
+
 ## Update 2026-10-20 (ADR-546): ElevenLabs is the default again
 
 Owner: "default should be elevenlabs voice agent". `VoiceProvider.effective` returns ElevenLabs for a missing, empty or unknown stored value, with the token server set or not. A stored `"openai"` or `"elevenlabs"` still wins, so someone who chose OpenAI keeps it. The OpenAI choice, the 2.1 / 2.1 mini picker (default mini) and the token server's model allowlist are unchanged. The ADR-442 section below describes the rule it replaced.

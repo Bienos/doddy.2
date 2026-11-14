@@ -6,7 +6,7 @@ import { afterEach, test } from "node:test";
 import { SignedSessionVerifier } from "../src/auth.js";
 import { ConfigError, loadConfig } from "../src/config.js";
 import { DeviceSessionIssuer, deviceUserId } from "../src/deviceSession.js";
-import { DocumentLinks } from "../src/documents.js";
+import { DOCUMENT_STALE_AFTER_MS, DocumentLinks, effectiveStatus, serveDocument } from "../src/documents.js";
 import { AppError, ProviderError } from "../src/errors.js";
 import { AnthropicClaudeProvider, fileIdsOf, fileName, MockClaudeProvider } from "../src/tools/claude.js";
 import { Store } from "../src/store.js";
@@ -230,16 +230,20 @@ test("make_document: answers at once with a link; the link says 'still making', 
   let release!: () => void;
   const gate = new Promise<void>((r) => (release = r));
   const slow = new MockClaudeProvider();
-  const original = slow.makeDocument.bind(slow);
-  slow.makeDocument = async (args) => {
+  // A deck is made from Claude's structured answers (decision 2026-11-10-better-presentations): held at its first one.
+  const original = slow.structured.bind(slow);
+  slow.structured = async (input) => {
     await gate;
-    return original(args);
+    return original(input);
   };
   rig = await start({}, { claude: slow });
   const res = await run(rig, "make_document", { kind: "deck", title: "Q4 plan: Doddy/beta", request: "Ten slides on the beta plan" });
   assert.equal(res.status, 200, res.text);
   assert.match(res.body.text, /^started: Claude is making the deck "Q4 plan: Doddy\/beta"/);
   assert.doesNotMatch(res.body.text, /https?:\/\//, "the voice agent never gets the link");
+  // Owner, 13 Nov 2026: nothing waits on the screen for a tap while the file is made, so the agent isn't told there is.
+  assert.doesNotMatch(res.body.text, /card|on the user's screen/i, "no card is promised");
+  assert.match(res.body.text, /doesn't need to tap anything/);
   assert.equal(res.body.document.status, "working");
   assert.equal(res.body.document.name, "Q4 plan Doddybeta.pptx");
   const link = new URL(res.body.document.url);
@@ -255,7 +259,7 @@ test("make_document: answers at once with a link; the link says 'still making', 
   await rig.tools.settle();
   const ready = await local(link);
   assert.equal(ready.status, 200);
-  assert.equal(ready.text, "DEMO deck: Q4 plan: Doddy/beta");
+  assert.ok(ready.text.startsWith("PK"), "the deck is a real PowerPoint file (a ZIP)");
 
   // A changed signature, a changed ID or an expired link opens nothing.
   const forged = new URL(link);
@@ -272,7 +276,7 @@ test("make_document: a failure says so on the page and in the log, without conte
     throw new ProviderError("provider_unavailable");
   };
   rig = await start({}, { claude: failing });
-  const res = await run(rig, "make_document", { kind: "text", title: "Blog: private stuff", request: "Write a blog post" });
+  const res = await run(rig, "make_document", { kind: "text", title: "Blog: private stuff", request: "Write a blog post for my friends" });
   assert.equal(res.status, 200, res.text);
   await rig.tools.settle();
   const link = new URL(res.body.document.url);
@@ -289,7 +293,7 @@ test("Claude not set up, or no document links: the card is refused honestly and 
   assert.equal(res.body.error.message, "Claude isn't set up on this server.");
   await rig.close();
   rig = await start({}, { documentLinks: false });
-  const doc = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "make_document", arguments: { kind: "pdf", title: "x", request: "y" } } });
+  const doc = await rig.call("POST", "/v1/tools/prepare", { body: { tool: "make_document", arguments: { kind: "pdf", title: "x", request: "y for the owner" } } });
   assert.equal(doc.status, 503);
 });
 
@@ -419,6 +423,120 @@ test("document links: signed, expiring, and bound to one ID", () => {
   other.pathname = "/v1/documents/abcdefghijklmnopqrstuvwy";
   assert.equal(links.verify(other, now), null);
   assert.equal(new DocumentLinks(Buffer.alloc(32, 8), "https://api.doddy.test").verify(url, now), null);
+});
+
+test("document status: JSON only, no file bytes, same signed link, gone for a bad link", async () => {
+  const links = new DocumentLinks(TEST_LINK_KEY, "https://api.doddy.test");
+  const now = new Date("2026-10-21T00:00:00Z");
+  const rows: Record<string, { status: "working" | "ready" | "failed"; name: string; mime: string; body: Buffer | null }> = {
+    abcdefghijklmnopqrstuvwx: { status: "working", name: "a.pdf", mime: "application/pdf", body: null },
+    abcdefghijklmnopqrstuvwy: { status: "ready", name: "b.pdf", mime: "application/pdf", body: Buffer.from("%PDF-secret") },
+    abcdefghijklmnopqrstuvwz: { status: "failed", name: "c.pdf", mime: "application/pdf", body: null },
+  };
+  const store = { getDocument: async (id: string) => rows[id] ?? null } as unknown as Parameters<typeof serveDocument>[4];
+  const ask = async (id: string, extra = "&status=1", at = now) => {
+    const url = new URL(links.link(id, now) + extra);
+    const chunks: Buffer[] = [];
+    let code = 0;
+    let type = "";
+    const res = {
+      writeHead: (c: number, h: Record<string, string | number>) => { code = c; type = String(h["content-type"]); },
+      end: (b?: string | Buffer) => { if (b) chunks.push(Buffer.from(b)); },
+    } as unknown as Parameters<typeof serveDocument>[1];
+    const returned = await serveDocument({} as Parameters<typeof serveDocument>[0], res, url, links, store, at);
+    return { code, returned, type, text: Buffer.concat(chunks).toString("utf8") };
+  };
+  assert.deepEqual(JSON.parse((await ask("abcdefghijklmnopqrstuvwx")).text), { status: "working" });
+  const ready = await ask("abcdefghijklmnopqrstuvwy");
+  assert.deepEqual(JSON.parse(ready.text), { status: "ready" });
+  assert.match(ready.type, /^application\/json/);
+  assert.ok(!ready.text.includes("PDF-secret"), "no file bytes in a status reply");
+  assert.deepEqual(JSON.parse((await ask("abcdefghijklmnopqrstuvwz")).text), { status: "failed" });
+  const unknown = await ask("abcdefghijklmnopqrstuvww");
+  assert.equal(unknown.code, 404);
+  assert.deepEqual(JSON.parse(unknown.text), { status: "gone" });
+  // An expired link is "gone", never a status.
+  assert.equal((await ask("abcdefghijklmnopqrstuvwy", "&status=1", new Date("2026-10-29T00:00:00Z"))).code, 404);
+  // Without the flag the file is served as before.
+  assert.equal((await ask("abcdefghijklmnopqrstuvwy", "")).text, "%PDF-secret");
+});
+
+/** Serves one document link against fake rows and returns what was sent: status, headers, text, and which rows were failed. */
+async function serveFake(row: { status: "working" | "ready" | "failed"; created_at: number; body?: Buffer | null }, at: Date, extra = "") {
+  const links = new DocumentLinks(TEST_LINK_KEY, "https://api.doddy.test");
+  const id = "abcdefghijklmnopqrstuvwx";
+  const failed: string[] = [];
+  const store = {
+    getDocument: async () => ({ id, user_id: "u", name: "a.docx", mime: "application/pdf", body: null, ...row }),
+    failDocument: async (x: string) => void failed.push(x),
+  } as unknown as Parameters<typeof serveDocument>[4];
+  const url = new URL(new DocumentLinks(TEST_LINK_KEY, "https://api.doddy.test").link(id, at) + extra);
+  let code = 0;
+  let headers: Record<string, string | number> = {};
+  const chunks: Buffer[] = [];
+  const res = {
+    writeHead: (c: number, h: Record<string, string | number>) => { code = c; headers = h; },
+    end: (b?: string | Buffer) => { if (b) chunks.push(Buffer.from(b)); },
+  } as unknown as Parameters<typeof serveDocument>[1];
+  await serveDocument({} as Parameters<typeof serveDocument>[0], res, url, links, store, at);
+  await new Promise((r) => setImmediate(r));
+  return { code, headers, text: Buffer.concat(chunks).toString("utf8"), failed, links };
+}
+
+test("the waiting page reloads itself when the file is ready: a nonce-guarded script polls ?status=1, the meta refresh stays", async () => {
+  const at = new Date("2026-11-10T10:00:00Z");
+  const working = await serveFake({ status: "working", created_at: at.getTime() - 60_000 }, at);
+  assert.equal(working.code, 200);
+  assert.match(working.text, /Doddy is still making this/);
+  assert.match(working.text, /http-equiv="refresh"/, "the no-script fallback is kept");
+  const nonce = /<script nonce="([A-Za-z0-9_-]{16,})">/.exec(working.text)?.[1];
+  assert.ok(nonce, "the script carries a nonce");
+  assert.match(String(working.headers["content-security-policy"]), new RegExp(`script-src 'nonce-${nonce}'`));
+  assert.match(String(working.headers["content-security-policy"]), /connect-src 'self'/);
+  assert.match(working.text, /searchParams\.set\("status","1"\)/);
+  assert.match(working.text, /visibilitychange/);
+  assert.match(working.text, /pageshow/);
+  assert.deepEqual(working.failed, [], "a fresh job is left alone");
+  // Another page makes a new nonce; pages that aren't waiting carry no script and no script permission.
+  const again = await serveFake({ status: "working", created_at: at.getTime() - 60_000 }, at);
+  assert.notEqual(/nonce="([^"]+)"/.exec(again.text)?.[1], nonce);
+  const failedPage = await serveFake({ status: "failed", created_at: at.getTime() - 60_000 }, at);
+  assert.ok(!failedPage.text.includes("<script"));
+  assert.ok(!String(failedPage.headers["content-security-policy"]).includes("script-src"));
+});
+
+test("a file still 'working' after a job could have run is failed: the page, the status and the row all say so", async () => {
+  const at = new Date("2026-11-10T10:00:00Z");
+  const lost = { status: "working" as const, created_at: at.getTime() - DOCUMENT_STALE_AFTER_MS - 1_000 };
+  const page = await serveFake(lost, at);
+  assert.match(page.text, /This one didn't work/);
+  assert.ok(!page.text.includes("<script"), "nothing keeps waiting");
+  assert.deepEqual(page.failed, ["abcdefghijklmnopqrstuvwx"], "the row is made final");
+  const status = await serveFake(lost, at, "&status=1");
+  assert.deepEqual(JSON.parse(status.text), { status: "failed" });
+  // Just inside the window it is still working; a ready file is never touched.
+  assert.equal(effectiveStatus({ status: "working", created_at: at.getTime() - DOCUMENT_STALE_AFTER_MS + 1_000 }, at), "working");
+  assert.equal(effectiveStatus({ status: "ready", created_at: 1 }, at), "ready");
+  // The string a BIGINT column can come back as is read the same.
+  assert.equal(effectiveStatus({ status: "working", created_at: String(at.getTime() - DOCUMENT_STALE_AFTER_MS - 1_000) }, at), "failed");
+});
+
+test("the hourly sweep fails lost 'working' files and leaves fresh, ready and failed ones", async () => {
+  const rig = await start();
+  try {
+    const now = Date.parse("2026-11-10T10:00:00Z");
+    const lost = await rig.store.startDocument("u", "a.docx", "m", now - 30 * 60_000);
+    const fresh = await rig.store.startDocument("u", "b.docx", "m", now - 60_000);
+    const done = await rig.store.startDocument("u", "c.docx", "m", now - 30 * 60_000);
+    await rig.store.finishDocument(done, "c.docx", "m", Buffer.from("x"));
+    assert.equal(await rig.store.failStaleDocuments(now, DOCUMENT_STALE_AFTER_MS), 1);
+    assert.equal((await rig.store.getDocument(lost))?.status, "failed");
+    assert.equal((await rig.store.getDocument(fresh))?.status, "working");
+    assert.equal((await rig.store.getDocument(done))?.status, "ready");
+    assert.equal(await rig.store.failStaleDocuments(now, DOCUMENT_STALE_AFTER_MS), 0, "a second sweep changes nothing");
+  } finally {
+    await rig.close();
+  }
 });
 
 void on;

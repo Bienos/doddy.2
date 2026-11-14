@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { generateKeyPairSync, sign } from "node:crypto";
 import { test } from "node:test";
 import { AccountCheckUnavailable, createAccountVerifier, madeWithPassword } from "../src/doddy-account.js";
+import { conversationIdentity } from "../src/conversations.js";
 import { handleTokenRequest } from "../src/handler.js";
+import { fakeConversationStore } from "./conversation-fakes.js";
 
 // Decision 2026-11-08-required-account: the voice token server accepts a Doddy account (a Supabase
 // user: Apple, Google or a code by email), checked against the project's published keys.
@@ -111,13 +113,13 @@ const ENV = {
   DODDY_SESSION_SIGNING_KEY: "server-only-session-key-for-tests-000000000000000",
   ELEVENLABS_API_KEY: "elevenlabs-server-secret",
   ELEVENLABS_AGENT_ID: "agent_test",
-  OPENAI_API_KEY: "openai-server-secret",
   SUPABASE_URL: PROJECT,
 };
 
 function limits() {
   const calls = [];
   return {
+    ...fakeConversationStore(),
     calls,
     async hitLimits(userId) {
       calls.push(userId);
@@ -152,7 +154,9 @@ test("a Doddy account gets an ElevenLabs token, in its own limit bucket, and not
   const bearer = token();
   const { response, body, store, upstream, logs } = await tokenRequest(bearer);
   assert.equal(response.status, 200);
-  assert.deepEqual(body, { token: "provider-credential" });
+  // The conversation is tied to the account: the answer adds the account's keyed user id (the Doddy account's id is
+  // the Supabase user's, in its own `account:` namespace), and the log carries neither.
+  assert.deepEqual(body, { token: "provider-credential", userId: conversationIdentity(ENV, `account:${SUB}`).userId });
   assert.deepEqual(store.calls, [`account:${SUB}`]);
   assert.deepEqual(upstream, ["https://api.elevenlabs.io/v1/convai/conversation/token?agent_id=agent_test"]);
   const logged = JSON.stringify(logs);

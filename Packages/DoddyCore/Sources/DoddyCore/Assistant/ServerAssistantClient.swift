@@ -17,17 +17,32 @@ public struct ServerAssistantClient: AssistantClient {
 
     public func respond(_ request: AssistantRequest) async throws -> AssistantReply {
         guard let server else { throw AssistantError.notConfigured }
-        let body: Data
+        var body: Data
         do { body = try WireCoding.encode(WireCoding.wireRequest(from: request)) } catch { throw AssistantError.invalidRequest }
 
         var retriedAccount = false
+        var mayRetryLegacy = request.localActions != nil
         while true {
             do {
                 let response = try await server.askAssistant(body, timeout: requestTimeout)
                 return try GatewayAssistantClient.interpret(
                     GatewayHTTPResponse(status: response.status, body: response.body), for: request)
             } catch let error as AssistantError {
+                // Older strict servers refuse this extension before a model call. Retry that
+                // validation refusal once without it, never an unknown outcome or a timeout.
+                if error == .invalidRequest, mayRetryLegacy {
+                    mayRetryLegacy = false
+                    var legacy = WireCoding.wireRequest(from: request)
+                    legacy.localActions = nil
+                    body = try WireCoding.encode(legacy)
+                    continue
+                }
                 throw error
+            } catch ServerError.invalidRequest where mayRetryLegacy {
+                mayRetryLegacy = false
+                var legacy = WireCoding.wireRequest(from: request)
+                legacy.localActions = nil
+                body = try WireCoding.encode(legacy)
             } catch ServerError.accountMissing where !retriedAccount {
                 // The server no longer knows this device and the token was removed: the next call makes a
                 // new anonymous account. Try once more with it.

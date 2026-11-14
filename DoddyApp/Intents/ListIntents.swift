@@ -7,7 +7,7 @@ import Foundation
 // the list screen and voice, and Siri says only what the store read back. Changing or reading a
 // list needs the iPhone unlocked, so nothing is read out on a locked phone. With the Face ID lock on
 // (ADR-310), Doddy has to be unlocked too: a list intent answers "Doddy is locked" and does nothing
-// until he is (ADR-723).
+// until he is (ADR-723). The lists' names follow the same lock (`DoddyListQuery`).
 
 /// The store the intents use; set once in `DoddyApp.init`.
 @MainActor
@@ -15,6 +15,16 @@ enum IntentStores {
     static weak var store: MemoryStore?
     /// The reviewed profile, for Talk in the Island's "Hey <name>" (ADR-577).
     static weak var profiles: ProfileStore?
+
+    /// iOS can run an intent in a freshly launched process before `DoddyApp.init` has set the stores.
+    /// Waits for them for up to 2 s (the init takes milliseconds); returns at once when they are set.
+    static func waitForStore() async {
+        var waited = 0
+        while store == nil, waited < 50 {
+            try? await Task.sleep(for: .milliseconds(40))
+            waited += 1
+        }
+    }
 
     static func loaded() async -> MemoryStore? {
         guard let store else { return nil }
@@ -27,6 +37,11 @@ enum IntentStores {
     static func loadedLists() async -> [DoddyList] {
         await loaded()?.lists ?? []
     }
+
+    /// What a list lookup from Shortcuts or Siri may answer now, under the Face ID lock (ADR-723).
+    static func listLookup(_ lookup: AppLockListLookup) -> AppLockListAnswer {
+        AppLockPolicy.listLookup(lookup, lockOn: AppLock.shared.lockOn, isLocked: AppLockGate.isLocked())
+    }
 }
 
 struct DoddyListEntity: AppEntity {
@@ -37,17 +52,41 @@ struct DoddyListEntity: AppEntity {
     let name: String
 
     var displayRepresentation: DisplayRepresentation { DisplayRepresentation(title: "\(name)") }
+
+    /// While Doddy is locked (ADR-723): a list under a neutral name, nothing of the person's. Its intent
+    /// runs and answers that Doddy is locked; the identifier is only the one Shortcuts already held.
+    static func locked(_ id: UUID = AppLockPolicy.lockedListID) -> DoddyListEntity {
+        DoddyListEntity(id: id, name: NSLocalizedString("Doddy is locked", comment: ""))
+    }
 }
 
+/// Shortcuts and Siri looking a list up (ADR-226). Under the Face ID lock (ADR-723,
+/// `AppLockPolicy.listLookup`): with the lock on no name is suggested, so iOS keeps none for Siri's
+/// phrases or the Shortcuts picker; while Doddy is locked a name or an identifier comes back as the
+/// neutral locked list, so the intent still runs and says that Doddy is locked.
 struct DoddyListQuery: EntityStringQuery {
     func entities(for identifiers: [UUID]) async throws -> [DoddyListEntity] {
-        await Self.lists().filter { identifiers.contains($0.id) }
+        switch await IntentStores.listLookup(.byID) {
+        case .lists: return await Self.lists().filter { identifiers.contains($0.id) }
+        case .lockedPlaceholder: return identifiers.map { DoddyListEntity.locked($0) }
+        case .nothing: return []
+        }
     }
 
-    func suggestedEntities() async throws -> [DoddyListEntity] { await Self.lists() }
+    func suggestedEntities() async throws -> [DoddyListEntity] {
+        switch await IntentStores.listLookup(.suggestions) {
+        case .lists: return await Self.lists()
+        case .lockedPlaceholder, .nothing: return []
+        }
+    }
 
     /// The same exact matching as voice: "shopping list" finds "Shopping"; no closest guess.
     func entities(matching string: String) async throws -> [DoddyListEntity] {
+        switch await IntentStores.listLookup(.byName) {
+        case .lists: break
+        case .lockedPlaceholder: return [DoddyListEntity.locked()]
+        case .nothing: return []
+        }
         let lists = await IntentStores.loadedLists()
         switch ListMatch.list(named: string, in: lists) {
         case .one(let list): return [DoddyListEntity(id: list.id, name: list.name)]

@@ -31,7 +31,8 @@ ADR-734. Status report and constitution evidence log: `docs/implementation/PAYME
 | Type the amount to confirm | From 0.10 USDC up | `DODDY_PAYMENTS_CONFIRM_AMOUNT_USDC` (see "Larger payments") |
 | Per person per day | 1.00 USDC | `DODDY_PAYMENTS_USER_DAILY_USDC` |
 | Whole server per day | 5.00 USDC | `DODDY_PAYMENTS_SERVICE_DAILY_USDC` |
-| Which sites | Any public https site | `DODDY_PAYMENTS_ALLOWED_HOSTS=a.example,b.example` |
+| Which sites | Mock mode: any public https site. **Live mode with a wallet: the server refuses to start without a list**, and the service refuses every payment route if it has none | `DODDY_PAYMENTS_ALLOWED_HOSTS=a.example,b.example` |
+| Query strings | None: a payment address with a query (`?…`) is refused before anything is read | `DODDY_PAYMENTS_QUERY_HOSTS=a.example` (sites whose addresses may keep one) |
 
 Mock mode (the default `DODDY_MODE`) uses a demo wallet and an offline demo seller. It makes no network calls and moves
 no money; its receipts say `mode: "mock"`.
@@ -41,23 +42,32 @@ no money; its receipts say `mode: "mock"`.
 ```
 Doddy proposes a page (a URL is the only thing a model supplies)
  │
- ├─ POST /v1/payments/prepare {url}
- │    wallet set up? switch on? public https URL? ──► (no) blocked, with a receipt
+ ├─ POST /v1/payments/page {url}                    NOTHING is read from the page
+ │    wallet set up (live: and a list of sites)? switch on? public https URL on the list?
+ │    a query only on a site listed for one? ──► (no) blocked, with a receipt
+ │    ──► {page{host,path}, preview, approvalId}   read approval = single use, 2 minutes, bound to exactly that address
+ │
+ ├─ the person sees: "Check the price on shop.example? Page: /articles/42" and taps "Check the price"
+ │
+ ├─ POST /v1/payments/prepare {url, approvalId}
+ │    same gates ──► the read approval for exactly this address, used up ──► (no) blocked, nothing read
  │    plain GET of the page ──► 402 + offer         (nothing is signed or paid)
  │    offer within policy? (exact, this network, the pinned USDC, a real address, ≤ cap, room today)
- │    ──► {preview, approvalId}   approval = single use, 2 minutes, bound to
+ │    ──► {preview, approvalId}   pay approval = single use, 2 minutes, bound to
  │                                 {page, recipient, amount, token, wallet}
  │
  ├─ the person sees: "Pay 0.05 USDC to shop.example (wallet 0x1234…abcd) from Coinbase wallet 0xAB12…89EF" and approves
  │
  └─ POST /v1/payments/pay {url, approvalId}
-      same gates ──► read the offer AGAIN ──► must match the approval (a changed price or recipient needs a new one)
+      same gates ──► a live pay approval for this person? (no: nothing is read)
+      ──► read the offer AGAIN ──► must match the approval (a changed price or recipient needs a new one)
       reserve today's spend ──► use up the approval ──► write the ledger row
       sign (wallet) ──► send ONCE with PAYMENT-SIGNATURE ──► read the seller's PAYMENT-RESPONSE
       "paid" only on a valid settlement (success, tx hash, this network, this payer); otherwise see below
 ```
 
-What leaves the server: the page address to the seller, and a signed EIP-3009 transfer authorization that is only
+What leaves the server: the page address to the seller, only after the person approved that exact address (DOD-07),
+and a signed EIP-3009 transfer authorization that is only
 valid for the approved recipient and amount for at most two minutes. The wallet can sign one thing, that authorization;
 it is never given a free-form message, a transaction or a different recipient. The account's private key is never in
 this process: Coinbase signs inside its own service, and the app never holds any key. **The server does hold the
@@ -130,7 +140,8 @@ client is a 400; the one number a client may send is the amount the person typed
 |---|---|---|
 | `GET /v1/payments` | | `PaymentStatus`: wallet kind/short address/network/testNetwork, `enabled`, limits and used today, `unresolved` |
 | `PUT /v1/payments/switch` | `{enabled}` | `{status, receipt}`; turning on needs a wallet |
-| `POST /v1/payments/prepare` | `{url}` | `{mode, preview{title,lines,confirmLabel}, amount, confirmAmountRequired, approvalId, expiresAt}` |
+| `POST /v1/payments/page` | `{url}` | `{mode, page{host,path}, preview{title,lines,confirmLabel}, approvalId, expiresAt}`; reads nothing; the approval lets `prepare` read that one address once |
+| `POST /v1/payments/prepare` | `{url, approvalId}` (the page card's) | `{mode, preview{title,lines,confirmLabel}, amount, confirmAmountRequired, approvalId, expiresAt}` |
 | `POST /v1/payments/pay` | `{url, approvalId, confirmAmount?}` | `{mode, text, receipt}`; `text` is for the voice agent (page content labelled as data, clipped to 4000 characters, never stored) |
 | `GET /v1/payments/receipts` | | the person's last 30 payment receipts |
 

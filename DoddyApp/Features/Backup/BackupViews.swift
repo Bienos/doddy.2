@@ -111,7 +111,7 @@ struct MakeBackupView: View {
                         Toggle("Include photos", isOn: $includePhotos)
                         Toggle("Include voice memos", isOn: $includeRecordings)
                     } footer: {
-                        Text("At least \(BackupLimits.minimumPassphraseLength) characters. Write it down somewhere safe: if it's lost, this backup can't be opened by anyone, Doddy included.")
+                        Text(verbatim: String(format: NSLocalizedString("At least %lld characters. Write it down somewhere safe: if it's lost, this backup can't be opened by anyone, Doddy included.", comment: ""), BackupLimits.minimumPassphraseLength))
                     }
                     if let problem { Section { Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(Theme.error) } }
                     Section {
@@ -152,6 +152,18 @@ struct MakeBackupView: View {
             problem = loadError
             return
         }
+        // Private notes go into the file only after Face ID, and the file names them so a restore can mark them
+        // again (ADR-310). Without the check no backup is made: one that left them out would still say it was whole.
+        let everything = store.memories + store.lists.map(\.record)
+        let marked: Set<UUID>
+        switch await PrivateExportGate.check(
+            records: everything, reason: NSLocalizedString("Back up Doddy's notes", comment: "Face ID reason: backing up notes that include private ones")
+        ) {
+        case .go(let ids): marked = ids
+        case .stopped(let text):
+            problem = text
+            return
+        }
         // Files that can't be read are counted and named in the receipt, never skipped silently (DOD-08).
         var unreadablePhotos = 0, unreadableRecordings = 0
         var photos: [BackupContents.Photo] = []
@@ -181,8 +193,8 @@ struct MakeBackupView: View {
             unreadablePhotos, unreadableRecordings)
         do {
             let export = try MemoryExport.json(
-                store.memories + store.lists.map(\.record), listItems: store.lists.flatMap(\.items),
-                corrections: store.corrections, exportedAt: .now)
+                everything, listItems: store.lists.flatMap(\.items),
+                corrections: store.corrections, privateIDs: marked, exportedAt: .now)
             let contents = BackupContents(
                 createdAt: .now, memoriesExport: export,
                 reminders: BackupContents.reminders(noteReminders.reminders, now: .now),
@@ -234,8 +246,14 @@ struct RestoreBackupView: View {
                 } else if let plan {
                     Section("This adds to this iPhone") {
                         Text(summary(plan))
+                        if !plan.privateIDs.isEmpty {
+                            Text(verbatim: String(format: NSLocalizedString("%lld of them are private. They are added as private, and Face ID asks before their words show.", comment: ""),
+                                                 plan.privateIDs.count))
+                                .font(.footnote).foregroundStyle(Theme.secondaryText)
+                        }
                         if plan.notes.alreadyHere + plan.notes.keptOnPhone > 0 {
-                            Text("\(plan.notes.alreadyHere + plan.notes.keptOnPhone) notes are already here and stay as they are.")
+                            Text(verbatim: String(format: NSLocalizedString("%lld notes are already here and stay as they are.", comment: ""),
+                                                 plan.notes.alreadyHere + plan.notes.keptOnPhone))
                                 .font(.footnote).foregroundStyle(Theme.secondaryText)
                         }
                     }
@@ -331,8 +349,11 @@ struct RestoreBackupView: View {
         isWorking = true
         defer { isWorking = false }
         do {
-            let added = try await store.restore(plan.notes.toAdd, corrections: plan.notes.corrections, listItems: plan.listItems)
+            // The private notes are marked, and the mark read back, before they are added (`MemoryStore.restore`).
+            let added = try await store.restore(
+                plan.notes.toAdd, corrections: plan.notes.corrections, listItems: plan.listItems, privateIDs: plan.privateIDs)
             let addedIDs = Set(added.map(\.id))
+            let restoredPrivate = PrivateNotesStore.current().ids.intersection(plan.privateIDs).intersection(addedIDs).count
             var photos = 0, recordings = 0, reminders = 0, notKept = 0
             for photo in plan.photos where addedIDs.contains(photo.memoryID) {
                 if (try? await store.attachPhoto(jpeg: photo.jpeg, width: photo.width, height: photo.height, to: photo.memoryID)) != nil {
@@ -357,6 +378,7 @@ struct RestoreBackupView: View {
                 if !profileAdded { notKept += 1 }
             }
             var lines = ["Added \(added.count) notes and lists"]
+            if restoredPrivate > 0 { lines.append("\(restoredPrivate) of them private") }
             if photos > 0 { lines.append("\(photos) photos") }
             if recordings > 0 { lines.append("\(recordings) voice memos") }
             if reminders > 0 { lines.append("\(reminders) reminders") }
