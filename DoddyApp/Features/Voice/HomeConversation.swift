@@ -137,6 +137,8 @@ final class HomeConversation {
         }
         let controller = VoiceSessionController(store: store)
         self.controller = controller
+        // The first sound of this conversation is timed from the tap (decision 2026-11-14-first-audible-sound).
+        if let requestedAt { AgentVoiceMeter.shared.beginStart(at: requestedAt) }
         await controller.start(VoiceConfig.connectionMode, profile: profile, wakeGreeting: wakeGreeting, requestedAt: requestedAt)
     }
 }

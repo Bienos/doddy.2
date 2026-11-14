@@ -2,6 +2,7 @@ import AVFoundation
 import DoddyCore
 import Foundation
 import LiveKit
+import os
 
 /// Listens to how loud Doddy's voice is while he talks, for Home's island extension (ADR-655) and
 /// the Dynamic Island's beat outside the app (ADR-683). LiveKit hands it each buffer of the audio
@@ -9,10 +10,18 @@ import LiveKit
 /// island's last beat, and the moment it was updated. The sound itself is never kept, copied or sent: only that
 /// number, in memory, for a moment. It reads Doddy's output, never the microphone.
 ///
+/// It also finds the first sound of a conversation (`VoiceAudibleOnset`, decision
+/// `2026-11-14-first-audible-sound`): from the press that started it (`beginStart`) to the first buffer
+/// loud enough to be his voice, logged once as seconds and fixed words. It starts listening on his first
+/// speaking event, when his audio track appears, so it can only be late, never early.
+///
 /// `render` is called on an audio thread, so the state sits behind a lock and the view reads it
 /// from anywhere.
 final class AgentVoiceMeter: NSObject, AudioRenderer, @unchecked Sendable {
     static let shared = AgentVoiceMeter()
+
+    /// The same log as `VoiceSessionController.audioLog`, so one filter shows both lines.
+    private static let audioLog = Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
 
     private let lock = NSLock()
     private var smoother = VoiceLevelSmoother()
@@ -23,16 +32,39 @@ final class AgentVoiceMeter: NSObject, AudioRenderer, @unchecked Sendable {
     /// His audio track is being listened to, so no buffer for a moment means silence, not
     /// "no source".
     private var attached = false
+    /// Waits for the first sound after a press; nothing is timed without one (`beginStart`).
+    private var onset = VoiceAudibleOnset()
 
     func render(pcmBuffer: AVAudioPCMBuffer) {
         let rate = pcmBuffer.format.sampleRate
         guard rate > 0 else { return }
         let seconds = Double(pcmBuffer.frameLength) / rate
         let level = VoiceLevel.level(rms: Self.rms(of: pcmBuffer))
+        let now = ProcessInfo.processInfo.systemUptime
         lock.lock()
         peak = max(peak, smoother.push(level, seconds: seconds))
-        updatedAt = ProcessInfo.processInfo.systemUptime
+        updatedAt = now
+        let firstSound = onset.push(level: level, seconds: seconds, at: now)
         lock.unlock()
+        if let firstSound { Self.reportFirstSound(firstSound) }
+    }
+
+    /// A press (Home's tap, the Action Button) that is about to start a conversation: `startedAt` is
+    /// `ProcessInfo.systemUptime` at the press. The first sound of that conversation is timed from it.
+    func beginStart(at startedAt: TimeInterval) {
+        lock.lock()
+        onset.begin(at: startedAt)
+        lock.unlock()
+    }
+
+    /// One log line, off the audio thread: reading the output latency from `AVAudioSession` there could
+    /// block it. Fixed words and seconds only. `outputLatency` is the iPhone's own delay between handing
+    /// sound to the output and it coming out (a Bluetooth headset has more), on top of `first sound`.
+    private static func reportFirstSound(_ found: VoiceAudibleOnset.Result) {
+        DispatchQueue.global(qos: .utility).async {
+            let latency = AVAudioSession.sharedInstance().outputLatency
+            audioLog.notice("voice first audible sound after start: \(found.line(outputLatency: latency), privacy: .public)")
+        }
     }
 
     /// Whether his audio track is being listened to (set by the conversation that attached it).
@@ -76,6 +108,7 @@ final class AgentVoiceMeter: NSObject, AudioRenderer, @unchecked Sendable {
         peak = 0
         updatedAt = nil
         attached = false
+        onset.reset()
         lock.unlock()
     }
 
