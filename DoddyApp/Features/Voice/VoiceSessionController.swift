@@ -1412,7 +1412,7 @@ final class VoiceSessionController {
         let recapLines = kept.map { RecapModelIO.Line(speaker: $0.fromUser ? .person : .doddy, text: $0.text) }
         let memories = store
         Task { await RecapKeeper.recapConversation(lines: recapLines, startedAt: log.startedAt, endedAt: log.endedAt,
-                                                   isPrivate: isPrivate, store: memories) }
+                                                   isPrivate: isPrivate, conversationID: log.id, store: memories) }
         guard ConversationRetention.shouldKeep(rememberRecent: logs.isEnabled, isPrivate: isPrivate, lineCount: lines.count) else { return }
         logs.append(log)
     }
@@ -2977,10 +2977,13 @@ final class VoiceSessionController {
                 return
             }
             do {
-                let outcome = PrivateNotesStore.current().shareable(try await store.recall(query))
+                let recall = ShareableRecallService(base: store.environment.recallService) { PrivateNotesStore.current().ids }
+                let outcome = try await recall.recall(query, limit: 20)
                 // No word matched: the newest notes too, e.g. one saved during this call.
                 let newest = outcome == .noMatch ? await store.newestNotesForVoice(excluding: PrivateNotesStore.current().ids) : .none
-                await reply(call.toolCallId, VoiceToolReply.search(outcome, question: query, newest: newest))
+                let currentPrivacy = PrivateNotesStore.current()
+                let shareableNewest = NewestNotes.pick(newest.notes, excluding: currentPrivacy.ids, withPhoto: newest.withPhoto)
+                await reply(call.toolCallId, VoiceToolReply.search(currentPrivacy.shareable(outcome), question: query, newest: shareableNewest))
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }

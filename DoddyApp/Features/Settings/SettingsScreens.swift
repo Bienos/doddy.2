@@ -508,14 +508,15 @@ struct KnowledgeSettingsView: View {
                     StatusRow(title: "Remembered conversations", value: "\(conversationLogs.logs.count) of the last \(ConversationLogStore.maxLogs)")
                 }
                 .accessibilityIdentifier("settings.rememberedConversations")
-                Button("Forget remembered conversations", role: .destructive) { conversationLogs.clear() }
-                    .disabled(conversationLogs.logs.isEmpty)
+                Button("Forget remembered conversations", role: .destructive) { ConversationDeletion.clearAll(logs: conversationLogs) }
+                    .disabled(conversationLogs.logs.isEmpty && conversationLogs.problem == nil)
                 if let problem = conversationLogs.problem {
                     Label(problem, systemImage: "exclamationmark.triangle")
                         .foregroundStyle(Theme.error)
                 }
             } footer: {
                 Text("When a conversation starts, Doddy gets your saved notes and, with this on, your last few conversations. They're kept only on this iPhone.")
+                Text("Forgetting these conversations removes this iPhone's history. Saved notes and recap notes stay and may still be used. Server or provider copies may remain.")
             }
             Section {
                 // ADR-247: "Worth keeping?" after a voice conversation.

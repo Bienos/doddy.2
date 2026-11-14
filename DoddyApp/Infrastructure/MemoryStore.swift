@@ -8,6 +8,7 @@ import Observation
 @Observable
 final class MemoryStore {
     let environment: AppEnvironment
+    private let meaningIndex: MeaningIndex?
     /// Notes only. Lists (ADR-216) are `memories` rows too, but live in `lists` with their items.
     private(set) var memories: [MemoryRecord] = []
     /// Every stored correction (ADR-252), reloaded with the memories, for history and exports.
@@ -44,8 +45,9 @@ final class MemoryStore {
     /// "What Doddy did": a deleted note takes the text its rows kept for Undo with it (review C2).
     var activity: ActivityLogStore?
 
-    init(environment: AppEnvironment) {
+    init(environment: AppEnvironment, meaningIndex: MeaningIndex? = nil) {
         self.environment = environment
+        self.meaningIndex = meaningIndex
     }
 
     var isStorageAvailable: Bool { environment.capabilities.isAvailable(.memoryStorage) }
@@ -113,6 +115,7 @@ final class MemoryStore {
 
     func correct(id: UUID, text: String) async throws -> MemoryRecord {
         let record = try await environment.memoryRepository.update(id: id, currentText: text)
+        await meaningIndex?.invalidate(id)
         await environment.noteReminders?.refreshContent(forMemory: id)
         await reload()
         return record
@@ -133,6 +136,7 @@ final class MemoryStore {
         let audio = recordings[id]
         let reminderID = try? await environment.noteReminders?.reminder(forMemory: id)?.id
         try await environment.memoryRepository.delete(id: id)
+        await meaningIndex?.invalidate(id)
         activity?.forget(memoryID: id)
         // Only one deleted note can be undone, so the photo of the one before it goes for good.
         if let old = recentlyDeletedPhoto { environment.photoFiles.delete(old.fileName) }
@@ -221,6 +225,7 @@ final class MemoryStore {
                 stored: defaults.string(forKey: PrivateNotes.storageKey), newlyMarked: marking.newlyMarked, added: Set(added.map(\.id)))
             defaults.set(settled, forKey: PrivateNotes.storageKey)
         }
+        await meaningIndex?.clear()
         await reload()
         return added
     }
@@ -229,6 +234,7 @@ final class MemoryStore {
     func deleteAll() async throws {
         recentlyDeleted = nil
         try await environment.memoryRepository.deleteAll()
+        await meaningIndex?.clear()
         activity?.forgetNotes()
         environment.photoFiles.deleteOrphans(keeping: [])
         recentlyDeletedPhoto = nil
@@ -248,9 +254,9 @@ final class MemoryStore {
     /// note saved during the call counts. Private notes are left out before the limit. A failed
     /// read gives none, and the reply stays a plain "not found".
     func newestNotesForVoice(excluding privateIDs: Set<UUID>) async -> NewestNotes {
-        guard let records = try? await environment.memoryRepository.list(limit: 50) else { return .none }
+        guard let snapshot = try? await environment.memoryRepository.voiceStartupSnapshot(excluding: privateIDs) else { return .none }
         let photoIDs = Set(((try? await environment.photoRepository.allPhotos()) ?? []).map(\.memoryID))
-        return NewestNotes.pick(records, excluding: privateIDs, withPhoto: photoIDs)
+        return NewestNotes.pick(snapshot.notes, excluding: privateIDs, withPhoto: photoIDs)
     }
 }
 

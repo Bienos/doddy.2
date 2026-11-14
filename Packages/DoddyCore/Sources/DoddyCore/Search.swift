@@ -63,8 +63,14 @@ public struct RepositoryRecallService: RecallService {
     }
 
     public func recall(_ question: String, limit: Int) async throws -> RecallOutcome {
-        let candidates = try await repository.query(question, limit: limit)
-            .filter { $0.record.source.isEligibleForPersonalRecall && !$0.matchedTerms.isEmpty && $0.record.category != .list }
+        try await recall(question, limit: limit, excluding: [])
+    }
+
+    public func recall(_ question: String, limit: Int, excluding privateIDs: Set<UUID>) async throws -> RecallOutcome {
+        guard limit > 0 else { return .noMatch }
+        let candidates = try await repository.queryNotes(question, limit: limit, excluding: privateIDs)
+            .filter { $0.record.source.isEligibleForPersonalRecall && !$0.matchedTerms.isEmpty
+                && $0.record.category != .list && !privateIDs.contains($0.memoryID) }
         return candidates.isEmpty ? .noMatch : .matches(candidates)
     }
 }

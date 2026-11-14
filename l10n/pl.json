@@ -522,7 +522,8 @@
   "It hasn't been saved.": "Nie została zapisana.",
   "It hasn't been saved. Keep it for later and it opens the next time you start a new note; a photo or recording isn't kept with it.": "Nie została zapisana. Zachowaj ją na później, a otworzy się, gdy następnym razem zaczniesz nową notatkę; zdjęcie ani nagranie nie są z nią zachowywane.",
   "It is removed from this iPhone and from what Doddy can use. This can't be undone.": "Zostanie usunięte z tego iPhone’a i z tego, z czego może korzystać Doddy. Tego nie można cofnąć.",
-  "It is removed from this iPhone and won't be brought up again. Notes you saved during it stay, and ElevenLabs may keep its own record as described in Settings › Privacy.": "Zostanie usunięta z tego iPhone’a i nie będzie już przywoływana. Notatki zapisane podczas niej zostają, a ElevenLabs może przechowywać własny zapis, jak opisano w Ustawieniach › Prywatność.",
+  "This removes the conversation history from this iPhone. Saved notes and recap notes stay and may still be used. Copies on Doddy's server or ElevenLabs may remain.": "Historia tej rozmowy zostanie usunięta z tego iPhone’a. Zapisane notatki i podsumowania pozostaną i nadal mogą być używane. Kopie na serwerze Doddy lub w ElevenLabs mogą pozostać.",
+  "Forgetting these conversations removes this iPhone's history. Saved notes and recap notes stay and may still be used. Server or provider copies may remain.": "Zapomnienie rozmów usuwa ich historię z tego iPhone’a. Zapisane notatki i podsumowania pozostają i nadal mogą być używane. Kopie na serwerze lub u dostawcy mogą pozostać.",
   "It is removed from this iPhone. Anything it already did stays as it is.": "Zostanie usunięta z tego iPhone’a. To, co już zrobiła, pozostaje bez zmian.",
   "It may not have gone back. Check it in Calendar or Reminders.": "Mogło nie wrócić do poprzedniego stanu. Sprawdź to w Kalendarzu lub Przypomnieniach.",
   "It rings even in Silent mode or a Focus, with Snooze for 9 minutes. Turn it off in Settings, Alarms, or ask Doddy.": "Zadzwoni nawet w trybie cichym i przy włączonym skupieniu, z drzemką na 9 minut. Wyłączysz go w Ustawieniach, w sekcji Budziki, albo prosząc Doddy’ego.",
@@ -3654,5 +3655,9 @@
   "Leaflet prices come back in seconds, and nothing is handed over for them.": "Ceny z gazetek wracają w kilka sekund i nic nie jest w tym celu przekazywane.",
   "Nothing is sent until you say yes on the next card. The kind goes along with your words.": "Nic nie jest wysyłane, dopóki nie powiesz „tak” na następnej karcie. Rodzaj sklepu idzie razem z Twoimi słowami.",
   "Shops by name": "Sklepy z nazwy",
-  "No shop of this kind is connected by name yet. Doddy looks across shops in Poland and reads their own pages.": "Żaden sklep tego rodzaju nie jest jeszcze podłączony z nazwy. Doddy przeszukuje sklepy w Polsce i czyta ich własne strony."
+  "No shop of this kind is connected by name yet. Doddy looks across shops in Poland and reads their own pages.": "Żaden sklep tego rodzaju nie jest jeszcze podłączony z nazwy. Doddy przeszukuje sklepy w Polsce i czyta ich własne strony.",
+  "Delete conversation and recap note": "Usuń rozmowę i podsumowanie",
+  "Delete conversation, keep recap note": "Usuń rozmowę, zachowaj podsumowanie",
+  "This removes the conversation history from this iPhone. Doddy also made a recap note from it: you can delete that too, or keep it. Copies on Doddy's server or ElevenLabs may remain.": "Historia tej rozmowy zostanie usunięta z tego iPhone’a. Doddy zrobił z niej też notatkę z podsumowaniem: możesz ją usunąć albo zachować. Kopie na serwerze Doddy lub w ElevenLabs mogą pozostać.",
+  "The conversation was deleted, but its recap note couldn't be deleted and is still kept. You can delete it from Notes.": "Rozmowa została usunięta, ale jej podsumowania nie udało się usunąć i nadal jest zachowane. Możesz je usunąć w Notatkach."
 }

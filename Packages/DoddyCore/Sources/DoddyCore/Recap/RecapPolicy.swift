@@ -13,6 +13,8 @@ public enum RecapSettings {
     /// When the person last turned "Remember what we talked about" on (seconds since 1970). Conversations
     /// that ended before it are never recapped: turning the switch on is not a yes for the past.
     public static let rememberSinceKey = "recaps.remember.since.v1"
+    /// Identifies one consent period even when two toggles have the same timestamp.
+    public static let rememberEpochKey = "recaps.remember.epoch.v1"
     /// The conversations already recapped (`RecapLedger`), so one is saved once, even if the person
     /// later deletes the note.
     public static let ledgerKey = "recaps.ledger.v1"

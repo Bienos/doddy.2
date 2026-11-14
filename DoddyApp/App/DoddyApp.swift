@@ -46,7 +46,7 @@ struct DoddyApp: App {
         // The same for the keys a person pasted in for their own accounts (ADR-640).
         AccountKeyStore.clearLeftoversOnFreshInstall()
         let environment = AppEnvironment.shared
-        let store = MemoryStore(environment: environment)
+        let store = MemoryStore(environment: environment, meaningIndex: MeaningService.index)
         let noteReminders = NoteReminderStore(coordinator: environment.noteReminders)
         store.noteReminders = noteReminders
         // The title of a reminder that rings like an alarm (ADR-651) is the note's own text.

@@ -73,6 +73,8 @@ public enum MeaningSearch {
 public actor MeaningIndex {
     private let embedder: any MeaningEmbedder
     private var cache: [UUID: (text: String, vector: [Float])] = [:]
+    /// Invalidates work suspended in an embedder as well as the vectors already cached.
+    private var generation: UInt64 = 0
 
     public init(embedder: any MeaningEmbedder) {
         self.embedder = embedder
@@ -80,8 +82,10 @@ public actor MeaningIndex {
 
     /// Hits for the question among `records`, or [] when the model can't read the question.
     public func search(_ question: String, in records: [MemoryRecord], excluding: Set<UUID>) async -> [MeaningHit] {
+        let owner = generation
         let trimmed = question.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= 3, let query = await embedder.vector(for: trimmed) else { return [] }
+        guard owner == generation, !Task.isCancelled else { return [] }
         let notes = MeaningSearch.eligible(records)
         let keep = Set(notes.map(\.id))
         cache = cache.filter { keep.contains($0.key) }
@@ -89,18 +93,29 @@ public actor MeaningIndex {
         for note in notes {
             // Find cancels the search on every keystroke: a cancelled pass stops here instead of reading
             // every remaining note with the model. Vectors already made stay cached for the next pass.
-            if Task.isCancelled { return [] }
+            if Task.isCancelled || owner != generation { return [] }
             let text = MeaningSearch.text(of: note)
             if let cached = cache[note.id], cached.text == text {
                 pairs.append((note, cached.vector))
             } else if let vector = await embedder.vector(for: text) {
+                guard owner == generation, !Task.isCancelled else { return [] }
                 cache[note.id] = (text, vector)
                 pairs.append((note, vector))
             }
         }
+        guard owner == generation, !Task.isCancelled else { return [] }
         return MeaningSearch.rank(query: query, notes: pairs, excluding: excluding)
     }
 
+    /// A corrected/deleted note must not retain its old vector or be restored by in-flight work.
+    public func invalidate(_ id: UUID) {
+        generation &+= 1
+        cache[id] = nil
+    }
+
     /// Forgets every vector (Delete all, or the store reloaded from a backup).
-    public func clear() { cache = [:] }
+    public func clear() {
+        generation &+= 1
+        cache = [:]
+    }
 }
