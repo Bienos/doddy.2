@@ -15,6 +15,7 @@ struct ShoppingResultSections: View {
     @Environment(\.openURL) private var openURL
     @State private var reportURL: URL?
     @State private var reportProblem: String?
+    @State private var showCompare = false
     private let language = NotificationLanguage.current
 
     var body: some View {
@@ -32,6 +33,18 @@ struct ShoppingResultSections: View {
             if let budget = shopping.budget {
                 Text(String(format: NSLocalizedString("Your budget: %@", comment: ""), budget.text(language)))
                     .font(.footnote).foregroundStyle(Theme.secondaryText)
+            }
+            // The picks side by side (owner, 13 Nov 2026: "porównywanie dogłębsze"), from this result only.
+            if ShoppingComparison.isOffered(for: shopping) {
+                Button {
+                    showCompare = true
+                } label: {
+                    Label("Compare the picks side by side", systemImage: "rectangle.split.3x1")
+                }
+                .accessibilityIdentifier("shopping.compare")
+                .sheet(isPresented: $showCompare) {
+                    ShoppingCompareView(title: errand.title, shopping: shopping)
+                }
             }
         }
         .accessibilityIdentifier("shopping.summary")

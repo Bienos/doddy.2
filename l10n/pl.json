@@ -3659,5 +3659,20 @@
   "Delete conversation and recap note": "Usuń rozmowę i podsumowanie",
   "Delete conversation, keep recap note": "Usuń rozmowę, zachowaj podsumowanie",
   "This removes the conversation history from this iPhone. Doddy also made a recap note from it: you can delete that too, or keep it. Copies on Doddy's server or ElevenLabs may remain.": "Historia tej rozmowy zostanie usunięta z tego iPhone’a. Doddy zrobił z niej też notatkę z podsumowaniem: możesz ją usunąć albo zachować. Kopie na serwerze Doddy lub w ElevenLabs mogą pozostać.",
-  "The conversation was deleted, but its recap note couldn't be deleted and is still kept. You can delete it from Notes.": "Rozmowa została usunięta, ale jej podsumowania nie udało się usunąć i nadal jest zachowane. Możesz je usunąć w Notatkach."
+  "The conversation was deleted, but its recap note couldn't be deleted and is still kept. You can delete it from Notes.": "Rozmowa została usunięta, ale jej podsumowania nie udało się usunąć i nadal jest zachowane. Możesz je usunąć w Notatkach.",
+  "Compare": "Porównaj",
+  "Compare the picks": "Porównaj propozycje",
+  "Compare the picks side by side": "Porównaj propozycje obok siebie",
+  "Side by side, as Doddy's server registered them. The lowest price is marked only when the prices can be compared.": "Obok siebie, tak jak zarejestrował je serwer Doddy. Najniższa cena jest zaznaczona tylko wtedy, gdy ceny da się porównać.",
+  "These prices are in different currencies, so Doddy doesn't mark the lowest.": "Te ceny są w różnych walutach, więc Doddy nie zaznacza najniższej.",
+  "Prices can change after the time they were checked. A price from the Google Shopping list wasn't checked on the shop's page, so it can't be watched. Doddy never buys: “Buy at” opens the shop's page in Safari.": "Ceny mogą się zmienić po czasie, w którym je sprawdzono. Ceny z listy Google Shopping nie sprawdzono na stronie sklepu, więc nie da się jej pilnować. Doddy niczego nie kupuje: „Kup w” otwiera stronę sklepu w Safari.",
+  "Lowest price of these picks": "Najniższa cena z tych propozycji",
+  "%@ more than the lowest": "%@ więcej niż najniższa",
+  "Shop": "Sklep",
+  "Price from": "Cena z",
+  "Delivery": "Dostawa",
+  "Not in the result": "Nie ma w wyniku",
+  "In short": "Krótko",
+  "Why this one": "Dlaczego ta",
+  "This price came from a list, not the shop's page, so Doddy can't watch it.": "Ta cena pochodzi z listy, a nie ze strony sklepu, więc Doddy nie może jej pilnować."
 }
