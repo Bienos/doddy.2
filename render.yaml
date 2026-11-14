@@ -30,11 +30,17 @@ services:
     healthCheckPath: /v1/health
     autoDeploy: false
     envVars:
+      # Production rules (decision 2026-11-14-production-rules). A build with the start-up check refuses to start when
+      # DODDY_MODE=live and DODDY_HOST is not loopback, unless DODDY_ENV=production, DODDY_AUTH_MODE=supabase,
+      # COMPOSIO_COMPLETION_MODE=verifier and DODDY_DEVICE_SIGNUP=off, with DODDY_DEVICE_INVITE_CODES unset and
+      # DODDY_OWNER_CLAIM not open. The values below are what the hand-made live service runs today. They are NOT changed
+      # here, because a Blueprint sync would apply new values to that service before the owner decides to deploy the check;
+      # the owner changes them on Render after that decision, in the order docs/OWNER_QUEUE.md 113 gives.
       - key: NODE_VERSION
         value: "22"       # package.json needs >= 22.22.3 (@composio/core)
       - key: DODDY_MODE
         value: live
-      # production + live is refused by the server until real app sign-in exists.
+      # development until the settings above are changed (production + live also needs DODDY_AUTH_MODE=supabase).
       - key: DODDY_ENV
         value: development
       - key: DODDY_HOST
@@ -63,7 +69,8 @@ services:
         sync: false
       - key: DATABASE_CA_CERT
         sync: false
-      # callback = single-owner development only (the server refuses it in production).
+      # callback = single-owner development only (the server refuses it in production and, with the start-up check, on any
+      # live host that is not loopback).
       - key: COMPOSIO_COMPLETION_MODE
         value: callback
       # https origin, no path: https://doddy.onrender.com or the URL Render shows if that name is taken.
@@ -119,7 +126,8 @@ services:
       # ADR-563: the phone signs itself in with a device ID. open (ADR-587, owner 22 Oct: Ask Doddy
       # for everyone) = the first iPhone that signs in owns this server; every other iPhone gets a
       # guest session good for Ask Doddy only (never the owner's accounts, search or documents).
-      # first-device = others are refused. Development only; needs DODDY_SESSION_SIGNING_KEY.
+      # first-device = others are refused. Development only; needs DODDY_SESSION_SIGNING_KEY. Under production rules
+      # (above) it has to be off.
       # The live service is hand-made: set the same value there (Environment).
       - key: DODDY_DEVICE_SIGNUP
         value: open

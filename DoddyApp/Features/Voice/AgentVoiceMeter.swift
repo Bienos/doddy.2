@@ -63,7 +63,10 @@ final class AgentVoiceMeter: NSObject, AudioRenderer, @unchecked Sendable {
     private static func reportFirstSound(_ found: VoiceAudibleOnset.Result) {
         DispatchQueue.global(qos: .utility).async {
             let latency = AVAudioSession.sharedInstance().outputLatency
-            audioLog.notice("voice first audible sound after start: \(found.line(outputLatency: latency), privacy: .public)")
+            let line = found.line(outputLatency: latency)
+            audioLog.notice("voice first audible sound after start: \(line, privacy: .public)")
+            // Also in Settings › Advanced › Start timing, to read without a Mac (decision 2026-11-14-start-timing-on-the-phone).
+            StartTimingStore.shared.record("voice first audible sound after start: " + line)
         }
     }
 

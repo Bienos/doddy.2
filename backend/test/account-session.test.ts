@@ -638,7 +638,8 @@ test("the route exists only where the server can check a Supabase token and sign
   const noKey = await doddy({ DODDY_SESSION_SIGNING_KEY: "", DODDY_DEVICE_SIGNUP: "off" });
   assert.equal((await noKey.exchange(account(ACCOUNT))).status, 404);
   assert.equal((await noKey.rows()).length, 0);
-  // Production loads no session key today (owner tokens are off there), so it is not served there either.
+  // Production loads no owner-token key (`signingKeys`). Since decision 2026-11-14-production-rules it does load the key of
+  // account sessions, file links and the link proof (`accountKeys`), so the route is served there: `production-rules.test.ts`.
   const production = loadConfig({ ...BASE_ENV, DODDY_ENV: "production", DATABASE_URL: "postgres://doddy:doddy@db.example.test/doddy", DODDY_DEVICE_SIGNUP: "off" });
   assert.equal(production.signingKeys, null);
 });
