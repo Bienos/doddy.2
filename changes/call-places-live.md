@@ -1,1 +1,0 @@
-`call_places` is on the live main voice agent (ElevenLabs, 119 tools, three prompt passages changed; owner queue 48 done). With the order agent from queue 61, food by phone is reachable from a conversation once the app build with the card (commit `331d7ce` or later) is on the phone. Docs and the tool id in `voice-agent/tools.json` only.

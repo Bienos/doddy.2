@@ -1,6 +1,6 @@
 # Doddy server (S1)
 
-TypeScript / Node 22 + Postgres on Render (EU). **Live** as `doddy-messaging`, made by hand on the free plan with the worker inside the web process (`RUN_WORKER_IN_WEB=1`). The `render.yaml` Blueprint at the repo root has not been applied (`STATUS.md`).
+TypeScript / Node 22 + Postgres on Render (EU). **Live** as `doddy-messaging`, made by hand, with the worker inside the web process (`RUN_WORKER_IN_WEB=1`); on a paid instance (`0.5c-512mb`, Render's Starter size) since 14 Nov 2026, so it no longer sleeps when idle. The `render.yaml` Blueprint at the repo root has not been applied (`STATUS.md`).
 It holds provider keys so the iPhone app never does, and sends updates by **push** and **SMS**.
 **Memories are not stored here.** They stay in the app's local SQLite database.
 
@@ -174,7 +174,7 @@ The user hands Doddy a task ("sprawdź loty i hotele do Rzymu…"), says yes onc
 - **Cost visibility:** per errand, input, cache-write, cache-read and output tokens across both calls, searches and fetches, and the model, stored on the row and logged with ids only. Not priced in code.
 - **Env:** `ERRANDS_ENABLED` (default `0`, off: set `1` to turn errands on; runs only when `ANTHROPIC_API_KEY` and `MEMORY_ENCRYPTION_KEY` are also set, otherwise `503 errands_disabled`), `ERRANDS_MODEL`, `ERRANDS_EFFORT` (`low|medium|high|xhigh|max`), `ERRAND_TIME_LIMIT_MINUTES` (1–120), `ERRANDS_MAX_OPEN` (1–20), `ERRANDS_DAILY_PER_ACCOUNT` (default 10) and `ERRANDS_DAILY_PER_SERVER` (default 30) approvals a UTC day (ADR-673: over either, approve answers `429 {"error":"errand_daily_limit","scope":"account"|"server"}` and queues nothing; the server's count is in `server_daily_usage`, which deleting an account doesn't reduce). Migrations `009_errands.sql` and `015_server_usage.sql` are applied at startup.
 - **Shopping errands** (ADR-607, `docs/implementation/SHOPPING.md`, `src/shopping/`): `kind: "shopping"` runs a shopping runner instead. It looks for offers with two tools the code runs (`find_offers` through Serper, `check_offer_page` through the polite fetcher) plus web search and fetch; every price, shop and link on the card comes from the code's own record, never from the model. Env: `SHOPPING_MODEL` (default `claude-haiku-5-5`), `SHOPPING_PREMIUM_MODEL` (default `claude-sonnet-5-5`, only for the account ids in `SHOPPING_PREMIUM_ACCOUNTS`), `SHOPPING_EFFORT`, `SHOPPING_MAX_OFFER_SEARCHES` (8), `SHOPPING_MAX_PAGE_CHECKS` (15), `SERPER_API_KEY` (without it `find_offers` answers "not set up"), `AFFILIATE_LINKS` (empty: no tracked links).
-- **Caveat:** a free Render web service sleeps after about 15 minutes without requests, which stops the worker; for dependable errands use a paid instance or the separate `doddy-messaging-worker` (`render.yaml`).
+- **Caveat:** a free Render web service sleeps after about 15 minutes without requests, which stops the worker; for dependable errands use a paid instance (the live service is one since 14 Nov 2026) or the separate `doddy-messaging-worker` (`render.yaml`).
 
 ## Leaflets (shopping stage 1, ADR-609)
 `POST /v1/deals/search` `{items[1–12], chains?, language}` reads shops' official leaflets on request and answers with the matching offers (`schemas/fixtures/deals_search_v1.json`). Contract: `docs/implementation/SHOPPING.md` section 2. Code: `src/deals/`, `src/routes/deals.ts`.
