@@ -70,6 +70,25 @@ export class VoiceAuthStoreUnavailable extends Error {
   }
 }
 
+/**
+ * The part of an account's deletion that ends its sessions, as Lua: KEYS[1] is the account's list of sessions, ARGV[1] the
+ * prefix of the session records and ARGV[2] that of the refresh hashes. It leaves `sessions` (the listed ids) for what follows.
+ */
+const END_USER_SESSIONS = `
+        local sessions = redis.call('SMEMBERS', KEYS[1])
+        for _, sid in ipairs(sessions) do
+          local sessionKey = ARGV[1] .. sid
+          local session = redis.call('GET', sessionKey)
+          if session then
+            local state = cjson.decode(session)
+            redis.call('DEL', ARGV[2] .. state.refreshHash)
+            if state.previousRefreshHash then redis.call('DEL', ARGV[2] .. state.previousRefreshHash) end
+            redis.call('DEL', sessionKey)
+          end
+        end
+        redis.call('DEL', KEYS[1])
+`;
+
 /** Redis REST adapter. All state is shared across serverless instances; there is no memory fallback. */
 export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, timeoutMs = STORE_TIMEOUT_MS }) {
   if (!isHttpsURL(url) || !token) throw new VoiceAuthStoreUnavailable();
@@ -110,22 +129,29 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
   const conversationsKey = (recordKey) => key("conversations", recordKey);
   const owedKey = `${STORE_PREFIX}conversations-owed`;
   return {
+    /**
+     * A session and its first refresh token. `nonceHash` is the replay guard of a sign-in with Apple: a nonce seen before
+     * refuses the session. A session made from a Doddy account's token (`account-session`) has no Apple nonce to guard,
+     * so it passes none and the guard is skipped; everything else is the same.
+     */
     async createSession({ userId, sessionId, refreshHash, nonceHash, ttlSeconds, nowSeconds }) {
+      const guarded = typeof nonceHash === "string";
       const script = `
-        if redis.call('EXISTS', KEYS[1]) == 1 then return 0 end
+        if ARGV[6] == '1' and redis.call('EXISTS', KEYS[1]) == 1 then return 0 end
         local refresh = redis.call('SET', KEYS[2], ARGV[1], 'EX', ARGV[3], 'NX')
         if not refresh then return 0 end
         redis.call('SET', KEYS[3], ARGV[2], 'EX', ARGV[3])
-        redis.call('SET', KEYS[1], '1', 'EX', ARGV[4])
+        if ARGV[6] == '1' then redis.call('SET', KEYS[1], '1', 'EX', ARGV[4]) end
         redis.call('SADD', KEYS[4], ARGV[5])
         redis.call('EXPIRE', KEYS[4], ARGV[3])
         return 1
       `;
       const session = JSON.stringify({ userId, sessionId, refreshHash, createdAt: nowSeconds });
       const refresh = JSON.stringify({ userId, sessionId });
+      // Without a nonce the first key is declared and never read or written.
       return Number(await evalScript(script, [
-        key("nonce", nonceHash), key("refresh", refreshHash), key("session", sessionId), key("user-sessions", userId),
-      ], [refresh, session, ttlSeconds, NONCE_TTL_SECONDS, sessionId]));
+        key("nonce", guarded ? nonceHash : `unused:${sessionId}`), key("refresh", refreshHash), key("session", sessionId), key("user-sessions", userId),
+      ], [refresh, session, ttlSeconds, NONCE_TTL_SECONDS, sessionId, guarded ? "1" : "0"]));
     },
 
     /**
@@ -160,7 +186,10 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
         state.refreshHash = ARGV[2]
         redis.call('SET', KEYS[2], cjson.encode(state), 'EX', ARGV[1])
         redis.call('EXPIRE', KEYS[4], ARGV[1])
-        redis.call('EXPIRE', KEYS[5], ARGV[1])
+        -- Keeps an Apple voice account's sealed Apple token alive while it is refreshed. A Doddy account's token (the same key,
+        -- under account:<id>) is kept for 400 days by apple-link, so a refresh only ever lengthens it, never shortens it.
+        local appleTtl = redis.call('TTL', KEYS[5])
+        if appleTtl >= 0 and appleTtl < tonumber(ARGV[1]) then redis.call('EXPIRE', KEYS[5], ARGV[1]) end
         return cjson.encode(state)
       `;
       const result = await evalScript(script, [
@@ -404,20 +433,20 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
       });
     },
 
+    /**
+     * Ends every session of one account: each session record, its current and swapped-out refresh hashes, and the
+     * account's list of sessions. Nothing else about the account is touched (a sealed Apple token stays). An access
+     * token of an ended session is refused from then on, because every request looks its session up. Returns how many
+     * sessions the account had listed.
+     */
+    async revokeUserSessions(userId) {
+      return Number(await evalScript(`${END_USER_SESSIONS} return #sessions`, [key("user-sessions", userId)],
+        [`${STORE_PREFIX}session:`, `${STORE_PREFIX}refresh:`]));
+    },
+
     async deleteAccount(userId) {
       const script = `
-        local sessions = redis.call('SMEMBERS', KEYS[1])
-        for _, sid in ipairs(sessions) do
-          local sessionKey = ARGV[1] .. sid
-          local session = redis.call('GET', sessionKey)
-          if session then
-            local state = cjson.decode(session)
-            redis.call('DEL', ARGV[2] .. state.refreshHash)
-            if state.previousRefreshHash then redis.call('DEL', ARGV[2] .. state.previousRefreshHash) end
-            redis.call('DEL', sessionKey)
-          end
-        end
-        redis.call('DEL', KEYS[1])
+        ${END_USER_SESSIONS}
         redis.call('DEL', KEYS[2])
         return #sessions
       `;
@@ -438,8 +467,14 @@ export function createVoiceAuthStore({ url, token, fetch: fetchImpl = fetch, tim
  *
  * `delete-conversations` also takes a Doddy account's access token (decision
  * 2026-11-12-voice-conversations-per-account): the account's voice conversations at ElevenLabs are deleted and read
- * back, and the answer is counts only, `{ deleted, pending }`. `delete-account` does the same for an older Apple
- * voice account's conversations and adds the counts to its answer.
+ * back, and the answer is counts only, `{ deleted, pending }`. It also ends the account's voice sessions (below).
+ * `delete-account` does the same for an older Apple voice account's conversations and adds the counts to its answer.
+ *
+ * `account-session` (decision 2026-11-12-one-token-per-server) takes a Doddy account's access token once and answers with
+ * this server's own access and refresh tokens, the same reply and the same kind of session as `sign-in`, bound to the
+ * account (`account:<id>`, the bucket the account's token already counts under). From then on the app sends that access
+ * token to `/api/voice-token`, refreshes it with `refresh` and ends it with `sign-out` (one session) or `delete-account`
+ * or `delete-conversations` (every session of the account); none of those needed to change.
  */
 export async function handleVoiceAuthRequest(request, env, deps = {}) {
   const now = deps.now ?? Date.now;
@@ -455,7 +490,7 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
   const body = await readBody(request);
   if (!body) return finish(400, "invalid_request");
   action = body.action;
-  if (!["sign-in", "refresh", "sign-out", "delete-account", "apple-link", "apple-revoke", "delete-conversations"].includes(action)) return finish(400, "unknown_action");
+  if (!["sign-in", "refresh", "sign-out", "delete-account", "apple-link", "apple-revoke", "delete-conversations", "account-session"].includes(action)) return finish(400, "unknown_action");
 
   let store;
   let keys;
@@ -524,6 +559,53 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
       return finish(200, null, sessionReply(keys, userId, sessionId, refreshToken, now()), {}, callerFlag);
     }
 
+    if (action === "account-session") {
+      // The Doddy account's own token, checked exactly as `apple-link` checks it, is traded once for this server's own session.
+      let account;
+      try {
+        account = await (deps.authenticateDoddyAccount ?? authenticateDoddyAccount)(
+          request, env, { ...(deps.accountFetch ? { fetch: deps.accountFetch } : {}), now: now() });
+      } catch (error) {
+        // The project's keys couldn't be read: "try again", never "signed out".
+        if (error instanceof AccountCheckUnavailable) return finish(503, "account_check_unavailable");
+        throw error;
+      }
+      if (!account) return finish(401, "session_expired");
+      // Like a sign-in: no session on a server that can't issue voice tokens, and a bad limit setting stops new sessions only.
+      if (!voiceProviderConfigured("elevenlabs", env)) return finish(503, "server_not_configured");
+      const signIns = signInLimits(env);
+      if (!signIns || typeof store.hitSignInLimits !== "function") return finish(503, "server_not_configured");
+      // Limited per account and per caller address, in the sign-ins' own numbers and failing closed. Counted only now that
+      // the account's token has checked out, so junk uses up nobody's allowance; the account first, so one account asking
+      // again and again never uses up the allowance of a shared address. A bucket of its own: Apple sign-ins from the same
+      // address are neither counted here nor refused by it.
+      const own = await store.hitSignInLimits(identifierHash(keys, `account-session:${account.userId}`),
+        signIns.perHour, signIns.perDay, now());
+      if (!own.allowed) {
+        return finish(429, "rate_limited", undefined, { "retry-after": String(own.retryAfterSeconds) }, { limit: own.limit });
+      }
+      const address = clientAddress(request, env);
+      const unknownCaller = address === "unknown";
+      const callerFlag = unknownCaller ? { noClientAddress: true } : {};
+      const factor = unknownCaller ? UNKNOWN_CLIENT_LIMIT_FACTOR : 1;
+      const turn = await store.hitSignInLimits(identifierHash(keys, `account-session-client:${address}`),
+        signIns.perHour * factor, signIns.perDay * factor, now());
+      if (!turn.allowed) {
+        return finish(429, "rate_limited", undefined, { "retry-after": String(turn.retryAfterSeconds) },
+          { limit: turn.limit, ...callerFlag });
+      }
+      // The same session and refresh records as an Apple voice account's, so refresh, sign-out and deletion are the same
+      // code. The user id is the account's own bucket (`account:<id>`), the one the Supabase token already counts under.
+      const sessionId = randomBytes(24).toString("base64url");
+      const refreshToken = randomBytes(32).toString("base64url");
+      const created = await store.createSession({
+        userId: account.userId, sessionId, refreshHash: sha256(refreshToken), ttlSeconds: REFRESH_TOKEN_SECONDS,
+        nowSeconds: Math.floor(now() / 1_000),
+      });
+      if (created !== 1) return finish(500, "voice_auth_failed");
+      return finish(200, null, sessionReply(keys, account.userId, sessionId, refreshToken, now()), {}, callerFlag);
+    }
+
     if (action === "refresh") {
       if (typeof body.refreshToken !== "string" || body.refreshToken.length < 40 || body.refreshToken.length > 128) {
         return finish(401, "session_expired");
@@ -569,6 +651,11 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
       if (!turn.allowed) {
         return finish(429, "rate_limited", undefined, { "retry-after": String(turn.retryAfterSeconds) }, { limit: turn.limit });
       }
+      // This is the step every deletion of a Doddy account makes, whichever way the person signed in, so it is also where the
+      // account's own voice sessions (`account-session`) end: no refresh token of the account gives a new access token after
+      // it, and an access token still inside its 10 minutes is refused too, because every request looks its session up.
+      // Before the sweep, so an unreachable store answers 503 with nothing half done; asking again ends nothing more.
+      await store.revokeUserSessions(account.userId);
       const counts = await sweepAccountConversations({
         store, client: conversationClientFromEnv(env, deps.elevenLabsFetch ?? fetch), recordKey: identity.recordKey,
         filters: [identity.userId, ...(installUserId ? [installUserId] : [])], now,
