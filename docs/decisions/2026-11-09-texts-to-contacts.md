@@ -17,7 +17,7 @@ On 9 Nov 2026 the owner asked Doddy in a voice conversation whether he could tex
 
 ## Steps
 1. The rule as code and in the rules file, with tests (`Packages/DoddyCore/Sources/DoddyCore/ContactText.swift`, `ContactTextTests`). Sends nothing.
-2. Messaging server: `POST /v1/texts/contact` takes the contact's number, the text and the approval hash, checks the hash, the country list, the 50-a-day cap and STOP, and queues the text for the worker, which sends it from Doddy's number. Off unless `CONTACT_TEXTS_ENABLED=1`. Only an account with a verified number of its own may use it, so a real phone stands behind every sender. Migration `025_contact_texts.sql`; tests in `server/messaging/test/contactTexts.test.ts`.
+2. Messaging server: `POST /v1/texts/contact` takes the contact's number, the text and the approval hash, checks the hash, the country list, the 50-a-day cap and STOP, and queues the text for the worker, which sends it from Doddy's number. Off unless `CONTACT_TEXTS_ENABLED=1`. Only an account with a verified number of its own may use it, so a real phone stands behind every sender. Migration `039_contact_texts.sql` (written as 025, renumbered when merged on 14 Nov 2026); tests in `server/messaging/test/contactTexts.test.ts`. A number that answers STOP is kept as a keyed hash and, encrypted, the number itself, so that a key rotation can't forget it (server README, "Rotating MEMORY_ENCRYPTION_KEY").
 3. App: a voice tool request and the card (contact, number, text, Send), reading the number from Contacts with the user's permission.
 4. Voice agent: a `text_contact` tool and a line in the instructions. It goes on the live ElevenLabs agent only on the owner's instruction.
 

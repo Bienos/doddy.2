@@ -130,8 +130,11 @@ describe("texts to contacts against real Postgres", { skip: dbSkip }, () => {
     const refused = await send(h, "+48600300010", "Hej");
     assert.equal(refused.statusCode, 409);
     assert.equal(refused.json().error, "contact_opted_out");
-    const { rows } = await db.query("SELECT number_hash FROM contact_text_opt_outs");
-    assert.ok(rows.every((r: { number_hash: Buffer }) => !r.number_hash.toString("utf8").includes("600300010")), "only a hash is kept");
+    const { rows } = await db.query("SELECT number_hash, number_ciphertext, key_version FROM contact_text_opt_outs");
+    assert.ok(rows.length > 0 && rows.every((r: { number_hash: Buffer; number_ciphertext: Buffer | null; key_version: number | null }) =>
+      !r.number_hash.toString("latin1").includes("600300010") && r.number_ciphertext !== null && r.key_version === testCipher.keyVersion
+      && !r.number_ciphertext.toString("latin1").includes("600300010")),
+      "a keyed hash, and the number only encrypted (so a key rotation can re-hash it)");
 
     await stop("+48600300010", "START");
     assert.equal((await send(h, "+48600300010", "Hej")).statusCode, 202);
