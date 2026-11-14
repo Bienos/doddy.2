@@ -1,4 +1,6 @@
+import { randomUUID } from "node:crypto";
 import type { ClaudeProvider } from "../tools/claude.js";
+import { UsageScope } from "../usageLedger.js";
 import type { TravelReader } from "./reader.js";
 import { BOOKING_KINDS, BOOKING_STATUSES } from "./schema.js";
 
@@ -55,7 +57,10 @@ export class ClaudeTravelReader implements TravelReader {
   /** Tokens across every email this reader read, for the run's log line (no content). */
   readonly usage = { inputTokens: 0, outputTokens: 0, calls: 0 };
 
-  constructor(private readonly claude: ClaudeProvider, private readonly timeoutMs = TRAVEL_READ_TIMEOUT_MS) {}
+  /** One id for the whole run: every email's call is its own ledger row under it. */
+  private readonly requestId = randomUUID();
+
+  constructor(private readonly claude: ClaudeProvider, private readonly timeoutMs = TRAVEL_READ_TIMEOUT_MS, private readonly userId?: string) {}
 
   async read(input: { system: string; text: string; subject: string; sender: string }): Promise<unknown> {
     const user = [
@@ -68,6 +73,8 @@ export class ClaudeTravelReader implements TravelReader {
     const result = await this.claude.structured(
       { system: input.system, user, schema: TRAVEL_READING_JSON_SCHEMA, maxTokens: MAX_TOKENS, effort: "low", name: TRAVEL_READING_STEP },
       AbortSignal.timeout(this.timeoutMs),
+      // A scope for each email, so each call is a first call and is not recorded as a retry of the one before.
+      this.userId ? new UsageScope(this.userId, "travel_scan", this.requestId) : undefined,
     );
     this.usage.calls++;
     this.usage.inputTokens += result.usage.inputTokens;

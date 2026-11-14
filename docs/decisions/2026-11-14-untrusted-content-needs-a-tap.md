@@ -20,11 +20,11 @@ The app keeps one fact per conversation, "text someone else wrote has reached it
 6. **"Ask me about it":** the saved note goes to the agent between the data markers, on one clean line (`NoteQuestion.appMessage`).
 7. **Per conversation.** The session value is replaced where a conversation starts and where it ends; nothing carries over. The user's last line is kept for the shared-list match and replaced by the next.
 
-**Not changed, on purpose:** `voice-agent/tools.json` (it waits for the live-agent sync) and the python spec checks. The tools above are still `runs_now` there: that is the baseline, and `ToolCatalogTests` and `AskFirstTests` still pin it. The wording the live descriptions need is `docs/OWNER_QUEUE.md` 97, including the `follow_news` sentence that promises a card that does not exist.
+**Not changed, on purpose:** `voice-agent/tools.json` (it waits for the live-agent sync) and the python spec checks. The tools above are still `runs_now` there: that is the baseline, and `ToolCatalogTests` and `AskFirstTests` still pin it. The wording the live descriptions need is `docs/OWNER_QUEUE.md` 99, including the `follow_news` sentence that promises a card that does not exist.
 
 ## Consequences
 - More taps in the cases above, and none otherwise. After an email read, "text me that code" shows a card.
-- The agent is not told a card may appear until the descriptions are synced (OWNER_QUEUE 97). A card waits up to 60 s for a tap on those tools until `timeout_secs` is raised there.
+- The agent is not told a card may appear until the descriptions are synced (OWNER_QUEUE 99). A card waits up to 60 s for a tap on those tools until `timeout_secs` is raised there.
 - The Wikipedia and weather results are still not marked as data: they would have to run on the phone (`runs_on: phone`), which is a `tools.json` change and its own pull request.
 - **Gaps, recorded so nobody reads this as complete:** notes, the device calendar and the items of a shared list are the user's own data and do not set the fact (a calendar invitation or a shared item can still carry someone else's words). The match for shared-list items is a conservative word match; a false "ask" costs a tap, a false "run" would need every word to be the user's. Plan cards (`propose_plan`) are approved as a whole and are not changed.
 

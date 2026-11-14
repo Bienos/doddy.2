@@ -3,6 +3,7 @@ import type { Limits } from "../config.js";
 import { AppError } from "../errors.js";
 import type { Store } from "../store.js";
 import type { ClaudeProvider } from "../tools/claude.js";
+import { UsageScope } from "../usageLedger.js";
 import { ACCOUNT_PARTS, type AccountContext, type AccountPart, type ChatContextView } from "../web/chatContext.js";
 import { ChatBody, localDay, refuse, type Turn } from "./contract.js";
 import type { MemoryService } from "./service.js";
@@ -164,7 +165,7 @@ export class MemoryChat {
     const counts = { notes: notes.length, conversations: conversations.length, turns: history.length, account: account !== null };
     let result;
     try {
-      result = await claude.structured({ system: CHAT_SYSTEM, user, schema: buildSchema([...sourceByAlias.keys()]), maxTokens: MAX_OUTPUT_TOKENS }, AbortSignal.timeout(CHAT_TIMEOUT_MS));
+      result = await claude.structured({ system: CHAT_SYSTEM, user, schema: buildSchema([...sourceByAlias.keys()]), maxTokens: MAX_OUTPUT_TOKENS }, AbortSignal.timeout(CHAT_TIMEOUT_MS), new UsageScope(userId, "memory_chat"));
     } catch (error) {
       const failure = claudeFailure(error);
       this.deps.log?.({ level: "info", event: "memory_chat", outcome: failure.outcome, ...failure.log, ...counts, ms: Date.now() - started });
@@ -178,6 +179,6 @@ export class MemoryChat {
     // `cited` holds the aliases the model named; each is one of this request's own.
     const sources = answer.cited.map((alias) => sourceByAlias.get(alias)).filter((source): source is ChatSource => source !== undefined);
     this.deps.log?.({ level: "info", event: "memory_chat", outcome: "answered", ...counts, cited: sources.length, inputTokens: result.usage.inputTokens, outputTokens: result.usage.outputTokens, ms: Date.now() - started });
-    return { text: answer.text, sources, usage: result.usage };
+    return { text: answer.text, sources, usage: { inputTokens: result.usage.inputTokens, outputTokens: result.usage.outputTokens } };
   }
 }

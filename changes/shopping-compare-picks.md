@@ -1,3 +1,0 @@
-A shopping result with two picks or more gets "Compare the picks side by side": one card per pick next to each other (price, how far above the lowest, shop, where the price was read and when, delivery, why, trade-off, "Watch the price", "Buy at …"). The lowest price is marked by code only when the prices share a currency. Nothing sent or stored; no server change.
-Decision `2026-11-14-shopping-compare-picks`. DoddyCore `ShoppingComparison` + `ShoppingComparisonTests`; `ShoppingCompareView`. Needs no deploy.
-Ran: `tools/build_strings_catalog.py --check`, `scripts/ci.sh --only checks`; the Swift is built and tested by this pull request's CI. Not run here: any Swift (no toolchain), a device.
