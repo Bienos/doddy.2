@@ -86,6 +86,12 @@ action_policy:
     tap_only: [pay_for_page, book_flight, call_places, unclassified_tool, card_waiting_for_a_choice, any_change_after_outside_text]
     spoken_yes_counts: {said_by: the_user, earliest_after_card_seconds: 1, latest_after_card_seconds: 120, strict_phrases_with_vetoes: true}
     one_yes_covers: one_action
+    # Change (2026-11-14; decision docs/decisions/2026-11-14-plan-card-ran-out.md; DOD-07, DOD-08): the plan card
+    # (propose_plan) is fresh for 90 s from when its steps were prepared (PlanApprovalGate, Packages/DoddyCore/Sources/
+    # DoddyCore/PlanApproval.swift). A tap after that runs nothing: the card is checked again and shown again with the
+    # current payload and a new 90 s, and only a new tap on it runs the plan. A spoken yes never runs a card that ran
+    # out or one shown again. A plan step never runs with an approval made after its card was shown.
+    plan_card: {fresh_for_seconds: 90, after_that: shown_again_with_current_payload_and_nothing_runs, shown_again_card_takes: a_new_tap_only, approval_made_after_the_card_was_shown: never}
     # ADR-570 (owner, 2026-10-21), changed by ADR-716 and ADR-702: handing a task over (hand_over_errand)
     # is one yes on its card. The yes covers the web searches and page fetches of that one task on the server,
     # within the per-task research budget; the worker has no other tool; the task's text carries no links.

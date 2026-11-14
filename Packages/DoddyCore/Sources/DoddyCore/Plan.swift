@@ -176,6 +176,9 @@ public enum PlanProposal {
 public enum PlanReply {
     public static let declined = "declined: the user chose not to do this plan. Nothing was done."
     public static let unticked = "declined: the user unticked this step. Nothing was done."
+    /// A step that goes through Doddy's server has no approval from when the card was shown. The app never makes one
+    /// later: the person's tap approved the preview on the card (`PlanApprovalGate`).
+    public static let stepNotApproved = "failed: this step had no approval from the card the user saw, so Doddy didn't run it. Nothing was done."
 
     /// `changed` are the steps the user edited on the card (ADR-205): the agent is told, so it
     /// repeats what was actually done rather than what it first proposed.

@@ -91089,6 +91089,17 @@
         }
       }
     },
+    "This card ran out, so here it is again with what's true now. Nothing was done. Check it, then tap once more.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta karta wygasła, więc pokazuję ją jeszcze raz z aktualnymi danymi. Nic nie zostało zrobione. Sprawdź ją i stuknij jeszcze raz."
+          }
+        }
+      }
+    },
     "This card was cancelled.": {
       "extractionState": "manual",
       "localizations": {
