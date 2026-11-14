@@ -340,7 +340,8 @@ public enum DoddyAccountLink {
     /// 2. the account takes over this iPhone's data with that code (`POST /v1/account/link-device`).
     /// Safe to run again after a lost answer: a new code, and a done link answers `linked`.
     public static func linkBackend(server: URL, account: DoddyAccountSession, deviceToken: String, transport: any HTTPTransport) async -> Outcome {
-        guard deviceToken.hasPrefix("ds1."), deviceToken.count <= 2_048 else { return .nothingToLink }
+        // An account session (`BackendAccountSessions`) is a `ds1.` token too, and the link routes refuse it: never sent there.
+        guard deviceToken.hasPrefix("ds1."), deviceToken.count <= 2_048, !BackendSessionToken.isAccountSession(deviceToken) else { return .nothingToLink }
         let start = HTTPRequest(
             method: "POST", url: server.appendingPathComponent("v1/account/link-device/start"),
             headers: ["authorization": "Bearer \(deviceToken)", "accept": "application/json"], body: nil)
@@ -391,7 +392,7 @@ public enum DoddyAccountLink {
     /// Doddy's backend (`POST /v1/account/link-device/undo`): within a day of a link, this iPhone's own
     /// device token takes its earlier data back from the account. No screen offers it yet.
     public static func undoBackendLink(server: URL, deviceToken: String, transport: any HTTPTransport) async -> UndoOutcome {
-        guard deviceToken.hasPrefix("ds1."), deviceToken.count <= 2_048 else { return .notAllowed }
+        guard deviceToken.hasPrefix("ds1."), deviceToken.count <= 2_048, !BackendSessionToken.isAccountSession(deviceToken) else { return .notAllowed }
         let request = HTTPRequest(
             method: "POST", url: server.appendingPathComponent("v1/account/link-device/undo"),
             headers: ["authorization": "Bearer \(deviceToken)", "accept": "application/json"], body: nil)
