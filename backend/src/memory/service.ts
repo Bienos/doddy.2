@@ -231,17 +231,17 @@ export class MemoryService {
   /** Notes, newest first. `unreadable` counts rows left out because they no longer decrypt. */
   async listNotes(userId: string, o: { limit: number; offset: number }): Promise<{ notes: NoteView[]; total: number; nextOffset: number | null; unreadable: number }> {
     this.cipher();
-    const rows = await this.deps.store.memoryNoteRows(userId);
+    // The database returns the page and the total; only the page is read and decrypted.
+    const { rows: pageRows, total } = await this.deps.store.memoryNoteRowsPage(userId, o.limit, o.offset);
     let unreadable = 0;
     const notes: (NoteView & { capturedMs: number | null })[] = [];
-    // Only the page is decrypted.
-    for (const row of rows.slice(o.offset, o.offset + o.limit)) {
+    for (const row of pageRows) {
       const note = this.readNote(userId, row);
       if (note) notes.push(note);
       else unreadable += 1;
     }
     this.noteUnreadable("notes", unreadable);
-    return { notes: notes.map(stripMs), total: rows.length, nextOffset: o.offset + o.limit < rows.length ? o.offset + o.limit : null, unreadable };
+    return { notes: notes.map(stripMs), total, nextOffset: o.offset + o.limit < total ? o.offset + o.limit : null, unreadable };
   }
 
   /** Notes that match `q`, best first. Decrypts every note, so it is rate limited per person. */
