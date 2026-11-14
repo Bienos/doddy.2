@@ -1608,7 +1608,13 @@ final class VoiceSessionController {
         // The conversation the card belongs to. The change runs to the end even if the user taps
         // End meanwhile; what it shows on screen after an await is shown only if this one is
         // still on screen (ADR-458).
-        let attempt = startAttempt
+        await perform(action, attempt: startAttempt)
+    }
+
+    /// Runs a change exactly as its card's button does: after a tap or a spoken yes on the card, or at once for
+    /// Doddy's own changes with Undo and the drafts and hand-overs that change nothing (`runsWithoutItsCard`, decision
+    /// 2026-11-14-spoken-yes-and-fewer-cards, step 2b). `attempt` is the conversation the change belongs to.
+    private func perform(_ action: PendingAction, attempt: Int) async {
         // On disk before the change runs: if Doddy is closed mid-way, the next launch shows it
         // as "Not sure" instead of nothing (ActivityLog.recoverInterrupted).
         if action.changesSomething { markStarted(action.toolCallID) }
@@ -3054,7 +3060,7 @@ final class VoiceSessionController {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
         case .saveMemory(let text):
-            // Nothing is stored until the user taps Save on the card.
+            // Saved when asked, with Undo, through the same path as the card's Save (step 2b, `runsWithoutItsCard`).
             guard await mayTryAgain(call.toolCallId, app: .memories) else { return }
             proposedNoteTexts.append(text)
             pendingMemoryCategory = .other
@@ -3443,7 +3449,14 @@ final class VoiceSessionController {
             }
             propose(.camera(toolCallID: call.toolCallId), toolCallID: call.toolCallId)
         case .openFoodApp(let handoff):
-            // Decision 2026-11-12-food-by-voice: the card's tap (AskFirst.tapFirst, checked above) was the yes.
+            // Decision 2026-11-12-food-by-voice, and step 2b of 2026-11-14-spoken-yes-and-fewer-cards: it opens when
+            // asked while Doddy is on screen. In the background iOS opens nothing, so its card waits for a tap or a yes.
+            if UIApplication.shared.applicationState != .active, !askLedger.mayRun(call.toolCallId, request: request, at: Date()) {
+                askLedger.asked(call.toolCallId, request: request, needsTap: false, at: Date())
+                propose(.ask(toolCallID: call.toolCallId, card: handoff.card(polish: Self.cardsInPolish), needsTap: false,
+                             toolName: call.toolName, parameters: call.parametersData), toolCallID: call.toolCallId)
+                return
+            }
             // The app's front page opens (its app when installed, else the website); nothing is ordered or sent.
             let opened = await open(handoff.openURL)
             await reply(call.toolCallId, opened ? handoff.openedReply : handoff.notOpenedReply, isError: !opened)
@@ -4521,6 +4534,13 @@ final class VoiceSessionController {
         // A proposal that finished its lookups after End shows no card (review H9), and one that
         // finished after End and a new Start shows none in the new conversation (ADR-458).
         guard isLive, isCurrent(toolCallID) else { return dropStale(toolCallID) }
+        // Step 2b: no card for Doddy's own changes with Undo and the drafts and hand-overs that change nothing. It runs
+        // as the card's button would, says what it did, and doesn't close a card that is waiting for something else.
+        if runsWithoutItsCard(action) {
+            let attempt = startAttempt
+            Task { await perform(action, attempt: attempt) }
+            return
+        }
         // One card at a time: the newest ask wins. The card it replaces is closed unanswered and
         // nothing on it runs (owner, 10 Nov 2026).
         if let waiting = pendingAction {
@@ -4528,6 +4548,16 @@ final class VoiceSessionController {
             Task { await settleUnanswered(waiting, replaced: true) }
         }
         pendingAction = action
+    }
+
+    /// Doddy's own changes with Undo and the drafts and hand-overs that change nothing run as asked, with no card
+    /// (`AskFirst.ownChangesAtOnce`, decision 2026-11-14-spoken-yes-and-fewer-cards, step 2b), by the tool the agent
+    /// called. The ones that open another app or the camera do so only while Doddy is on screen: iOS opens nothing from
+    /// the background, and "opened" is never said of what didn't open, so otherwise their card stays for a tap or a yes.
+    private func runsWithoutItsCard(_ action: PendingAction) -> Bool {
+        guard let tool = callsAsReceived[action.toolCallID]?.toolName, AskFirst.ownChangesAtOnce.contains(tool) else { return false }
+        if AskFirst.opensSomethingElse.contains(tool) { return UIApplication.shared.applicationState == .active }
+        return true
     }
 
     /// Looks in Calendar first, so asking again after an unconfirmed try never adds a second copy;

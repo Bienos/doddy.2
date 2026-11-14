@@ -84,10 +84,10 @@ final class PresentationTests: XCTestCase {
     func testRules() {
         let request = VoiceToolRequest.makePresentation(sample)
         XCTAssertEqual(VoiceConnection.serving(VoiceToolName.makePresentation), .presentations)
-        XCTAssertEqual(AskFirst.need(for: request), .ownPayloadCard, "the card is the slides themselves")
+        XCTAssertEqual(AskFirst.need(for: request), .runsNow, "made when asked (step 2b); the file is shown with every slide")
         XCTAssertTrue(ConnectionPause.applies(to: request))
         if case .refuse = CarProfile.decision(for: request) {} else { XCTFail("needs a tap, so not while driving") }
-        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.makePresentation)?.approval, .card)
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.makePresentation)?.approval, .runsNow)
         let row = ActivityRequest.describe(request, calendar: Calendar(identifier: .gregorian))
         XCTAssertEqual(row?.app, .presentations)
         XCTAssertEqual(row?.logDetail, "4 slides", "the 30-day log keeps no slide text")

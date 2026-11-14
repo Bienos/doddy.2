@@ -31,8 +31,9 @@ public enum ConfirmationTiers {
     /// nothing anywhere (a draft the person sends themselves, a checklist, a map). Added to `AskFirst.runsAtOnce`.
     public static let ownUndoableAtOnce: Set<String> = [
         "set_timer", "set_alarm", "create_reminder", "save_memory", "remind_me_about_note", "remind_when_to_leave",
-        "parking_spot", "create_list", "add_ingredients", "open_map", "open_camera", "open_food_app", "undo_last",
+        "parking_spot", "create_list", "add_ingredients", "open_map", "open_camera", "open_food_app",
         "lost_wallet", "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation",
+        // `undo_last` is not here (step 2b): nothing undoes an undo, so it keeps its card and a spoken yes.
     ]
 
     /// Every tool Doddy has, by name (`ToolCatalog.all`).

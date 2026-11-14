@@ -126,7 +126,7 @@ final class ContactChoiceTests: XCTestCase {
         XCTAssertEqual(VoiceConnection.serving(VoiceToolName.draftBlikTransfer), .blik)
         XCTAssertEqual(VoiceConnection.serving(VoiceToolName.lookupContact), .contacts)
         let message = VoiceToolRequest.parse(name: VoiceToolName.draftMessage, parametersJSON: Data(#"{"to":"Ania","body":"Jestem w drodze"}"#.utf8))
-        XCTAssertEqual(AskFirst.need(for: message), .ownPayloadCard)
-        XCTAssertTrue(AskFirst.needsTap(AskFirst.need(for: message)))
+        // Messages opens with the draft when asked (step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards); the person sends it.
+        XCTAssertEqual(AskFirst.need(for: message), .runsNow)
     }
 }

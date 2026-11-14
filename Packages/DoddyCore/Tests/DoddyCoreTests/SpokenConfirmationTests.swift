@@ -121,8 +121,8 @@ final class SpokenConfirmationTests: XCTestCase {
         [("remove_from_list", removeMilk),
          ("parking_spot", .parkingSpot(.clear)),
          ("hand_over_errand", .handOverErrand(ErrandDraft(words: "znajdź lot do Rzymu", brief: "Lot do Rzymu", title: "Rzym"))),
-         ("make_something", .makeSomething(StudioJob(topic: "Pompy ciepła"))),
-         ("open_food_app", .openFoodApp(try! FoodHandoff.parse(app: "Wolt", search: "pizza").get()))]
+         ("make_something", .makeSomething(StudioJob(topic: "Pompy ciepła")))]
+        // Opening a food app has no card of AskFirst's since step 2b: it opens when asked (`AtOnceOwnChangesTests`).
     }
 
     func testAsksOnTheSpokenYesTierTakeASpokenYes() {
@@ -138,15 +138,16 @@ final class SpokenConfirmationTests: XCTestCase {
         var session = OutsideContentSession()
         XCTAssertEqual(AskFirst.need(for: removeMilk, in: session), AskFirst.need(for: removeMilk), "nothing from outside yet")
         session.noteRun(of: "read_email")
-        for (tool, request) in asks where tool != "open_food_app" {
+        for (tool, request) in asks {
             guard case .yesFirst(let card) = AskFirst.need(for: request) else { return XCTFail(tool) }
             XCTAssertEqual(AskFirst.need(for: request, in: session), .tapFirst(card), tool)
             XCTAssertEqual(ConfirmationTiers.tier(for: request, toolName: tool, outsideContentSeen: true), .tapOnly, tool)
         }
-        // Opening a food app is on the at-once tier: nothing is ordered, and Doddy's own hand-overs stay as they are.
+        // Opening a food app is on the at-once tier: nothing is ordered, and it opens when asked even after outside text.
         let food = VoiceToolRequest.openFoodApp(try! FoodHandoff.parse(app: "Wolt", search: "pizza").get())
-        XCTAssertEqual(AskFirst.need(for: food, in: session), AskFirst.need(for: food))
+        XCTAssertEqual(AskFirst.need(for: food, in: session), .runsNow)
         XCTAssertEqual(ConfirmationTiers.tier(for: food, toolName: "open_food_app", outsideContentSeen: true), .atOnce)
+        XCTAssertEqual(AskFirst.ownCardTier(food, outsideContentSeen: true), .atOnce)
     }
 
     func testEveryCardMadeHereHasATierAndAnUnnamedOneIsTapOnly() {
