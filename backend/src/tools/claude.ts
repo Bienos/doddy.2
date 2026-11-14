@@ -4,6 +4,7 @@ import { DECK_PLAN_STEP, DECK_WRITE_STEP, demoDeck, demoDeckPlan } from "../deck
 import { ProviderError, type ProviderDetail } from "../errors.js";
 import { demoTravelReading, TRAVEL_READING_STEP } from "../travel/claudeReader.js";
 import { demoBrief, UNDERSTAND_STEP } from "../travel/plan.js";
+import { readUsage, recordCall, type CallKind, type TokenUsage, type UsageRecorder, type UsageScope } from "../usageLedger.js";
 
 /**
  * Claude for Doddy (ADR-564): quick writing and summaries, and documents made with Claude's own
@@ -193,20 +194,20 @@ export interface ClaudeProvider {
   readonly mode: "mock" | "live";
   isConfigured(): boolean;
   /** Quick answer, summary or short writing. */
-  ask(args: AskClaudeArgs, signal: AbortSignal): Promise<{ text: string }>;
+  ask(args: AskClaudeArgs, signal: AbortSignal, scope?: UsageScope): Promise<{ text: string }>;
   /**
    * One finished file. Slow (often one to three minutes); run in the background. `files` is told of
    * every copy Claude makes at the provider the moment it is seen, so a deletion still owed survives a
    * crash, a restart and the person's account being erased.
    */
-  makeDocument(args: MakeDocumentArgs, signal: AbortSignal, files?: ProviderFileLedger): Promise<ClaudeFile>;
+  makeDocument(args: MakeDocumentArgs, signal: AbortSignal, files?: ProviderFileLedger, scope?: UsageScope): Promise<ClaudeFile>;
   /** Deletes one copy at the provider: `removed` once it is gone (or was already), else `failed` to try again later. */
   deleteFile(id: string, signal: AbortSignal): Promise<"removed" | "failed">;
   /**
    * One JSON answer constrained to `schema` (structured output), for Ask Doddy (ADR-587). Throws
    * `ClaudeRefusal` when the model declines and `ProviderError` for everything else that fails.
    */
-  structured(input: StructuredInput, signal: AbortSignal): Promise<StructuredResult>;
+  structured(input: StructuredInput, signal: AbortSignal, scope?: UsageScope): Promise<StructuredResult>;
 }
 
 export interface StructuredInput {
@@ -230,7 +231,8 @@ export interface StructuredInput {
 
 export interface StructuredResult {
   value: unknown;
-  usage: { inputTokens: number; outputTokens: number };
+  /** The provider's own counters: `inputTokens` is the input after the last cache breakpoint that was neither read nor written. */
+  usage: { inputTokens: number; outputTokens: number; cacheCreationInputTokens?: number; cacheReadInputTokens?: number };
   /** Set when the answer came through `promptFallback`: what Anthropic said to the compiled schema (content-free). */
   schemaRefused?: ProviderDetail;
 }
@@ -285,7 +287,7 @@ interface MessageResponse {
   content: Block[];
   stop_reason: string | null;
   container?: { id?: string } | null;
-  usage?: { input_tokens?: number; output_tokens?: number } | null;
+  usage?: Record<string, unknown> | null;
 }
 
 export class AnthropicClaudeProvider implements ClaudeProvider {
@@ -294,6 +296,7 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
     private readonly settings: ClaudeSettings,
     private readonly fetchImpl: typeof fetch = (input, init) => fetch(input, init),
     private readonly baseUrl: string = ANTHROPIC_BASE_URL,
+    private readonly deps: { recorder?: UsageRecorder | null; log?: (line: Record<string, unknown>) => void; now?: () => number } = {},
   ) {}
 
   /** Steps whose compiled schema Anthropic refused while the same request without it worked; kept until the server restarts. */
@@ -303,17 +306,18 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
     return this.settings.apiKey !== "";
   }
 
-  async ask(args: AskClaudeArgs, signal: AbortSignal): Promise<{ text: string }> {
+  async ask(args: AskClaudeArgs, signal: AbortSignal, scope?: UsageScope): Promise<{ text: string }> {
     const response = await this.messages(
       { model: this.settings.model, max_tokens: 900, system: cachedSystem(this.settings.model, ASK_SYSTEM), messages: [{ role: "user", content: userContent(`Task: ${args.task}. ${args.request}`, args.material) }] },
       signal,
+      scope,
     );
     const text = textOf(response.content);
     if (!text) throw new ProviderError("malformed_provider_result");
     return { text };
   }
 
-  async makeDocument(args: MakeDocumentArgs, signal: AbortSignal, files?: ProviderFileLedger): Promise<ClaudeFile> {
+  async makeDocument(args: MakeDocumentArgs, signal: AbortSignal, files?: ProviderFileLedger, scope?: UsageScope): Promise<ClaudeFile> {
     const info = KIND_INFO[args.kind];
     if (info.skill === null) {
       const response = await this.messages(
@@ -324,6 +328,7 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
           messages: [{ role: "user", content: userContent(`Title: ${args.title}\n${args.request}`, args.material) }],
         },
         signal,
+        scope,
       );
       const text = textOf(response.content);
       if (!text) throw new ProviderError("malformed_provider_result");
@@ -351,7 +356,7 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
           content: userContent(`Make a ${info.label} titled "${args.title}".\n${args.request}`, args.material, `Save it as one .${info.ext} file.`),
         },
       ];
-      let response = await this.messages({ model: this.settings.model, max_tokens: 16_000, system: cachedSystem(this.settings.model, DOCUMENT_SYSTEM), container: { skills }, tools, messages }, signal);
+      let response = await this.messages({ model: this.settings.model, max_tokens: 16_000, system: cachedSystem(this.settings.model, DOCUMENT_SYSTEM), container: { skills }, tools, messages }, signal, scope);
       await note(fileIdsOf(response.content));
       for (let i = 0; i < MAX_PAUSE_TURNS && response.stop_reason === "pause_turn"; i++) {
         const containerId = response.container?.id;
@@ -366,6 +371,8 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
         response = await this.messages(
           { model: this.settings.model, max_tokens: 16_000, system: cachedSystem(this.settings.model, DOCUMENT_SYSTEM), container: { id: containerId, skills }, tools, messages, ...cache },
           signal,
+          scope,
+          true,
         );
         await note(fileIdsOf(response.content));
       }
@@ -406,25 +413,25 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
    * asks for more: Ask Doddy wants a short, quick answer. Thinking blocks, if any, are skipped; only
    * the text block is the answer.
    */
-  async structured(input: StructuredInput, signal: AbortSignal): Promise<StructuredResult> {
+  async structured(input: StructuredInput, signal: AbortSignal, scope?: UsageScope): Promise<StructuredResult> {
     const key = input.name ?? "";
     if (input.promptFallback && this.schemaRefused.has(key)) {
-      return { ...(await this.structuredOnce(input, "prompt", signal)), schemaRefused: this.schemaRefused.get(key)! };
+      return { ...(await this.structuredOnce(input, "prompt", signal, scope)), schemaRefused: this.schemaRefused.get(key)! };
     }
     try {
-      return await this.structuredOnce(input, "schema", signal);
+      return await this.structuredOnce(input, "schema", signal, scope);
     } catch (error) {
       const refused = input.promptFallback && error instanceof ProviderError && isRequestRefusal(error.detail) ? error.detail : undefined;
       if (!refused) throw error;
       // The same request with the schema as words. If this fails too, that failure is the one reported.
-      const result = await this.structuredOnce(input, "prompt", signal);
+      const result = await this.structuredOnce(input, "prompt", signal, scope);
       // Only now is it known that the schema was the reason: later calls for this step skip the refused request.
       this.schemaRefused.set(key, refused);
       return { ...result, schemaRefused: refused };
     }
   }
 
-  private async structuredOnce(input: StructuredInput, mode: "schema" | "prompt", signal: AbortSignal): Promise<StructuredResult> {
+  private async structuredOnce(input: StructuredInput, mode: "schema" | "prompt", signal: AbortSignal, scope?: UsageScope): Promise<StructuredResult> {
     const effort = input.effort ?? "low";
     const response = await this.messages(
       {
@@ -435,6 +442,7 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
         messages: [{ role: "user", content: input.user }],
       },
       signal,
+      scope,
     );
     if (response.stop_reason === "refusal") throw new ClaudeRefusal();
     // Cut off by max_tokens: the JSON may be incomplete, so nothing of it is shown.
@@ -446,8 +454,11 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
     } catch {
       throw new ProviderError("malformed_provider_result");
     }
-    const count = (n: unknown) => (typeof n === "number" && Number.isSafeInteger(n) && n >= 0 ? n : 0);
-    return { value, usage: { inputTokens: count(response.usage?.input_tokens), outputTokens: count(response.usage?.output_tokens) } };
+    const used = readUsage(response.usage);
+    return {
+      value,
+      usage: { inputTokens: used?.inputTokens ?? 0, outputTokens: used?.outputTokens ?? 0, cacheCreationInputTokens: used?.cacheCreationTokens ?? 0, cacheReadInputTokens: used?.cacheReadTokens ?? 0 },
+    };
   }
 
   private headers(): Record<string, string> {
@@ -455,13 +466,18 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
   }
 
   /**
-   * One call to /v1/messages. If the provider refuses a request that carries a cache mark with a 400 that
-   * names the mark (hint `cache_control`), it is sent once more without it: caching is an optimisation and
-   * must never be what stops an answer. A 400 about anything else (a schema, the key, the balance) is not
-   * the mark's fault and is not retried here. A refused request wasn't processed, so the retry can't be
-   * paid for twice.
+   * One call to /v1/messages. Every call, a failed one included, writes one ledger event (counters and
+   * outcome only, never text). If the provider refuses a request that carries a cache mark with a 400
+   * that names the mark (hint `cache_control`), it is sent once more without it: caching is an
+   * optimisation and must never be what stops an answer. A 400 about anything else (a schema, the key,
+   * the balance) is not the mark's fault and is not retried here. A refused request wasn't processed, so
+   * the retry can't be paid for twice; it is its own ledger row, recorded as a retry.
    */
-  private async messages(body: Record<string, unknown>, signal: AbortSignal): Promise<MessageResponse> {
+  private async messages(body: Record<string, unknown>, signal: AbortSignal, scope?: UsageScope, continuation = false): Promise<MessageResponse> {
+    const model = typeof body.model === "string" ? body.model : this.settings.model;
+    let call: { seq: number; kind: CallKind } = scope?.begin(continuation) ?? { seq: 0, kind: "initial" };
+    const note = (result: { outcome: "succeeded" | "failed"; errorCode?: string; stopReason?: unknown; usage: TokenUsage | null }) =>
+      recordCall(this.deps.recorder, this.deps.log, scope, call, model, result, this.deps.now?.());
     let sending = body;
     let response: Response;
     for (;;) {
@@ -469,15 +485,23 @@ export class AnthropicClaudeProvider implements ClaudeProvider {
         response = await this.send(`/v1/messages`, { method: "POST", headers: { ...this.headers(), "content-type": "application/json" }, body: JSON.stringify(sending), signal });
         break;
       } catch (error) {
+        // The provider's error answer carries no usage, and a timeout may or may not have been billed: unknown, not zero.
+        await note({ outcome: "failed", errorCode: error instanceof ProviderError ? error.code : "provider_unavailable", usage: null });
         if (error instanceof ProviderError && error.detail?.status === 400 && error.detail.hint === "cache_control" && hasCacheControl(sending)) {
           sending = withoutCacheControl(sending);
+          call = scope?.begin(false) ?? { seq: call.seq + 1, kind: "retry" as const };
           continue;
         }
         throw error;
       }
     }
     const json = (await response.json().catch(() => null)) as MessageResponse | null;
-    if (!json || !Array.isArray(json.content)) throw new ProviderError("malformed_provider_result");
+    const usage = readUsage(json?.usage);
+    if (!json || !Array.isArray(json.content)) {
+      await note({ outcome: "failed", errorCode: "malformed_provider_result", usage });
+      throw new ProviderError("malformed_provider_result");
+    }
+    await note({ outcome: "succeeded", stopReason: json.stop_reason, usage });
     return json;
   }
 
@@ -655,15 +679,15 @@ export class MockClaudeProvider implements ClaudeProvider {
   /** Demo: a short answer that cites the first note it was offered, if any; for a deck, the demo plan and outline. */
   async structured(input: StructuredInput): Promise<StructuredResult> {
     if (this.delayMs) await new Promise((r) => setTimeout(r, this.delayMs));
-    if (input.name === DECK_PLAN_STEP) return { value: demoDeckPlan(input.user), usage: { inputTokens: 0, outputTokens: 0 } };
-    if (input.name === DECK_WRITE_STEP) return { value: demoDeck(input.user), usage: { inputTokens: 0, outputTokens: 0 } };
-    if (input.name === TRAVEL_READING_STEP) return { value: demoTravelReading(input.user), usage: { inputTokens: 0, outputTokens: 0 } };
-    if (input.name === UNDERSTAND_STEP) return { value: demoBrief(input.user), usage: { inputTokens: 0, outputTokens: 0 } };
+    if (input.name === DECK_PLAN_STEP) return { value: demoDeckPlan(input.user), usage: { inputTokens: 0, outputTokens: 0, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 } };
+    if (input.name === DECK_WRITE_STEP) return { value: demoDeck(input.user), usage: { inputTokens: 0, outputTokens: 0, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 } };
+    if (input.name === TRAVEL_READING_STEP) return { value: demoTravelReading(input.user), usage: { inputTokens: 0, outputTokens: 0, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 } };
+    if (input.name === UNDERSTAND_STEP) return { value: demoBrief(input.user), usage: { inputTokens: 0, outputTokens: 0, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 } };
     const props = (input.schema.properties ?? {}) as { sources?: { items?: { enum?: string[] } } };
     const first = props.sources?.items?.enum?.[0];
     // Notes are n1…, conversations c1…, the chat's account parts their own names (ADR-604).
     const what = !first ? null : /^n\d+$/.test(first) ? "your saved note says" : /^c\d+$/.test(first) ? "your conversation says" : `your account's ${first} shows`;
     const value = first ? { answer: `DEMO: here is what ${what}.`, sources: [first] } : { answer: "DEMO: a general answer, not from your notes." };
-    return { value, usage: { inputTokens: 0, outputTokens: 0 } };
+    return { value, usage: { inputTokens: 0, outputTokens: 0, cacheCreationInputTokens: 0, cacheReadInputTokens: 0 } };
   }
 }
