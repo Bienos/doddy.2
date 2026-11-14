@@ -4,7 +4,7 @@ import { type AssistReply, AssistService } from "./assist.js";
 import { ASK_DEDUP, RequestOnce } from "./idempotency.js";
 import { AccountLinker, LinkedAccountVerifier } from "./accountLinks.js";
 import { AccountSessionIssuer } from "./accountSession.js";
-import { AnyOfSessionVerifier, DevSessionVerifier, type FetchJson, RevocableSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier, TokenFloors } from "./auth.js";
+import { AccountSessionOrSupabaseVerifier, AnyOfSessionVerifier, DevSessionVerifier, type FetchJson, RevocableSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier, TokenFloors } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
 import type { Config } from "./config.js";
 import { DAY_MS, DEVICE_KEPT_DAYS, DeviceRegistry } from "./devices.js";
@@ -96,7 +96,7 @@ export async function buildApp(
     store,
     accounts: supabase,
     // The iPhone's own device session (valid and not cut off, ADR-709) starts a link and can undo it.
-    devices: config.signingKeys ? new RevocableSessionVerifier(new SignedSessionVerifier(config.signingKeys), floors, devices) : null,
+    devices: config.accountKeys ? new RevocableSessionVerifier(new SignedSessionVerifier(config.accountKeys), floors, devices) : null,
     floors,
     log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
   });
@@ -133,7 +133,7 @@ export async function buildApp(
   const claude =
     overrides.claude !== undefined ? overrides.claude : config.mode === "live" ? (config.claude ? new AnthropicClaudeProvider(config.claude, undefined, undefined, usageDeps) : null) : new MockClaudeProvider();
   // Document links are signed with their own key, derived from the session key (signingKeys.ts); without one, make_document says "not set up".
-  const documentLinks = config.signingKeys ? new DocumentLinks(config.signingKeys, config.publicBaseUrl) : null;
+  const documentLinks = config.accountKeys ? new DocumentLinks(config.accountKeys, config.publicBaseUrl) : null;
   // Files are kept only encrypted, with the memory key (decision 2026-11-12-documents-at-rest); without it, "not set up" too.
   store.sealDocumentsWith(config.memoryKey ? new DocumentSeal(new MemoryCipher(config.memoryKey)) : null);
   // Booking emails are read by the small chat model (DODDY_CHAT_MODEL) when the server has one.
@@ -185,10 +185,10 @@ export async function buildApp(
   // 2026-11-12-one-token-per-server): where the server checks Supabase tokens and has a session key to sign with. The session
   // is checked by the verifier above, next to the Supabase token, which this does not stop accepting anywhere.
   const accountSessions =
-    supabase && config.signingKeys && config.identifierKey
+    supabase && config.accountKeys && config.identifierKey
       ? new AccountSessionIssuer({
           accounts: supabase,
-          keys: config.signingKeys,
+          keys: config.accountKeys,
           identifierKey: config.identifierKey,
           store,
           floors,
@@ -356,7 +356,10 @@ export function sessionVerifier(config: Config, prebuilt: SupabaseSessionVerifie
   if (config.authMode === "signed") return new SignedSessionVerifier(config.signingKeys!);
   const supabase = prebuilt ?? new SupabaseSessionVerifier({ projectUrl: config.supabaseUrl! });
   // Development only (config enforces it): the owner's minted token still works next to Supabase.
-  return config.signingKeys ? new AnyOfSessionVerifier([new SignedSessionVerifier(config.signingKeys), supabase]) : supabase;
+  if (config.signingKeys) return new AnyOfSessionVerifier([new SignedSessionVerifier(config.signingKeys), supabase]);
+  // Production rules: the account's Supabase token, and the backend's own session for it on an iPhone (an `acc` token). Nothing
+  // else signed with the key is taken, and there are no owner tokens or device sessions to take (`signingKeys` is null).
+  return config.accountKeys ? new AccountSessionOrSupabaseVerifier(new SignedSessionVerifier(config.accountKeys), supabase) : supabase;
 }
 
 /** The iPhone's own URL scheme, where its Apple or Google sign-in sheet ends (ADR-818): DODDY_APP_RETURN_URL's when it is a doddy scheme. */
