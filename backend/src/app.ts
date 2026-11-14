@@ -25,7 +25,7 @@ import { MockCalendarProvider } from "./providers/mock.js";
 import { UnconfiguredCalendarProvider, UnconfiguredToolsProvider } from "./providers/unconfigured.js";
 import type { CalendarProvider } from "./providers/types.js";
 import { ConnectedAppsService, PROVIDER as CALENDAR_PROVIDER } from "./service.js";
-import { Store, SUPABASE_AUTH_CLEANUP } from "./store.js";
+import { ANTHROPIC_FILE_CLEANUP, Store, SUPABASE_AUTH_CLEANUP } from "./store.js";
 import { UsageLimiter } from "./policy.js";
 import { ShopifyUcpService } from "./shopify/ucp.js";
 import { TOOLKITS } from "./tools/catalog.js";
@@ -193,6 +193,8 @@ export async function buildApp(
       { providers: [CALENDAR_PROVIDER], remove: (connectionId, signal) => provider.removeConnection({ connectionId, signal }) },
       { providers: Object.keys(TOOLKITS), remove: (connectionId, signal) => toolsProvider.removeConnection({ connectionId, signal }) },
       ...(supabaseUsers ? [supabaseUsers] : []),
+      // A document's copy at Anthropic still owed a deletion when the account is erased: removed now, or kept queued.
+      ...(claude ? [{ providers: [ANTHROPIC_FILE_CLEANUP], remove: (id: string, signal: AbortSignal) => claude.deleteFile(id, signal) }] : []),
     ],
     timeoutMs: config.limits.providerTimeoutMs,
     floors,

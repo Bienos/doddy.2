@@ -158,6 +158,13 @@ export const KEPT_ON_ERASE = ["cleanups", "device_owner", "token_floor"] as cons
 /** The `cleanups.provider` of a Supabase Auth user owed a removal (a linked Google or Apple sign-in, ADR-818). */
 export const SUPABASE_AUTH_CLEANUP = "supabase_auth";
 
+/**
+ * The `cleanups.provider` of a copy of a person's document at Anthropic (`connection_id` is the file id,
+ * nothing else about it). Written when the file is first seen, removed only when the provider confirms
+ * the deletion, and kept through account erasure until then (`KEPT_ON_ERASE`).
+ */
+export const ANTHROPIC_FILE_CLEANUP = "anthropic_file";
+
 /** A device session token lives 30 days at most; a cut-off older than this covers no live token any more (ADR-709). */
 const TOKEN_FLOOR_KEPT_DAYS = 31;
 
@@ -883,15 +890,16 @@ export class Store {
   /**
    * Queued removals of these providers to try again now: queued more than CLEANUP_RETRY.afterMs ago
    * (so a request still working on one isn't raced) and due (`next_try_at`), the most overdue first.
-   * However often a row failed, it comes back when due: there is no last try.
+   * However often a row failed, it comes back when due: there is no last try. `queuedBefore` moves the
+   * first cut-off for a kind whose work can run longer than CLEANUP_RETRY.afterMs (a document job).
    */
-  async cleanupsToRetry(providers: readonly string[], now: number, limit: number): Promise<QueuedCleanup[]> {
+  async cleanupsToRetry(providers: readonly string[], now: number, limit: number, queuedBefore = now - CLEANUP_RETRY.afterMs): Promise<QueuedCleanup[]> {
     if (providers.length === 0) return [];
     const rows = (await this.db.query<{ connection_id: string; user_id: string; provider: string }>(
       `SELECT connection_id, user_id, provider FROM cleanups
        WHERE provider = ANY($1::text[]) AND created_at < $2 AND COALESCE(next_try_at, 0) <= $3
        ORDER BY COALESCE(next_try_at, 0) ASC, created_at ASC LIMIT $4`,
-      [[...providers], now - CLEANUP_RETRY.afterMs, now, limit],
+      [[...providers], queuedBefore, now, limit],
     )).rows;
     return rows.map((r) => ({ connectionId: r.connection_id, userId: r.user_id, provider: r.provider }));
   }
