@@ -27,7 +27,9 @@ export const twilioWebhookRoutes = (deps: Deps): FastifyPluginAsync => async (ap
   const smsChatLog = deps.smsChatLog ?? ((msg: string, extra: object = {}) => app.log.info(extra, msg));
 
   // Inbound SMS. STOP / START / HELP change state only; Twilio's Advanced Opt-Out sends the confirmation replies.
-  // Any other text goes to exactly one handler, never both, and only for the user's own verified number:
+  // Any other text goes to exactly one handler, never both, and only for a text that names the user's own verified number
+  // as its sender (the sender number can't be proven here, so what a handler does with a text is limited instead: a
+  // note that waits for the user, or an answer that carries no link):
   //  1. "Texts to Doddy" (ADR-753, off by default): the text becomes a note in the inbox, with no reply.
   //  2. Otherwise "Text with Doddy" (ADR-656, off by default, smsChat.ts): one answer by text, queued for the worker.
   // From anyone else the text is dropped: no reply, nothing stored. The answer to Twilio is always empty TwiML.
