@@ -148,6 +148,11 @@ export interface Config {
   /** Extra invite codes for device sign-in (ADR-563). */
   deviceInviteCodes: string[];
   /**
+   * How many days an iPhone's join to another account lasts unless it signs in again with the same Apple or Google (decision
+   * 2026-11-12-account-and-device-tokens, c). A plain number, 90 by default.
+   */
+  deviceJoinDays: number;
+  /**
    * Whether the first iPhone to sign in may claim a server that has no owner yet (ADR-707). The app
    * is built from a public repository, so it can carry no secret for that first claim; instead the
    * operator opens the claim by hand. Default: `open` in mock mode, `closed` in live mode.
@@ -272,6 +277,8 @@ const EnvSchema = z.object({
   DODDY_DEVICE_SIGNUP: z.enum(["off", "first-device", "open"]).default("off"),
   /** Extra invite codes for more devices (ADR-563), comma-separated. */
   DODDY_DEVICE_INVITE_CODES: z.string().optional(),
+  /** Days an iPhone's join to another account lasts unless it signs in again with the same Apple or Google (1 to 3650). */
+  DODDY_DEVICE_JOIN_DAYS: intSetting(90, 1, 3_650),
   /**
    * `open` | `closed` (ADR-707): may the first iPhone to sign in claim a server with no owner yet?
    * Read as text so a wrong value is reported by name below. Unset or empty: the default, which is
@@ -674,6 +681,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     memoryKey,
     deviceSignup: e.DODDY_DEVICE_SIGNUP,
     deviceInviteCodes,
+    deviceJoinDays: e.DODDY_DEVICE_JOIN_DAYS,
     ownerClaim,
     inviteLimits: {
       triesPerClientPerHour: e.DODDY_INVITE_TRIES_PER_CLIENT,

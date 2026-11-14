@@ -14,6 +14,7 @@ import { type DeviceOwnerStore, DeviceSessionIssuer, deviceUserId } from "../src
 import { DocumentLinks } from "../src/documents.js";
 import { SigningKeys } from "../src/signingKeys.js";
 import { listeningLine } from "../src/startLine.js";
+import { Store } from "../src/store.js";
 
 /**
  * One signing key per purpose, a key id on everything signed, and a previous key for rotation
@@ -53,6 +54,8 @@ const bearer = (token: string) => `Bearer ${token}`;
 const payloadOf = (token: string) => token.split(".")[1]!;
 const signatureOf = (token: string) => token.split(".")[2]!;
 const withSignature = (token: string, signature: string) => `ds1.${payloadOf(token)}.${signature}`;
+/** The iPhone's row a device token names (its signed `dev` claim). */
+const deviceOf = (token: string) => (JSON.parse(Buffer.from(payloadOf(token), "base64url").toString("utf8")) as { dev: string }).dev;
 
 // ------------------------------------------------------------------ derivation
 
@@ -463,12 +466,13 @@ const LIVE = {
   DODDY_OWNER_CLAIM: "open",
 };
 
-async function app(env: Record<string, string>) {
-  const { server, store } = await buildApp(loadConfig({ ...LIVE, ...env }), { webSearch: null });
+/** `shared`: the database of an earlier start. A restart of the same server keeps its database, and with iPhones stored a device token names a row in it. */
+async function app(env: Record<string, string>, shared?: Store) {
+  const { server, store } = await buildApp(loadConfig({ ...LIVE, ...env }), { webSearch: null, ...(shared ? { store: shared } : {}) });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   servers.push(server);
-  closers.push(() => store.close());
+  if (!shared) closers.push(() => store.close());
   const origin = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   return {
     signIn: async (deviceId: string) => {
@@ -486,26 +490,38 @@ test("the real server, rotated: new tokens, earlier tokens and old-key tokens al
   const newFormatBefore = new SignedSessionVerifier(new SigningKeys(EARLIER)).mint(STORED_DEVICE_USER, now, 3_600);
 
   // Before anything is set: today's key alone, as the live server runs it.
-  const today = await app({ DODDY_SESSION_SIGNING_KEY: b64(EARLIER) });
+  const database = await Store.memory();
+  closers.push(() => database.close());
+  const today = await app({ DODDY_SESSION_SIGNING_KEY: b64(EARLIER) }, database);
   assert.equal(await today.status(earlier), 200, "a token from before this change");
   const first = await today.signIn(PHONE);
   assert.equal(first.status, 200);
   assert.equal(signatureOf(first.body.token).length, 51, "new tokens carry a key id");
   assert.equal(await today.status(first.body.token), 200);
-  assert.deepEqual(new SignedSessionVerifier(new SigningKeys(EARLIER)).verify(bearer(first.body.token), now), { userId: STORED_DEVICE_USER }, "the same person as before");
+  // The server now stores iPhones, so its device tokens also name the iPhone's row (a signed claim); the person is the same.
+  assert.deepEqual(
+    new SignedSessionVerifier(new SigningKeys(EARLIER)).verify(bearer(first.body.token), now),
+    { userId: STORED_DEVICE_USER, deviceId: deviceOf(first.body.token) },
+    "the same person as before",
+  );
+  assert.match(deviceOf(first.body.token), /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
 
   // Rotation: the old key becomes the previous key, a new key is set, and identifiers stay where they were.
-  const rotated = await app({ DODDY_SESSION_SIGNING_KEY: b64(K2), DODDY_SESSION_SIGNING_KEY_PREVIOUS: b64(EARLIER), DODDY_IDENTIFIER_KEY: b64(EARLIER) });
+  const rotated = await app({ DODDY_SESSION_SIGNING_KEY: b64(K2), DODDY_SESSION_SIGNING_KEY_PREVIOUS: b64(EARLIER), DODDY_IDENTIFIER_KEY: b64(EARLIER) }, database);
   assert.equal(await rotated.status(earlier), 200, "earlier-format token, signed with the previous key");
   assert.equal(await rotated.status(first.body.token), 200, "a token this server's old key signed");
   assert.equal(await rotated.status(newFormatBefore), 200);
   const second = await rotated.signIn(PHONE);
   assert.equal(second.status, 200);
   assert.ok(signatureOf(second.body.token).startsWith(keyId(K2, SESSION)), "signed with the new key, never the previous one");
-  assert.deepEqual(new SignedSessionVerifier(new SigningKeys(K2)).verify(bearer(second.body.token), now), { userId: STORED_DEVICE_USER }, "still the same person");
+  assert.deepEqual(
+    new SignedSessionVerifier(new SigningKeys(K2)).verify(bearer(second.body.token), now),
+    { userId: STORED_DEVICE_USER, deviceId: deviceOf(first.body.token) },
+    "still the same person, and the same iPhone's row: a new key doesn't make a new iPhone",
+  );
 
   // Thirty days later the previous key is removed.
-  const finished = await app({ DODDY_SESSION_SIGNING_KEY: b64(K2), DODDY_IDENTIFIER_KEY: b64(EARLIER) });
+  const finished = await app({ DODDY_SESSION_SIGNING_KEY: b64(K2), DODDY_IDENTIFIER_KEY: b64(EARLIER) }, database);
   assert.equal(await finished.status(second.body.token), 200, "what the new key signed");
   assert.equal(await finished.status(earlier), 401);
   assert.equal(await finished.status(first.body.token), 401);
