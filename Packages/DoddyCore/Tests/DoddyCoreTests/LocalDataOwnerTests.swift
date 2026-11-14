@@ -97,6 +97,31 @@ final class LocalDataOwnerTests: XCTestCase {
             .mismatch(DataOwnerMismatch(owner: "a", signedIn: "b")))
     }
 
+    /// "Erase everything on this iPhone" clears the owner only after every store was read back as empty, then the
+    /// signed-in account takes the empty iPhone over. Until then the record stays, so nothing left behind can be handed
+    /// to whoever signs in next.
+    func testErasingTheIPhoneClearsTheOwnerAndTheSignedInAccountTakesItOver() async {
+        defaults.set("account-a", forKey: LocalDataOwner.ownerKey)
+        LocalDataOwner.forgetOwner(in: defaults)
+        XCTAssertNil(LocalDataOwner.owner(in: defaults))
+        XCTAssertFalse(LocalDataOwner.mayUpload(for: "account-b", defaults: defaults), "waiting, until the claim")
+        let claim = await LocalDataOwner.claim(for: "account-b", defaults: defaults) {
+            XCTFail("an iPhone with no owner recorded needs no check")
+            return false
+        }
+        XCTAssertEqual(claim, .adopted)
+        XCTAssertTrue(LocalDataOwner.mayUpload(for: "account-b", defaults: defaults))
+    }
+
+    func testTheOwnerRecordSurvivesTheErasePreferenceSweep() {
+        defaults.set("account-a", forKey: LocalDataOwner.ownerKey)
+        let suiteName = suite!
+        DefaultsErasure.erase(defaults, domain: suiteName, scope: .keepSignIn)
+        DefaultsErasure.erase(defaults, domain: suiteName, scope: .afterAccountDeleted)
+        XCTAssertEqual(LocalDataOwner.owner(in: defaults), "account-a",
+                       "only the app clears it, and only once the erase was confirmed")
+    }
+
     func testSigningOutTurnsTheUploadSwitchesOff() {
         defaults.set(true, forKey: "memoryCopyOn")
         defaults.set(true, forKey: "unrelated")

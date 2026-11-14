@@ -153,8 +153,9 @@ final class SharedListsController {
             : NSLocalizedString("You leave the shared list first; the others keep it. Undo brings it back on this iPhone only, not shared.", comment: "")
     }
 
-    /// Delete all (Settings): stops sharing every list this user shares, so no copy and no
-    /// invitees are left in iCloud (review G3/I3). Returns the lists whose stop wasn't confirmed
+    /// Stops sharing every list this user shares, so no copy and no
+    /// invitees are left in iCloud (review G3/I3). "Erase everything on this iPhone" uses `stopEveryShare`, which also leaves
+    /// the lists others shared. Returns the lists whose stop wasn't confirmed
     /// (all of them in a build without iCloud). While Doddy stays open, the next sync tries those
     /// again once their lists are gone (see `sync`).
     func stopAllOwnedShares() async -> [UUID] {
@@ -162,6 +163,25 @@ final class SharedListsController {
         guard cloud != nil else { return owned }
         var failed: [UUID] = []
         for listID in owned {
+            do {
+                try await stop(listID)
+            } catch {
+                failed.append(listID)
+            }
+        }
+        return failed
+    }
+
+    /// "Erase everything on this iPhone": stops sharing every list, the ones this user shares (the copy in iCloud is deleted
+    /// and the people invited lose it) and the ones they joined (they leave; the others keep them), so nothing of them is
+    /// left in iCloud. The links are read again first, so a controller that never loaded them still finds every share.
+    /// Returns the lists whose stop wasn't confirmed (all of them in a build without iCloud).
+    func stopEveryShare() async -> [UUID] {
+        await load()
+        let shared = links.values.map(\.listID).sorted { $0.uuidString < $1.uuidString }
+        guard cloud != nil else { return shared }
+        var failed: [UUID] = []
+        for listID in shared {
             do {
                 try await stop(listID)
             } catch {

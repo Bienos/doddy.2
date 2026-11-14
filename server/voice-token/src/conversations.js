@@ -8,7 +8,7 @@
 // A conversation counts as deleted only when ElevenLabs answers 404 on reading it back after the delete (DOD-08).
 // Whatever isn't confirmed stays recorded as owed. Nothing here writes an id, a token or a user id to a log:
 // callers log counts.
-import { createHmac } from "node:crypto";
+import { identifierHash, keyRingFromEnv } from "./keys.js";
 
 const ELEVENLABS_API = "https://api.elevenlabs.io";
 const CALL_TIMEOUT_MS = 4_000;
@@ -55,17 +55,19 @@ export function validInstallUserId(value) {
 }
 
 /**
- * Keyed hashes of one account, made with the session signing key (as the Apple subjects are):
- * `recordKey` names its record in the store, `userId` is what the app gives ElevenLabs as the conversation's user.
- * They differ, so neither gives away the other, and neither is the account. Null without a usable key.
- * @param {{ DODDY_SESSION_SIGNING_KEY?: string }} env
+ * Keyed hashes of one account, made with the identifier key (`src/keys.js`: `DODDY_IDENTIFIER_KEY`, or the session
+ * signing key itself when that is not set, as the Apple subjects are): `recordKey` names its record in the store,
+ * `userId` is what the app gives ElevenLabs as the conversation's user. They differ, so neither gives away the other,
+ * and neither is the account. They have to stay the same for as long as the account lives, so they do not follow the
+ * signing key when it is rotated. Null without a usable key.
+ * @param {{ DODDY_SESSION_SIGNING_KEY?: string, DODDY_SESSION_SIGNING_KEY_PREVIOUS?: string, DODDY_IDENTIFIER_KEY?: string }} env
  * @param {string} accountId a Doddy account (`account:<id>`) or an older voice account's pseudonymous id
  */
 export function conversationIdentity(env, accountId) {
-  const key = env?.DODDY_SESSION_SIGNING_KEY;
-  if (typeof key !== "string" || Buffer.byteLength(key, "utf8") < 32) return null;
+  const keys = keyRingFromEnv(env);
+  if (!keys) return null;
   if (typeof accountId !== "string" || accountId.length === 0) return null;
-  const hash = (purpose) => createHmac("sha256", key).update(`${purpose}:${accountId}`).digest("hex");
+  const hash = (purpose) => identifierHash(keys, `${purpose}:${accountId}`);
   return { recordKey: hash("voice-conversations"), userId: hash("voice-user").slice(0, 32) };
 }
 

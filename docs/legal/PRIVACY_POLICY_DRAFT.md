@@ -434,7 +434,7 @@ Screen sharing is not a permission: you start it from iOS's own sheet each time,
 
 ## 7. Children, AI transparency, automated decisions, sale of data
 
-**Children.** The code has no age gate, no parental controls and no children's mode (searched `DoddyApp` and `Packages`). Doddy is not designed for children. **[CONFIRM: age rating for the App Store; the minimum age for the voice features and the open-ended AI chat; whether the policy says "13", "16" or "18"; parental consent rules]**
+**Children.** Doddy is meant for people aged 16 or over (owner choice, 14 Nov 2026; the same line belongs in the terms and in the App Store age rating). The code has no age gate, no parental controls and no children's mode (searched `DoddyApp` and `Packages`): the minimum age is stated here, not checked in the app, so the policy must say "meant for" and never "verified". Doddy is not designed for children. **[CONFIRM with a lawyer: the age (16 chosen); whether a country's parental-consent rule needs more than a stated minimum; the App Store age rating that matches 16]**
 
 **AI transparency (draft statement, EU AI Act Article 50).**
 - Doddy is an AI system. When you talk to Doddy, you are talking to software and not to a person.

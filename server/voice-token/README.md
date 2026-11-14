@@ -25,7 +25,7 @@ device-only accessibility. A revoked Apple credential, DODDY sign-out, or invali
 requires a new Apple sign-in. The server stores only a keyed pseudonymous Apple subject, session
 records, refresh-token hashes (the current one and the one it replaced), and replay/rate-limit
 counters (the sign-in ones are keyed by a hash of the caller's address, never the address), plus, when the Apple key below is set,
-Apple's refresh token for the person, sealed (AES-256-GCM) with a key derived from the signing key.
+Apple's refresh token for the person, sealed (AES-256-GCM) with a key of its own derived from the signing key (see "Keys" below).
 Request logs contain action/provider, outcome, status, and duration only (and, for account deletion,
 whether Apple revoked the link).
 
@@ -40,7 +40,9 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 |---|---|
 | `APPLE_BUNDLE_ID` | Exact bundle identifier for the app build signing in (for example, the development bundle identifier). |
 | `SUPABASE_URL` | Optional. The Doddy accounts project (`https://<ref>.supabase.co`, decision `2026-11-08-required-account`). With it, `/api/voice-token` also accepts a Doddy account's access token (Apple, Google or a code by email), checked against the project's published keys (`src/doddy-account.js`): no secret is needed. Its limits count per account (`account:<id>`), apart from the Apple voice accounts. Unreadable keys answer 503 `account_check_unavailable`, never 401. Without it, only this server's own Apple sign-in works, as before. |
-| `DODDY_SESSION_SIGNING_KEY` | Stable random secret, at least 32 bytes. Signs short-lived sessions and pseudonymizes Apple subject identifiers. Rotating it invalidates sessions. |
+| `DODDY_SESSION_SIGNING_KEY` | Stable random secret, at least 32 bytes. The master key: a key of its own for each job (the access tokens, the sealed Apple tokens) is derived from it, and the Apple pseudonyms and the other keyed hashes are made with it unless `DODDY_IDENTIFIER_KEY` is set (see "Keys" below). Replace it only by the steps under "Rotating the signing key". |
+| `DODDY_SESSION_SIGNING_KEY_PREVIOUS` | Optional, for a rotation only. The key that was `DODDY_SESSION_SIGNING_KEY` before: access tokens and sealed Apple tokens made with it are still accepted. It is only ever used to check and to open, never to sign or seal. Needs `DODDY_IDENTIFIER_KEY`: with a previous key and no identifier key the server answers `503 server_not_configured` rather than move anyone's identifiers. Nothing has to be set for this at deploy. |
+| `DODDY_IDENTIFIER_KEY` | Optional, for a rotation only. At least 32 bytes. The key of the keyed hashes that must never change for a person: the Apple pseudonyms, the keys under which an account's voice conversations are recorded, the user id given to ElevenLabs and the rate-limit buckets. Not set means they use `DODDY_SESSION_SIGNING_KEY` exactly as they always have. Before the signing key is replaced it is set to the signing key's current value, and then it is left alone. |
 | `UPSTASH_REDIS_REST_URL` | HTTPS URL for the durable shared session/rate-limit store. |
 | `UPSTASH_REDIS_REST_TOKEN` | Secret for that store. Never log or expose it to the app. |
 | `ELEVENLABS_API_KEY` | Owner-held ElevenLabs API credential. |
@@ -56,6 +58,66 @@ Vercel project `doddy-voice-token` through `tools/secrets/sync.mjs` (ADR-493,
 | `APPLE_SIGN_IN_KEY_ID` | The key ID of a Sign in with Apple key (Apple Developer › Certificates, Identifiers & Profiles › Keys). |
 | `APPLE_SIGN_IN_PRIVATE_KEY` | That key's `.p8` file contents (PEM; literal `\n` line breaks work). Secret: 1Password only. |
 
+### Keys: one per job, with a key id and a previous key (decision `2026-11-12-account-and-device-tokens`, part b)
+
+`DODDY_SESSION_SIGNING_KEY` is the master key. Code: `src/keys.js`; used in `src/voice-auth.js` and
+`src/conversations.js`. Everything the server signs, seals or derives from it:
+
+| Job | Made with | Carries | Lives |
+|---|---|---|---|
+| Access token (HS256 JWT) | HMAC-SHA-256 with the key derived for `doddy/voice/access-token/v1` | `kid`, the key id, in the token header | 10 minutes |
+| Apple's refresh token, sealed (AES-256-GCM) | the key derived for `doddy/voice/apple-token-seal/v1` | `v2.<key id>.<iv, ciphertext, tag>` | 400 days for a Doddy account's link; 30 days, kept alive while refreshed, for an older voice session's |
+| Apple pseudonym, conversation `recordKey` and `userId`, rate-limit buckets (the caller address, the account) | HMAC-SHA-256 of a fixed prefix and the value with the identifier key | nothing: they are identifiers | as long as the person (the buckets: an hour or a day) |
+
+- **A key per job.** Each key is HKDF-SHA256 (RFC 5869, no salt) over the master with the fixed label as `info`, 32 bytes.
+  A token made for one job is refused for another, because the keys differ. The labels are never changed (a test holds
+  known answers); a new job gets a new label.
+- **A key id in everything signed or sealed.** It is eight characters of HKDF output over the master with its own label,
+  so it needs no setting and tells nothing about the key. A value naming an id this server doesn't have is refused.
+- **The previous key** (`DODDY_SESSION_SIGNING_KEY_PREVIOUS`) is accepted for checking and opening. It is never used to
+  sign or seal: a new value always names the current key.
+- **Identifiers are not rotated with the signing key.** They are what the person *is* here: a new Apple pseudonym is a
+  new account, and conversations recorded under the old `recordKey` could not be found to delete. They use the identifier
+  key, which is `DODDY_IDENTIFIER_KEY` when set and otherwise the signing key itself, which is what they have always
+  used, so they are byte for byte the same as before (a test holds recorded values from the code before this change).
+  The rate-limit buckets use it too, so a rotation doesn't give anyone a fresh allowance.
+- **Everything made before this change still works, with no setting changed.** An access token with no `kid` is checked
+  with the signing key itself (and the previous one), until it expires. A sealed value with no `v2.` prefix is opened with
+  the key it was sealed with before. Refresh tokens are random and kept as hashes: no key ever touched them, so
+  nobody is signed out, at the deploy or at a rotation.
+- **Fails closed.** A key that is too short, or a previous key with no identifier key, makes sign-in and tokens answer
+  `503 server_not_configured` (as a missing signing key always did). Nothing logs a key, a key id or a token.
+
+**Rotating the signing key** (the owner, on the Vercel project `doddy-voice-token`; each step is a redeploy; never as part
+of a `tools/secrets/sync.mjs` run, which doesn't write this key):
+
+1. Make the new value (`openssl rand -base64 48`). Keep the current value in 1Password.
+2. **Pin the identifiers, once.** Set `DODDY_IDENTIFIER_KEY` to the current value of `DODDY_SESSION_SIGNING_KEY`, exactly,
+   and redeploy. Nothing changes for anyone: it is the value the identifiers already use. It is never changed afterwards.
+3. **Rotate.** In one redeploy, set `DODDY_SESSION_SIGNING_KEY_PREVIOUS` to the old value and `DODDY_SESSION_SIGNING_KEY`
+   to the new one. From then on tokens are signed and sealed with the new key, and everything made with the old one is
+   still accepted. Check by talking to Doddy once, and the `voice_auth` and `voice_token` log lines for `status: 200`.
+4. **Remove `DODDY_SESSION_SIGNING_KEY_PREVIOUS`** when nothing still needs it. Access tokens made under the old key are
+   gone 10 minutes after step 3, and no refresh token ever depended on it. What does need it is Apple's refresh token
+   sealed under the old key, so that deleting such an account can still revoke Sign in with Apple: a Doddy account's link
+   is kept for up to 400 days (each new sign-in with Apple seals a fresh one under the current key). Removed earlier,
+   nobody is signed out, but deleting an account whose link was sealed under the old key still deletes it and reports
+   `apple: "no_token"` instead of revoking at Apple, until that person signs in with Apple again.
+
+**Rolling back.** Reverting this change (redeploying the earlier code, or Vercel's rollback) leaves everything made before
+it valid: the earlier code reads exactly the formats it always did. It knows one key only: it ignores
+`DODDY_SESSION_SIGNING_KEY_PREVIOUS` and `DODDY_IDENTIFIER_KEY`, and makes the identifiers from `DODDY_SESSION_SIGNING_KEY`
+itself. So if the signing key was rotated, put the old value back in `DODDY_SESSION_SIGNING_KEY` as well (it is the value
+`DODDY_IDENTIFIER_KEY` holds), or the identifiers move; tokens made under the new key stop working then, too.
+What the new code made while it was live is not read by the earlier code:
+- **Access tokens** (a `kid` in the header): refused for the rest of their 10 minutes. The iPhone then asks for a new one
+  with its refresh token (`VoiceAuthSession.serverRejectedSession`, read in the code, not seen on a device), which needs no
+  key, so a rollback signs a voice session out only if that refresh fails too. The 30-day refresh tokens are not affected at all.
+- **Sealed Apple tokens** (`v2.` values, made when someone signed in with Apple, or linked, while the new code was live):
+  not opened by the earlier code for as long as they live (up to 400 days) or until that person signs in with Apple again,
+  so deleting such an account would not revoke Sign in with Apple. Redeploying the new code makes them readable again; nothing
+  stored is changed by either version.
+
 ### Voice conversations deleted with the account (decision `2026-11-12-voice-conversations-per-account`)
 
 Deleting a Doddy account also deletes its voice conversations at ElevenLabs. The retention at ElevenLabs has
@@ -66,7 +128,8 @@ no time limit (owner, 13 Nov 2026), so nothing ages out: only these steps remove
   public API reference, read 13 Nov 2026; not yet seen against the live service). When the server issues a token it
   keeps that id under the account, in the same Redis store, as a sorted set at
   `doddy:voice:v1:conversations:<recordKey>`. `recordKey` is a keyed hash (HMAC-SHA-256 with
-  `DODDY_SESSION_SIGNING_KEY`, as the Apple subjects are) of the account: a Doddy account (`account:<id>`) or an
+  the identifier key, which is `DODDY_SESSION_SIGNING_KEY` unless `DODDY_IDENTIFIER_KEY` is set, as for the Apple
+  subjects) of the account: a Doddy account (`account:<id>`) or an
   older Apple voice account. The app never sends an id, so a deletion only reaches what the server itself recorded.
   The set **never expires** and holds at most 5 000 ids per account; past that the oldest are let go of (they are
   still found by `userId`, below). Redis holds ids and the times they were issued, never words.
@@ -101,9 +164,10 @@ no time limit (owner, 13 Nov 2026), so nothing ages out: only these steps remove
   account again for up to 45 seconds and removes it when nothing is left. The cron checks
   `Authorization: Bearer $CRON_SECRET` against `CRON_SECRET` (compared as digests) and does nothing without it: **the
   owner must set `CRON_SECRET`** (below). Known limits: a conversation started on another device in the minutes
-  after the deletion, while its short-lived account token still works, is recorded but not owed; and rotating
-  `DODDY_SESSION_SIGNING_KEY` changes every `recordKey` and `userId`, so conversations recorded before are no longer
-  found by them (`secrets/manifest.json` says so).
+  after the deletion, while its short-lived account token still works, is recorded but not owed; and a change of the
+  identifier key (`DODDY_IDENTIFIER_KEY`, or `DODDY_SESSION_SIGNING_KEY` while the first is not set) changes every
+  `recordKey` and `userId`, so conversations recorded before are no longer found by them. Replacing the signing key by
+  the steps under "Rotating the signing key" does not do that: the identifier key stays as it was.
 - **Logs** carry the action, status, timing and counts (`deleted`, `pending`; for the cron `accounts`, `deleted`,
   `pending`) and a fixed word for the recording. Never an id, a `userId`, a `recordKey`, a token or a word.
 

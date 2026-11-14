@@ -6,11 +6,10 @@ import Foundation
 // the signed-in account and the app's stores, and says what a sign-out turns off. Not compiled on Linux: the
 // hosted ios-build job is its first compile.
 //
-// TODO(local-data-owner screen): when `localDataMismatch` is not nil, offer "Erase Doddy's data on this iPhone"
-// (the same steps as Settings › Memories › Delete all, then `claimLocalData()` so the signed-in account takes the
-// empty iPhone over). Not added here: that routine lives in SettingsScreens.swift, which open pull requests are
-// changing. Until then the switches that would send data say why nothing is sent (`otherAccountsData`), and
-// erasing in Settings followed by the next launch hands the empty iPhone to the signed-in account.
+// The way out of a mismatch is Settings › Memories › "Erase everything on this iPhone" (`EraseThisIPhone`, DoddyCore
+// `DeviceErasure`): it erases every store, and only when each was read back as empty it clears the owner and calls
+// `claimLocalData()`, so the signed-in account takes the empty iPhone over. That row says so while `localDataMismatch` is not
+// nil. The switches that would send data say why nothing is sent (`otherAccountsData`). A button on those screens is not added.
 extension DoddyAccountServers {
     /// The gate every upload of this iPhone's data asks first: the Messages copy for Doddy Web, Memory on calls,
     /// notes and conversations kept on Doddy's server, and Logbook.

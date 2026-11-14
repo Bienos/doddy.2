@@ -118,11 +118,15 @@ final class UnfinishedNoteStore {
         if ProcessInfo.processInfo.arguments.contains("-inMemoryStore") {
             return fileManager.temporaryDirectory.appendingPathComponent("unfinished-notes-\(UUID().uuidString).json")
         }
-        guard let directory = try? fileManager
+        guard var directory = try? fileManager
             .url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
             .appendingPathComponent("Drafts", isDirectory: true)
         else { return nil }
         try? fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        // "Never ... backed up", as the type says: the folder is marked out of iPhone backups (it was not marked before).
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try? directory.setResourceValues(values)
         return directory.appendingPathComponent("unfinished-notes.json")
     }
 }

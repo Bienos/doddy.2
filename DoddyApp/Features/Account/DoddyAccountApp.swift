@@ -236,9 +236,14 @@ enum DoddyAccountServers {
     /// 2. the backend deletes what it keeps and, with it, the sign-in at the account service (its
     ///    cleanup queue, decision 2026-11-08-required-account), and disconnects the online accounts;
     /// 3. this iPhone's own voice account, if it still has one, is deleted the way it always was;
-    /// 4. only then is this iPhone signed out. The welcome then asks for a sign-in again.
+    /// 4. only then is this iPhone signed out. The welcome then asks for a sign-in again;
+    /// 5. with `erase` (the person chose "Delete my account and erase this iPhone", or deleted the account right after
+    ///    "Erase everything on this iPhone"), what the account's sign-in and server links left on this iPhone is erased now,
+    ///    after the signing out: `erase` is `EraseThisIPhone.lineAfterAccountDeleted` and returns the line for the message.
+    ///    It never runs unless every step above was confirmed, so a failed deletion keeps the person signed in with
+    ///    everything still here. Without `erase`, the notes and everything else on this iPhone stay, and the message says so.
     /// The result goes in the account's message, which the sign-in sheet and Settings show.
-    static func deleteAccount() async {
+    static func deleteAccount(thenErase erase: (@MainActor () async -> String)? = nil) async {
         let model = DoddyAccountModel.shared
         guard model.isSignedIn else { return }
         // Only a backend that takes the account knows its sign-in, so only it can delete that.
@@ -298,7 +303,12 @@ enum DoddyAccountServers {
         // The agreement to keep voice conversations belonged to this account; the next one is asked again. Nothing
         // asks yet (`VoiceConsent.requiredVersion` is nil), so this only clears what was never written.
         VoiceConsent.withdraw()
-        let done = NSLocalizedString("Your Doddy account was deleted and this iPhone is signed out. Notes on this iPhone stay.", comment: "")
+        // Step 5: asked for together with the deletion. Its line is the erase's own (it says what it couldn't confirm), and
+        // "Notes on this iPhone stay." is only said when nothing was erased.
+        let eraseLine: String? = await erase?()
+        let done = erase == nil
+            ? NSLocalizedString("Your Doddy account was deleted and this iPhone is signed out. Notes on this iPhone stay.", comment: "")
+            : NSLocalizedString("Your Doddy account was deleted and this iPhone is signed out.", comment: "")
         // Voice conversations are named as deleted only when the voice server confirmed all of them (DOD-08).
         let conversationsLine: String? = switch conversations.finalLine {
         case .deleted:
@@ -308,7 +318,7 @@ enum DoddyAccountServers {
         case nil:
             nil
         }
-        model.message = [done, serverLine, conversationsLine, voiceLine, appleLine].compactMap { $0 }.joined(separator: " ")
+        model.message = [done, eraseLine, serverLine, conversationsLine, voiceLine, appleLine].compactMap { $0 }.joined(separator: " ")
     }
 
     /// Step 1c of `deleteAccount`: the voice server deletes the account's voice conversations at ElevenLabs and answers

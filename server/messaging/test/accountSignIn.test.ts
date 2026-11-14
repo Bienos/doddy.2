@@ -76,6 +76,8 @@ describe("POST /v1/accounts/sign-in", { skip: dbSkip }, () => {
   const anonymous = async () => (await app.inject({ method: "POST", url: "/v1/accounts" })).json() as { accountId: string; deviceToken: string };
   const works = async (deviceToken: string) =>
     (await app.inject({ method: "GET", url: "/v1/calls/settings", headers: { authorization: `Bearer ${deviceToken}` } })).statusCode === 200;
+  /** The answer without `expiresAt`, which moves with the clock. */
+  const identity = (body: { accountId: string; deviceToken: string }) => ({ accountId: body.accountId, deviceToken: body.deviceToken });
   const subjectOf = async (accountId: string) =>
     (await db.query<{ auth_subject: string | null }>("SELECT auth_subject FROM accounts WHERE id = $1", [accountId])).rows[0]?.auth_subject;
 
@@ -97,11 +99,17 @@ describe("POST /v1/accounts/sign-in", { skip: dbSkip }, () => {
     await db.query("INSERT INTO phone_numbers (account_id, e164, verified_at) VALUES ($1, '+48600100200', now())", [anon.accountId]);
     const linked = await signIn(account(BOB), { deviceToken: anon.deviceToken });
     assert.equal(linked.status, 200);
-    assert.deepEqual(linked.body, { accountId: anon.accountId, deviceToken: anon.deviceToken });
+    assert.deepEqual(identity(linked.body), { accountId: anon.accountId, deviceToken: anon.deviceToken });
+    assert.equal(typeof linked.body.expiresAt, "string", "it says when the token runs out (device token expiry, migration 040)");
     assert.equal(await subjectOf(anon.accountId), BOB);
     assert.equal((await db.query("SELECT 1 FROM phone_numbers WHERE account_id = $1", [anon.accountId])).rowCount, 1, "its data stays");
-    // A repeat (a lost answer) is answered the same way.
-    assert.deepEqual((await signIn(account(BOB), { deviceToken: anon.deviceToken })).body, linked.body);
+    // A repeat (a lost answer) reaches the same account. The iPhone's token is now a Doddy account's, so asking with it
+    // is a rotation: a fresh token, and the one it asked with works for a few minutes more (test/deviceTokenExpiry.test.ts).
+    const repeat = await signIn(account(BOB), { deviceToken: anon.deviceToken });
+    assert.equal(repeat.status, 200);
+    assert.equal(repeat.body.accountId, anon.accountId);
+    assert.notEqual(repeat.body.deviceToken, anon.deviceToken);
+    assert.ok(await works(repeat.body.deviceToken) && await works(anon.deviceToken));
     // Signing in later without the token reaches the same account.
     assert.equal((await signIn(account(BOB))).body.accountId, anon.accountId);
   });
@@ -113,7 +121,7 @@ describe("POST /v1/accounts/sign-in", { skip: dbSkip }, () => {
     const fresh = await anonymous();
     const moved = await signIn(account(SUB), { deviceToken: fresh.deviceToken });
     assert.equal(moved.status, 200);
-    assert.deepEqual(moved.body, { accountId: home, deviceToken: fresh.deviceToken });
+    assert.deepEqual(identity(moved.body), { accountId: home, deviceToken: fresh.deviceToken });
     assert.equal((await db.query("SELECT 1 FROM accounts WHERE id = $1", [fresh.accountId])).rowCount, 0, "the empty account is gone");
     assert.ok(await works(fresh.deviceToken));
 
