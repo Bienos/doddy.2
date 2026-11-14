@@ -21,7 +21,7 @@ const providers = providersFrom(config);
 const deps = {
   db, ...providers, twilioAuthToken: config.twilio?.authToken, publicBaseUrl: config.publicBaseUrl,
   accounts: config.supabaseUrl ? createAccountVerifier({ projectUrl: config.supabaseUrl }) : null,
-  anonymousAccounts: config.anonymousAccounts,
+  anonymousAccounts: config.anonymousAccounts, deviceTokens: config.deviceTokens,
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
   jakdojade: config.jakdojade ? new JakdojadePartnerClient(async () => config.jakdojade ?? null) : undefined,
   fileWatches: { origin: config.documentsOrigin }, radar: { enabled: config.radarAlertsEnabled },
@@ -33,6 +33,8 @@ const calls = callsAvailable(deps);
 app.log.info({
   // Without either, a new iPhone gets no account here (sign-in answers 503 not_configured, anonymous 403).
   doddyAccounts: !!config.supabaseUrl, anonymousAccounts: config.anonymousAccounts,
+  // Whether device tokens of Doddy accounts run out, and after how many days (idle, absolute); never a token.
+  deviceTokenExpiry: config.deviceTokens.enforce ? { idleDays: config.deviceTokens.idleDays, maxAgeDays: config.deviceTokens.maxAgeDays } : false,
   push: !!providers.push, sms: !!providers.sms, webhooks: !!config.publicBaseUrl,
   calls: calls.inbound, outboundCalls: calls.outbound,
   newsWriter: !!providers.news.writer, newsSearch: !!providers.news.search,

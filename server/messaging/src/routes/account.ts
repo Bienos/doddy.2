@@ -3,11 +3,12 @@ import type { FastifyPluginAsync } from "fastify";
 import type pg from "pg";
 import { z } from "zod";
 import { parse, type Deps } from "../app.js";
-import { hashToken, newDeviceToken, principal, requireDevice } from "../auth.js";
+import { hashToken, lifetimeSeconds, newDeviceToken, principal, requireDevice, TOKEN_MATCH, TOKEN_STATE_COLUMNS, tokenRunOut } from "../auth.js";
 import { queuePhoneAgentDeletions } from "../calls.js";
 import { abuseLimits } from "../config.js";
 import { clientBucket, counterKey, pruneCounters, returnCounter, takeCounter } from "../dailyCounters.js";
 import { inTransaction } from "../db.js";
+import { expiresAt, type DeviceTokenPolicy } from "../deviceTokens.js";
 import { AccountCheckUnavailable } from "../doddyAccount.js";
 import { takeServerSlot } from "../serverUsage.js";
 import type { TaskCallContext } from "../taskCalls/context.js";
@@ -35,6 +36,34 @@ async function holdsOnlyDevices(c: pg.PoolClient, accountId: string): Promise<bo
   return true;
 }
 
+/**
+ * A fresh token for a device that presented its current token, or the one an earlier rotation replaced while that one still
+ * works. The device row stays (its push binding and history with it); only the token changes. The token it presented keeps working
+ * for the overlap, so an answer that never arrived does not sign the iPhone out; presenting the replaced token again keeps the window
+ * its rotation started and replaces the answer that was lost. One statement, so two calls with the same token cannot both win:
+ * the one that finds the token already gone gets null.
+ */
+async function rotateToken(c: pg.PoolClient, deviceId: string, presented: Buffer, policy: DeviceTokenPolicy): Promise<{ deviceToken: string; issuedAt: Date } | null> {
+  const { token, hash } = newDeviceToken();
+  const { rows } = await c.query<{ token_issued_at: Date }>(
+    `UPDATE devices SET
+        previous_token_hash  = CASE WHEN token_hash = $2 THEN token_hash ELSE previous_token_hash END,
+        previous_valid_until = CASE WHEN token_hash = $2 THEN now() + make_interval(secs => $4::double precision) ELSE previous_valid_until END,
+        token_hash = $3, token_issued_at = now(), last_seen_at = now()
+      WHERE id = $1 AND (token_hash = $2 OR (previous_token_hash = $2 AND previous_valid_until > now()))
+      RETURNING token_issued_at`,
+    [deviceId, presented, hash, policy.overlapSeconds]);
+  const issuedAt = rows[0]?.token_issued_at;
+  return issuedAt ? { deviceToken: token, issuedAt } : null;
+}
+
+/** An iPhone's anonymous token becoming a Doddy account's: its expiry clocks start now. Returns when it was issued, as far as expiry counts. */
+async function startLifetime(c: pg.PoolClient, deviceId: string): Promise<Date> {
+  const { rows } = await c.query<{ token_issued_at: Date }>(
+    "UPDATE devices SET token_issued_at = now(), last_seen_at = now() WHERE id = $1 RETURNING token_issued_at", [deviceId]);
+  return rows[0]!.token_issued_at;
+}
+
 const pushToken = z.object({
   token: z.string().regex(/^[0-9a-f]{64,200}$/),
   environment: z.enum(["sandbox", "production"]),
@@ -44,6 +73,9 @@ export const accountRoutes = (deps: Deps, taskCtx?: TaskCallContext): FastifyPlu
   const { db } = deps;
   const auth = requireDevice(db);
   const limits = abuseLimits(deps.limits);
+  // The same policy the device-token check of every signed-in route reads (set on the app in buildApp).
+  const policy = app.deviceTokenPolicy;
+  const [idleSeconds, maxAgeSeconds] = lifetimeSeconds(policy);
   // The address is stored only as a keyed hash (HMAC under a key derived from MEMORY_ENCRYPTION_KEY when there is one).
   const ipSecret = deps.cipher?.derivedKey("client-address");
 
@@ -84,6 +116,10 @@ export const accountRoutes = (deps: Deps, taskCtx?: TaskCallContext): FastifyPlu
   // account, made the first time; this iPhone gets its own device token, used as before. An iPhone that
   // already has an anonymous account here sends its device token: that account is linked once, or, when
   // the Doddy account already has one here, this iPhone moves to it if its own holds nothing. Never merged.
+  // Rotation (decision 2026-11-12-account-and-device-tokens, part d): an iPhone that sends the device token it already has for
+  // this Doddy account gets a fresh one and its `expiresAt`; the token it sent keeps working for a few minutes (DEVICE_TOKEN_
+  // OVERLAP_SECONDS), so an answer that never arrived does not sign it out. A token that has run out (60 days unseen, 180 days
+  // old; Doddy accounts only) counts as unknown here, so the answer is a new iPhone, never the old token back to life.
   app.post("/v1/accounts/sign-in", {
     config: { rateLimit: { max: 30, timeWindow: "1 hour", keyGenerator: (req) => "ip:" + req.ip } },
   }, async (req, reply) => {
@@ -107,20 +143,35 @@ export const accountRoutes = (deps: Deps, taskCtx?: TaskCallContext): FastifyPlu
     const attempt = () => inTransaction(db, async (c) => {
       const mine = (await c.query<{ id: string }>("SELECT id FROM accounts WHERE auth_subject = $1", [subject])).rows[0];
       if (body.deviceToken) {
-        const device = (await c.query<{ id: string; account_id: string; auth_subject: string | null }>(
-          `SELECT d.id, d.account_id, a.auth_subject FROM devices d JOIN accounts a ON a.id = d.account_id
-            WHERE d.token_hash = $1 FOR UPDATE OF a`, [hashToken(body.deviceToken)])).rows[0];
-        if (device) {
-          if (device.auth_subject === subject) return { accountId: device.account_id, deviceToken: body.deviceToken };
-          if (device.auth_subject !== null) return "signed_in_elsewhere" as const;
-          if (!mine) {
+        const presented = hashToken(body.deviceToken);
+        const device = (await c.query<{
+          id: string; account_id: string; auth_subject: string | null;
+          current: boolean; doddy_account: boolean; idle_over: boolean; too_old: boolean;
+        }>(
+          `SELECT d.id, d.account_id, a.auth_subject, ${TOKEN_STATE_COLUMNS}
+             FROM devices d JOIN accounts a ON a.id = d.account_id
+            WHERE ${TOKEN_MATCH} FOR UPDATE OF a`, [presented, idleSeconds, maxAgeSeconds])).rows[0];
+        // A token that has run out is as good as an unknown one: it is not brought back by presenting it (not rotated, and
+        // this sign-in makes a new iPhone below), which is also what the iPhone does when it has no token.
+        if (device && !tokenRunOut(policy, device)) {
+          if (device.auth_subject !== null && device.auth_subject !== subject) return "signed_in_elsewhere" as const;
+          if (device.auth_subject === subject) {
+            // This iPhone's token for this Doddy account: a rotation (decision 2026-11-12-account-and-device-tokens, part d).
+            const rotated = await rotateToken(c, device.id, presented, policy);
+            if (rotated) return { accountId: device.account_id, ...rotated };
+            // The token was replaced by another call at the same moment: this one makes a new iPhone, below.
+          } else if (!mine) {
             await c.query("UPDATE accounts SET auth_subject = $1 WHERE id = $2", [subject, device.account_id]);
-            return { accountId: device.account_id, deviceToken: body.deviceToken };
+            // The token stays; from now on it is a Doddy account's, so its lifetime starts here.
+            return { accountId: device.account_id, deviceToken: body.deviceToken, issuedAt: await startLifetime(c, device.id) };
+          } else {
+            if (!(await holdsOnlyDevices(c, device.account_id))) return "has_data" as const;
+            const moved = await c.query<{ token_issued_at: Date }>(
+              "UPDATE devices SET account_id = $1, token_issued_at = now(), last_seen_at = now() WHERE id = $2 RETURNING token_issued_at",
+              [mine.id, device.id]);
+            await c.query("DELETE FROM accounts WHERE id = $1", [device.account_id]);
+            return { accountId: mine.id, deviceToken: body.deviceToken, issuedAt: moved.rows[0]!.token_issued_at };
           }
-          if (!(await holdsOnlyDevices(c, device.account_id))) return "has_data" as const;
-          await c.query("UPDATE devices SET account_id = $1 WHERE id = $2", [mine.id, device.id]);
-          await c.query("DELETE FROM accounts WHERE id = $1", [device.account_id]);
-          return { accountId: mine.id, deviceToken: body.deviceToken };
         }
       }
       let accountId = mine?.id;
@@ -142,8 +193,9 @@ export const accountRoutes = (deps: Deps, taskCtx?: TaskCallContext): FastifyPlu
            SELECT id FROM devices WHERE account_id = $1 ORDER BY last_seen_at DESC, created_at DESC OFFSET $2)`,
         [accountId, MAX_DEVICES_PER_ACCOUNT - 1]);
       const { token, hash } = newDeviceToken();
-      await c.query("INSERT INTO devices (id, account_id, token_hash) VALUES ($1, $2, $3)", [randomUUID(), accountId, hash]);
-      return { accountId, deviceToken: token };
+      const made = await c.query<{ token_issued_at: Date }>(
+        "INSERT INTO devices (id, account_id, token_hash) VALUES ($1, $2, $3) RETURNING token_issued_at", [randomUUID(), accountId, hash]);
+      return { accountId, deviceToken: token, issuedAt: made.rows[0]!.token_issued_at };
     });
 
     let outcome;
@@ -157,7 +209,9 @@ export const accountRoutes = (deps: Deps, taskCtx?: TaskCallContext): FastifyPlu
     if (outcome === "rate_limited") return reply.code(429).send({ error: "rate_limited" });
     if (outcome === "signed_in_elsewhere") return reply.code(409).send({ error: "account_conflict", reason: "device_signed_in_to_another_account" });
     if (outcome === "has_data") return reply.code(409).send({ error: "account_conflict", reason: "device_account_has_data" });
-    return reply.code(200).send(outcome);
+    // `expiresAt`: the latest this token works, 180 days after it was issued; it stops earlier when the iPhone leaves it unused
+    // for 60 days. null while the server is set not to expire tokens (DEVICE_TOKEN_EXPIRY=0).
+    return reply.code(200).send({ accountId: outcome.accountId, deviceToken: outcome.deviceToken, expiresAt: expiresAt(policy, outcome.issuedAt) });
   });
 
   // Erases the account and everything tied to it (devices, phone number, queued and past messages).

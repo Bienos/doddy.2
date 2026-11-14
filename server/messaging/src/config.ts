@@ -1,4 +1,5 @@
 import type { DealsSettings } from "./deals/types.js";
+import { DEFAULT_DEVICE_TOKEN_POLICY, type DeviceTokenPolicy } from "./deviceTokens.js";
 import { DEFAULT_RESEARCH_BUDGET, type ResearchBudget } from "./errands/budget.js";
 import { DEFAULT_ALLOWED_COUNTRY_CODES, parseCountryCodes } from "./phoneCountries.js";
 import { DEFAULT_NEWS_SUMMARY_CAPS, DEFAULT_NEWS_WRITER_CAPS, type NewsWriterCaps } from "./news/usage.js";
@@ -48,6 +49,14 @@ const schema = z.object({
   // new account here belongs to a Doddy account (decision 2026-11-08-required-account). "1": made as before, within the
   // daily caps below. Accounts and device tokens that already exist keep working either way.
   ANONYMOUS_ACCOUNTS: z.enum(["0", "1"]).default("0"),
+  // Device tokens of Doddy accounts expire and rotate (decision 2026-11-12-account-and-device-tokens, part d; src/deviceTokens.ts).
+  // "1" (the default): a token is refused after DEVICE_TOKEN_IDLE_DAYS unseen [60] or DEVICE_TOKEN_MAX_AGE_DAYS after it was
+  // issued [180]; the iPhone then signs in again with its Doddy account. "0": nothing expires (the clocks are still kept).
+  // Anonymous accounts' tokens never expire. DEVICE_TOKEN_OVERLAP_SECONDS: how long a token a rotation replaced still works [300].
+  DEVICE_TOKEN_EXPIRY: z.enum(["0", "1"]).default("1"),
+  DEVICE_TOKEN_IDLE_DAYS: z.coerce.number().int().min(1).max(3650).default(DEFAULT_DEVICE_TOKEN_POLICY.idleDays),
+  DEVICE_TOKEN_MAX_AGE_DAYS: z.coerce.number().int().min(1).max(3650).default(DEFAULT_DEVICE_TOKEN_POLICY.maxAgeDays),
+  DEVICE_TOKEN_OVERLAP_SECONDS: z.coerce.number().int().min(0).max(3600).default(DEFAULT_DEVICE_TOKEN_POLICY.overlapSeconds),
 
   // S2 phone calls
   // base64 of 32 random bytes. Required on a deployed server (deployment.ts): without it the server refuses to start.
@@ -480,6 +489,8 @@ export interface Config {
   supabaseUrl?: string;
   /** ANONYMOUS_ACCOUNTS: whether `POST /v1/accounts` still makes accounts without a sign-in. Default false. */
   anonymousAccounts: boolean;
+  /** How long a device token of a Doddy account lives (DEVICE_TOKEN_*; defaults 60 days idle, 180 absolute, on). */
+  deviceTokens: DeviceTokenPolicy;
   port: number;
   trustProxyHops: number;
   verifyDailyCap: number;
@@ -558,6 +569,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       + "and phone numbers and addresses hashed without a key. Set it (1Password item memory-encryption-key) on every messaging "
       + "service, web and worker, and start again.");
   }
+  // An idle limit longer than the absolute one could never be reached: a mistake, so the start-up says so (names only).
+  if (e.DEVICE_TOKEN_IDLE_DAYS > e.DEVICE_TOKEN_MAX_AGE_DAYS) {
+    throw new Error("DEVICE_TOKEN_IDLE_DAYS must not be longer than DEVICE_TOKEN_MAX_AGE_DAYS");
+  }
   if (e.MEMORY_ENCRYPTION_KEY_PREVIOUS) {
     if (!e.MEMORY_ENCRYPTION_KEY) throw new Error("MEMORY_ENCRYPTION_KEY_PREVIOUS is set without MEMORY_ENCRYPTION_KEY");
     if (e.MEMORY_ENCRYPTION_KEY_PREVIOUS_VERSION === undefined) {
@@ -571,6 +586,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     databaseUrl: e.DATABASE_URL,
     supabaseUrl: e.SUPABASE_URL ? new URL(e.SUPABASE_URL).origin : undefined,
     anonymousAccounts: e.ANONYMOUS_ACCOUNTS === "1",
+    deviceTokens: {
+      enforce: e.DEVICE_TOKEN_EXPIRY === "1", idleDays: e.DEVICE_TOKEN_IDLE_DAYS,
+      maxAgeDays: e.DEVICE_TOKEN_MAX_AGE_DAYS, overlapSeconds: e.DEVICE_TOKEN_OVERLAP_SECONDS,
+    },
     port: e.PORT,
     trustProxyHops: e.TRUST_PROXY_HOPS,
     verifyDailyCap: e.VERIFY_DAILY_CAP,
