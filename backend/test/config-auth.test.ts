@@ -54,7 +54,10 @@ test("test identities can never be used with live mode, production or a public h
 test("live mode outside loopback needs a hosted database, never a local file", () => {
   const p = problems({ ...live, DODDY_HOST: "0.0.0.0" });
   assert.ok(p.some((x) => x.includes("DATABASE_URL is required when DODDY_MODE=live")), p.join("; "));
-  assert.equal(loadConfig({ ...live, DODDY_HOST: "0.0.0.0", DATABASE_URL: "postgres://u@db.example.com/doddy" }).databaseUrl, "postgres://u@db.example.com/doddy");
+  // A live server on a public host starts only under production rules (decision 2026-11-14-production-rules), so the
+  // config that loads here is a production one; the development config above is refused for that, and for the database.
+  const publicProduction = { ...live, DODDY_ENV: "production", DODDY_AUTH_MODE: "supabase", SUPABASE_URL: "https://abcdefghijklmnopqrst.supabase.co" };
+  assert.equal(loadConfig({ ...publicProduction, DODDY_HOST: "0.0.0.0", DATABASE_URL: "postgres://u@db.example.com/doddy" }).databaseUrl, "postgres://u@db.example.com/doddy");
   // Loopback development and mock mode may still use PGlite.
   assert.equal(loadConfig({ ...live, DODDY_HOST: "127.0.0.1" }).databaseUrl, null);
   assert.equal(loadConfig({ ...live, DODDY_HOST: "localhost" }).databaseUrl, null);
