@@ -1,16 +1,21 @@
-import { purgeExpiredSessions } from "./calls.js";
-import type { AbuseLimits } from "./config.js";
+import { purgeExpiredSessions, sweepPhoneAgentOrphans } from "./calls.js";
+import { pruneCallbackRoutes } from "./callbacks.js";
+import { DEFAULT_ABUSE_LIMITS, type AbuseLimits } from "./config.js";
 import type { TextCipher } from "./crypto.js";
 import { pruneCounters } from "./dailyCounters.js";
 import type { Db } from "./db.js";
 import { runDueDigests, type NewsDeps } from "./news/digest.js";
+import { runRadarPass, type RadarContext } from "./news/radar.js";
+import type { QuietHours } from "./quietHours.js";
 import { pruneNewsCache } from "./news/sources.js";
 import { dispatchDue, reconcileUnknownSms } from "./outbox.js";
 import { DELETE_AFTER_HOURS_DEFAULT, deleteAfterMinutes, pruneDeletions, runDueDeletions } from "./providerRecords.js";
 import type { PushSender, RecordDeleter, SmsSender } from "./providers/types.js";
 import { placeDueCall, pruneCallReasons, type ScheduledCallDeps } from "./scheduledCalls.js";
+import { pruneDeliveries } from "./delivery/deliveries.js";
 import type { TaskVoice } from "./providers/taskCalls.js";
 import type { TaskCallContext } from "./taskCalls/context.js";
+import { pruneDialLog } from "./taskCalls/service.js";
 import { runDeletions, runTaskCallPasses } from "./taskCalls/worker.js";
 import type { ErrandContext } from "./errands/context.js";
 import { newErrandLoopState, runErrandPasses, stopErrandRuns } from "./errands/worker.js";
@@ -19,6 +24,12 @@ import { newStudioLoopState, runStudioPasses, stopStudioRuns } from "./studio/wo
 import type { WatchContext } from "./watches/context.js";
 import { CHECK_EVERY_MS, runFileWatchPass, type FileWatchContext } from "./fileWatches.js";
 import { BATCH, newWatchLoopState, runWatchPasses } from "./watches/worker.js";
+import { runCatalogPass, type CatalogContext } from "./deals/catalog.js";
+import { PoliteFetcher } from "./deals/fetcher.js";
+import { warsawDay } from "./deals/chains/common.js";
+import { ADAPTERS, type DealsDeps } from "./deals/service.js";
+import { checkDealWatches, tellDealWatches, tidyDealWatches, type DealWatchContext } from "./deals/dealWatches.js";
+import type { ReadChain } from "./deals/types.js";
 
 import { log } from "./log.js";
 
@@ -42,15 +53,25 @@ export interface WorkerDeps {
   watches?: WatchContext;
   /** File-ready pushes (9 Nov 2026); only with MEMORY_ENCRYPTION_KEY and DOCUMENTS_ORIGIN. */
   fileWatches?: FileWatchContext;
-  /** Calling codes a text may go to, checked again when it is sent (ADR-704). */
-  limits?: Pick<AbuseLimits, "allowedCountryCodes">;
-  /** Deletes Doddy's records at Twilio, deleteAfterMinutes after they are final (ADR-753). */
+  /** On my radar alerts (decision 2026-11-10-radar-alerts); only with RADAR_ALERTS_ENABLED=1. */
+  radar?: RadarContext;
+  /** The leaflet catalog's scans (decision 2026-11-12-leaflet-catalog); only with DEALS_CATALOG_ENABLED=1. */
+  catalog?: CatalogContext;
+  /** Deal watches (decision 2026-11-13-leaflet-results-and-deal-watches): told and tidied in the catalog's loop. */
+  dealWatches?: DealWatchContext;
+  /** Calling codes a text may go to, checked again when it is sent (ADR-704); how long call-back routes last. */
+  limits?: Pick<AbuseLimits, "allowedCountryCodes"> & Partial<Pick<AbuseLimits, "callbackRouteDays">>;
+  /** Deletes Doddy's records at Twilio, deleteAfterMinutes after they are final (ADR-753): the main account's... */
   deleter?: RecordDeleter;
+  /** ...and the task-call account's, with that account's own credentials. */
+  taskDeleter?: RecordDeleter;
   deleteAfterMinutes?: number;
   /** Places scheduled calls (ADR-754); only when calls are fully set up, else due calls fail with a notice. */
   scheduledCalls?: Omit<ScheduledCallDeps, "db" | "cipher" | "now">;
   /** Deletes phone-agent conversations queued at account deletion when task calls (and their worker) are off. */
   phoneAgentVoice?: TaskVoice;
+  /** The phone agent whose conversations no call owns are swept (with phoneAgentVoice). */
+  phoneAgentId?: string;
 }
 
 /**
@@ -65,11 +86,82 @@ export async function runWorkerLoop(db: Db, deps: WorkerDeps, shouldStop: () => 
     callLoop(db, deps, shouldStop)];
   if (deps.taskCalls) loops.push(taskCallLoop(deps.taskCalls, shouldStop));
   else if (deps.phoneAgentVoice) loops.push(conversationDeletionLoop(db, deps.phoneAgentVoice, shouldStop));
+  if (deps.phoneAgentVoice && deps.phoneAgentId) loops.push(phoneAgentSweepLoop(db, deps.phoneAgentVoice, deps.phoneAgentId, shouldStop));
   if (deps.errands) loops.push(errandLoop(deps.errands, shouldStop));
   if (deps.studio) loops.push(studioLoop(deps.studio, shouldStop));
   if (deps.watches) loops.push(watchLoop(deps.watches, shouldStop));
   if (deps.fileWatches) loops.push(fileWatchLoop(deps.fileWatches, shouldStop));
+  if (deps.radar) loops.push(radarLoop(deps.radar, shouldStop));
+  if (deps.catalog) loops.push(catalogLoop(deps.catalog, deps.dealWatches, shouldStop));
   await Promise.all(loops);
+}
+
+/**
+ * The leaflet catalog (decision 2026-11-12-leaflet-catalog): every few minutes, scans the chains whose last scan is
+ * older than DEALS_CATALOG_EVERY_HOURS, one at a time; a scan reads only pages it hasn't read before. Its own loop, so
+ * minutes of page reads never hold back pushes. Logs codes and counts only.
+ */
+async function catalogLoop(ctx: CatalogContext, dealWatches: DealWatchContext | undefined, shouldStop: () => boolean) {
+  while (!shouldStop()) {
+    try {
+      const counts = await runCatalogPass(ctx, shouldStop);
+      if (Object.keys(counts).length) log("leaflet catalog passes", counts);
+    } catch (err) {
+      log("leaflet catalog pass failed", { error: (err as Error).message });
+    }
+    // Deal watches (decision 2026-11-13-leaflet-results-and-deal-watches): offers held by quiet hours are told when they
+    // end, ended watches are deleted. The checks themselves run after a pass that scanned a chain (afterScans).
+    if (dealWatches) {
+      try {
+        const told = await tellDealWatches(dealWatches);
+        const tidied = await tidyDealWatches(dealWatches);
+        if (Object.keys(told).length || Object.keys(tidied).length) log("deal watch passes", { ...told, ...tidied });
+      } catch (err) {
+        log("deal watch pass failed", { error: err instanceof Error ? err.name : "unknown" });
+      }
+    }
+    await pause(5 * 60_000, shouldStop);
+  }
+}
+
+/** The catalog worker's context, or undefined while leaflets or the catalog are off. With deal watches, each pass that
+ * scanned a chain checks them against what it kept. */
+export function catalogContext(db: Db, deals: DealsDeps | undefined, dealWatches?: DealWatchContext): CatalogContext | undefined {
+  const c = deals?.settings.catalog;
+  if (!deals || !deals.settings.enabled || !c?.enabled) return undefined;
+  return {
+    db, adapters: ADAPTERS, fetcher: deals.fetcher ?? new PoliteFetcher(), model: deals.scanModel, everyHours: c.everyHours,
+    maxPagesPerChain: c.maxPagesPerChain, dailyTokensPerChain: c.dailyTokensPerChain, dailyTokens: c.dailyTokens,
+    now: () => new Date(), today: () => warsawDay(new Date()), log,
+    ...(dealWatches?.enabled ? { afterScans: (chains: ReadChain[]) => checkDealWatches(dealWatches, chains) } : {}),
+  };
+}
+
+/**
+ * On my radar alerts (decision 2026-11-10-radar-alerts): reads the feeds of the alerts that are due (each about
+ * every 20 minutes, daily ones every 2 hours and at their summary time), records new matching stories and queues
+ * their pushes. Its own loop, so slow feeds never hold back other pushes. Logs counts only.
+ */
+async function radarLoop(ctx: RadarContext, shouldStop: () => boolean) {
+  while (!shouldStop()) {
+    let more = false;
+    try {
+      const counts = await runRadarPass(ctx);
+      if (Object.keys(counts).length) log("radar passes", counts);
+      more = (counts.claimed ?? 0) >= 10;
+    } catch (err) {
+      log("radar passes failed", { error: (err as Error).message });
+    }
+    if (!more) await pause(30_000, shouldStop);
+  }
+}
+
+/** The radar worker's context, or undefined while RADAR_ALERTS_ENABLED is off. */
+export function radarContext(
+  db: Db, enabled: boolean, news: NewsDeps, push: PushSender | undefined, cipher: TextCipher | undefined, quietHours?: QuietHours,
+): RadarContext | undefined {
+  if (!enabled) return undefined;
+  return { db, news, push, cipher, quietHours, now: () => new Date(), log };
 }
 
 /**
@@ -170,6 +262,21 @@ async function conversationDeletionLoop(db: Db, voice: TaskVoice, shouldStop: ()
   }
 }
 
+/**
+ * Every 3 hours (and at start), the phone agent's conversations no call owns are queued for deletion; the task-call
+ * loop or, with task calls off, the loop above deletes them. Like the task agents' sweep (`sweepOrphans`).
+ */
+async function phoneAgentSweepLoop(db: Db, voice: TaskVoice, agentId: string, shouldStop: () => boolean) {
+  while (!shouldStop()) {
+    try {
+      await sweepPhoneAgentOrphans({ db, voice, now: () => new Date(), log }, agentId);
+    } catch (err) {
+      log("phone agent sweep failed", { error: (err as Error).message });
+    }
+    await pause(3 * 3600_000, shouldStop);
+  }
+}
+
 async function taskCallLoop(ctx: TaskCallContext, shouldStop: () => boolean) {
   const state = { lastSweep: 0 };
   while (!shouldStop()) {
@@ -184,7 +291,7 @@ async function taskCallLoop(ctx: TaskCallContext, shouldStop: () => boolean) {
 }
 
 async function dispatchLoop(
-  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; limits?: Pick<AbuseLimits, "allowedCountryCodes"> },
+  db: Db, deps: { push?: PushSender; sms?: SmsSender; cipher?: TextCipher; limits?: WorkerDeps["limits"] },
   shouldStop: () => boolean,
 ) {
   let lastTidy = 0;
@@ -201,8 +308,12 @@ async function dispatchLoop(
         const pruned = await pruneNewsCache(db);
         const deletions = await pruneDeletions(db);
         const reasons = await pruneCallReasons(db);
-        if (sessions || pruned || deletions || reasons) {
-          log("tidied", { sessions, newsCacheRows: pruned, deletionRows: deletions, callReasons: reasons });
+        const deliveries = await pruneDeliveries(db); // lapsed quotes and finished deliveries' details
+        const dialLog = await pruneDialLog(db); // task calls' dial log past what the limits read
+        // Call-back routes past CALLBACK_ROUTE_DAYS (never used after that either).
+        const routes = await pruneCallbackRoutes(db, deps.limits?.callbackRouteDays ?? DEFAULT_ABUSE_LIMITS.callbackRouteDays);
+        if (sessions || pruned || deletions || reasons || deliveries || dialLog || routes) {
+          log("tidied", { sessions, newsCacheRows: pruned, deletionRows: deletions, callReasons: reasons, deliveryRows: deliveries, dialLogRows: dialLog, callbackRoutes: routes });
         }
       }
       if (r.processed || r.reaped) log("dispatch pass", r);
@@ -214,12 +325,12 @@ async function dispatchLoop(
   }
 }
 
-/** Once a minute, the due deletions of Doddy's records at Twilio. */
+/** Once a minute, the due deletions of Doddy's records at Twilio, each on its own account. */
 async function deletionLoop(db: Db, deps: WorkerDeps, shouldStop: () => boolean) {
   const after = deps.deleteAfterMinutes ?? deleteAfterMinutes(DELETE_AFTER_HOURS_DEFAULT);
   while (!shouldStop()) {
     try {
-      await runDueDeletions(db, deps.deleter, after);
+      await runDueDeletions(db, { main: deps.deleter, task: deps.taskDeleter }, after);
     } catch (err) {
       log("twilio deletion pass failed", { error: (err as Error).message });
     }

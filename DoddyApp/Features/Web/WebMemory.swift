@@ -7,7 +7,9 @@ import Foundation
 enum WebMemory {
     @MainActor static let shared = WebMemoryModel(
         makeClient: { await WebMemoryClientFactory.ready() },
-        renewClient: { await WebMemoryClientFactory.renewed() })
+        renewClient: { await WebMemoryClientFactory.renewed() },
+        // Only the account that owns this iPhone's data gets it (decision 2026-11-12-local-data-owner).
+        uploadGate: { DoddyAccountServers.localDataUpload() })
 
     /// The language of a conversation as the server wants it: the app's own choice, else the phone's.
     @MainActor static func language() -> String? {

@@ -3,7 +3,7 @@
 Owner, 9 Nov 2026: "when I tell Doddy to do it he starts in the background, and if he created a doc or did the job I get a notification."
 
 ## What it does
-When Doddy starts making a file by voice (`make_document`: deck, Word, Excel, PDF or text, ADR-564), the user gets **one notification when the file is ready or failed**, with fixed words and nothing from the file: "Gotowe. Twój plik czeka w aplikacji." / "Ready. Your file is waiting in the app." (or "Nie udało się przygotować pliku." / "Doddy couldn't finish a file."). The file is then in Messages under "Files Doddy made for you" and in Files (`MESSAGES_ATTACHMENTS.md`). Tapping the notification opens Doddy (it carries no routing hint yet).
+When Doddy starts making a file by voice (`make_document`: deck, Word, Excel, PDF or text, ADR-564), the user gets **one notification when the file is ready or failed**, with fixed words and nothing from the file: "Gotowe. Twój plik czeka w Wiadomościach." / "Ready. Your file is waiting in Messages." (or "Nie udało się przygotować pliku." / "Doddy couldn't finish a file."). The file is then in Messages under "Files Doddy made for you" and in Files (`MESSAGES_ATTACHMENTS.md`). Tapping the notification opens Doddy (it carries no routing hint yet).
 
 ## How
 1. **iPhone** (`FileReadyPush.watch`, called where the voice screen gets a `working` document): sends the file's signed link and the language ("pl" or "en") to the messaging server, `POST /v1/file-watches`. Best effort and silent.

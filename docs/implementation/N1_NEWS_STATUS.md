@@ -12,6 +12,8 @@ Date: 2026-10-10. Owner decisions on that date:
 
 > **28 Oct 2026:** the same sources now also feed **Following** (ADR-656, `FOLLOWING_STATUS.md`): a screen of cards for what the person follows, with no AI step and nothing stored on the server. The digest below is unchanged.
 
+> **13 Nov 2026** (decision `2026-11-13-news-more-sources`): the catalog has 78 feeds from 49 publishers (36 feeds in Polish), not 28. The shortlist keeps one entry per story across publishers, leaves out a story sent before by any of its links or told in the account's digests of the last 3 days, lets publishers alternate and puts the reader's language a little first. Feeds are read once per scheduler pass, at most 8 at a time, and refreshed conditionally (migration 036). The architecture below is otherwise unchanged.
+
 ## Architecture
 ```
 App: Settings → Daily news ──PUT /v1/news/settings──▶ Postgres (news_settings, news_topics, news_feeds)

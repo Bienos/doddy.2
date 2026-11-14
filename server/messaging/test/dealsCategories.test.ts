@@ -3,7 +3,9 @@
 // as the item ("masło roślinne" for "masło", "kawa rozpuszczalna" for "kawa mielona"). Nothing here calls Anthropic.
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
-import { CATEGORIES, categoryOf, relation } from "../src/deals/categories.js";
+import { MARKS } from "../src/deals/brands.js";
+import { CATEGORIES, categoryMatch, categoryOf, relation } from "../src/deals/categories.js";
+import { normalize, stem, wordSimilarity } from "../src/deals/match.js";
 import { PoliteFetcher } from "../src/deals/fetcher.js";
 import { searchDeals } from "../src/deals/service.js";
 import { DEFAULT_DEALS_SETTINGS, type ReadChain } from "../src/deals/types.js";
@@ -11,6 +13,48 @@ import { chainsWeb, FakeModel, read } from "./dealsFakes.js";
 
 const NOW = () => new Date("2026-10-24T06:10:00.000Z");
 const cat = (text: string) => categoryOf(text)?.id;
+
+/** The lookup as it was written before 13 Nov 2026: every phrase tried at every place, in the list's order. */
+function everyPhrase(text: string): { id: string; quality: number } | undefined {
+  const words = normalize(text).split(" ").filter(Boolean).map((raw) => ({ raw, stem: stem(raw) }));
+  let found: string | undefined;
+  let best = 0;
+  let longest = 0;
+  for (const c of CATEGORIES) {
+    for (const p of c.phrases) {
+      if (p.words.length === 0 || p.words.length > words.length) continue;
+      for (let i = 0; i + p.words.length <= words.length; i++) {
+        const quality = Math.min(...p.words.map((w, j) => wordSimilarity(w, words[i + j]!)));
+        if (quality < 0.6) continue;
+        if (quality > best || (quality === best && p.length > longest)) { found = c.id; best = quality; longest = p.length; }
+      }
+    }
+  }
+  return found ? { id: found, quality: best } : undefined;
+}
+
+test("the indexed lookup (13 Nov 2026, about 70 times faster) answers exactly as trying every phrase did", () => {
+  const texts = new Set<string>();
+  const all = CATEGORIES.flatMap((c) => c.words);
+  for (const w of all) texts.add(w);
+  // Every word next to another, inflected, with a brand, a size and a word that names nothing.
+  all.forEach((w, i) => {
+    const next = all[(i * 7 + 3) % all.length]!;
+    texts.add(`${w} ${next}`);
+    texts.add(`Promocja ${next} ${w} 500 g`);
+    texts.add(`${w}y ${w}ami`);
+    texts.add(`${w.slice(0, -1)}ek Marka ${w}`);
+  });
+  for (const m of MARKS) for (const n of m.names) { texts.add(n); texts.add(`${n} 2 x 100 g`); }
+  for (const t of ["", "  ", "42", "tv", "ps 5", "sól", "ser", "serek", "kasza i kaszka", "szampon szampan", "tabletki do zmywarki tablet"]) texts.add(t);
+  let checked = 0;
+  for (const text of texts) {
+    const got = categoryMatch(text);
+    assert.deepEqual(got ? { id: got.category.id, quality: got.quality } : undefined, everyPhrase(text), text);
+    checked++;
+  }
+  assert.ok(checked > 3000, `${checked} names checked`);
+});
 
 describe("what kind of thing a name is", () => {
   test("queries and leaflet names, inflected and with brands", () => {

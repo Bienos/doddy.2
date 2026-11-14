@@ -4,40 +4,40 @@ import XCTest
 final class VoiceStyleTests: XCTestCase {
     func testDefaultSendsNothing() {
         XCTAssertNil(VoiceStyle.doddyDefault.override)
-        XCTAssertNil(VoiceStyle(voice: nil, speed: nil, expressiveness: nil).override)
+        XCTAssertNil(VoiceStyle(speed: nil, expressiveness: nil).override)
     }
 
-    func testOnlyChangedFieldsAreSent() {
+    func testOnlyChangedFieldsAreSentAndNeverAVoice() {
         XCTAssertEqual(
-            VoiceStyle(voice: .josh, speed: .normal, expressiveness: .natural).override,
-            VoiceOverride(voiceID: "ZoiZ8fuDWInAcwPXaVeq", speed: nil, stability: nil))
-        XCTAssertEqual(
-            VoiceStyle(voice: .doddy, speed: .faster, expressiveness: .steady).override,
+            VoiceStyle(speed: .faster, expressiveness: .steady).override,
             VoiceOverride(voiceID: nil, speed: 1.15, stability: 0.75))
+        XCTAssertEqual(
+            VoiceStyle(speed: .normal, expressiveness: .expressive).override,
+            VoiceOverride(voiceID: nil, speed: nil, stability: 0.3))
+        // Decision 2026-11-12-one-voice: Doddy speaks in the agent's own voice, whatever else is set.
+        for speed in SpeakingSpeed.allCases {
+            for level in Expressiveness.allCases {
+                XCTAssertNil(VoiceStyle(speed: speed, expressiveness: level).override?.voiceID)
+            }
+        }
     }
 
     func testStoredValuesFallBackPerSetting() {
         XCTAssertEqual(
-            VoiceStyle(voice: "wiktor", speed: "warp", expressiveness: nil),
-            VoiceStyle(voice: .wiktor, speed: .normal, expressiveness: .natural))
+            VoiceStyle(speed: "warp", expressiveness: "expressive"),
+            VoiceStyle(speed: .normal, expressiveness: .expressive))
     }
 
-    func testEveryVoiceHasABundledSample() {
+    func testTheVoiceSamplesAreGone() {
         let previews = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent("DoddyApp/Resources/VoicePreviews")
-        for choice in VoiceChoice.allCases {
-            let file = previews.appendingPathComponent(choice.previewResourceName + ".mp3")
-            XCTAssertTrue(FileManager.default.fileExists(atPath: file.path), "missing \(file.lastPathComponent)")
-        }
-        XCTAssertEqual(VoiceStyle(voice: .josh, speed: .faster, expressiveness: .natural).previewRate, 1.15)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: previews.path), "decision 2026-11-12-one-voice removed the voice samples")
     }
 
     func testValuesStayInElevenLabsRanges() {
         for speed in SpeakingSpeed.allCases { XCTAssertTrue((0.7...1.2).contains(speed.elevenLabsSpeed)) }
         for level in Expressiveness.allCases { XCTAssertTrue((0...1).contains(level.elevenLabsStability)) }
-        let ids = VoiceChoice.allCases.compactMap(\.elevenLabsVoiceID)
-        XCTAssertEqual(Set(ids).count, VoiceChoice.allCases.count - 1)
     }
 }

@@ -4,7 +4,7 @@
 // server reads the live agent and refuses to call while it differs (ADR-503). Only setting names
 // are reported, never values.
 import { createHash } from "node:crypto";
-import { TASK_AGENT_SPEC } from "./agentSpec.js";
+import { SYNC_PENDING_PROMPTS, TASK_AGENT_SPEC, type TaskAgentSpec } from "./agentSpec.js";
 
 export type AgentProblem =
   | "unreadable" | "prompt_changed" | "first_message_changed" | "language_changed"
@@ -25,30 +25,32 @@ function anyTrue(v: unknown): boolean {
 
 export const sha256Hex = (s: string) => createHash("sha256").update(s, "utf8").digest("hex");
 
-export function checkAgentSafety(agent: unknown): AgentProblem[] {
+export function checkAgentSafety(agent: unknown, spec: TaskAgentSpec = TASK_AGENT_SPEC): AgentProblem[] {
   if (!agent || typeof agent !== "object") return ["unreadable"];
   const problems: AgentProblem[] = [];
   const cc = at(agent, "conversation_config");
   const a = at(cc, "agent");
   const prompt = at(a, "prompt");
   const text = at(prompt, "prompt");
-  if (typeof text !== "string" || sha256Hex(text.trim()) !== TASK_AGENT_SPEC.promptSha256) problems.push("prompt_changed");
-  if (at(a, "first_message") !== TASK_AGENT_SPEC.firstMessage) problems.push("first_message_changed");
-  if (at(a, "language") !== TASK_AGENT_SPEC.language) problems.push("language_changed");
+  // The spec's prompt, or the one it replaced while the owner hasn't synced the live agent yet (agentSpec.ts).
+  const accepted = [spec.promptSha256, ...(SYNC_PENDING_PROMPTS[spec.promptSha256] ?? [])];
+  if (typeof text !== "string" || !accepted.includes(sha256Hex(text.trim()))) problems.push("prompt_changed");
+  if (at(a, "first_message") !== spec.firstMessage) problems.push("first_message_changed");
+  if (at(a, "language") !== spec.language) problems.push("language_changed");
   if (nonEmpty(at(prompt, "tool_ids"))) problems.push("tool_ids_present");
   const tools = at(prompt, "tools");
-  if (Array.isArray(tools) && tools.some((t) => at(t, "type") !== "system" || !TASK_AGENT_SPEC.systemTools.includes(String(at(t, "name"))))) {
+  if (Array.isArray(tools) && tools.some((t) => at(t, "type") !== "system" || !spec.systemTools.includes(String(at(t, "name"))))) {
     problems.push("tools_present");
   }
   const builtIn = at(prompt, "built_in_tools");
   if (builtIn && typeof builtIn === "object" &&
-    Object.entries(builtIn as Record<string, unknown>).some(([k, v]) => v != null && !TASK_AGENT_SPEC.systemTools.includes(k))) {
+    Object.entries(builtIn as Record<string, unknown>).some(([k, v]) => v != null && !spec.systemTools.includes(k))) {
     problems.push("built_in_tool_not_allowed");
   }
   if (nonEmpty(at(prompt, "knowledge_base"))) problems.push("knowledge_base_present");
   if (nonEmpty(at(prompt, "mcp_server_ids")) || nonEmpty(at(prompt, "native_mcp_server_ids"))) problems.push("mcp_present");
-  if (at(cc, "tts", "agent_output_audio_format") !== TASK_AGENT_SPEC.audioFormat ||
-    at(cc, "asr", "user_input_audio_format") !== TASK_AGENT_SPEC.audioFormat) problems.push("audio_format_changed");
+  if (at(cc, "tts", "agent_output_audio_format") !== spec.audioFormat ||
+    at(cc, "asr", "user_input_audio_format") !== spec.audioFormat) problems.push("audio_format_changed");
   if (at(agent, "platform_settings", "privacy", "record_voice") !== false) problems.push("records_voice");
   // Every override switch must be off: per-call prompt, first message, voice, tools, extra LLM body...
   const overrides = at(agent, "platform_settings", "overrides");
@@ -62,6 +64,6 @@ export function checkAgentSafety(agent: unknown): AgentProblem[] {
   // The AI disclosure in the first message is spoken to the end, even if the callee talks over it.
   if (at(a, "disable_first_message_interruptions") !== true) problems.push("first_message_interruptible");
   const maxDuration = at(cc, "conversation", "max_duration_seconds");
-  if (typeof maxDuration === "number" && maxDuration < TASK_AGENT_SPEC.minAgentMaxDurationSecs) problems.push("max_duration_too_short");
+  if (typeof maxDuration === "number" && maxDuration < spec.minAgentMaxDurationSecs) problems.push("max_duration_too_short");
   return problems;
 }

@@ -6,9 +6,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { ErrandEffort } from "../config.js";
-import { budgetLeft, DEFAULT_RESEARCH_BUDGET, requestTokens, withMaxUses, type BudgetLeft, type ResearchBudget } from "../errands/budget.js";
+import { budgetLeft, DEFAULT_RESEARCH_BUDGET, requestTokens, WEB_FETCH_MAX_CONTENT_TOKENS, withMaxUses, type BudgetLeft, type ResearchBudget } from "../errands/budget.js";
 import {
-  countToolUses, echoable, FALLBACK_BETA, languageName, RESEARCH_TOOLS,
+  apiErrorDetail, countToolUses, echoable, FALLBACK_BETA, languageName, RESEARCH_TOOLS,
   type ErrandResearcher, type ErrandTask, type ResearchControl, type ResearchOutcome, type RunStats, type Usage,
 } from "../errands/researcher.js";
 import type { FailureCode } from "../errands/schema.js";
@@ -17,6 +17,7 @@ import { formatMoney } from "./money.js";
 import { OfferRegistry, type OfferSource, type RegisteredOffer } from "./offers.js";
 import type { AffiliateLinks } from "./affiliate.js";
 import { checkOfferPage, type PageFetcher } from "./pagecheck.js";
+import { SeenPages } from "./seen.js";
 
 type Block = { type: string; [key: string]: unknown };
 export type ShoppingTurn = { role: "user"; content: string | Block[] } | { role: "assistant"; content: Block[] };
@@ -58,7 +59,7 @@ The task arrives as data: the person's own words ("words"), Doddy's one-line bri
 
 Your tools:
 - find_offers: searches Google Shopping in Poland and returns leads: offers with ids (o1, o2, …), shop, price as listed and a link. Use short product queries in Polish, e.g. "zmywarka do zabudowy 45 cm cicha". Two to five queries are usually enough. A listed price is NOT confirmed and is never shown to the person: a lead tells you what exists and where.
-- check_offer_page: reads one shop's own product page and confirms its price from the shop's published product data. Only an offer confirmed this way (evidence "shop_page") can be recommended or shown with a price. Google's links usually point to Google, not to the shop, so find the shop's own product page first (web_search for the product with the shop's name, or a link on a page you read) and check that. It upgrades or adds an offer with an id. It may answer that the shop blocks automated reading or publishes no price: then that offer stays unconfirmed.
+- check_offer_page: reads one shop's own product page and confirms its price from the shop's published product data. Only an offer confirmed this way (evidence "shop_page") can be recommended or shown with a price. Google's links usually point to Google, not to the shop, so find the shop's own product page first (web_search for the product with the shop's name, or a link on a page you read) and check that. It reads only an address that appeared in this task's own results (find_offers, web_search or web_fetch), exactly as it appeared; any other address is refused. It upgrades or adds an offer with an id. It may answer that the shop blocks automated reading or publishes no price: then that offer stays unconfirmed.
 - web_search and web_fetch: for specifications, sizes, noise levels, energy class, reviews and catches, and to find shops' own product pages. A price you see this way is only a note: only confirmed offers with an id count.
 
 How to work:
@@ -86,10 +87,10 @@ export const SHOPPING_TOOLS = [
   },
   {
     name: "check_offer_page",
-    description: "Read one shop's own product page (https) and confirm its price from the shop's published product data. Returns the offer with an id and evidence 'shop_page', or why it couldn't (blocked, not allowed, no published price).",
+    description: "Read one shop's own product page (https) and confirm its price from the shop's published product data. Only an address that appeared in this task's own find_offers, web_search or web_fetch results can be read; any other is refused. Returns the offer with an id and evidence 'shop_page', or why it couldn't (blocked, not allowed, no published price).",
     input_schema: {
       type: "object",
-      properties: { url: { type: "string", description: "The https address of the shop's product page." } },
+      properties: { url: { type: "string", description: "The https address of the shop's product page, as it appeared in this task's results." } },
       required: ["url"], additionalProperties: false,
     },
     strict: true,
@@ -123,6 +124,8 @@ export async function runShopping(api: ShoppingModelApi, tools: ShoppingTools, t
   const log = control.log ?? (() => {});
   const usage = emptyUsage();
   const registry = new OfferRegistry();
+  // The only addresses check_offer_page may read: those this run's own results named.
+  const seenPages = new SeenPages();
   const maxSearches = tools.maxOfferSearches ?? 8;
   const maxChecks = tools.maxPageChecks ?? 15;
   let offerSearches = 0;
@@ -182,14 +185,19 @@ export async function runShopping(api: ShoppingModelApi, tools: ShoppingTools, t
       const seenAt = now();
       const found = r.offers.flatMap((raw) => registry.addListing(raw, seenAt) ?? []);
       const unique = [...new Map(found.map((o) => [o.id, o])).values()];
+      for (const o of unique) seenPages.add(o.url);
       return reply(JSON.stringify({
         offers: unique.map((o) => offerLine(o, task.language)),
         note: unique.length ? "Prices as Google Shopping lists them now: leads only, never shown to the person. check_offer_page on a shop's own page confirms a price; only confirmed offers can be recommended." : "No offers with a readable price.",
       }));
     }
     if (b.name === "check_offer_page") {
-      const url = typeof input.url === "string" ? input.url.trim() : "";
-      if (!url) return reply("A url is needed.", true);
+      const asked = typeof input.url === "string" ? input.url.trim() : "";
+      if (!asked) return reply("A url is needed.", true);
+      // Nothing is fetched (not even robots.txt) for an address this run's results never named; a query that wasn't
+      // seen with that page is dropped.
+      const url = seenPages.resolve(asked);
+      if (!url) return reply("Not read: check_offer_page reads only an address that appeared in this task's own find_offers, web_search or web_fetch results. Find the shop's product page with web_search first.", true);
       if (pageChecks >= maxChecks) return reply(`The page check limit for this task (${maxChecks}) is reached.`, true);
       pageChecks++;
       const r = await checkOfferPage(url, tools.fetcher, signal);
@@ -197,6 +205,7 @@ export async function runShopping(api: ShoppingModelApi, tools: ShoppingTools, t
       if (r.offer.availability === "out_of_stock") return reply("The page says it is out of stock; not added as an offer.", true);
       const o = registry.addShopPage(r.offer, url, now());
       if (!o) return reply("Too many offers registered for this task.", true);
+      seenPages.add(o.url); // where the shop's page ended up (a redirect the shop chose) is a result of this run too
       return reply(JSON.stringify({ offer: offerLine(o, task.language), ...(r.offer.availability ? { availability: r.offer.availability } : {}) }));
     }
     return reply(`There is no tool called ${String(b.name)}.`, true);
@@ -225,12 +234,13 @@ export async function runShopping(api: ShoppingModelApi, tools: ShoppingTools, t
     const r = await guarded(control.deadline, (signal) => api.research(messages, signal, room.left));
     if ("stop" in r) return stopped(r.stop);
     if ("error" in r) {
-      log("shopping request failed", { errandId: task.id, requests, error: errorCode(r.error) });
+      log("shopping request failed", { errandId: task.id, requests, error: errorCode(r.error), ...apiErrorDetail(r.error) });
       return failed("provider_error");
     }
     requests++;
     const m = r.ok;
     addUsage(usage, m.usage);
+    seenPages.addFromResults(m.content);
     reportedSearches += m.usage?.server_tool_use?.web_search_requests ?? 0;
     reportedFetches += m.usage?.server_tool_use?.web_fetch_requests ?? 0;
     const counted = countToolUses(m.content);
@@ -276,7 +286,7 @@ export async function runShopping(api: ShoppingModelApi, tools: ShoppingTools, t
   const c = await guarded(new Date(Math.max(now().getTime(), control.deadline.getTime()) + 4 * 60_000), (signal) => api.card(input, signal));
   if ("stop" in c) return stopped(c.stop);
   if ("error" in c) {
-    log("shopping card request failed", { errandId: task.id, error: errorCode(c.error) });
+    log("shopping card request failed", { errandId: task.id, error: errorCode(c.error), ...apiErrorDetail(c.error) });
     return failed("provider_error");
   }
   addUsage(usage, c.ok.usage);
@@ -311,13 +321,14 @@ const DYNAMIC_FILTERING_MODELS: ReadonlySet<string> = new Set([
 /** The basic web search and fetch tools: no code execution behind them, so they work on any model that has web tools. */
 const BASIC_WEB_TOOLS = [
   { type: "web_search_20250305", name: "web_search" },
-  { type: "web_fetch_20250910", name: "web_fetch" },
+  { type: "web_fetch_20250910", name: "web_fetch", max_content_tokens: WEB_FETCH_MAX_CONTENT_TOKENS },
 ] as const;
 
 export const supportsServerFallback = (model: string): boolean => SERVER_FALLBACK_MODELS.has(model);
-/** Haiku 5.5 is not on the documented list of dynamic-filtering models, so it gets the basic tools (ADR-611). */
-export const webToolsFor = (model: string, left?: BudgetLeft, budget: ResearchBudget = DEFAULT_RESEARCH_BUDGET) =>
-  withMaxUses(DYNAMIC_FILTERING_MODELS.has(model) ? RESEARCH_TOOLS : BASIC_WEB_TOOLS, left, budget);
+/** Haiku 5.5 is not on the documented list of dynamic-filtering models, so it gets the basic tools (ADR-611). The
+ * same on every request of one errand: a changed `tools` invalidates the thinking blocks sent back (budget.ts). */
+export const webToolsFor = (model: string, budget: ResearchBudget = DEFAULT_RESEARCH_BUDGET) =>
+  withMaxUses(DYNAMIC_FILTERING_MODELS.has(model) ? RESEARCH_TOOLS : BASIC_WEB_TOOLS, budget);
 
 export class AnthropicShoppingApi implements ShoppingModelApi {
   readonly model: string;
@@ -345,7 +356,7 @@ export class AnthropicShoppingApi implements ShoppingModelApi {
       ...this.fallback,
       cache_control: { type: "ephemeral" },
       system: SHOPPING_SYSTEM,
-      tools: [...SHOPPING_TOOLS, ...webToolsFor(this.model, left, this.budget)] as never,
+      tools: [...SHOPPING_TOOLS, ...webToolsFor(this.model, this.budget)] as never,
       messages: messages as never,
     }, { signal });
     return (await stream.finalMessage()) as unknown as ShoppingMessage;

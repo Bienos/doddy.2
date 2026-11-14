@@ -61,6 +61,14 @@ struct HomeView: View {
     @State private var showCalls = false
     /// This week's leaflets and the basket (SHOPPING.md 2).
     @State private var showDeals = false
+    /// Shopping in one place: "Find me this", watched prices and the leaflets (ShoppingHubView).
+    @State private var showShopping = false
+    /// Poland-first public information: IMGW, GIOŚ, NBP, InPost handoff and existing leaflets.
+    @State private var showPolandPack = false
+    /// The food-delivery apps (Uber Eats, Wolt, Glovo, Pyszne.pl), each a tap away (decision 2026-11-11-food-button).
+    @State private var showFood = false
+    /// Trips found in booking emails (decision 2026-11-11-travel-agent-plan, TRAVEL_EMAILS.md).
+    @State private var showTrips = false
     @AppStorage(PreferenceKey.hideCharacterArt) private var hideCharacterArt = false
     /// First visit (ADR-326): until a conversation has really connected, Home keeps to talking and
     /// holds back the voice picker (ADR-443) and the Back Tap and Today offers.
@@ -118,6 +126,18 @@ struct HomeView: View {
                 }
             }
             .animation(reduceMotion ? nil : .easeInOut(duration: 0.25), value: conversation.live == nil)
+            // A file Doddy started making (owner, 13 Nov 2026): a small note drops out of the island for a few
+            // seconds instead of the pop-up card. Nothing on it needs a tap; the file arrives in Messages.
+            .overlay(alignment: .top) {
+                if let note = conversation.live?.madeFileNote {
+                    MadeFileIslandNote(document: note.document, keptInMessages: note.keptInMessages) {
+                        conversation.live?.dismissMadeFileNote()
+                    }
+                    .id(note.id)
+                    .transition(reduceMotion ? .opacity : .scale(scale: 0.4, anchor: .top).combined(with: .opacity))
+                }
+            }
+            .animation(reduceMotion ? nil : .spring(duration: 0.45, bounce: 0.2), value: conversation.live?.madeFileNote?.id)
             .animation(reduceMotion ? nil : .spring(duration: 0.5, bounce: 0.2), value: showFiles)
             .toolbar(.hidden, for: .navigationBar, .tabBar)
             .navigationDestination(for: UUID.self) { MemoryOrListView(id: $0) }
@@ -126,13 +146,17 @@ struct HomeView: View {
             .sheet(isPresented: $showCalls) { HomeCallsSheet() }
             .sheet(isPresented: $showFollowing) { FollowingView() }
             .sheet(isPresented: $showDeals) { DealsView() }
+            .sheet(isPresented: $showShopping) { ShoppingHubView() }
+            .sheet(isPresented: $showFood) { FoodView() }
+            .sheet(isPresented: $showPolandPack) { PolandPackView() }
+            .sheet(isPresented: $showTrips, onDismiss: { TripsModel.shared.reload() }) { TripsView() }
             .sheet(isPresented: Binding(get: { router.isRecordingsPresented }, set: { router.isRecordingsPresented = $0 })) { RecordingsView() }
             .sheet(isPresented: $showCapabilities, onDismiss: openAbility) { CapabilitiesSheet(open: { abilityToOpen = $0 }) }
             .sheet(isPresented: $showFiles) { FilesSheet() }
             // A finished call's push, tapped (ADR-730): Files, where Calls lists the recaps.
             .sheet(isPresented: Binding(get: { router.isCallRecapsPresented }, set: { router.isCallRecapsPresented = $0 })) { FilesSheet() }
             .sheet(isPresented: $showToday) {
-                HomeTodaySheet(openSettings: { showToday = false; selectedTab = .settings })
+                TodaySheet(openSettings: { showToday = false; selectedTab = .settings })
             }
             .sheet(item: $tool) { tool in
                 switch tool {
@@ -142,6 +166,25 @@ struct HomeView: View {
                 case .timer: CountdownView(purpose: .timer)
                 case .windDown: CountdownView(purpose: .windDown)
                 }
+            }
+            // A product link shared from Safari or a shop app with "Check the price": the Shopping screen opens, and its
+            // "Check this" card takes the link (ShoppingHubView). Nothing is read from the shop until the person taps.
+            .onChange(of: router.priceCheckLink, initial: true) { _, link in
+                guard link != nil, scope.shows(.priceWatch), !showShopping else { return }
+                showShopping = true
+            }
+            // A finished task's or file's push, tapped: Messages, where Doddy's message about it is.
+            .onChange(of: router.isMessagesRequested, initial: true) { _, requested in
+                guard requested else { return }
+                router.isMessagesRequested = false
+                showAsk = true
+            }
+            // A radar story's push, tapped (decision 2026-11-13-radar-fixes): On my radar, where "Doddy spotted" lists it.
+            .onChange(of: router.isRadarRequested, initial: true) { _, requested in
+                guard requested else { return }
+                router.isRadarRequested = false
+                guard scope.shows(.following) else { return }
+                showFollowing = true
             }
             .fullScreenCover(isPresented: $showAsk, onDismiss: { photoForMessages = nil; fileForMessages = nil }) {
                 MessagesView(repository: store.environment.messageThreadRepository, photo: photoForMessages,
@@ -169,7 +212,7 @@ struct HomeView: View {
         // Motion v2: each sheet and cover from Home hides him in the frame it starts. Ask isn't
         // one of them (MV4: its cover carries him up on its composer), and the Files sheet
         // isn't either: the calm Home lifts him above it (ADR-545), and he rides with the box.
-        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showCalls || showCapabilities || tool != nil || showTranslator || showToday)
+        .coversDoddy(modal != nil || showPhotoCamera || showPhotoLibrary || choosingFile || showCalls || showCapabilities || tool != nil || showTranslator || showToday || showPolandPack)
         // A note pushed over Home covers him where he stands.
         .onChange(of: path.count, initial: true) { _, depth in
             DoddyDirector.shared.pageChanged(on: .home, open: depth > 0, detail: false)
@@ -189,6 +232,13 @@ struct HomeView: View {
                 // One small mark while Doddy has a call going for the person; nothing otherwise.
                 ActiveCallBadge()
                 Spacer()
+                // "Show screen" (decision 2026-11-09-doddy-looks-at-the-screen) is a capsule over Mute and End
+                // while Doddy talks (owner review, 13 Nov 2026). After the conversation, a small mark stays here
+                // only while the screen is still shared, so it can be stopped from Home. It comes and goes with
+                // Messages, whose server reads the picture.
+                if conversation.live == nil, scope.shows(Feature.messages) {
+                    ScreenShareCapsule(compact: true)
+                }
                 moreMenu
             }
         }
@@ -223,7 +273,7 @@ struct HomeView: View {
     }
 
     /// What used to be listed down Home (ADR-545): the tools, the voice picker, the other tabs and
-    /// the privacy page. The AI disclosure heads it.
+    /// the privacy page.
     private var moreMenu: some View {
         Menu {
             Section {
@@ -238,8 +288,8 @@ struct HomeView: View {
                         .accessibilityHint("Doddy translates between you and someone who speaks another language.")
                         .accessibilityIdentifier("home.translate")
                 }
-                Button { selectedTab = .memories; showFind = true } label: { Label("Find something", systemImage: "magnifyingglass") }
-                    .accessibilityIdentifier("home.find")
+                // "Find something" left the menu on 10 Nov 2026 (owner: unclear here). Find stays on the notes
+                // screen (Settings › Doddy's memory › Notes) and in a conversation ("what did I save about…").
                 // Tasks handed to Doddy's background worker (ADR-570).
                 if scope.shows(.errands) {
                     Button { showErrands = true } label: { Label("Tasks", systemImage: "checklist") }
@@ -251,56 +301,17 @@ struct HomeView: View {
                     Button { showCalls = true } label: { Label("Phone calls", systemImage: "phone") }
                         .accessibilityIdentifier("home.calls")
                 }
-                // Focus counts down, the stopwatch counts up (ADR-652). One row for both: the menu
-                // fits eleven rows on an iPhone at the default text size, and a twelfth put "What I
-                // can do" and "What leaves this iPhone" out of reach (the hosted UI tests caught it).
-                // Phone calls took a row on 9 Nov 2026; What leaves this iPhone moved to Settings › Privacy only, to make room.
-                Menu {
-                    Button { tool = .focus } label: {
-                        if FocusController.shared.session.map({ !$0.isOver }) ?? false {
-                            Label("Focus · on", systemImage: "timer")
-                        } else {
-                            Label("Focus", systemImage: "timer")
-                        }
-                    }
-                    .accessibilityIdentifier("home.focus")
-                    Button { tool = .stopwatch } label: {
-                        if StopwatchController.shared.watch.map({ !$0.isOver }) ?? false {
-                            Label("Stopwatch · on", systemImage: "stopwatch")
-                        } else {
-                            Label("Stopwatch", systemImage: "stopwatch")
-                        }
-                    }
-                    .accessibilityIdentifier("home.stopwatch")
-                    // A kitchen timer and a wind-down countdown, on the island and in StandBy (ADR-780).
-                    Button { tool = .timer } label: {
-                        if CountdownController.shared.session(.timer).map({ !$0.isOver }) ?? false {
-                            Label("Timer · on", systemImage: "timer.circle")
-                        } else {
-                            Label("Timer", systemImage: "timer.circle")
-                        }
-                    }
-                    .accessibilityIdentifier("home.timer")
-                    Button { tool = .windDown } label: {
-                        if CountdownController.shared.session(.windDown).map({ !$0.isOver }) ?? false {
-                            Label("Wind down · on", systemImage: "moon")
-                        } else {
-                            Label("Wind down", systemImage: "moon")
-                        }
-                    }
-                    .accessibilityIdentifier("home.windDown")
-                } label: {
-                    Label("Focus, timers and stopwatch", systemImage: "timer")
-                }
-                .accessibilityIdentifier("home.timers")
+                // Focus, the timers and the stopwatch left this menu on 10 Nov 2026 (owner: "lepiej to schować i po prostu
+                // wywoływać to na komendę do Doddy'ego", decision 2026-11-10-timers-by-voice). A conversation starts them;
+                // one that runs shows on Home (`RunningTimersView`), and a tap there opens its screen with Pause and Stop.
                 // Today only points to Settings until something is connected (ADR-326).
                 if hadFirstConversation || calendarOn || remindersOn {
                     Button { showToday = true } label: { Label("Today", systemImage: "calendar") }
                         .accessibilityIdentifier("home.today")
                 }
-            } header: {
-                Text("Doddy is an AI, not a person.")
             }
+            // The "Doddy is an AI, not a person." header left this menu on 11 Nov 2026 (owner: "nie chcę używać słowa AI
+            // w ogóle w mówieniu o Dodim … usuń tam Dodi AI"); asked directly, Doddy still says what he is (DOD-03).
             Section {
                 // Leaflets read on request (SHOPPING.md 2). In this section, not the first: there it pushed the
                 // menu's first item off its first screen at the largest text size (the dark, largest-text UI test,
@@ -309,10 +320,34 @@ struct HomeView: View {
                     Button { showDeals = true } label: { Label("Cheapest this week", systemImage: "cart") }
                         .accessibilityIdentifier("home.deals")
                 }
+                // Shopping in one place (owner, 11 Nov 2026): typing "Find me this", the searches handed over and
+                // watched prices. Shown when tasks are, because that is what a search is. "Cheapest this week"
+                // keeps its own row above: UI tests and Home's leaflet card open it directly.
+                if scope.shows(.errands) {
+                    Button { showShopping = true } label: { Label("Shopping", systemImage: "bag") }
+                        .accessibilityIdentifier("home.shopping")
+                }
+                // The food-delivery apps the owner adds to (11 Nov 2026): one row each, opened from here, nothing sent.
+                Button { showFood = true } label: { Label("Food", systemImage: "fork.knife") }
+                    .accessibilityIdentifier("home.food")
+                // My city (was Poland Pack, "Polska na co dzień", until 13 Nov 2026): the weather, warnings, air and NBP
+                // rates, read from official sources only when opened; no startup request.
+                Button { showPolandPack = true } label: {
+                    Label(NotificationLanguage.current == .polish ? "Moje miasto" : "My city",
+                          systemImage: "building.2")
+                }
+                .accessibilityIdentifier("home.polandPack")
                 // The feed of what the person follows (ADR-656): the publishers' stories, no AI line.
+                // Named "On my radar" since 10 Nov 2026 (owner: "Na radarze"; was "Following").
                 if scope.shows(.following) {
-                    Button { showFollowing = true } label: { Label("Following", systemImage: "newspaper") }
+                    Button { showFollowing = true } label: { Label("On my radar", systemImage: "dot.radiowaves.left.and.right") }
                         .accessibilityIdentifier("home.following")
+                }
+                // Trips from booking emails (owner, 11 Nov 2026: "the full list next to Tasks"). In this section,
+                // not the first, for the same reason as the leaflets above. Gmail is read only from its own button.
+                if scope.shows(.onlineAccounts) {
+                    Button { showTrips = true } label: { Label("Trips", systemImage: "airplane") }
+                        .accessibilityIdentifier("home.trips")
                 }
                 // What is built and what isn't, from the capability catalog (T35/T42, ADR-195, ADR-548).
                 Button { showCapabilities = true } label: { Label("What I can do", systemImage: "sparkles") }
@@ -334,6 +369,9 @@ struct HomeView: View {
     /// Only what needs the user now. Each card hides itself when there is nothing to show.
     private var notices: some View {
         VStack(spacing: 12) {
+            // A focus, a timer, a wind-down or the stopwatch that runs now (decision 2026-11-10-timers-by-voice): they
+            // start by voice, so this is where one is seen and, through its screen, paused or stopped.
+            RunningTimersView { tool = $0 }
             DueRemindersView()
             // A payment that was sent and never confirmed (ADR-736): hidden unless payments were once switched on.
             UnconfirmedPaymentsBanner()
@@ -347,6 +385,10 @@ struct HomeView: View {
             // A task Doddy finished in the background since the user last looked (ADR-570).
             if scope.shows(.errands), let finished = ErrandsModel.shared.newestUnseen {
                 errandFinishedCard(finished)
+            }
+            // The next trip, while one is close (owner: "Karta na Home, gdy jest wyjazd"), from the trips saved here.
+            if scope.shows(.onlineAccounts), let trip = TripsModel.shared.homeTrip {
+                TripHomeCardView(trip: trip) { showTrips = true }
             }
             // Leaflets looked up by voice (ADR-666): the list waits on its screen, one tap away.
             if scope.shows(.deals), DealsModel.shared.homeCardDue, let result = DealsModel.shared.lastResult {
@@ -515,8 +557,20 @@ struct HomeView: View {
         }
     }
 
-    /// While he talks (ADR-595): Mute and End, where Messages and Files are.
+    /// While he talks (ADR-595): Mute and End, where Messages and Files are, with "Show screen" over them.
     private func talkBar(_ live: VoiceSessionController) -> some View {
+        VStack(spacing: 8) {
+            if scope.shows(Feature.messages) {
+                ScreenShareCapsule()
+            }
+            muteAndEnd(live)
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func muteAndEnd(_ live: VoiceSessionController) -> some View {
         HStack(spacing: 12) {
             Button {
                 Task { await live.toggleMute() }
@@ -549,9 +603,6 @@ struct HomeView: View {
         .lineLimit(1)
         .dynamicTypeSize(...DynamicTypeSize.xxLarge)
         .foregroundStyle(Theme.ink)
-        .padding(.horizontal, 16)
-        .padding(.bottom, 12)
-        .frame(maxWidth: .infinity)
     }
 
     private var restBar: some View {
@@ -658,8 +709,8 @@ struct HomeView: View {
     /// Which features this build shows (decision 2026-11-07-release-scope). Read each time, so the Debug toggle shows on the next draw.
     private var scope: ReleaseScope { ReleaseScopeStore.current }
 
-    /// He hops and perks up, then the conversation starts here on Home (ADR-595). At once under
-    /// Reduce Motion, with his pictures hidden, or when the tap ends the conversation.
+    /// Start in the tap's turn (ADR-595), with the hop alongside it. Only animation cleanup waits:
+    /// a decorative hop must never add latency before account, token or provider setup.
     private func talk() {
         guard canTalk else { return }
         guard !reduceMotion, !hideCharacterArt, conversation.live == nil else {
@@ -668,10 +719,10 @@ struct HomeView: View {
         }
         tapHops &+= 1
         perking = true
+        conversation.talk(store: store, profile: profiles.profile)
         Task {
-            try? await Task.sleep(for: .seconds(0.35))
-            conversation.talk(store: store, profile: profiles.profile)
-            try? await Task.sleep(for: .seconds(0.8))
+            // Keep the previous visual lifetime (0.35 + 0.8 s), outside the start path.
+            try? await Task.sleep(for: .seconds(1.15))
             perking = false
         }
     }
@@ -990,33 +1041,106 @@ private struct DoddyPressStyle: ButtonStyle {
 
 // MARK: - Sheets from Home
 
-/// Today (it used to be a card on Home), from the ••• menu.
-private struct HomeTodaySheet: View {
-    let openSettings: () -> Void
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                TodayCard(openSettings: openSettings)
-                    .padding(24)
-            }
-            .background(Theme.canvas)
-            .navigationTitle("Today")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-        }
-        .presentationDetents([.medium, .large])
-    }
-}
+// Today's sheet is `TodaySheet` in Features/Today.
 
 private enum HomeTool: String, Identifiable {
     case focus, stopwatch, timer, windDown
     var id: String { rawValue }
+}
+
+/// Doddy's own timers that run now, one small row each (decision 2026-11-10-timers-by-voice). Since they left Home's
+/// ••• menu they start in a conversation, so this is how a running or paused one is seen without the Lock Screen
+/// or the island (an iPad, Live Activities off), and a tap opens its screen with Pause and Stop. Nothing shows when
+/// none runs. The time ticks by itself, so Home isn't redrawn every second.
+private struct RunningTimersView: View {
+    let open: (HomeTool) -> Void
+
+    private var focus: FocusSession? { FocusController.shared.session.flatMap { $0.isOver ? nil : $0 } }
+    private var stopwatch: Stopwatch? { StopwatchController.shared.watch.flatMap { $0.isOver ? nil : $0 } }
+    private func countdown(_ purpose: CountdownSession.Purpose) -> CountdownSession? {
+        CountdownController.shared.session(purpose).flatMap { $0.isOver ? nil : $0 }
+    }
+
+    var body: some View {
+        let timer = countdown(.timer), windDown = countdown(.windDown)
+        if focus != nil || stopwatch != nil || timer != nil || windDown != nil {
+            VStack(spacing: 8) {
+                if let focus {
+                    row(.focus, paused: focus.isPaused) {
+                        Label("Focus", systemImage: "timer")
+                    } time: {
+                        clock(endsAt: focus.endsAt, remaining: focus.remaining(at: Date()))
+                    }
+                }
+                if let timer {
+                    row(.timer, paused: timer.isPaused) {
+                        Label("Timer", systemImage: "timer.circle")
+                    } time: {
+                        clock(endsAt: timer.endsAt, remaining: timer.remaining(at: Date()))
+                    }
+                }
+                if let windDown {
+                    row(.windDown, paused: windDown.isPaused) {
+                        Label("Wind down", systemImage: "moon")
+                    } time: {
+                        clock(endsAt: windDown.endsAt, remaining: windDown.remaining(at: Date()))
+                    }
+                }
+                if let stopwatch {
+                    row(.stopwatch, paused: stopwatch.isPaused) {
+                        Label("Stopwatch", systemImage: "stopwatch")
+                    } time: {
+                        if let from = stopwatch.countsFrom {
+                            IslandElapsedText(startedAt: from)
+                        } else {
+                            Text(verbatim: Stopwatch.clock(stopwatch.elapsed(at: Date()))).monospacedDigit()
+                        }
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    /// A running countdown ticks down to its end; a paused one shows the time left as it stopped.
+    @ViewBuilder
+    private func clock(endsAt: Date?, remaining: TimeInterval) -> some View {
+        if let endsAt {
+            IslandCountdownText(end: endsAt)
+        } else {
+            Text(verbatim: DoddyToolAttributes.clock(remaining)).monospacedDigit()
+        }
+    }
+
+    private func row<Name: View, Time: View>(_ tool: HomeTool, paused: Bool, @ViewBuilder name: () -> Name,
+                                             @ViewBuilder time: () -> Time) -> some View {
+        Button { open(tool) } label: {
+            HStack(spacing: 10) {
+                name()
+                    .font(.subheadline.weight(.semibold))
+                Spacer(minLength: 8)
+                if paused {
+                    Text("Paused")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+                time()
+                    .font(.subheadline.weight(.semibold))
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityHidden(true)
+            }
+            .padding(.horizontal, 16)
+            .frame(minHeight: 48)
+            .background(Theme.quietSurface, in: Capsule())
+            .contentShape(Capsule())
+        }
+        .buttonStyle(DoddyPressStyle())
+        .foregroundStyle(Theme.ink)
+        .accessibilityHint("Opens its screen with Pause and Stop.")
+        .accessibilityIdentifier("home.running.\(tool.rawValue)")
+    }
 }
 
 /// Whether Home's once-a-launch greeting has played (ADR-313, ADR-380).

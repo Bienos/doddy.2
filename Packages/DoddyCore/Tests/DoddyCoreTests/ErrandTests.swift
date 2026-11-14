@@ -400,9 +400,9 @@ final class ErrandTests: XCTestCase {
 
     // MARK: Ask first (ASK-01) and the voice tools
 
-    /// ADR-716 changed the first half: handing a task over needs a tap on its card (the card's text is
-    /// tested in ErrandLinkTests); checking what a task found is still a read a spoken yes can answer.
-    func testHandingOverNeedsATapAndCheckingIsARead() {
+    /// ADR-716: handing a task over needs a tap on its card (the card's text is also tested in
+    /// ErrandLinkTests). Checking what a task found runs at once since decision 2026-11-11-asked-for-runs-at-once.
+    func testHandingOverNeedsATapAndCheckingRunsAtOnce() {
         let handOver = AskFirst.need(for: .handOverErrand(draft))
         guard case .tapFirst(let card) = handOver else { return XCTFail("\(handOver)") }
         XCTAssertEqual(card, ErrandAsk.handOverCard(draft))
@@ -413,12 +413,14 @@ final class ErrandTests: XCTestCase {
         XCTAssertEqual(card.lines.last, "Nothing is booked, bought or sent.")
         XCTAssertTrue(AskFirst.needsTap(handOver))
         let check = AskFirst.need(for: .checkErrands(about: "Rzym"))
-        XCTAssertEqual(check, .yesFirst(AskCard(title: "Check your tasks?", lines: ["What Doddy found for the tasks you handed over"], confirmLabel: "Yes, check")))
+        XCTAssertEqual(check, .runsNow)
         XCTAssertFalse(AskFirst.needsTap(check))
+        // The check card's builder is still there (no longer shown before a check); its words stay exact.
+        XCTAssertEqual(ErrandAsk.checkCard(polish: false), AskCard(title: "Check your tasks?", lines: ["What Doddy found for the tasks you handed over"], confirmLabel: "Yes, check"))
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.handOverErrand)?.effect, .handoff)
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.handOverErrand)?.approval, .card)
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.checkErrands)?.effect, .lookup)
-        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.checkErrands)?.approval, .askFirst)
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.checkErrands)?.approval, .runsNow)
         for name in [VoiceToolName.handOverErrand, VoiceToolName.checkErrands] {
             XCTAssertNil(VoiceConnection.serving(name), name)
         }

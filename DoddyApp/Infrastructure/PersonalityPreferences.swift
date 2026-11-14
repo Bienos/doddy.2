@@ -14,10 +14,10 @@ extension PersonalitySettings {
 }
 
 extension VoiceStyle {
-    /// Voice, speed and expressiveness from the same Settings screen (ADR-105).
+    /// Speed and expressiveness from the same Settings screen (ADR-105). There is no voice to read: Doddy has one
+    /// (decision 2026-11-12-one-voice), so a voice picked before 12 Nov 2026 is no longer sent.
     static func stored(in defaults: UserDefaults = .standard) -> VoiceStyle {
         VoiceStyle(
-            voice: defaults.string(forKey: PreferenceKey.voiceChoice),
             speed: defaults.string(forKey: PreferenceKey.voiceSpeed),
             expressiveness: defaults.string(forKey: PreferenceKey.voiceExpressiveness))
     }

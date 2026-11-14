@@ -58,6 +58,9 @@ public enum ThreadDocumentError: Error, Equatable, Sendable {
     case notConfigured
     /// The iPhone is offline.
     case offline
+    /// The server wants a little more detail (who it is for, what for) before it makes this file. Nothing was made
+    /// or used up; the person adds detail to the request and taps again.
+    case needsDetails
     /// The server answered, but the file was not made (a refusal, a limit, or it reported a failure).
     case failed
 }

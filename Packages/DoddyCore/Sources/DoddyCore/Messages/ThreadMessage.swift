@@ -28,6 +28,16 @@ public struct ThreadDocument: Equatable, Sendable, Codable {
         self.init(url: document.url, name: document.name, kind: document.kind)
     }
 
+    /// The server's id of this file, read from its link (`…/v1/documents/<24 characters>`), so the bubble can tell from the
+    /// files list whether it is still being made. nil for any other link; the id is only ever compared, never requested.
+    public var documentID: String? {
+        let parts = url.pathComponents
+        guard parts.count >= 2, parts[parts.count - 2] == "documents" else { return nil }
+        let id = parts[parts.count - 1]
+        guard id.count == 24, id.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") }) else { return nil }
+        return id
+    }
+
     /// For the bubble: "Deck", "Document", …
     public var label: String {
         switch kind {
@@ -141,13 +151,28 @@ public struct ThreadMessage: Equatable, Sendable, Identifiable, Codable {
 }
 
 extension ThreadMessage {
-    /// The bubble for a file Doddy made. It is not from the user's notes, so its basis is "general"; its text is the
-    /// file's name (never empty, which the table requires).
-    public static func file(_ document: ThreadDocument, now: Date = Date(), id: UUID = UUID()) -> ThreadMessage {
+    /// The most of a file's description its bubble shows; the rest is cut at a word with "…".
+    public static let fileAboutLimit = 280
+
+    /// The bubble for a file Doddy made. It is not from the user's notes, so its basis is "general". Its text says what
+    /// the file is when `about` gives that (owner, 12 Nov 2026: "dodawać troszkę jakiś opis, jak wysyłasz na przykład
+    /// prezentację albo jakiś plik"): the brief the person said yes to on the "Make it" card, clipped; the file's name
+    /// is on its card under it. Without one, the text is the file's name (never empty, which the table requires).
+    public static func file(_ document: ThreadDocument, about: String? = nil, now: Date = Date(), id: UUID = UUID()) -> ThreadMessage {
         let name = document.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return ThreadMessage(
-            id: id, sender: .doddy, text: name.isEmpty ? document.label : name, createdAt: now, delivery: .sent,
-            basis: .general, document: document)
+        let text = fileAbout(about) ?? (name.isEmpty ? document.label : name)
+        return ThreadMessage(id: id, sender: .doddy, text: text, createdAt: now, delivery: .sent, basis: .general, document: document)
+    }
+
+    /// A file's description as its bubble shows it: one line of whitespace, at most `fileAboutLimit` characters, cut at a
+    /// word. nil when there is nothing to say.
+    public static func fileAbout(_ about: String?) -> String? {
+        let text = (about ?? "").split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        guard !text.isEmpty else { return nil }
+        guard text.count > fileAboutLimit else { return text }
+        let cut = text.prefix(fileAboutLimit)
+        let end = cut.lastIndex(of: " ") ?? cut.endIndex
+        return String(cut[..<end]).trimmingCharacters(in: .whitespaces) + "…"
     }
 }
 

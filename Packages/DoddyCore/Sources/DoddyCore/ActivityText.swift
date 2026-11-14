@@ -29,7 +29,9 @@ extension ActivityApp {
         case .home: return "Dom"
         case .health: return "Zdrowie"
         case .training: return "Plan treningowy"
-        case .news: return "Śledzone"
+        case .news: return "Na radarze"
+        case .screen: return "Twój ekran"
+        case .food: return "Aplikacje z jedzeniem"
         }
     }
 }
@@ -74,6 +76,8 @@ public enum ActivityText {
         "Read the week from Apple Health": "Odczytano tydzień z Apple Health",
         "Looked through photos": "Przejrzano zdjęcia",
         "Open the camera": "Otwórz aparat",
+        "Open a food app": "Otwórz aplikację z jedzeniem",
+        "Looked at your screen": "Zerknięto na ekran",
         "Control the home": "Steruj domem",
         "Open the training plan": "Otwórz plan treningowy",
         "Draft an email": "Szkic e-maila",
@@ -81,6 +85,7 @@ public enum ActivityText {
         "Text you from Doddy's number": "SMS do Ciebie z numeru Doddy’ego",
         // ADR-754.
         "Call you later from Doddy's number": "Telefon do Ciebie później z numeru Doddy’ego",
+        "Call you now from Doddy's number": "Telefon do Ciebie teraz z numeru Doddy’ego",
         "Call places for you from Doddy's number": "Telefony do miejsc w Twoim imieniu z numeru Doddy’ego",
         // Written before ADR-275 fixed the article; old rows still say it.
         "Draft a email": "Szkic e-maila",
@@ -112,10 +117,18 @@ public enum ActivityText {
         // Round 3 (ADR-280, ADR-283), joined in the PR #34 merge.
         "Read alarms": "Odczytano budziki",
         "Turn off alarm": "Wyłącz budzik",
-        "Follow in Following": "Śledź w Śledzonych",
+        // Rows kept before 13 Nov 2026 say "Follow in Following"; the screen is On my radar now (decision 2026-11-13-radar-fixes).
+        "Follow in Following": "Dodaj do radaru",
+        "Add to radar": "Dodaj do radaru",
         "Start stopwatch": "Włącz stoper",
         "Stop stopwatch": "Zatrzymaj stoper",
         "Read stopwatch": "Odczytano stoper",
+        // Decision 2026-11-10-timers-by-voice.
+        "Start focus": "Włącz skupienie",
+        "Stop focus": "Zatrzymaj skupienie",
+        "Read focus": "Odczytano skupienie",
+        "Start wind-down": "Włącz wyciszenie",
+        "Stop wind-down": "Zatrzymaj wyciszenie",
         "Delete events": "Usuń wydarzenia",
         "Move reminders": "Przenieś przypomnienia",
         // Round 4 (ADR-300 onwards).
@@ -156,6 +169,13 @@ public enum ActivityText {
         "Create a Google Doc": "Utwórz Dokument Google",
         "Search the news": "Wyszukano wiadomości",
         "Find places": "Wyszukano miejsca",
+        // Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking).
+        "Find flights": "Wyszukano loty",
+        "Find flights Doddy can book": "Wyszukano loty do rezerwacji",
+        "Check a flight booking": "Sprawdzono rezerwację lotu",
+        "Book a flight": "Zarezerwuj lot",
+        "Searched flights": "Wyszukano loty",
+        "Checked a flight booking": "Sprawdzono rezerwację lotu",
         // ADR-564
         "Ask Claude": "Zapytano Claude’a",
         "Make a document with Claude": "Zlecono Claude’owi dokument",

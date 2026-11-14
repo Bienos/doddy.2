@@ -68,16 +68,17 @@ final class PlanAskTests: XCTestCase {
 
     // MARK: The voice tool
 
-    func testTheToolParsesAndAsksForATap() throws {
+    func testTheToolParsesAndOpensThePlanScreenAtOnce() throws {
         let request = parse(#"{"goal":"10k","days_per_week":3,"minutes_per_session":45}"#)
         let ask = try XCTUnwrap(PlanAsk.make(goalName: "10k", daysPerWeek: 3, minutesPerSession: 45))
         XCTAssertEqual(request, .openTrainingPlan(ask))
-        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.openTrainingPlan)?.approval, .card, "ASK-01: a card and a tap")
-        guard case .tapFirst(let card) = AskFirst.need(for: request, calendar: calendar) else { return XCTFail("expected a tap first") }
-        XCTAssertEqual(card.title, "Make a training plan?")
-        XCTAssertEqual(card.confirmLabel, "Open")
-        XCTAssertEqual(card.lines, ask.cardLines)
-        XCTAssertTrue(AskFirst.needsTap(.tapFirst(card)), "a spoken yes is not enough")
+        // Decision 2026-11-11-asked-for-runs-at-once: opening Doddy's own plan screen is undone by closing it,
+        // so it opens at once. The plan itself is made there, and the safety questions are answered there (ADR-626).
+        XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.openTrainingPlan)?.approval, .runsNow)
+        let need = AskFirst.need(for: request, calendar: calendar)
+        XCTAssertEqual(need, .runsNow)
+        XCTAssertFalse(AskFirst.needsTap(need))
+        XCTAssertTrue(AskFirst.ownSmallActions.contains(VoiceToolName.openTrainingPlan))
     }
 
     func testTheToolAcceptsWholeNumbersAsTextOrJSONAndOnlyAKnownGoal() {

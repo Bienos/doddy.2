@@ -11,14 +11,18 @@ final class WhatICanDoTests: XCTestCase {
         XCTAssertEqual(rows.map(\.ability), DoddyAbility.allCases)
     }
 
-    func testTheBetaListsOnlyWhatItShips() {
-        // The beta scope hides calls, tasks and leaflets (ReleaseScope.shipping); the translator is shown
-        // since decision 2026-11-08-translator-in-beta.
+    func testEveryFeatureIsListedInTheShippingScope() {
+        // Nothing is hidden since 10 Nov 2026 (decision 2026-11-10-no-beta-scope): the shipping list is the full list.
         let rows = WhatICanDo.rows(catalog: shipping, scope: .shipping, serverConfigured: true)
-        XCTAssertEqual(rows.map(\.ability), [.talk, .notes, .lists, .reminders, .messages, .translator])
+        XCTAssertEqual(rows.map(\.ability), DoddyAbility.allCases)
         for ability in rows.map(\.ability) {
             if let feature = ability.feature { XCTAssertTrue(ReleaseScope.shipping.shows(feature), "\(ability)") }
         }
+    }
+
+    func testAScopeThatHidesAFeatureStillDropsItsRow() {
+        let rows = WhatICanDo.rows(catalog: shipping, scope: ReleaseScope(hidden: [.translator]), serverConfigured: true)
+        XCTAssertFalse(rows.map(\.ability).contains(.translator))
     }
 
     func testCallsAreNeverClaimedToWork() {
@@ -107,5 +111,19 @@ final class WhatICanDoTests: XCTestCase {
                 XCTAssertFalse(text.contains(phrase), "\(ability): \(phrase)")
             }
         }
+    }
+
+    func testEveryFeatureHasAShortExampleInBothLanguages() {
+        for ability in DoddyAbility.allCases {
+            for language in [NotificationLanguage.english, .polish] {
+                let example = WhatICanDo.example(ability, language)
+                XCTAssertFalse(example.isEmpty, "\(ability)")
+                XCTAssertLessThanOrEqual(example.count, 60, "one short line: \(example)")
+                XCTAssertFalse(example.contains("!"), "product voice: no exclamation marks")
+            }
+        }
+        XCTAssertEqual(WhatICanDo.exampleLead(.messages, .polish), "Napisz na przykład", "Messages is typed")
+        XCTAssertEqual(WhatICanDo.exampleLead(.talk, .polish), "Powiedz na przykład")
+        XCTAssertEqual(WhatICanDo.exampleLead(.translator, .english), "Say, for example")
     }
 }

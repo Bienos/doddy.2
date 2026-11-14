@@ -1,4 +1,5 @@
 import AppIntents
+import os
 
 /// "Talk to Doddy" as the Action Button, Control Center or the Lock Screen runs it (ADR-579,
 /// ADR-632): both Talk to Doddy controls run it. A press talks in the Dynamic Island without
@@ -52,6 +53,12 @@ struct TalkButtonIntent: AudioRecordingIntent, LiveActivityIntent {
         case .tell(let message):
             throw TalkInIsland.Problem(message: message)
         }
+        #else
+        // This is the widget extension's copy, which does nothing. If the Console shows this line after a
+        // press, iOS ran the intent here instead of in the app, and that is why Doddy didn't start
+        // (decision 2026-11-10-action-button-start). Subsystem com.bienos.doddy2.dev, category voice-audio.
+        Logger(subsystem: "com.bienos.doddy2.dev", category: "voice-audio")
+            .notice("talk button ran in the widget extension: nothing started")
         #endif
         return .result()
     }

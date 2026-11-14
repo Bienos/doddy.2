@@ -16,9 +16,10 @@ public enum TranslatorKind: String, Equatable, Sendable, CaseIterable {
     case listen
 }
 
-/// One of the 37 European languages Doddy speaks (ADR-212), with the lines shown or said to the
-/// other person in that language. These lines were written for this build and still need a native
-/// speaker's review before release (docs/implementation/TRANSLATOR_STATUS.md).
+/// One of the translator's languages: the 37 European ones Doddy speaks (ADR-212) and, since 12 Nov
+/// 2026, 52 more, every other language ElevenLabs accepts (decision 2026-11-12-translator-more-languages), with the
+/// lines shown or said to the other person in that language. These lines were written for this build
+/// and still need a native speaker's review before release (docs/implementation/TRANSLATOR_STATUS.md).
 public struct TranslatorLanguage: Equatable, Hashable, Sendable, Identifiable {
     public let code: String
     public let nativeName: String
@@ -36,6 +37,11 @@ public struct TranslatorLanguage: Equatable, Hashable, Sendable, Identifiable {
 
     /// "Español (Spanish)", or just "English".
     public var label: String { nativeName == englishName ? nativeName : "\(nativeName) (\(englishName))" }
+
+    /// Written right to left: their half of the screen is laid out from the right.
+    public var isRightToLeft: Bool { Self.rightToLeft.contains(code) }
+
+    private static let rightToLeft: Set<String> = ["ar", "ckb", "fa", "he", "ps", "sd", "ur"]
 }
 
 public enum TranslatorLanguages {
@@ -225,15 +231,290 @@ public enum TranslatorLanguages {
               hello: "Moien, ech sinn den Doddy, en KI-Iwwersetzer op dësem Telefon. Ech iwwersetzen tëscht Iech zwee. Schwätzt ganz normal.",
               holdToTalk: "Gedréckt halen, während Dir schwätzt",
               careful: "KI-Iwwersetzung. Fir eppes Wichteges, frot et och schrëftlech."),
+        // Beyond Europe (12 Nov 2026, owner: "Dodaj więcej języków do tłumacza naszego"; decision
+        // 2026-11-12-translator-more-languages). Each is in ElevenLabs' Eleven v3 list; the live agent
+        // needs a preset for it (docs/OWNER_QUEUE.md). Written without a native speaker's review.
+        .init(code: "ar", nativeName: "العربية", englishName: "Arabic",
+              aiLabel: "ترجمة بالذكاء الاصطناعي · قد تحتوي على أخطاء",
+              hello: "مرحبًا، أنا Doddy، مترجم بالذكاء الاصطناعي على هذا الهاتف. سأترجم بينكما. تحدّثا بشكل طبيعي من فضلكما.",
+              holdToTalk: "اضغط مع الاستمرار أثناء التحدث",
+              careful: "ترجمة بالذكاء الاصطناعي. في الأمور المهمة، يُرجى الحصول عليها مكتوبةً أيضًا."),
+        .init(code: "zh", nativeName: "中文", englishName: "Chinese",
+              aiLabel: "AI 翻译 · 可能有误",
+              hello: "你好，我是 Doddy，这部手机上的 AI 翻译。我会在你们两位之间翻译。请正常说话。",
+              holdToTalk: "说话时请按住",
+              careful: "AI 翻译。重要事项请另外以书面形式确认。"),
+        .init(code: "ja", nativeName: "日本語", englishName: "Japanese",
+              aiLabel: "AI翻訳 · 誤りを含む場合があります",
+              hello: "こんにちは、Doddyです。このスマートフォンのAI翻訳です。お二人の会話を通訳します。普段どおりに話してください。",
+              holdToTalk: "話している間、押し続けてください",
+              careful: "AI翻訳です。大切な内容は、書面でもご確認ください。"),
+        .init(code: "ko", nativeName: "한국어", englishName: "Korean",
+              aiLabel: "AI 번역 · 오류가 있을 수 있음",
+              hello: "안녕하세요, 저는 이 휴대폰의 AI 번역기 Doddy입니다. 두 분 사이에서 통역해 드릴게요. 평소처럼 말씀해 주세요.",
+              holdToTalk: "말하는 동안 길게 누르세요",
+              careful: "AI 번역입니다. 중요한 내용은 서면으로도 받아 두세요."),
+        .init(code: "hi", nativeName: "हिन्दी", englishName: "Hindi",
+              aiLabel: "AI अनुवाद · इसमें गलतियाँ हो सकती हैं",
+              hello: "नमस्ते, मैं Doddy हूँ, इस फ़ोन पर एक AI अनुवादक। मैं आप दोनों के बीच अनुवाद करूँगा। कृपया सामान्य रूप से बोलें।",
+              holdToTalk: "बोलते समय दबाए रखें",
+              careful: "AI अनुवाद। किसी भी ज़रूरी बात के लिए, कृपया उसे लिखित में भी लें।"),
+        .init(code: "bn", nativeName: "বাংলা", englishName: "Bengali",
+              aiLabel: "AI অনুবাদ · ভুল থাকতে পারে",
+              hello: "হ্যালো, আমি Doddy, এই ফোনের একটি AI অনুবাদক। আমি আপনাদের দুজনের মধ্যে অনুবাদ করব। দয়া করে স্বাভাবিকভাবে কথা বলুন।",
+              holdToTalk: "কথা বলার সময় চেপে ধরে রাখুন",
+              careful: "AI অনুবাদ। গুরুত্বপূর্ণ কিছুর জন্য অনুগ্রহ করে লিখিতভাবেও নিয়ে নিন।"),
+        .init(code: "ur", nativeName: "اردو", englishName: "Urdu",
+              aiLabel: "اے آئی ترجمہ · اس میں غلطیاں ہو سکتی ہیں",
+              hello: "ہیلو، میں Doddy ہوں، اس فون پر ایک اے آئی مترجم۔ میں آپ دونوں کے درمیان ترجمہ کروں گا۔ براہِ کرم معمول کے مطابق بات کریں۔",
+              holdToTalk: "بولتے وقت دبا کر رکھیں",
+              careful: "اے آئی ترجمہ۔ کسی بھی اہم بات کے لیے براہِ کرم اسے تحریری طور پر بھی لیں۔"),
+        .init(code: "fa", nativeName: "فارسی", englishName: "Persian",
+              aiLabel: "ترجمه با هوش مصنوعی · ممکن است اشتباه داشته باشد",
+              hello: "سلام، من Doddy هستم، مترجم هوش مصنوعی روی این گوشی. بین شما دو نفر ترجمه می‌کنم. لطفاً عادی صحبت کنید.",
+              holdToTalk: "هنگام صحبت، نگه دارید",
+              careful: "ترجمه با هوش مصنوعی. برای موارد مهم، لطفاً آن را کتبی هم بگیرید."),
+        .init(code: "he", nativeName: "עברית", englishName: "Hebrew",
+              aiLabel: "תרגום AI · עלול להכיל טעויות",
+              hello: "שלום, אני Doddy, מתורגמן AI בטלפון הזה. אתרגם ביניכם. דברו כרגיל, בבקשה.",
+              holdToTalk: "החזיקו לחוץ בזמן הדיבור",
+              careful: "תרגום AI. בכל דבר חשוב, בקשו לקבל אותו גם בכתב."),
+        .init(code: "vi", nativeName: "Tiếng Việt", englishName: "Vietnamese",
+              aiLabel: "Bản dịch AI · có thể có lỗi",
+              hello: "Xin chào, tôi là Doddy, trình phiên dịch AI trên điện thoại này. Tôi sẽ dịch giữa hai người. Xin cứ nói bình thường.",
+              holdToTalk: "Nhấn giữ trong khi nói",
+              careful: "Bản dịch AI. Với những việc quan trọng, xin hãy yêu cầu thêm bản viết."),
+        .init(code: "th", nativeName: "ไทย", englishName: "Thai",
+              aiLabel: "แปลโดย AI · อาจมีข้อผิดพลาด",
+              hello: "สวัสดีครับ ผมชื่อ Doddy เป็นนักแปล AI ในโทรศัพท์เครื่องนี้ ผมจะแปลระหว่างคุณทั้งสอง กรุณาพูดตามปกติครับ",
+              holdToTalk: "กดค้างไว้ขณะพูด",
+              careful: "แปลโดย AI สำหรับเรื่องสำคัญ กรุณาขอเป็นลายลักษณ์อักษรด้วย"),
+        .init(code: "id", nativeName: "Bahasa Indonesia", englishName: "Indonesian",
+              aiLabel: "Terjemahan AI · mungkin ada kesalahan",
+              hello: "Halo, saya Doddy, penerjemah AI di ponsel ini. Saya akan menerjemahkan di antara Anda berdua. Silakan bicara seperti biasa.",
+              holdToTalk: "Tahan selama Anda berbicara",
+              careful: "Terjemahan AI. Untuk hal penting, mohon minta juga secara tertulis."),
+        .init(code: "ms", nativeName: "Bahasa Melayu", englishName: "Malay",
+              aiLabel: "Terjemahan AI · mungkin terdapat kesilapan",
+              hello: "Helo, saya Doddy, penterjemah AI dalam telefon ini. Saya akan menterjemah antara anda berdua. Sila bercakap seperti biasa.",
+              holdToTalk: "Tekan dan tahan semasa anda bercakap",
+              careful: "Terjemahan AI. Untuk perkara penting, sila dapatkan juga secara bertulis."),
+        .init(code: "fil", nativeName: "Filipino", englishName: "Filipino",
+              aiLabel: "Pagsasalin ng AI · maaaring may mali",
+              hello: "Kumusta, ako si Doddy, isang AI na tagasalin sa teleponong ito. Isasalin ko ang usapan ninyong dalawa. Magsalita lang po kayo nang normal.",
+              holdToTalk: "Pindutin nang matagal habang nagsasalita",
+              careful: "Pagsasalin ng AI. Para sa mahahalagang bagay, pakihingi rin ito nang nakasulat."),
+        .init(code: "sw", nativeName: "Kiswahili", englishName: "Swahili",
+              aiLabel: "Tafsiri ya AI · inaweza kuwa na makosa",
+              hello: "Habari, mimi ni Doddy, mtafsiri wa AI kwenye simu hii. Nitatafsiri kati yenu wawili. Tafadhali ongeeni kama kawaida.",
+              holdToTalk: "Shikilia unapozungumza",
+              careful: "Tafsiri ya AI. Kwa jambo lolote muhimu, tafadhali omba pia kwa maandishi."),
+        .init(code: "ka", nativeName: "ქართული", englishName: "Georgian",
+              aiLabel: "AI თარგმანი · შესაძლოა შეიცავდეს შეცდომებს",
+              hello: "გამარჯობა, მე ვარ Doddy, ხელოვნური ინტელექტის თარჯიმანი ამ ტელეფონზე. თქვენ ორს შორის ვთარგმნი. გთხოვთ, ჩვეულებრივად ისაუბროთ.",
+              holdToTalk: "საუბრისას ხანგრძლივად დააჭირეთ",
+              careful: "AI თარგმანი. მნიშვნელოვანი საკითხებისთვის, გთხოვთ, ის წერილობითაც მოითხოვოთ."),
+        // Every other language on ElevenLabs' Eleven v3 list that it accepts as an agent language (12 Nov 2026,
+        // owner: "i tak chce więcej języków"). Codes as ElevenLabs writes them: "ast" and "yue" have three letters.
+        .init(code: "af", nativeName: "Afrikaans", englishName: "Afrikaans",
+              aiLabel: "KI-vertaling · kan foute bevat",
+              hello: "Hallo, ek is Doddy, 'n KI-vertaler op hierdie foon. Ek sal tussen julle twee vertaal. Praat asseblief normaal.",
+              holdToTalk: "Hou in terwyl jy praat",
+              careful: "KI-vertaling. Vra asseblief vir enigiets belangriks ook op skrif."),
+        .init(code: "hy", nativeName: "Հայերեն", englishName: "Armenian",
+              aiLabel: "ԱԲ թարգմանություն · կարող է սխալներ պարունակել",
+              hello: "Բարև, ես Doddy-ն եմ՝ արհեստական բանականությամբ թարգմանիչ այս հեռախոսում։ Ես կթարգմանեմ ձեր երկուսի միջև։ Խնդրում եմ, խոսեք սովորականի պես։",
+              holdToTalk: "Սեղմած պահեք, երբ խոսում եք",
+              careful: "ԱԲ թարգմանություն։ Կարևոր հարցերի համար խնդրում ենք ստանալ նաև գրավոր։"),
+        .init(code: "as", nativeName: "অসমীয়া", englishName: "Assamese",
+              aiLabel: "AI অনুবাদ · ভুল থাকিব পাৰে",
+              hello: "নমস্কাৰ, মই Doddy, এই ফোনটোৰ এজন AI অনুবাদক। মই আপোনালোক দুজনৰ মাজত অনুবাদ কৰিম। অনুগ্ৰহ কৰি স্বাভাৱিকভাৱে কথা কওক।",
+              holdToTalk: "কথা কোৱাৰ সময়ত টিপি ধৰি ৰাখক",
+              careful: "AI অনুবাদ। গুৰুত্বপূৰ্ণ কথাৰ বাবে অনুগ্ৰহ কৰি লিখিতভাৱেও লওক।"),
+        .init(code: "ast", nativeName: "Asturianu", englishName: "Asturian",
+              aiLabel: "Traducción con IA · pue tener errores",
+              hello: "Hola, soi Doddy, un traductor d'IA nesti teléfonu. Voi traducir ente vosotros dos. Falái con normalidá.",
+              holdToTalk: "Caltién primío mientres fales",
+              careful: "Traducción con IA. Pa coses importantes, pidi que te lo den tamién per escrito."),
+        .init(code: "az", nativeName: "Azərbaycanca", englishName: "Azerbaijani",
+              aiLabel: "Süni intellekt tərcüməsi · səhvlər ola bilər",
+              hello: "Salam, mən Doddy, bu telefondakı süni intellekt tərcüməçisiyəm. Sizin ikiniz arasında tərcümə edəcəyəm. Zəhmət olmasa, adi qaydada danışın.",
+              holdToTalk: "Danışarkən basılı saxlayın",
+              careful: "Süni intellekt tərcüməsi. Vacib məsələlər üçün, zəhmət olmasa, bunu yazılı şəkildə də alın."),
+        .init(code: "my", nativeName: "မြန်မာ", englishName: "Burmese",
+              aiLabel: "AI ဘာသာပြန် · အမှားများ ပါနိုင်သည်",
+              hello: "မင်္ဂလာပါ၊ ကျွန်တော်က Doddy ပါ၊ ဒီဖုန်းထဲက AI ဘာသာပြန်ပါ။ ခင်ဗျားတို့ နှစ်ယောက်ကြား ဘာသာပြန်ပေးပါမယ်။ ပုံမှန်အတိုင်း ပြောပါ။",
+              holdToTalk: "ပြောနေစဉ် ဖိထားပါ",
+              careful: "AI ဘာသာပြန်ဖြစ်ပါသည်။ အရေးကြီးသောကိစ္စများအတွက် စာဖြင့်လည်း ရယူပါ။"),
+        .init(code: "yue", nativeName: "粵語", englishName: "Cantonese",
+              aiLabel: "AI 翻譯 · 可能有錯",
+              hello: "你好，我係 Doddy，呢部手機入面嘅 AI 翻譯。我會幫你哋兩位翻譯。請正常講嘢。",
+              holdToTalk: "講嘢嗰陣請㩒住",
+              careful: "AI 翻譯。重要嘅事，請另外攞埋書面文件。"),
+        .init(code: "gu", nativeName: "ગુજરાતી", englishName: "Gujarati",
+              aiLabel: "AI અનુવાદ · તેમાં ભૂલો હોઈ શકે છે",
+              hello: "નમસ્તે, હું Doddy છું, આ ફોન પરનો AI અનુવાદક. હું તમારા બંને વચ્ચે અનુવાદ કરીશ. કૃપા કરીને સામાન્ય રીતે બોલો.",
+              holdToTalk: "બોલતી વખતે દબાવી રાખો",
+              careful: "AI અનુવાદ. કોઈપણ મહત્વની બાબત માટે, કૃપા કરીને તે લેખિતમાં પણ મેળવો."),
+        .init(code: "ha", nativeName: "Hausa", englishName: "Hausa",
+              aiLabel: "Fassarar AI · tana iya samun kurakurai",
+              hello: "Sannu, ni ne Doddy, mai fassara na AI a wannan wayar. Zan fassara tsakaninku biyu. Don Allah ku yi magana kamar yadda kuka saba.",
+              holdToTalk: "Riƙe yayin da kake magana",
+              careful: "Fassarar AI. Don wani abu mai muhimmanci, don Allah a nemi a rubuta shi ma."),
+        .init(code: "jv", nativeName: "Basa Jawa", englishName: "Javanese",
+              aiLabel: "Terjemahan AI · bisa ana kaluputan",
+              hello: "Halo, aku Doddy, penerjemah AI ing hape iki. Aku bakal nerjemahake ing antarane panjenengan sakloron. Mangga ngomong kaya biasane.",
+              holdToTalk: "Pencet terus nalika ngomong",
+              careful: "Terjemahan AI. Kanggo bab sing penting, mangga njaluk uga kanthi tulisan."),
+        .init(code: "kn", nativeName: "ಕನ್ನಡ", englishName: "Kannada",
+              aiLabel: "AI ಅನುವಾದ · ತಪ್ಪುಗಳಿರಬಹುದು",
+              hello: "ನಮಸ್ಕಾರ, ನಾನು Doddy, ಈ ಫೋನ್‌ನಲ್ಲಿರುವ AI ಅನುವಾದಕ. ನಾನು ನಿಮ್ಮಿಬ್ಬರ ನಡುವೆ ಅನುವಾದಿಸುತ್ತೇನೆ. ದಯವಿಟ್ಟು ಸಹಜವಾಗಿ ಮಾತನಾಡಿ.",
+              holdToTalk: "ಮಾತನಾಡುವಾಗ ಒತ್ತಿ ಹಿಡಿಯಿರಿ",
+              careful: "AI ಅನುವಾದ. ಯಾವುದೇ ಮುಖ್ಯ ವಿಷಯಕ್ಕೆ, ದಯವಿಟ್ಟು ಅದನ್ನು ಲಿಖಿತವಾಗಿಯೂ ಪಡೆಯಿರಿ."),
+        .init(code: "kk", nativeName: "Қазақша", englishName: "Kazakh",
+              aiLabel: "ЖИ аудармасы · қателер болуы мүмкін",
+              hello: "Сәлеметсіз бе, мен Doddy, осы телефондағы жасанды интеллект аудармашысымын. Сіздердің екеуіңіздің араңызда аударма жасаймын. Әдеттегідей сөйлей беріңіз.",
+              holdToTalk: "Сөйлеген кезде басып тұрыңыз",
+              careful: "ЖИ аудармасы. Маңызды мәселелер бойынша оны жазбаша түрде де алыңыз."),
+        .init(code: "ky", nativeName: "Кыргызча", englishName: "Kyrgyz",
+              aiLabel: "ЖИ котормосу · катачылыктар болушу мүмкүн",
+              hello: "Саламатсызбы, мен Doddy, ушул телефондогу жасалма интеллект котормочусумун. Силер экөөңөрдүн ортоңордо которуп берем. Кадимкидей сүйлөй бериңиз.",
+              holdToTalk: "Сүйлөп жатканда басып туруңуз",
+              careful: "ЖИ котормосу. Маанилүү маселелер боюнча, сураныч, аны жазуу түрүндө да алыңыз."),
+        .init(code: "ml", nativeName: "മലയാളം", englishName: "Malayalam",
+              aiLabel: "AI വിവർത്തനം · തെറ്റുകൾ ഉണ്ടാകാം",
+              hello: "നമസ്കാരം, ഞാൻ Doddy, ഈ ഫോണിലെ ഒരു AI വിവർത്തകൻ. നിങ്ങൾ രണ്ടുപേർക്കുമിടയിൽ ഞാൻ വിവർത്തനം ചെയ്യും. ദയവായി സാധാരണപോലെ സംസാരിക്കൂ.",
+              holdToTalk: "സംസാരിക്കുമ്പോൾ അമർത്തിപ്പിടിക്കുക",
+              careful: "AI വിവർത്തനം. പ്രധാനപ്പെട്ട കാര്യങ്ങൾക്ക്, ദയവായി അത് എഴുതിയും വാങ്ങുക."),
+        .init(code: "mi", nativeName: "Te Reo Māori", englishName: "Māori",
+              aiLabel: "Whakamāori AI · tērā pea he hapa kei roto",
+              hello: "Kia ora, ko Doddy ahau, he kaiwhakamāori AI i tēnei waea. Ka whakamāori ahau i waenganui i a kōrua. Kōrero noa mai.",
+              holdToTalk: "Pēhia roatia i a koe e kōrero ana",
+              careful: "Whakamāori AI. Mō ngā take nui, tonoa kia tuhia hoki."),
+        .init(code: "mr", nativeName: "मराठी", englishName: "Marathi",
+              aiLabel: "AI भाषांतर · यात चुका असू शकतात",
+              hello: "नमस्कार, मी Doddy आहे, या फोनवरील AI भाषांतरकार. मी तुम्हा दोघांमध्ये भाषांतर करेन. कृपया नेहमीसारखे बोला.",
+              holdToTalk: "बोलताना दाबून ठेवा",
+              careful: "AI भाषांतर. कोणत्याही महत्त्वाच्या गोष्टीसाठी, कृपया ती लेखी स्वरूपातही घ्या."),
+        .init(code: "mn", nativeName: "Монгол", englishName: "Mongolian",
+              aiLabel: "Хиймэл оюуны орчуулга · алдаа гарч болзошгүй",
+              hello: "Сайн байна уу, би Doddy, энэ утсан дээрх хиймэл оюун ухаант орчуулагч. Би та хоёрын хооронд орчуулна. Энгийнээр ярина уу.",
+              holdToTalk: "Ярьж байхдаа дарж барина уу",
+              careful: "Хиймэл оюуны орчуулга. Чухал зүйлийн хувьд үүнийг бичгээр бас авна уу."),
+        .init(code: "ne", nativeName: "नेपाली", englishName: "Nepali",
+              aiLabel: "AI अनुवाद · गल्ती हुन सक्छ",
+              hello: "नमस्ते, म Doddy हुँ, यो फोनमा रहेको AI अनुवादक। म तपाईं दुई जनाको बीचमा अनुवाद गर्नेछु। कृपया सामान्य रूपमा बोल्नुहोस्।",
+              holdToTalk: "बोल्दा थिचिराख्नुहोस्",
+              careful: "AI अनुवाद। कुनै पनि महत्त्वपूर्ण कुराको लागि, कृपया लिखित रूपमा पनि लिनुहोस्।"),
+        .init(code: "oc", nativeName: "Occitan", englishName: "Occitan",
+              aiLabel: "Traduccion per IA · pòt conténer d'errors",
+              hello: "Adieu, soi Doddy, un traductor d'IA sus aqueste telefòn. Vau traduire entre vosautres dos. Parlatz normalament.",
+              holdToTalk: "Tenètz quichat mentre que parlatz",
+              careful: "Traduccion per IA. Per quicòm d'important, demandatz-o tanben per escrich."),
+        .init(code: "or", nativeName: "ଓଡ଼ିଆ", englishName: "Odia",
+              aiLabel: "AI ଅନୁବାଦ · ଭୁଲ ରହିପାରେ",
+              hello: "ନମସ୍କାର, ମୁଁ Doddy, ଏହି ଫୋନରେ ଥିବା ଜଣେ AI ଅନୁବାଦକ। ମୁଁ ଆପଣ ଦୁହିଁଙ୍କ ମଧ୍ୟରେ ଅନୁବାଦ କରିବି। ଦୟାକରି ସାଧାରଣ ଭାବରେ କଥା ହୁଅନ୍ତୁ।",
+              holdToTalk: "କଥା କହିବା ସମୟରେ ଦବାଇ ରଖନ୍ତୁ",
+              careful: "AI ଅନୁବାଦ। ଗୁରୁତ୍ୱପୂର୍ଣ୍ଣ ବିଷୟ ପାଇଁ, ଦୟାକରି ଏହାକୁ ଲିଖିତ ଭାବରେ ମଧ୍ୟ ନିଅନ୍ତୁ।"),
+        .init(code: "ps", nativeName: "پښتو", englishName: "Pashto",
+              aiLabel: "د مصنوعي ځیرکتیا ژباړه · ښایي تېروتنې ولري",
+              hello: "سلام، زه Doddy یم، په دې تلیفون کې د مصنوعي ځیرکتیا ژباړونکی. زه به ستاسو دواړو ترمنځ ژباړه وکړم. مهرباني وکړئ په عادي ډول خبرې وکړئ.",
+              holdToTalk: "د خبرو پر مهال یې ټینګ ونیسئ",
+              careful: "د مصنوعي ځیرکتیا ژباړه. د مهمو مسایلو لپاره، مهرباني وکړئ دا په لیکلي ډول هم واخلئ."),
+        .init(code: "pa", nativeName: "ਪੰਜਾਬੀ", englishName: "Punjabi",
+              aiLabel: "AI ਅਨੁਵਾਦ · ਇਸ ਵਿੱਚ ਗਲਤੀਆਂ ਹੋ ਸਕਦੀਆਂ ਹਨ",
+              hello: "ਸਤ ਸ੍ਰੀ ਅਕਾਲ, ਮੈਂ Doddy ਹਾਂ, ਇਸ ਫ਼ੋਨ 'ਤੇ ਇੱਕ AI ਅਨੁਵਾਦਕ। ਮੈਂ ਤੁਹਾਡੇ ਦੋਵਾਂ ਵਿਚਕਾਰ ਅਨੁਵਾਦ ਕਰਾਂਗਾ। ਕਿਰਪਾ ਕਰਕੇ ਆਮ ਵਾਂਗ ਬੋਲੋ।",
+              holdToTalk: "ਬੋਲਦੇ ਸਮੇਂ ਦਬਾ ਕੇ ਰੱਖੋ",
+              careful: "AI ਅਨੁਵਾਦ। ਕਿਸੇ ਵੀ ਜ਼ਰੂਰੀ ਗੱਲ ਲਈ, ਕਿਰਪਾ ਕਰਕੇ ਇਸ ਨੂੰ ਲਿਖਤੀ ਰੂਪ ਵਿੱਚ ਵੀ ਲਓ।"),
+        .init(code: "sd", nativeName: "سنڌي", englishName: "Sindhi",
+              aiLabel: "AI ترجمو · ان ۾ غلطيون ٿي سگهن ٿيون",
+              hello: "هيلو، مان Doddy آهيان، هن فون تي هڪ AI ترجمان. مان توهان ٻنهي جي وچ ۾ ترجمو ڪندس. مهرباني ڪري عام طرح ڳالهايو.",
+              holdToTalk: "ڳالهائڻ وقت دٻائي رکو",
+              careful: "AI ترجمو. ڪنهن به اهم ڳالهه لاءِ، مهرباني ڪري ان کي لکت ۾ به وٺو."),
+        .init(code: "so", nativeName: "Soomaali", englishName: "Somali",
+              aiLabel: "Turjumaad AI · waxaa laga yaabaa inay khaldan tahay",
+              hello: "Salaan, waxaan ahay Doddy, turjumaan AI ah oo ku jira taleefankan. Waxaan idinka dhex turjumi doonaa labadiinna. Fadlan si caadi ah u hadla.",
+              holdToTalk: "Riix oo hay inta aad hadlayso",
+              careful: "Turjumaad AI. Wax kasta oo muhiim ah, fadlan sidoo kale qoraal ahaan u qaado."),
+        .init(code: "tg", nativeName: "Тоҷикӣ", englishName: "Tajik",
+              aiLabel: "Тарҷумаи зеҳни сунъӣ · метавонад хато дошта бошад",
+              hello: "Салом, ман Doddy ҳастам, тарҷумони зеҳни сунъӣ дар ин телефон. Ман байни шумо ду нафар тарҷума мекунам. Лутфан муқаррарӣ гап занед.",
+              holdToTalk: "Ҳангоми гап задан пахш карда нигоҳ доред",
+              careful: "Тарҷумаи зеҳни сунъӣ. Барои масъалаҳои муҳим, лутфан онро хаттӣ ҳам гиред."),
+        .init(code: "ta", nativeName: "தமிழ்", englishName: "Tamil",
+              aiLabel: "AI மொழிபெயர்ப்பு · பிழைகள் இருக்கலாம்",
+              hello: "வணக்கம், நான் Doddy, இந்த போனில் உள்ள AI மொழிபெயர்ப்பாளர். உங்கள் இருவருக்கும் இடையே நான் மொழிபெயர்ப்பேன். தயவுசெய்து இயல்பாகப் பேசுங்கள்.",
+              holdToTalk: "பேசும்போது அழுத்திப் பிடிக்கவும்",
+              careful: "AI மொழிபெயர்ப்பு. முக்கியமான எதற்கும், தயவுசெய்து அதை எழுத்து மூலமாகவும் பெறுங்கள்."),
+        .init(code: "te", nativeName: "తెలుగు", englishName: "Telugu",
+              aiLabel: "AI అనువాదం · తప్పులు ఉండవచ్చు",
+              hello: "నమస్కారం, నేను Doddy, ఈ ఫోన్‌లోని AI అనువాదకుడిని. మీ ఇద్దరి మధ్య నేను అనువదిస్తాను. దయచేసి మామూలుగా మాట్లాడండి.",
+              holdToTalk: "మాట్లాడేటప్పుడు నొక్కి పట్టుకోండి",
+              careful: "AI అనువాదం. ముఖ్యమైన విషయాల కోసం, దయచేసి దాన్ని రాతపూర్వకంగా కూడా తీసుకోండి."),
+        .init(code: "uz", nativeName: "Oʻzbekcha", englishName: "Uzbek",
+              aiLabel: "Sunʼiy intellekt tarjimasi · xatolar boʻlishi mumkin",
+              hello: "Salom, men Doddy, ushbu telefondagi sunʼiy intellekt tarjimoniman. Sizlar ikkingiz oʻrtasida tarjima qilaman. Iltimos, odatdagidek gapiring.",
+              holdToTalk: "Gapirayotganda bosib turing",
+              careful: "Sunʼiy intellekt tarjimasi. Muhim masalalar uchun, iltimos, uni yozma ravishda ham oling."),
+        .init(code: "yo", nativeName: "Yorùbá", englishName: "Yoruba",
+              aiLabel: "Ìtumọ̀ AI · ó lè ní àṣìṣe",
+              hello: "Ẹ n lẹ́, èmi ni Doddy, olùtúmọ̀ AI lórí fóònù yìí. Màá ṣe ìtumọ̀ láàrin ẹ̀yin méjèèjì. Ẹ jọ̀ọ́, ẹ sọ̀rọ̀ bí ẹ ṣe máa ń sọ.",
+              holdToTalk: "Tẹ̀ ẹ́ mọ́lẹ̀ nígbà tí o bá ń sọ̀rọ̀",
+              careful: "Ìtumọ̀ AI. Fún ohunkóhun tó ṣe pàtàkì, ẹ jọ̀ọ́ ẹ gbà á ní ìwé pẹ̀lú."),
+        // Seven more ElevenLabs accepts as agent languages (its own list, read from a refusal on 12 Nov 2026);
+        // it refused Lingala, Cebuano and Chichewa, so they are not here.
+        .init(code: "am", nativeName: "አማርኛ", englishName: "Amharic",
+              aiLabel: "የAI ትርጉም · ስህተቶች ሊኖሩት ይችላሉ",
+              hello: "ሰላም፣ እኔ Doddy ነኝ፣ በዚህ ስልክ ላይ ያለ የAI ተርጓሚ። በሁለታችሁ መካከል እተረጉማለሁ። እባክዎ እንደተለመደው ይናገሩ።",
+              holdToTalk: "በሚናገሩበት ጊዜ ተጭነው ይያዙ",
+              careful: "የAI ትርጉም። ለማንኛውም አስፈላጊ ጉዳይ፣ እባክዎ በጽሑፍም ይቀበሉት።"),
+        .init(code: "lo", nativeName: "ລາວ", englishName: "Lao",
+              aiLabel: "ການແປໂດຍ AI · ອາດມີຂໍ້ຜິດພາດ",
+              hello: "ສະບາຍດີ, ຂ້ອຍແມ່ນ Doddy, ນັກແປ AI ໃນໂທລະສັບນີ້. ຂ້ອຍຈະແປລະຫວ່າງທ່ານທັງສອງ. ກະລຸນາເວົ້າຕາມປົກກະຕິ.",
+              holdToTalk: "ກົດຄ້າງໄວ້ໃນຂະນະທີ່ເວົ້າ",
+              careful: "ການແປໂດຍ AI. ສຳລັບເລື່ອງສຳຄັນ, ກະລຸນາຂໍເປັນລາຍລັກອັກສອນນຳ."),
+        .init(code: "lg", nativeName: "Luganda", englishName: "Luganda",
+              aiLabel: "Okuvvuunula kwa AI · kuyinza okubaamu ensobi",
+              hello: "Gyebale ko, nze Doddy, omuvvuunuzi wa AI ku ssimu eno. Nja kuvvuunula wakati wammwe ababiri. Mwogere nga bwe mwogera bulijjo.",
+              holdToTalk: "Kwata nga oyogera",
+              careful: "Okuvvuunula kwa AI. Ku nsonga enkulu, musabe era bibawandiikirwe."),
+        .init(code: "sn", nativeName: "chiShona", englishName: "Shona",
+              aiLabel: "Shanduro yeAI · inogona kuva nezvikanganiso",
+              hello: "Mhoro, ndini Doddy, muturikiri weAI parunhare urwu. Ndichashandura pakati penyu mese vaviri. Ndapota taurai sezvamunogara muchiita.",
+              holdToTalk: "Dzvanya ubate paunenge uchitaura",
+              careful: "Shanduro yeAI. Pazvinhu zvakakosha, ndapota kumbirai zvinyorwe zvakare."),
+        .init(code: "ckb", nativeName: "کوردی", englishName: "Central Kurdish",
+              aiLabel: "وەرگێڕانی AI · لەوانەیە هەڵەی تێدا بێت",
+              hello: "سڵاو، من Doddyم، وەرگێڕێکی AI لەسەر ئەم مۆبایلە. لە نێوان ئێوەی دوو کەس وەرگێڕان دەکەم. تکایە بە شێوەی ئاسایی قسە بکەن.",
+              holdToTalk: "لە کاتی قسەکردندا دایگرە",
+              careful: "وەرگێڕانی AI. بۆ هەر شتێکی گرنگ، تکایە بە نووسینیش وەریبگرن."),
+        .init(code: "wo", nativeName: "Wolof", englishName: "Wolof",
+              aiLabel: "Firi AI · man na am ay njuumte",
+              hello: "Salaam aleekum, maa ngi tudd Doddy, tekkikat AI ci telefon bii. Dinaa tekki ci seen diggante ñoom ñaar. Waxleen ni ngeen di wax.",
+              holdToTalk: "Bësal te téye ba ngay wax",
+              careful: "Firi AI. Ngir lu am solo, baaleen ñu bind leen ko itam."),
+        .init(code: "zu", nativeName: "isiZulu", englishName: "Zulu",
+              aiLabel: "Ukuhumusha kwe-AI · kungase kube namaphutha",
+              hello: "Sawubona, nginguDoddy, umhumushi we-AI kulolu cingo. Ngizohumusha phakathi kwenu nobabili. Sicela nikhulume njengokujwayelekile.",
+              holdToTalk: "Bamba ngenkathi ukhuluma",
+              careful: "Ukuhumusha kwe-AI. Kunoma yini ebalulekile, sicela uyithole nangokubhaliwe."),
     ]
+
+    /// How many languages the translator speaks: 89 since 12 Nov 2026, the 37 European ones of ADR-212 and
+    /// every other language ElevenLabs accepts as an agent language (not Basque, Albanian, Lingala, Cebuano or Chichewa).
+    public static var count: Int { all.count }
 
     private static let byCode = Dictionary(uniqueKeysWithValues: all.map { ($0.code, $0) })
 
-    /// A two-letter code, case-insensitive ("nb" and "nn" are read as Norwegian). Nil when Doddy doesn't speak it.
+    /// Older or other codes for the same language: "nb"/"nn" Norwegian, "iw" Hebrew, "in" Indonesian,
+    /// "tl" Tagalog as Filipino, "cmn" Mandarin as Chinese.
+    private static let aliases = ["nb": "no", "nn": "no", "iw": "he", "in": "id", "tl": "fil", "cmn": "zh"]
+
+    /// A language code (two letters, or ElevenLabs' three for Filipino, Asturian, Cantonese and Central Kurdish),
+    /// case-insensitive. Nil when Doddy doesn't speak it.
     public static func named(_ code: String) -> TranslatorLanguage? {
         let key = code.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        if key == "nb" || key == "nn" { return byCode["no"] }
-        return byCode[key]
+        return byCode[aliases[key] ?? key]
     }
 
     public static var english: TranslatorLanguage { byCode["en"]! }
@@ -291,7 +572,8 @@ public struct TranslatorSetup: Equatable, Sendable {
 
     /// What the agent hears about the mode, in the `translator_start` variable or the tool reply.
     public var agentDescription: String {
-        let theirs = other.map { "\($0.englishName) (\($0.code))" } ?? "not known yet: detect it when they speak"
+        let theirs = other.map { "\($0.englishName) (\($0.code))" }
+            ?? "not known yet: the first language you hear that isn't \(owner.englishName) is theirs"
         switch kind {
         case .faceToFace:
             return "face to face. The user speaks \(owner.englishName) (\(owner.code)); the other person speaks \(theirs)."
@@ -308,11 +590,67 @@ public enum TranslatorPrompt {
 
     public static func render(_ preset: TranslatorSetup?) -> String {
         guard let preset else { return "none" }
-        var text = "Translator mode is on from the start: \(preset.agentDescription)"
-        if preset.kind == .faceToFace, let other = preset.other {
-            text += " When the app says so, first say exactly this to them, in \(other.englishName): \"\(other.hello)\""
-        }
+        // 9 Nov 2026 (owner: "słyszy obcego i od razu tłumaczy na polski"): the conversation log showed
+        // Doddy calling start_translator again, being refused and talking about it in English instead of
+        // translating. Then (owner: "niech nic nie mówi, zmień zasady"): Doddy says nothing of his own,
+        // no greeting, no spoken disclosure, no question; their half of the screen shows the AI label.
+        // 12 Nov 2026, live test conversations (decision 2026-11-12-translator-more-languages): asked
+        // "where is the nearest pharmacy?", the agent called find_places and answered instead of translating,
+        // and said a Thai reply again in Thai. The interpreter rule now comes first, with that example.
+        var text = preset.interpreterOnly + " Translator mode is on from the start: \(preset.agentDescription)"
+        text += " It is already on: never call start_translator, and never talk about the mode. " + silentStart
+        text += " From the first word, " + preset.directions
+        text += " " + preset.nothingIsForYou
         return text
+    }
+
+    /// The owner's rule of 9 Nov 2026, said where it replaces the prompt's older lines.
+    static let silentStart = "Say nothing of your own: no greeting, no AI translator disclosure, no question about what to translate (this replaces those lines below; the other person's half of the screen shows, in their language, that this is an AI translation). Wait in silence until someone speaks."
+
+    /// What Doddy says first in a conversation opened for translating (`{{opening_line}}`): nothing
+    /// (owner, 9 Nov 2026: "niech nic nie mówi"). An empty first message makes the agent wait for
+    /// someone to speak.
+    public static func openingLine(_ setup: TranslatorSetup) -> String { "" }
+}
+
+extension TranslatorSetup {
+    /// Said first: nothing is for Doddy, with the example the live agent got wrong (12 Nov 2026).
+    var interpreterOnly: String {
+        switch kind {
+        case .faceToFace:
+            let theirs = other?.englishName ?? "the other person's language"
+            return "YOU ARE ONLY AN INTERPRETER NOW. Everything you hear is said to the other person, never to you. When the user asks \"where is the nearest pharmacy?\", you say that same question in \(theirs) and nothing else: you don't look it up, don't call any tool, don't say you are checking, don't answer."
+        case .listen:
+            return "YOU ARE ONLY AN INTERPRETER NOW. Nothing you hear is said to you: you translate it into \(owner.englishName) for the user, and never answer it, look anything up or call a tool."
+        }
+    }
+
+    /// Questions and requests are translated, never acted on; nothing is said again in its own language;
+    /// after a refused tool, the line is translated at once.
+    var nothingIsForYou: String {
+        let owner = self.owner.englishName
+        switch kind {
+        case .listen:
+            return "Never say a line again in the language it was said in: everything becomes \(owner). If you called a tool anyway and the app refused it, translate what was said into \(owner) at once and say nothing else."
+        case .faceToFace:
+            let theirs = other?.englishName ?? "their language"
+            return "Nothing anyone says is meant for you: a question or a request (\"where is…\", \"can you…\", \"call…\") is translated for the other person, never answered or acted on, and you call no tool (the app refuses them all). Never say a line again in the language it was said in: \(theirs) always becomes \(owner), \(owner) always becomes \(theirs). If you called a tool anyway and the app refused it, what was said was for the other person: translate it at once (\(owner) into \(theirs), \(theirs) into \(owner)) and say nothing else."
+        }
+    }
+
+    /// Which way each line goes, said plainly for the agent. With their language unknown, the user's
+    /// own first words go into English (or Polish for an English speaker) until the other person speaks.
+    var directions: String {
+        let owner = self.owner.englishName
+        switch (kind, other) {
+        case (.listen, _):
+            return "translate everything you hear into \(owner) for the user, one short line at a time, as soon as each sentence ends. Say nothing else."
+        case (.faceToFace, let other?):
+            return "translate every turn as soon as it ends: \(owner) into \(other.englishName), \(other.englishName) into \(owner). Say only the translation."
+        case (.faceToFace, nil):
+            let fallback = self.owner == TranslatorLanguages.english ? TranslatorLanguages.named("pl")! : TranslatorLanguages.english
+            return "translate every turn as soon as it ends. When the other person speaks, translate what they said into \(owner). When the user speaks \(owner), translate it into the other person's language; until you have heard it, into \(fallback.englishName). Say only the translation."
+        }
     }
 }
 
@@ -358,14 +696,14 @@ extension VoiceToolRequest {
         var theirs: TranslatorLanguage?
         if theirRaw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() != "detect" {
             guard let language = TranslatorLanguages.named(theirRaw) else {
-                return .invalid(name: name, reason: "their_language must be one of Doddy's 37 language codes, or detect")
+                return .invalid(name: name, reason: "their_language must be one of Doddy's \(TranslatorLanguages.count) language codes, or detect")
             }
             theirs = language
         }
         var yours: TranslatorLanguage?
         if let yourRaw = args.text("your_language") {
             guard let language = TranslatorLanguages.named(yourRaw) else {
-                return .invalid(name: name, reason: "your_language must be one of Doddy's 37 language codes")
+                return .invalid(name: name, reason: "your_language must be one of Doddy's \(TranslatorLanguages.count) language codes")
             }
             yours = language
         }
@@ -379,9 +717,13 @@ extension VoiceToolRequest {
 /// While translator mode is on, the app runs no tool: no notes, reminders, calendar, contacts,
 /// accounts or web. Only stop_translator is answered.
 public enum TranslatorPolicy {
+    /// stop_translator, and start_translator, which is answered "already on" (`translatorAlreadyOn`)
+    /// so the agent keeps translating instead of explaining a refusal.
     public static func allows(_ request: VoiceToolRequest) -> Bool {
-        if case .stopTranslator = request { return true }
-        return false
+        switch request {
+        case .stopTranslator, .startTranslator: return true
+        default: return false
+        }
     }
 }
 
@@ -390,23 +732,21 @@ extension VoiceToolReply {
     public static func translatorStarted(_ setup: TranslatorSetup) -> String {
         var lines = ["started: translator mode is on, \(setup.agentDescription) From now on follow the Translator mode rules: translate, never answer; the app runs no tools until it ends."]
         switch (setup.kind, setup.other) {
-        case (.faceToFace, let other?):
-            lines.append("First say exactly this to them, in \(other.englishName): \"\(other.hello)\" Then translate every turn.")
-            // ADR-619: it started without asking, so the user may not have said what yet.
-            lines.append(Self.askWhatToTranslate(setup.owner))
-        case (.faceToFace, nil):
-            lines.append("Their language isn't known yet. Tell the user in one short sentence, in \(setup.owner.englishName), to let them say something first. When they first speak, say the AI translator disclosure to them in their language before anything else, then translate.")
+        case (.faceToFace, _):
+            // Owner, 9 Nov 2026: no spoken disclosure and no "what should I translate?" (replaces ADR-619 here).
+            lines.append(TranslatorPrompt.silentStart + " Then " + setup.directions)
+            lines.append(setup.nothingIsForYou)
         case (.listen, _):
             lines.append("Say nothing to anyone else. Translate each thing you hear into \(setup.owner.englishName) for the user, one short line at a time.")
+            lines.append(setup.nothingIsForYou)
         }
         return lines.joined(separator: " ")
     }
 
-    /// ADR-619 (owner, 24 Oct 2026): translator mode starts without asking; if the user hasn't
-    /// said what to translate, Doddy asks, once, in their own language.
-    static func askWhatToTranslate(_ owner: TranslatorLanguage) -> String {
-        "If the user hasn't said yet what to translate, ask them once, in \(owner.englishName), in one short line, what to translate"
-            + (owner.code == "pl" ? " (for example \"Co mam przetłumaczyć?\")" : "") + "; then only translate."
+    /// start_translator while the mode is on: nothing changes, and the agent goes on translating.
+    public static func translatorAlreadyOn(_ setup: TranslatorSetup) -> String {
+        "started: translator mode is already on, \(setup.agentDescription) Nothing changed. Don't mention it and don't call start_translator again; "
+            + setup.directions + " " + setup.nothingIsForYou
     }
 
     public static let translatorDeclined = "declined: the user chose not to start translating. Nothing changed; talk normally."
@@ -415,8 +755,10 @@ extension VoiceToolReply {
 
     /// Any tool asked for while translating. The tool's name is the agent's own text, so it
     /// follows as data (ToolData).
+    /// 12 Nov 2026: after the old "Keep translating", the live agent asked the user which town they meant
+    /// instead of translating their question; this wording got the translation said in the live checks.
     public static func translatorRefused(_ name: String) -> String {
-        "refused: translator mode is on, so the app doesn't run the tool below or any other tool. Nothing was looked up, saved or changed. Keep translating; the user can end translator mode on screen or by saying stop translating.\n"
+        "refused: translator mode is on, so the app doesn't run the tool below or any other tool. Nothing was looked up, saved or changed. What was just said was meant for the other person, not for you: translate it now into the other language and say nothing else. Don't answer it and don't ask about it.\n"
             + ToolData.block([quoted("Tool", name)])
     }
 }
@@ -450,7 +792,7 @@ public enum LanguageGuess {
         let lower = text.lowercased()
         let script = Script.of(lower)
         let profile = profiles[code] ?? Profile(script: .latin, letters: "", words: [])
-        if script != .unknown, script != profile.script, !(code == "sr" && script == .cyrillic) { return 0 }
+        if script != .unknown, script != profile.script, !profile.also.contains(script) { return 0 }
         var points = script == profile.script && script != .latin ? 3 : 0
         points += lower.unicodeScalars.filter { profile.letters.unicodeScalars.contains($0) }.count
         let words = lower.split { !$0.isLetter && $0 != "'" && $0 != "’" }.map(String.init)
@@ -458,28 +800,71 @@ public enum LanguageGuess {
         return points
     }
 
-    enum Script: Equatable { case latin, cyrillic, greek, unknown
+    enum Script: Hashable {
+        case latin, cyrillic, greek, arabic, hebrew, devanagari, bengali, thai, georgian, hangul, kana, han
+        case armenian, myanmar, gurmukhi, gujarati, odia, tamil, telugu, kannada, malayalam, ethiopic, lao, unknown
+        /// On a tie the first wins, Latin last (as before 12 Nov 2026: Cyrillic, then Greek, then Latin).
+        private static let order: [Script] = [.cyrillic, .greek, .arabic, .hebrew, .devanagari, .bengali, .thai, .georgian, .hangul, .kana, .han,
+                                              .armenian, .myanmar, .gurmukhi, .gujarati, .odia, .tamil, .telugu, .kannada, .malayalam,
+                                              .ethiopic, .lao, .latin]
+
         static func of(_ text: String) -> Script {
-            var latin = 0, cyrillic = 0, greek = 0
+            var counts: [Script: Int] = [:]
             for scalar in text.unicodeScalars where scalar.properties.isAlphabetic {
-                switch scalar.value {
-                case 0x0400...0x04FF: cyrillic += 1
-                case 0x0370...0x03FF, 0x1F00...0x1FFF: greek += 1
-                case 0x0041...0x024F: latin += 1
-                default: break
-                }
+                if let script = script(of: scalar.value) { counts[script, default: 0] += 1 }
             }
-            let top = max(latin, cyrillic, greek)
+            let top = counts.values.max() ?? 0
             if top == 0 { return .unknown }
-            return top == cyrillic ? .cyrillic : top == greek ? .greek : .latin
+            // Japanese writes kanji between its kana; Chinese never uses kana.
+            if let kana = counts[.kana], kana + (counts[.han] ?? 0) >= top { return .kana }
+            return order.first { counts[$0] == top } ?? .unknown
+        }
+
+        private static func script(of value: UInt32) -> Script? {
+            switch value {
+            case 0x0400...0x04FF: .cyrillic
+            case 0x0370...0x03FF, 0x1F00...0x1FFF: .greek
+            // Latin Extended Additional holds Vietnamese letters such as ạ, ế and ự.
+            case 0x0041...0x024F, 0x1E00...0x1EFF: .latin
+            case 0x0600...0x06FF, 0x0750...0x077F, 0x08A0...0x08FF, 0xFB50...0xFDFF, 0xFE70...0xFEFF: .arabic
+            case 0x0590...0x05FF, 0xFB1D...0xFB4F: .hebrew
+            case 0x0900...0x097F: .devanagari
+            case 0x0980...0x09FF: .bengali
+            case 0x0E00...0x0E7F: .thai
+            case 0x10A0...0x10FF, 0x1C90...0x1CBF, 0x2D00...0x2D2F: .georgian
+            case 0x1100...0x11FF, 0x3130...0x318F, 0xAC00...0xD7AF: .hangul
+            case 0x3040...0x30FF, 0x31F0...0x31FF, 0xFF66...0xFF9F: .kana
+            case 0x3400...0x4DBF, 0x4E00...0x9FFF, 0xF900...0xFAFF, 0x20000...0x2FA1F: .han
+            case 0x0530...0x058F, 0xFB13...0xFB17: .armenian
+            case 0x1000...0x109F: .myanmar
+            case 0x0A00...0x0A7F: .gurmukhi
+            case 0x0A80...0x0AFF: .gujarati
+            case 0x0B00...0x0B7F: .odia
+            case 0x0B80...0x0BFF: .tamil
+            case 0x0C00...0x0C7F: .telugu
+            case 0x0C80...0x0CFF: .kannada
+            case 0x0D00...0x0D7F: .malayalam
+            case 0x1200...0x139F, 0x2D80...0x2DDF: .ethiopic
+            case 0x0E80...0x0EFF: .lao
+            default: nil
+            }
         }
     }
 
     struct Profile {
         let script: Script
-        /// Letters that point to this language among European ones.
+        /// Other scripts the language is also written in: Serbian in Cyrillic, Japanese in kanji alone.
+        let also: Set<Script>
+        /// Letters that point to this language among the others in its script.
         let letters: String
         let words: Set<String>
+
+        init(script: Script, also: Set<Script> = [], letters: String, words: Set<String>) {
+            self.script = script
+            self.also = also
+            self.letters = letters
+            self.words = words
+        }
     }
 
     static let profiles: [String: Profile] = [
@@ -510,7 +895,7 @@ public enum LanguageGuess {
         "tr": .init(script: .latin, letters: "ğış", words: ["ve", "bir", "bu", "ne", "nerede", "kaç", "teşekkür", "lütfen", "değil", "ben", "siz", "mi", "var"]),
         "et": .init(script: .latin, letters: "õ", words: ["ja", "on", "ma", "sa", "see", "ei", "kus", "kui", "palju", "aitäh", "palun", "mis"]),
         "ca": .init(script: .latin, letters: "·", words: ["el", "la", "els", "les", "i", "és", "que", "de", "no", "on", "quant", "gràcies", "si", "us", "plau", "amb"]),
-        "sr": .init(script: .latin, letters: "čćđšžђћјљњџ", words: ["je", "i", "se", "na", "da", "šta", "gde", "koliko", "hvala", "molim", "nije", "sam", "шта", "где", "хвала"]),
+        "sr": .init(script: .latin, also: [.cyrillic], letters: "čćđšžђћјљњџ", words: ["je", "i", "se", "na", "da", "šta", "gde", "koliko", "hvala", "molim", "nije", "sam", "шта", "где", "хвала"]),
         "is": .init(script: .latin, letters: "ðþæ", words: ["og", "er", "ég", "þú", "það", "ekki", "hvar", "hvað", "takk", "við"]),
         "ga": .init(script: .latin, letters: "", words: ["agus", "is", "tá", "an", "na", "ní", "cá", "conas", "go", "raibh", "maith", "agat", "dia"]),
         "mt": .init(script: .latin, letters: "ċġħ", words: ["u", "huwa", "hija", "il", "ma", "jien", "int", "fejn", "kemm", "grazzi", "jekk"]),
@@ -520,6 +905,72 @@ public enum LanguageGuess {
         "cy": .init(script: .latin, letters: "ŵŷ", words: ["ac", "yn", "y", "mae", "dw", "chi", "ble", "faint", "diolch", "os", "gwelwch"]),
         "gl": .init(script: .latin, letters: "ñ", words: ["o", "os", "as", "e", "é", "que", "de", "non", "onde", "canto", "grazas", "ola", "vostede"]),
         "lb": .init(script: .latin, letters: "ë", words: ["an", "ass", "net", "ech", "du", "mir", "wou", "wéi", "vill", "merci", "mat"]),
+        // 12 Nov 2026. A script of its own is enough for most; Arabic, Persian and Urdu share one, so
+        // their own letters decide: Arabic ي ك ة; Persian and Urdu share پ چ گ ک ی, then Persian writes
+        // ه where Urdu writes ہ, and only Urdu has ٹ ڈ ڑ ں ے. Latin-script
+        // words that are common in a European language ("po", "na", "di", "sa", "em") are left out, so
+        // an owner's Polish line is never taken for the other person's.
+        // Bengali writes র where Assamese writes ৰ; Cantonese's own characters (嘅 唔 係 冇 哋) tell it from Mandarin.
+        "ar": .init(script: .arabic, letters: "ةىيكأإؤ", words: ["في", "من", "على", "هل", "هذا", "هذه", "أنا", "أنت", "شكرا", "شكراً", "كم", "أين", "ماذا", "نعم", "إلى", "لو", "سمحت"]),
+        "fa": .init(script: .arabic, letters: "پچژگکیه", words: ["است", "این", "آن", "من", "شما", "چه", "کجا", "چقدر", "ممنون", "مرسی", "بله", "می", "را", "که", "با", "هست", "خیلی", "لطفاً"]),
+        "ur": .init(script: .arabic, letters: "پچگکیٹڈڑںےھہ", words: ["ہے", "ہیں", "کیا", "میں", "آپ", "کہاں", "کتنا", "کتنے", "شکریہ", "نہیں", "جی", "ہاں", "کے", "کی", "کا", "اور", "یہ", "وہ"]),
+        "he": .init(script: .hebrew, letters: "", words: ["אני", "אתה", "את", "זה", "לא", "כן", "מה", "איפה", "כמה", "תודה", "בבקשה", "של", "עם", "יש", "אין"]),
+        // Characters only Chinese uses (no spaces to find words by).
+        "zh": .init(script: .han, letters: "的吗们这么没说谢吧您", words: []),
+        // Kana particles; kanji alone still counts as Japanese, but less than as Chinese.
+        "ja": .init(script: .kana, also: [.han], letters: "のはがをにでとも", words: []),
+        "ko": .init(script: .hangul, letters: "", words: ["안녕하세요", "감사합니다", "네", "아니요", "어디", "얼마", "저", "제가", "뭐", "있어요", "없어요", "주세요"]),
+        "hi": .init(script: .devanagari, letters: "", words: ["है", "हैं", "क्या", "मैं", "आप", "कहाँ", "कितना", "धन्यवाद", "नहीं", "हाँ", "का", "की", "के", "और", "यह"]),
+        "bn": .init(script: .bengali, letters: "র", words: ["আমি", "আপনি", "কি", "কোথায়", "কত", "ধন্যবাদ", "না", "হ্যাঁ", "এটা", "আছে"]),
+        "th": .init(script: .thai, letters: "", words: []),
+        "ka": .init(script: .georgian, letters: "", words: ["და", "არის", "მე", "თქვენ", "სად", "რამდენი", "მადლობა", "არა", "კი", "ეს"]),
+        "vi": .init(script: .latin, letters: "ơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ", words: ["không", "tôi", "bạn", "của", "có", "này", "ở", "đâu", "bao", "nhiêu", "cảm", "ơn", "được", "và", "anh", "chị", "gì"]),
+        // Indonesian and Malay share most words; the ones each uses alone decide, and a tie is no guess.
+        "id": .init(script: .latin, letters: "", words: ["yang", "ini", "itu", "tidak", "saya", "mana", "berapa", "terima", "kasih", "ada", "apa", "bisa", "tolong", "sudah", "belum", "kamu", "karena", "saja", "bagaimana"]),
+        "ms": .init(script: .latin, letters: "", words: ["yang", "ini", "itu", "tidak", "saya", "mana", "berapa", "terima", "kasih", "ada", "apa", "boleh", "tolong", "sudah", "belum", "awak", "mahu", "kerana", "sahaja", "bagaimana", "encik"]),
+        "fil": .init(script: .latin, letters: "", words: ["ang", "ng", "mga", "ikaw", "salamat", "saan", "magkano", "ito", "ba", "kayo", "opo", "oo", "naman", "siya", "kumusta"]),
+        "sw": .init(script: .latin, letters: "", words: ["kwa", "wa", "asante", "wapi", "ngapi", "mimi", "wewe", "hapana", "ndiyo", "habari", "tafadhali", "nini", "hii", "sana", "kuna"]),
+        // The 36 added later on 12 Nov 2026. Kazakh, Kyrgyz, Mongolian and Tajik by their own Cyrillic letters
+        // (Kyrgyz and Mongolian have none of their own, so words decide); Pashto and Sindhi by theirs; Marathi
+        // and Nepali, in Hindi's script, by their words. Common words of European languages are left out again
+        // ("na", "ora", "ma", "va", "men", "ha", "ne", "та", "би").
+        "af": .init(script: .latin, letters: "", words: ["ek", "jy", "julle", "baie", "dankie", "hoeveel", "asseblief", "hierdie"]),
+        "hy": .init(script: .armenian, letters: "", words: ["ես", "դուք", "որտեղ", "որքան", "շնորհակալություն", "այո", "ոչ", "և", "է"]),
+        "as": .init(script: .bengali, letters: "ৰৱ", words: ["মই", "আপুনি", "ক'ত", "কিমান", "নহয়", "হয়", "আছে"]),
+        "ast": .init(script: .latin, letters: "", words: ["ye", "nun", "gracies", "ónde", "cuántu", "soi", "nesti", "esti", "pue", "voi", "ente", "tamién"]),
+        "az": .init(script: .latin, letters: "ə", words: ["mən", "nə", "harada", "neçə", "təşəkkür", "zəhmət", "xahiş", "yox", "bəli", "və", "deyil"]),
+        "my": .init(script: .myanmar, letters: "", words: []),
+        "yue": .init(script: .han, letters: "嘅唔咗喺係冇啲佢嘢哋㩒嗰咩乜嚟俾", words: []),
+        "gu": .init(script: .gujarati, letters: "", words: []),
+        "ha": .init(script: .latin, letters: "ɓɗƙƴ", words: ["sannu", "nagode", "yaya", "nawa", "ina", "wannan", "allah", "magana", "kuma", "zan", "yi"]),
+        "jv": .init(script: .latin, letters: "", words: ["aku", "kowe", "iki", "iku", "ing", "karo", "mangga", "matur", "nuwun", "pira", "ngendi", "wis", "arep", "kanggo", "panjenengan"]),
+        "kn": .init(script: .kannada, letters: "", words: []),
+        "kk": .init(script: .cyrillic, letters: "әғқңөұү", words: ["және", "емес", "қалай", "қанша", "рахмет", "өтінемін", "сіз", "бұл", "қайда", "иә", "жоқ"]),
+        "ky": .init(script: .cyrillic, letters: "ңөү", words: ["жана", "эмес", "кандай", "канча", "рахмат", "сураныч", "сиз", "бул", "кайда", "ооба", "жок", "мен"]),
+        "ml": .init(script: .malayalam, letters: "", words: []),
+        "mi": .init(script: .latin, letters: "ō", words: ["kia", "ahau", "koe", "tēnā", "kei", "hea", "pēhea", "aroha", "atu", "ngā", "tēnei", "kōrua"]),
+        "mr": .init(script: .devanagari, letters: "ळ", words: ["आहे", "आहेत", "मी", "तुम्ही", "काय", "कुठे", "किती", "नाही", "आणि", "हे", "ते"]),
+        "mn": .init(script: .cyrillic, letters: "өү", words: ["байна", "энэ", "юу", "хаана", "хэд", "баярлалаа", "үгүй", "тийм", "болон"]),
+        "ne": .init(script: .devanagari, letters: "", words: ["छ", "छन्", "म", "तपाईं", "कति", "छैन", "यो", "मेरो", "हुन्छ"]),
+        "oc": .init(script: .latin, letters: "", words: ["soi", "sètz", "mercé", "mercés", "aquò", "òc", "aqueste", "aquesta", "vau", "parlatz", "sus"]),
+        "or": .init(script: .odia, letters: "", words: []),
+        "ps": .init(script: .arabic, letters: "ټډړښږځڅڼۍېګ", words: ["زه", "ته", "تاسو", "دا", "چېرته", "څومره", "مننه", "هو", "یم", "یې"]),
+        "pa": .init(script: .gurmukhi, letters: "", words: []),
+        "sd": .init(script: .arabic, letters: "ڄٻڀٽٺڊڍڏڙڦڪڳڱڻڇ۾ٿڌ", words: ["آهي", "آهيان", "مان", "توهان", "ڪٿي", "ڪيترو", "مهرباني"]),
+        "so": .init(script: .latin, letters: "", words: ["waxaan", "waa", "iyo", "maya", "haa", "fadlan", "mahadsanid", "xagee", "immisa", "aad", "ku", "oo", "waxa"]),
+        "tg": .init(script: .cyrillic, letters: "ӣӯҳҷғқ", words: ["ман", "шумо", "ин", "чӣ", "куҷо", "чанд", "ташаккур", "лутфан"]),
+        "ta": .init(script: .tamil, letters: "", words: []),
+        "te": .init(script: .telugu, letters: "", words: []),
+        "uz": .init(script: .latin, letters: "ʻʼ", words: ["nima", "qayerda", "qancha", "rahmat", "iltimos", "yoʻq", "emas", "bilan", "salom", "kerak", "yaxshi"]),
+        "yo": .init(script: .latin, letters: "ẹọṣ", words: ["báwo", "ibo", "kí", "wà", "èmi", "ìwọ"]),
+        "am": .init(script: .ethiopic, letters: "", words: []),
+        "lo": .init(script: .lao, letters: "", words: []),
+        "lg": .init(script: .latin, letters: "", words: ["nze", "ggwe", "gyebale", "webale", "nnyo", "ssebo", "nnyabo", "mwattu", "wano", "bulijjo"]),
+        "sn": .init(script: .latin, letters: "", words: ["ndini", "mhoro", "ndatenda", "maita", "zvakanaka", "ndapota", "kupi", "marii", "hongu", "kwete"]),
+        // Central Kurdish writes ە ێ ۆ ڕ ڵ, which Persian and Urdu don't.
+        "ckb": .init(script: .arabic, letters: "ڕڵۆێەڤ", words: ["تۆ", "ئێوە", "کوێ", "چەند", "سوپاس", "بەڵێ", "نەخێر", "ئەمە"]),
+        "wo": .init(script: .latin, letters: "", words: ["maa", "ngi", "dama", "bëgg", "jërëjëf", "ñaata", "waaw", "déedéet", "nanga", "yow", "ndax"]),
+        "zu": .init(script: .latin, letters: "", words: ["sawubona", "ngiyabonga", "yebo", "ngicela", "sicela", "kuphi", "malini", "wena", "futhi", "kodwa"]),
     ]
 }
 
@@ -669,6 +1120,19 @@ public enum CarefulTopics {
             "врач", "больниц", "лекарств", "лікар", "лікарн", "болниц", "лекар",
             "γιατρ", "νοσοκομ", "φάρμακ",
             "doktor", "hastane", "ilaç",
+            "obat", "ubat", "klinik", "ospital", "gamot", "daktari",
+            "의사", "병원", "약국", "처방", "알레르기", "구급차", "응급", "임신",
+            "डॉक्टर", "डाक्टर", "अस्पताल", "दवा", "एलर्जी", "एम्बुलेंस", "गर्भवती",
+            "ডাক্তার", "হাসপাতাল", "ওষুধ", "অ্যাম্বুলেন্স",
+            "ڈاکٹر", "ہسپتال", "اسپتال", "دوائی", "دکتر", "پزشک", "بیمارستان", "دارو",
+            "ექიმ", "საავადმყოფო", "წამალ", "აფთიაქ",
+            "hospitaal", "medisyne", "həkim", "xəstəxana", "dərman", "shifokor", "kasalxona", "dorixona",
+            "likita", "asibiti", "magani", "udokotela", "isibhedlela", "chiremba", "chipatara", "mushonga",
+            "omusawo", "eddwaliro", "eddagala", "doktoor", "loppitaan", "ሐኪም", "ሆስፒታል", "መድኃኒት", "دکتۆر", "نەخۆشخانە",
+            "dhakhtar", "isbitaal", "daawo", "tākuta", "hōhipera", "rongoā", "mètge", "espital", "médicu", "melecina",
+            "բժիշկ", "հիվանդանոց", "դեղատուն", "дәрігер", "аурухана", "дарыгер", "оорукана", "эмч", "эмнэлэг", "духтур", "беморхона",
+            "மருத்துவ", "డాక్టర్", "ఆసుపత్రి", "रुग्णालय", "ડૉક્ટર", "હોસ્પિટલ", "દવા", "ਡਾਕਟਰ", "ਹਸਪਤਾਲ", "ਦਵਾਈ",
+            "ವೈದ್ಯ", "ಡಾಕ್ಟರ್", "ಆಸ್ಪತ್ರೆ", "ഡോക്ടർ", "ആശുപത്രി", "മരുന്ന്", "औषधि", "ডাক্তৰ", "ଡାକ୍ତର", "ډاکټر", "روغتون", "درمل", "ڊاڪٽر",
         ],
         .law: [
             "police", "lawyer", "court", "arrest", "contract", "passport", "visa", "embassy",
@@ -680,6 +1144,16 @@ public enum CarefulTopics {
             "avvocat", "contratto",
             "advocaat", "advokat", "asianajaja", "ügyvéd", "odvjetnik", "advokát",
             "полици", "адвокат", "поліці", "αστυνομ", "δικηγόρ", "avukat",
+            "pengacara", "peguam", "pengadilan", "mahkamah", "paspor", "pulis", "wakili", "mahakama", "mkataba", "pasipoti",
+            "경찰", "변호사", "법원", "재판", "계약", "여권", "비자", "대사관",
+            "पुलिस", "वकील", "अदालत", "पासपोर्ट", "পুলিশ", "উকিল", "আদালত", "পাসপোর্ট",
+            "پولیس", "پلیس", "وکیل", "عدالت", "دادگاه", "پاسپورت",
+            "პოლიცი", "ადვოკატ", "სასამართლო", "ხელშეკრულებ", "პასპორტ", "ვიზა", "საელჩო",
+            "prokureur", "vəkil", "məhkəmə", "politsiya", "lauya", "kotu", "booliis",
+            "amaphoyisa", "iphoyisa", "ummeli", "mapurisa", "gweta", "poliisi", "looya", "ፖሊስ", "ጠበቃ", "پۆلیس", "پارێزەر",
+            "qareen", "maxkamad", "pirihimana", "rōia", "kōti", "abogáu",
+            "ոստիկան", "փաստաբան", "դատարան", "милиция", "милиса",
+            "காவல்", "పోలీస్", "पोलीस", "પોલીસ", "ਪੁਲਿਸ", "ਪੁਲੀਸ", "ಪೊಲೀಸ್", "പോലീസ്", "प्रहरी", "ପୋଲିସ", "وڪيل", "محکمه",
         ],
         .money: [
             "bank", "loan", "mortgage", "debt", "deposit",
@@ -690,22 +1164,69 @@ public enum CarefulTopics {
             "prestito", "debito", "mutuo",
             "lening", "schuld", "lån", "laina", "úvěr", "hitel",
             "кредит", "долг", "борг", "δάνει", "borç",
+            "pinjaman", "utang", "hutang", "bangko", "benki", "mkopo",
+            "은행", "대출", "빚", "보증금",
+            "बैंक", "कर्ज", "क़र्ज़", "ऋण", "ব্যাংক", "ঋণ",
+            "بینک", "بانک", "وام", "قرض", "بنك",
+            "ბანკ", "სესხ",
+            "skuld", "borc", "qarz", "bangi", "deyn", "bashi", "banki", "pēke", "prèst", "bancu", "préstamu",
+            "ibhange", "isikweletu", "bhangi", "chikwereti", "bbanka", "ebbanja", "ባንክ", "ብድር", "قەرز",
+            "բանկ", "վարկ", "несие", "қарыз", "насыя", "карыз", "қарз", "бонк",
+            "வங்கி", "கடன்", "బ్యాంక్", "બેંક", "ਬੈਂਕ", "ਕਰਜ਼", "ಬ್ಯಾಂಕ್", "ബാങ്ക്", "വായ്പ", "ବ୍ୟାଙ୍କ", "بئنڪ",
         ],
     ]
 
-    /// Everyday words a stem would wrongly catch ("polis", "polic", "policie", "pill").
+    /// Found anywhere in the text, not only at a word's start: Chinese, Japanese and Thai have no
+    /// spaces between words, Arabic and Hebrew join "the" and "in" to the front of a word
+    /// (المستشفى, בבית החולים), and some are two words (rumah sakit, bác sĩ). Long or rare enough not
+    /// to sit inside an everyday word: no Hebrew חוב (it is inside רחוב, street), no Thai ศาล (a shrine).
+    static let contained: [Topic: [String]] = [
+        .health: [
+            "医生", "大夫", "医院", "醫院", "药", "藥", "过敏", "救护车", "怀孕", "处方",
+            "医者", "病院", "薬", "アレルギー", "救急車", "妊娠", "処方",
+            "แพทย์", "โรงพยาบาล", "ร้านขายยา", "ใบสั่งยา", "รถพยาบาล", "ตั้งครรภ์",
+            "طبيب", "دكتور", "مستشفى", "دواء", "صيدلي", "إسعاف", "وصفة طبية",
+            "רופא", "בית חולים", "בית החולים", "תרופ", "מרשם", "אמבולנס", "בהריון",
+            "rumah sakit", "bác sĩ", "bệnh viện", "thuốc", "dị ứng", "cấp cứu", "mang thai", "có thai",
+            "醫生", "ဆရာဝန်", "ဆေးရုံ", "ທ່ານໝໍ", "ໂຮງໝໍ",
+        ],
+        .law: [
+            "警察", "律师", "律師", "法院", "合同", "护照", "護照", "签证", "大使馆",
+            "弁護士", "裁判", "契約", "パスポート", "ビザ", "大使館",
+            "ตำรวจ", "ทนาย", "สัญญาเช่า", "หนังสือเดินทาง", "วีซ่า", "สถานทูต",
+            "شرطة", "بوليس", "محامي", "محكمة", "جواز سفر", "تأشيرة", "سفارة",
+            "ຕຳຫຼວດ",
+            "משטרה", "שוטר", "עורך דין", "עורכת דין", "בית משפט", "בית המשפט", "חוזה", "דרכון", "ויזה", "שגרירות",
+            "cảnh sát", "công an", "luật sư", "tòa án", "hợp đồng", "hộ chiếu", "thị thực", "đại sứ quán",
+        ],
+        .money: [
+            "银行", "銀行", "贷款", "借钱", "押金",
+            "ローン", "借金", "敷金",
+            "ธนาคาร", "เงินกู้", "หนี้", "เงินมัดจำ",
+            "البنك", "قرض", "عربون",
+            "בנק", "הלוואה", "משכנתא",
+            "ngân hàng", "khoản vay", "vay tiền", "đặt cọc", "nợ",
+            "借錢", "ဘဏ်", "ທະນາຄານ",
+        ],
+    ]
+
+    /// Everyday words a stem would wrongly catch ("polis", "polic", "policie", "pill"; Italian
+    /// "ospitale", hospitable, for Filipino "ospital").
     static let notTopics: Set<String> = [
         "polish", "polished", "polishing", "policy", "policies", "pillow", "pillows",
+        "ospitale", "ospitali", "ospitalità",
     ]
 
     /// The first topic heard in the text, health first.
     public static func topic(in text: String) -> Topic? {
-        let words = text.lowercased().split { !$0.isLetter }.map(String.init).filter { !notTopics.contains($0) }
+        let lower = text.lowercased()
+        let words = lower.split { !$0.isLetter }.map(String.init).filter { !notTopics.contains($0) }
         for topic in [Topic.health, .law, .money] {
             let list = stems[topic] ?? []
             if words.contains(where: { word in list.contains { stem in
                 word.hasPrefix(stem)
             } }) { return topic }
+            if (contained[topic] ?? []).contains(where: { lower.contains($0) }) { return topic }
         }
         return nil
     }

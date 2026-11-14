@@ -28,6 +28,8 @@ targets:
       - target: DoddyShare
       # The expanded paper notification (ADR-786).
       - target: DoddyNotificationContent
+      # Screen sharing with Doddy (decision 2026-11-09-doddy-looks-at-the-screen); kept in step with project.yml only.
+      - target: DoddyScreen
       # The Apple Watch app (ADR-232), embedded in the iPhone app.
       - target: DoddyWatch
       - package: DoddyCore

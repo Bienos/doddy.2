@@ -82,6 +82,8 @@ describe("the leaflet search", () => {
       unitPrice: { minor: 2495, per: "kg" }, regularPrice: { minor: 649, currency: "PLN" },
       conditions: ["z aplikacją Moja Biedronka", "max 4 szt."], validFrom: "2026-10-22",
       source: { url: BIEDRONKA_PRESS, page: 2 }, readBy: "page_image", check: false, flags: ["app"], limit: 4,
+      // 13 Nov 2026: how it matched, and when (this search read it live) with the leaflet's dates and completeness.
+      match: "exact", leafletRead: { readAt: "2026-10-24T06:10:00.000Z", validFrom: "2026-10-22", complete: true },
     }, "the app and the limit as data for the app's checklist (ADR-661)");
     assert.deepEqual(lidlButter!.conditions, ["z Lidl Plus"]);
     assert.deepEqual(lidlButter!.source, { url: "https://www.lidl.pl/l/pl/gazetki/gazetka-22-10-czw-kw43/view/flyer/page/6", page: 6 });
@@ -91,6 +93,7 @@ describe("the leaflet search", () => {
       unitPrice: { minor: 1796, per: "kg" }, lowest30d: { minor: 499, currency: "PLN" }, conditions: [],
       validFrom: "2026-10-21", validTo: "2026-10-27", source: { url: DINO_LISTING, page: 51 }, readBy: "leaflet_data",
       ean: "5900120025967", check: false, cut: { percent: 10 },
+      match: "exact", leafletRead: { readAt: "2026-10-24T06:10:00.000Z", validFrom: "2026-10-21", validTo: "2026-10-27", complete: true },
     }, "Dino's own name, price and EAN; the page read confirmed it and added the 30-day price: 4,49 is 10% below 4,99");
 
     assert.deepEqual(offers(response, "pieluchy rozmiar 4").map((o) => [...brief(o), o.unitPrice?.minor, o.check]), [

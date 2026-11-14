@@ -96,6 +96,33 @@ enum WatchPush {
 }
 SWIFT
 
+# On my radar's model (decision 2026-11-10-radar-alerts) words server errors with UpdatesModel's text, and
+# UpdatesModel imports UserNotifications; only that one function is needed here.
+cat > "$work/UpdatesModelStub.swift" <<'SWIFT'
+enum UpdatesModel {
+    static func text(for error: any Error) -> String { "" }
+}
+SWIFT
+
+# The trips model (TRAVEL_EMAILS.md) builds its server client like OnlineAccountsClientFactory: the device
+# session and the Keychain (Security) and the URLSession transport; only the calls it makes are needed here.
+cat > "$work/TravelSessionStubs.swift" <<'SWIFT'
+import DoddyCore
+import Foundation
+enum DeviceSession {
+    static func serverURL() -> URL? { nil }
+    static func ensure(server: URL, now: Date = Date()) async -> Bool { false }
+    static func renew(server: URL) async -> Bool { false }
+}
+enum KeychainSessionStore {
+    static func read() -> BoundSessionToken? { nil }
+}
+struct URLSessionTransport: HTTPTransport {
+    static let shared = URLSessionTransport()
+    func send(_ request: HTTPRequest) async throws -> (status: Int, body: Data) { (500, Data()) }
+}
+SWIFT
+
 # The one type IslandPose.swift needs from the island drawing model (ADR-313).
 cat > "$work/IslandRectStub.swift" <<'SWIFT'
 struct IslandRect: Equatable, Sendable {
@@ -116,6 +143,8 @@ files=(
   # Conversation recaps (decision 2026-11-09-conversation-recaps): saves a recap as a note through MemoryStore.
   DoddyApp/Features/Recaps/RecapKeeper.swift
   DoddyApp/Features/Recaps/OnDeviceRecapWriter.swift
+  DoddyApp/Features/Recaps/RecapKeeper+Recordings.swift
+  DoddyApp/Features/Recaps/RecapKeeper+Phone.swift
   DoddyApp/Infrastructure/ProfileStore.swift
   DoddyApp/Infrastructure/ShortcutRouter.swift
   DoddyApp/Infrastructure/LegalAcceptanceStore.swift
@@ -123,6 +152,8 @@ files=(
   DoddyApp/Infrastructure/SiriNoteLookup.swift
   # The thread with Doddy (ADR-585): the Messages screen's state, without the views.
   DoddyApp/Features/Messages/MessagesModel.swift
+  # Which made files Messages and Files still offer (decision 2026-11-12-deleted-files-stay-gone); MessagesModel calls it.
+  DoddyApp/Features/Messages/FilesShownSinceStore.swift
   DoddyApp/Features/NoteReminders/NoteReminderStore.swift
   DoddyApp/Features/Opening/OpeningModel.swift
   DoddyApp/Features/Photos/PhotoFiles.swift
@@ -139,6 +170,8 @@ files=(
   DoddyApp/Features/Voice/VoiceConfig.swift
   DoddyApp/Infrastructure/ActivityLogStore.swift
   Shared/Share/ShareInboxFile.swift
+  # Screen sharing with Doddy (decision 2026-11-09-doddy-looks-at-the-screen): the App Group files only.
+  Shared/Screen/ScreenShareFiles.swift
   # SiriNoteLookup picks Doddy's pose for an answer (ADR-313); IslandRect is stubbed above.
   Shared/IslandArt/IslandPose.swift
   # Motion v2: the one Doddy's director, kept free of SwiftUI so it is compiled here.
@@ -160,12 +193,16 @@ files=(
   DoddyApp/Features/Sport/PlanText.swift
   # The training log's state (sport plan stage 3, ADR-642), without the screens or the file it lives in.
   DoddyApp/Features/Sport/TrainingLogModel.swift
+  DoddyApp/Features/News/FollowingModel.swift
+  # Trips from booking emails and the trip planner (TRAVEL_EMAILS.md, TRAVEL_PLANNER.md): their state, without the views.
+  DoddyApp/Features/Trips/TripsModel.swift
+  DoddyApp/Features/Trips/TripPlannerModel.swift
   # TrainingLogDatabase.swift (the file it lives in) imports DoddyPersistence, which this script cannot link.
 )
 for f in "${files[@]}"; do [ -f "$f" ] || { echo "FAIL: $f is missing; update scripts/typecheck_app_logic.sh"; exit 1; }; done
 
 echo "Type-checking ${#files[@]} app files against DoddyCore (Swift 6)"
-swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "$work/SystemNoteNotificationsStub.swift" "$work/IslandRectStub.swift" "$work/OpenWaysReminderSchedulerStub.swift" "$work/ServerConfigStub.swift" "$work/WatchPushStub.swift" "${files[@]}"
+swiftc -typecheck -swift-version 6 -I "$modules" "$work/PreferenceKey.swift" "$work/AppEnvironmentStub.swift" "$work/PlaceLocationStub.swift" "$work/SystemNoteNotificationsStub.swift" "$work/IslandRectStub.swift" "$work/OpenWaysReminderSchedulerStub.swift" "$work/ServerConfigStub.swift" "$work/WatchPushStub.swift" "$work/UpdatesModelStub.swift" "$work/TravelSessionStubs.swift" "${files[@]}"
 echo "PASS: ${#files[@]} app files type-check (SwiftUI, App Intents and widget code are not covered)"
 
 # App files that import no UI framework but aren't in the list: most use types this script can't

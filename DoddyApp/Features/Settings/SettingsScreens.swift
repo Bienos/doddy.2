@@ -135,9 +135,10 @@ struct AppearanceSettingsView: View {
 
 // MARK: Voice and interaction
 
-/// Settings › Voice: how he sounds and talks, who runs his voice, starting on open, the island, Siri and
-/// Back Tap, and the voice account. Personality, the island and Siri were their own Settings rows until
-/// ADR-633.
+/// Settings › Voice and personality: one page for how he sounds and talks, starting on open, the island, Siri and Back
+/// Tap, and how he comes across (12 Nov 2026, decision `2026-11-12-settings-one-voice-page`). Before, this page opened a
+/// second one for the personality, both were called "Voice", and the voice account was a section at the bottom: that is
+/// on Settings › Account now. Personality, the island and Siri were their own Settings rows until ADR-633.
 struct VoiceSettingsView: View {
     @AppStorage(PreferenceKey.listenOnOpen) private var listenOnOpen = OpeningPreferences.listenOnOpenDefault
     @AppStorage(LaunchPreferencesMigration.islandExpandsKey) private var islandExpands = false
@@ -147,9 +148,6 @@ struct VoiceSettingsView: View {
 
     var body: some View {
         Form {
-            Section {
-                PersonalityLinkRow()
-            }
             Section {
                 Toggle(isOn: $listenOnOpen) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -167,6 +165,7 @@ struct VoiceSettingsView: View {
             } footer: {
                 Text("Your voice and the conversation go to the voice service only after you agree, the first time you talk. iOS shows its orange dot while Doddy listens.")
             }
+            VoiceStyleSections()
             Section {
                 // The island's expansion: iPhone only (ADR-432, ADR-453).
                 if DeviceSupport.hasDynamicIsland {
@@ -179,22 +178,13 @@ struct VoiceSettingsView: View {
                     if DeviceSupport.hasBackTap { Text("Siri and Back Tap") } else { Text("Siri") }
                 }
                 .accessibilityIdentifier("settings.ways")
+            } header: {
+                Text("Opening Doddy")
             }
-            Section("Account") {
-                VoiceAccountSettings()
-                StatusRow(title: "Connection", value: connectionText)
-                    .accessibilityIdentifier("settings.voiceConnection")
-            }
+            PersonalitySections()
         }
         .settingsPage()
-        .navigationTitle("Voice")
-    }
-
-    private var connectionText: String {
-        if VoiceSessionKeychain.refreshToken() != nil { return NSLocalizedString("Doddy voice account", comment: "") }
-        // Decision 2026-11-08-required-account: the Doddy account also opens voice.
-        if DoddyAccountModel.shared.isSignedIn { return NSLocalizedString("Your Doddy account", comment: "") }
-        return NSLocalizedString("Sign in on first use", comment: "")
+        .navigationTitle("Voice and personality")
     }
 }
 
@@ -354,7 +344,7 @@ struct MemoriesSettingsView: View {
 
             BackupSettingsSection()
 
-            // Hidden in the beta until one real Takeout export has been tried (decision 2026-11-07-release-scope).
+            // Shown since 10 Nov 2026 (decision 2026-11-10-no-beta-scope); no real Takeout export has been tried yet, and the screen says what it reads.
             if ReleaseScopeStore.current.shows(.noteImport) {
                 NoteImportSettingsSection()
             }
@@ -409,8 +399,10 @@ struct MemoriesSettingsView: View {
             // Studio (ADR-740): the topics and the opened copies kept here. The items stay on
             // Doddy's server until they are deleted in Studio (said below).
             StudioModel.shared.forgetLocal()
-            // The typed conversation with Doddy (ADR-585): messages kept on this iPhone.
+            // The typed conversation with Doddy (ADR-585): messages kept on this iPhone. The files Doddy made until
+            // now are not offered again (decision 2026-11-12-deleted-files-stay-gone).
             try await environment.messageThreadRepository.deleteAll()
+            FilesShownSinceStore.conversationDeleted()
             // Recordings (ADR-588): their audio and words, on this iPhone only. One being made is
             // stopped and saved first, then goes with the rest.
             await RecordingCoordinator.shared.stop()
@@ -550,19 +542,21 @@ struct KnowledgeSettingsView: View {
                 // is saved as a note without a tap. Turning it on is not a yes for conversations before it.
                 Toggle("Remember what we talked about", isOn: Binding(
                     get: { rememberRecaps },
-                    set: { RecapKeeper.setRemember($0); rememberRecaps = $0 }))
+                    set: { on in
+                        RecapKeeper.setRemember(on)
+                        rememberRecaps = on
+                        // Also the server: it writes recaps of calls to Doddy's phone line only while this is on.
+                        Task { await RecapKeeper.syncPhoneRecaps(on) }
+                    }))
                     .accessibilityIdentifier("settings.rememberRecaps")
-                if rememberRecaps {
-                    // The yes for step 3b: the conversation's text goes to Doddy's server and Anthropic for one recap.
-                    Toggle("Recaps on Doddy's server", isOn: $recapsOnServer)
-                        .accessibilityIdentifier("settings.recapsOnServer")
-                }
+                // The yes for the server writing a recap this iPhone can't (a conversation, or a recording when you
+                // tap "Write a recap"): the text goes to Doddy's server and Anthropic for that one recap.
+                Toggle("Recaps on Doddy's server", isOn: $recapsOnServer)
+                    .accessibilityIdentifier("settings.recapsOnServer")
             } footer: {
                 VStack(alignment: .leading, spacing: 6) {
-                Text("After a conversation with Doddy, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations are recapped on this iPhone, where it has Apple Intelligence in your language. You can edit or delete each recap like any note.")
-                if rememberRecaps {
-                    Text("With “Recaps on Doddy's server” on, when this iPhone can't write a recap itself, the conversation's text goes to your Doddy messaging server and Anthropic for that one recap. They keep only counts, not words. Off, those conversations get no recap.")
-                }
+                    Text("After a conversation with Doddy, after a recording written out on this iPhone, after a call to or from Doddy's phone line, and after a call Doddy makes for you, a short recap goes into your notes: what was discussed, agreed and left to do. Never the transcript, never a Private conversation, and nothing from before you turn this on. Conversations and recordings are recapped on this iPhone, where it has Apple Intelligence in your language. You can edit or delete each recap like any note.")
+                    Text("With “Recaps on Doddy's server” on, when this iPhone can't write a recap itself, the text of the conversation or recording goes to your Doddy messaging server and Anthropic for that one recap. They keep only counts, not words. Off, those get no recap.")
                 }
             }
         }
@@ -584,8 +578,8 @@ struct PrivacySettingsView: View {
     /// The privacy summary that used to be at the bottom of Home (ADR-326).
     private var privacySummary: String {
         memoryCopyOn
-            ? NSLocalizedString("Doddy is an AI, not a person. Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.", comment: "")
-            : NSLocalizedString("Doddy is an AI, not a person. Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.", comment: "")
+            ? NSLocalizedString("Notes are kept on this iPhone, and because Memory on calls is on, a copy is on your Doddy messaging server so Doddy can answer on calls. While a conversation is open, notes and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.", comment: "")
+            : NSLocalizedString("Notes stay on this iPhone; while a conversation is open they and your last few conversations go to ElevenLabs so Doddy knows them. Typed questions go to Doddy's server and Anthropic only if you turn on Ask Doddy in Settings. Calendar, reminders and contacts stay off until you turn them on in Settings, and Today reads them on this iPhone only; Google Calendar reading is in Settings › Connections › Online accounts.", comment: "")
     }
 
     var body: some View {
@@ -626,7 +620,7 @@ struct PrivacySettingsView: View {
                         : listenOnOpen ? "Only while talking. A conversation starts when you open Doddy; turn that off under Voice"
                         : "Only while talking")
                 StatusRow(title: "Analytics and telemetry", value: privacy.analyticsEnabled || privacy.contentTelemetryEnabled ? "On" : "Off (not built)")
-                StatusRow(title: "Cloud AI", value: privacy.cloudAIEnabled ? DataFlow.cloudAISummary(.current()) : "Off (not built)")
+                StatusRow(title: "Online answers", value: privacy.cloudAIEnabled ? DataFlow.cloudAISummary(.current()) : "Off (not built)")
                 StatusRow(title: "Sync", value: privacy.syncText)
             }
             .accessibilityIdentifier("settings.privacy")
@@ -711,7 +705,7 @@ struct AskDoddySettingsView: View {
                 StatusRow(title: "Status", value: assistantStatus)
                     .accessibilityIdentifier("settings.assistantStatus")
             } footer: {
-                Text("Doddy's server keeps the AI key, so no key is stored on your iPhone. This iPhone uses its anonymous Doddy account to prove it may use the server.")
+                Text("Doddy's server keeps the key, so no key is stored on your iPhone. This iPhone uses its anonymous Doddy account to prove it may use the server.")
             }
         }
         .settingsPage()
@@ -768,9 +762,6 @@ struct AdvancedSettingsView: View {
     @AppStorage(LegalAcceptance.preferenceKey) private var legalRecordData: Data?
     @State private var showStudio = false
     #if DEBUG
-    /// Shows every feature on the owner's phone (decision 2026-11-07-release-scope); on until turned off
-    /// (decision 2026-11-08-debug-shows-every-feature). Only a Debug build has the toggle or reads the key.
-    @AppStorage(ReleaseScope.previewEverythingKey) private var previewEverything = ReleaseScope.debugShowsEverythingByDefault
     @AppStorage(PreferenceKey.connectedAppsServerURL) private var connectedAppsServerURL = ""
     @State private var sessionTokenDraft = ""
     @State private var hasSessionToken = KeychainSessionStore.hasToken
@@ -806,7 +797,6 @@ struct AdvancedSettingsView: View {
             // Studio (ADR-740): kept here, not on Home's menu (it has no room for a twelfth row, ADR-652) or
             // Settings' first page (ADR-633). Studio is off on the server until the owner turns it on, and says so
             // when it is.
-            // Hidden in the beta with `make_something` (decision 2026-11-07-release-scope).
             if ReleaseScopeStore.current.shows(.studio) {
                 Section {
                     Button("Studio") { showStudio = true }
@@ -832,16 +822,15 @@ struct AdvancedSettingsView: View {
     }
 
     #if DEBUG
-    /// The release scope (decision 2026-11-07-release-scope): what this build hides, and the switch to see it all. Debug only.
+    /// The release scope: every feature is shown in every build since 10 Nov 2026 (decision
+    /// 2026-11-10-no-beta-scope), so the old Debug toggle is gone. Debug only.
     private var releaseScope: some View {
         Section {
-            Toggle("Developer: show every feature", isOn: $previewEverything)
-                .accessibilityIdentifier("settings.previewEverything")
-            StatusRow(title: "Hidden features",
-                      value: previewEverything ? "0" : "\(ReleaseScope.shipping.hidden.count) of \(Feature.allCases.count)")
-            StatusRow(title: "Voice tools kept", value: "\(ReleaseScopeStore.current.hiddenTools.isEmpty ? ToolCatalog.all.count : ToolCatalog.all.count - ReleaseScope.shipping.hiddenTools.count) of \(ToolCatalog.all.count)")
+            let scope = ReleaseScopeStore.current
+            StatusRow(title: "Hidden features", value: "\(scope.hidden.count) of \(Feature.allCases.count)")
+            StatusRow(title: "Voice tools kept", value: "\(ToolCatalog.all.count - scope.hiddenTools.count) of \(ToolCatalog.all.count)")
         } footer: {
-            Text("On (the default in a Debug build): every feature. Off: what the beta ships, as a Release or TestFlight build always shows (docs/implementation/RELEASE_SCOPE.md). A hidden feature's data stays; only its ways in go. Takes effect on the next screen and the next conversation.")
+            Text("Every feature is shown in every build (docs/implementation/RELEASE_SCOPE.md). A feature whose server or permission isn't set up says so itself.")
         }
     }
 

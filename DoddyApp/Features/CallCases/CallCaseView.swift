@@ -60,7 +60,7 @@ struct CallCaseView: View {
             Button("Call now") { Task { await model.approve() } }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Doddy says the opening line on the card first, asks the question and ends the call. You can take over or end it from this screen or the Lock Screen.")
+            Text("Doddy says the opening line on the card first, asks the question and ends the call. You can take over or end it from this screen; while it runs, a small phone mark on Home brings you back to it.")
         }
     }
 

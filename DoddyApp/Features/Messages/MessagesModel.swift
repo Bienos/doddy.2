@@ -89,6 +89,15 @@ final class MessagesModel {
         }
     }
 
+    /// A message Doddy delivered while this screen was open (a finished task or a file, `ThreadInbox`). It is
+    /// already saved and read back; this only shows it, once.
+    func receive(_ message: ThreadMessage) {
+        guard didLoad, !messages.contains(where: { $0.id == message.id }) else { return }
+        messages.append(message)
+        messages.sort { $0.createdAt < $1.createdAt }
+        syncToWeb()
+    }
+
     // MARK: Sending
 
     /// - Parameter service: nil when Ask Doddy isn't set up.
@@ -275,7 +284,8 @@ final class MessagesModel {
     private func finishMaking(_ id: UUID, _ result: Result<ThreadDocument, ThreadDocumentError>) async {
         switch result {
         case .success(let document):
-            let file = ThreadMessage.file(document, now: now())
+            // The bubble says what the file is: the brief the person said yes to (12 Nov 2026).
+            let file = ThreadMessage.file(document, about: proposals[id]?.request, now: now())
             proposals[id] = nil
             messages.append(file)
             await persist { try await $0.append(file) }
@@ -310,6 +320,9 @@ final class MessagesModel {
         deleteFailed = false
         do {
             try await repository.deleteAll()
+            // The files Doddy made until now are not offered here again; the server keeps each until its own
+            // deletion date (decision 2026-11-12-deleted-files-stay-gone).
+            FilesShownSinceStore.conversationDeleted()
             messages = []
             proposals = [:]
             planAsks = [:]

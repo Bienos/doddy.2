@@ -4,7 +4,9 @@ import Foundation
 // writes this small snapshot to the App Group folder that only Doddy and its widget extension can
 // read: pinned notes, the next time reminders and the lists, each shortened. The app writes it
 // after every change and reads it back; the widget only reads it. "Show in widgets" off writes an
-// empty snapshot, so nothing of the user's is left in the shared folder.
+// empty snapshot, so nothing of the user's is left in the shared folder. With the Face ID lock on
+// (ADR-723, `AppLockPolicy.widgetsShowContent`) it writes an empty locked one: the widgets say
+// "Doddy is locked".
 
 public struct WidgetSnapshot: Codable, Equatable, Sendable {
     public static let currentVersion = 1
@@ -112,9 +114,13 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// Absent in snapshots written before ADR-783; those still read, and the shelf widget then
     /// asks to open Doddy once.
     public let shelf: Shelf?
+    /// The Face ID lock is on in the app (ADR-723): the snapshot holds nothing of the person's, and the
+    /// widgets say Doddy is locked. Written only when true (`isOn` is false then too, so a reader that
+    /// doesn't know this field still shows nothing); snapshots from before read as not locked.
+    public let locked: Bool?
 
     public init(version: Int = currentVersion, writtenAt: Date, isOn: Bool, pinned: [Note], reminders: [Reminder], lists: [List],
-                parking: Parked? = nil, hidesDoddy: Bool = false, shelf: Shelf? = nil) {
+                parking: Parked? = nil, hidesDoddy: Bool = false, shelf: Shelf? = nil, locked: Bool = false) {
         self.version = version
         self.writtenAt = writtenAt
         self.isOn = isOn
@@ -124,13 +130,24 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
         self.parking = parking
         self.hidesDoddy = hidesDoddy ? true : nil
         self.shelf = shelf
+        self.locked = locked ? true : nil
     }
 
     /// Whether Doddy's pictures are to be left out (ADR-331).
     public var hidesPictures: Bool { hidesDoddy == true }
 
+    /// Whether the widgets are to say Doddy is locked and show nothing else (ADR-723).
+    public var isLocked: Bool { locked == true }
+
     public static func off(at date: Date, hidesDoddy: Bool = false) -> WidgetSnapshot {
         WidgetSnapshot(writtenAt: wholeMilliseconds(date), isOn: false, pinned: [], reminders: [], lists: [], hidesDoddy: hidesDoddy)
+    }
+
+    /// The Face ID lock is on (ADR-723): nothing of the person's, not even the shelf's counts or the
+    /// parking time. Only "Hide character artwork" travels.
+    public static func locked(at date: Date, hidesDoddy: Bool = false) -> WidgetSnapshot {
+        WidgetSnapshot(writtenAt: wholeMilliseconds(date), isOn: false, pinned: [], reminders: [], lists: [],
+                       hidesDoddy: hidesDoddy, locked: true)
     }
 
     /// The date as the file keeps it (`millisecondsSince1970`). A `Date.now` with a finer fraction
@@ -141,12 +158,15 @@ public struct WidgetSnapshot: Codable, Equatable, Sendable {
     }
 
     /// Builds the snapshot from what the app has loaded. Pinned notes in pin order, skipping
-    /// ones that no longer exist; the next time reminders after `now`; lists newest first.
+    /// ones that no longer exist; the next time reminders after `now`; lists newest first. Switched
+    /// off, the off snapshot; with the Face ID lock on (`appLockOn`), the locked one.
     public static func make(
         memories: [MemoryRecord], lists: [DoddyList], pinned: PinnedNotes, reminders: [MemoryReminder],
-        showReminderText: Bool, isOn: Bool, now: Date, parking: ParkingSpot? = nil, hidesDoddy: Bool = false
+        showReminderText: Bool, isOn: Bool, now: Date, parking: ParkingSpot? = nil, hidesDoddy: Bool = false,
+        appLockOn: Bool = false
     ) -> WidgetSnapshot {
         guard isOn else { return .off(at: now, hidesDoddy: hidesDoddy) }
+        guard AppLockPolicy.widgetsShowContent(lockOn: appLockOn) else { return .locked(at: now, hidesDoddy: hidesDoddy) }
         let byID = Dictionary(memories.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
         let notes = pinned.ids.compactMap { id in byID[id].map { Note(id: id, text: shortened($0.currentText)) } }
         let upcoming = reminders.compactMap { reminder -> Reminder? in
@@ -232,6 +252,8 @@ public enum WidgetTick: Equatable, Sendable {
     /// The item or list is gone, or changed in the app since the widget drew it; nothing changed.
     case notFound
     case failed
+    /// The Face ID lock is on (ADR-723): a widget drawn before it was turned on changes nothing.
+    case locked
 
     /// The change a tap asks for: the opposite of what the widget showed. `shownDone` guards
     /// against a stale widget toggling an item the app already changed.

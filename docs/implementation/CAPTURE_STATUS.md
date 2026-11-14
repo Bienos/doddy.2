@@ -104,7 +104,7 @@ Run on an iPhone with Doddy installed from this branch, a free-team build is eno
 - Export writes the transcript to the temporary folder for the share sheet; iOS clears it later.
 
 ## Decisions needed (owner)
-1. **The rundown and answers (ADR-591):** a server endpoint, Apple's on-device models, or neither; and whether summaries run on a tap or after a standing yes. Without this the page says "No summary yet".
+1. **The rundown and answers (ADR-591; the recap of what was discussed is answered by decision `2026-11-09-conversation-recaps`, 9 Nov 2026, the rundown's structured form and the answers are still open):** a server endpoint, Apple's on-device models, or neither; and whether summaries run on a tap or after a standing yes. Without this the page says "No summary yet".
 2. **Notice wording** (legal), and whether Poland and the UK need more.
 3. **Permission text translations** (nine languages) and the new Polish strings: native review (`l10n/REVIEW_NOTES.md`).
 4. **The 4-hour cap** (Live Activity limit is 8 hours) and the 10-minute part length.

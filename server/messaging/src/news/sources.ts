@@ -1,11 +1,21 @@
 import { createHash } from "node:crypto";
 import type { Db } from "../db.js";
 import { httpUrl, parseFeed, plainText, type NewsItem } from "./feeds.js";
-import { safeFetchText } from "./safeFetch.js";
+import { safeFetchText, type Validators } from "./safeFetch.js";
+
+export interface FetchedFeed extends Validators {
+  title: string;
+  items: NewsItem[];
+  /** The publisher answered 304 to the validators it was given: nothing changed, keep what is cached. */
+  notModified?: boolean;
+}
 
 export interface FeedSource {
-  /** Throws when the feed can't be fetched or parsed. */
-  fetchFeed(url: string): Promise<{ title: string; items: NewsItem[] }>;
+  /**
+   * Throws when the feed can't be fetched or parsed. With `conditional` (the publisher's validators from the last
+   * answer) it may answer `notModified` instead of the feed (reader.ts).
+   */
+  fetchFeed(url: string, conditional?: Validators): Promise<FetchedFeed>;
 }
 
 export interface NewsSearch {
@@ -13,10 +23,11 @@ export interface NewsSearch {
 }
 
 export class HttpFeedSource implements FeedSource {
-  async fetchFeed(url: string) {
-    const res = await safeFetchText(url);
+  async fetchFeed(url: string, conditional?: Validators): Promise<FetchedFeed> {
+    const res = await safeFetchText(url, { conditional });
+    if (res.status === 304 && (conditional?.etag || conditional?.lastModified)) return { title: "", items: [], notModified: true };
     if (res.status < 200 || res.status >= 300) throw new Error(`feed HTTP ${res.status}`);
-    return parseFeed(res.text, new URL(res.finalUrl).hostname);
+    return { ...parseFeed(res.text, new URL(res.finalUrl).hostname), etag: res.etag, lastModified: res.lastModified };
   }
 }
 
@@ -66,9 +77,24 @@ export async function pruneNewsCache(db: Db): Promise<number> {
   return r.rowCount ?? 0;
 }
 
+/** The most JSON one cached feed or search keeps (UTF-8 bytes). A digest uses a few items from each source,
+ * and a feed of 60 ordinary items is well under half of this. */
+export const NEWS_CACHE_MAX_ROW_BYTES = 256 * 1024;
+
+/** The items from the first that fit in `max` bytes of JSON, in order: the rest are not cached. */
+export function fitForCache(items: NewsItem[], max = NEWS_CACHE_MAX_ROW_BYTES): NewsItem[] {
+  let size = 2; // "[]"
+  for (let i = 0; i < items.length; i++) {
+    size += Buffer.byteLength(JSON.stringify(items[i])) + (i > 0 ? 1 : 0);
+    if (size > max) return items.slice(0, i);
+  }
+  return items;
+}
+
 /**
  * Shared cache in front of feeds and searches (not linked to any account). A failed refresh
- * keeps the last good items so one flaky publisher doesn't empty a digest.
+ * keeps the last good items so one flaky publisher doesn't empty a digest. A row keeps at most
+ * NEWS_CACHE_MAX_ROW_BYTES of items, and the caller gets the same items the row keeps.
  */
 export async function cached(
   db: Db, key: string, maxAgeMinutes: number, load: () => Promise<{ title?: string; items: NewsItem[] }>,
@@ -81,11 +107,12 @@ export async function cached(
   if (hit?.fresh) return { ok: hit.ok, title: hit.title ?? undefined, items: hit.items };
   try {
     const fresh = await load();
+    const items = fitForCache(fresh.items);
     await db.query(
       `INSERT INTO news_cache (key, fetched_at, ok, title, items) VALUES ($1, now(), true, $2, $3)
        ON CONFLICT (key) DO UPDATE SET fetched_at = now(), ok = true, title = EXCLUDED.title, items = EXCLUDED.items`,
-      [key, fresh.title ?? null, JSON.stringify(fresh.items)]);
-    return { ok: true, ...fresh };
+      [key, fresh.title ?? null, JSON.stringify(items)]);
+    return { ok: true, ...fresh, items };
   } catch {
     await db.query(
       `INSERT INTO news_cache (key, fetched_at, ok) VALUES ($1, now(), false)

@@ -1,3 +1,0 @@
-Sign-in: a successful Apple sign-in always closes the welcome. Before, a sign-in made while a session was already kept (a reinstall keeps the Keychain; Settings › "Show the welcome again") left the welcome up with nothing happening (TestFlight build 20). Someone already signed in when the welcome shows now sees which account and "Continue". Email sign-in is hidden for now (decision `2026-11-09-email-sign-in-off-for-now`).
-Google: Google refuses the sign-in with `redirect_uri_mismatch` until the Supabase callback is on the Google OAuth client (OWNER_QUEUE 25); no app change needed.
-Ran: see the pull request. Not run: the iPhone build (no Xcode here) and a sign-in on a device. Needs no deploy; a new build ships it.

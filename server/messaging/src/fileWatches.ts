@@ -21,7 +21,7 @@ const LINK_MAX = 400;
 const KEEP_FINISHED_MS = 24 * 3600_000;
 
 export const PUSH_TEXT = {
-  ready: { pl: "Gotowe. Twój plik czeka w aplikacji.", en: "Ready. Your file is waiting in the app." },
+  ready: { pl: "Gotowe. Twój plik czeka w Wiadomościach.", en: "Ready. Your file is waiting in Messages." },
   failed: { pl: "Nie udało się przygotować pliku.", en: "Doddy couldn't finish a file." },
 } as const;
 export const pushText = (kind: keyof typeof PUSH_TEXT, language: string) => (language === "pl" ? PUSH_TEXT[kind].pl : PUSH_TEXT[kind].en);

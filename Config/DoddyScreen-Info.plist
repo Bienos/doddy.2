@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Partial Info.plist for the DoddyScreen broadcast upload extension (merged with the generated keys).
+  Decision 2026-11-09-doddy-looks-at-the-screen: while the person shares their screen with Doddy (iOS's
+  "Start Broadcast" sheet), it keeps one picture of the screen in the App Group. No network, no database.
+-->
+<plist version="1.0">
+<dict>
+	<!-- Shared folder with the app; only works when the build is signed with the App Group. -->
+	<key>DoddyAppGroup</key>
+	<string>group.$(DODDY_APP_BUNDLE_IDENTIFIER)</string>
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.broadcast-services-upload</string>
+		<key>NSExtensionPrincipalClass</key>
+		<string>$(PRODUCT_MODULE_NAME).SampleHandler</string>
+		<key>RPBroadcastProcessMode</key>
+		<string>RPBroadcastProcessModeSampleBuffer</string>
+	</dict>
+</dict>
+</plist>

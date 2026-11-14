@@ -51,6 +51,7 @@ Example text typed by the test (the notes, the list) is made up. Starting Focus 
 | `dealsHome` | Home's "Leaflet offers" card | `test7cShopping` | the same |
 | `errand` | Home's "Done" card, Tasks, a task's three picks | `test7cShopping` | `errand_result_shopping_v1.json` (Polish sample task) |
 | `report` | the two pages of the shopping report PDF, full screen | `test7cShopping` | the same result, written by the app's own `ShoppingReport` |
+| `running:<kind>` | one of Doddy's timers running (focus, stopwatch, timer, windDown), so Home shows its row and its screen opens from there; the others are stopped first, and `running:none` only stops them (decision `2026-11-10-timers-by-voice`: Home's menu no longer starts them) | `test2Home` (`2-home-04`, `-12`, `-13`, `-14`) | the controllers' own `start`, as the voice handler calls it after the tap; kept in UserDefaults, so the test clears them after its last visit |
 | `island:<state>` | the real voice Live Activity in one real state (connecting, listening, thinking, speaking, muted, confirm, text, transfer, document, translator): iOS draws the compact island on the Home Screen, the expanded island (a long press) and the Lock Screen card; three whole-screen pictures each | `test8aNativeIsland`, `test8bNativeIsland` | none: the activity has no conversation behind it |
 
 **What the runs showed (2 Nov, hosted Mac, nothing seen on a device):**

@@ -1,3 +1,4 @@
+import DoddyCore
 import Foundation
 import UIKit
 import UserNotifications
@@ -51,6 +52,12 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     ) -> Bool {
         // One delegate for every banner: timers, nudges and Doddy's updates show while the app is open.
         UNUserNotificationCenter.current().delegate = TimerBanners.shared
+        // A voice token is fetched ahead when Doddy comes to the front, so Talk only has to connect
+        // (decision 2026-11-10-action-button-start). Warms only in the foreground, never on a background launch.
+        MainActor.assumeIsolated { VoiceTokenWarmer.shared.install() }
+        // A picture of the screen left behind by the sharing extension is deleted now and whenever the app comes
+        // to the front (`ScreenFrameRetention`).
+        MainActor.assumeIsolated { ScreenFrameSweeper.shared.install() }
         return true
     }
 
@@ -68,9 +75,21 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
         PushRegistrar.shared.didRegister(deviceToken)
     }
 
-    /// Silent notifications: iCloud saying a shared list changed (ADR-284). Nothing else uses them.
+    /// Pushes iOS hands the app in the background: iCloud saying a shared list changed (ADR-284), and Doddy's server
+    /// saying a task finished (12 Nov 2026; the server marks that push `content-available`). For the task, its result
+    /// is fetched and saved in Messages now, so it is there when the person taps the notification or opens Doddy.
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable: Any]) async -> UIBackgroundFetchResult {
-        await SharedListsController.shared.handleRemoteNotification(userInfo) ? .newData : .noData
+        if ServerPushKind.parse(userInfo) == .errandResult {
+            return await Self.saveTaskResults() ? .newData : .noData
+        }
+        return await SharedListsController.shared.handleRemoteNotification(userInfo) ? .newData : .noData
+    }
+
+    @MainActor
+    private static func saveTaskResults() async -> Bool {
+        let finishedBefore = ErrandsModel.shared.errands.filter { $0.state.isFinished }.count
+        await ErrandsModel.shared.refresh()
+        return ErrandsModel.shared.errands.filter { $0.state.isFinished }.count > finishedBefore
     }
 
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: any Error) {

@@ -79,3 +79,20 @@ test("only phone-shaped text counts as a listing number", () => {
   assert.equal(listingPhone(48221234567), null, "not a string");
   assert.equal(listingPhone(undefined), null);
 });
+
+test("a place keeps its booking page on a known platform, never another link (decision 2026-11-11-salon-booking-pages)", () => {
+  const out = normalizeMonidTool("find_places", {
+    local_results: [
+      { title: "Barber Demo", phone: "22 123 45 67", links: { website: "https://booksy.com/pl-pl/12345_barber-demo_barber-shop_3_warszawa#ba_s=sr_1" } },
+      { title: "Studio Demo", book_online: "https://www.fresha.com/pl/a/studio-demo-krakow-abc" },
+      { title: "Own Site Demo", website: "https://own-site.example/book" },
+      { title: "Lookalike Demo", website: "https://booksy.com.evil.example/x" },
+    ],
+  }, { query: "barber", near: "Warszawa" });
+  assert.match(out.text, /"Barber Demo", phone: "22 123 45 67", booking page \(Booksy\): https:\/\/booksy\.com\/pl-pl\/12345_barber-demo_barber-shop_3_warszawa\n/);
+  assert.match(out.text, /"Studio Demo", booking page \(Fresha\): https:\/\/www\.fresha\.com\/pl\/a\/studio-demo-krakow-abc/);
+  assert.doesNotMatch(out.text, /own-site\.example|evil\.example/);
+  assert.match(out.text, /Doddy has not booked anything/);
+  const none = normalizeMonidTool("find_places", { local_results: [{ title: "Cafe Demo" }] }, { query: "cafe", near: "Warszawa" });
+  assert.doesNotMatch(none.text, /booking page/, "no note when there is no booking page");
+});

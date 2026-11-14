@@ -188,6 +188,7 @@ extension VoiceToolReply {
         }
     }
 
+    public static let homeUnavailable = "unavailable: this version of Doddy can't use the user's Home. Nothing was changed. Tell the user in one short sentence that control of lights and outlets isn't in this build."
     public static let homeDeclined = "declined: the user said no. Nothing was changed. Say so in one short sentence."
     public static let homeNotAllowed = "not allowed: the user hasn't let Doddy use Home. Say so and don't ask again."
     public static let homeNotFound = "not found: no accessory or scene has that name. Don't guess one; ask the user for the name."
@@ -197,5 +198,18 @@ extension VoiceToolReply {
     public static func homeRefused(_ reason: String) -> String { "not changed: \(reason) Say so in one short sentence." }
     public static func homeUnreachable(_ name: String) -> String {
         "not changed: \(name) isn't responding in HomeKit. Nothing was changed; don't say it worked."
+    }
+}
+
+
+/// Whether a build can use HomeKit at all. Without the HomeKit entitlement (a free Apple team can't
+/// sign one) iOS never shows the prompt and never answers, so the app must say so at once instead
+/// of waiting for an answer that can't come.
+public enum HomeKitEntitlement {
+    /// `profile` is the text of the build's embedded provisioning profile. A build that has none
+    /// (App Store, TestFlight) is signed with its entitlements, so nothing says it lacks HomeKit.
+    public static func isMissing(profile: String?) -> Bool {
+        guard let profile, !profile.isEmpty else { return false }
+        return !profile.contains("com.apple.developer.homekit")
     }
 }

@@ -223,6 +223,8 @@ const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const money = z.strictObject({ minor: z.number().int().positive(), currency: z.literal("PLN") });
 const readChain = z.enum(["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "leclerc", "maxizoo", "komfort", "ccc", "lewiatan", "natura", "action", "deichmann", "zooplus"]);
 const anyChain = z.enum(["biedronka", "lidl", "dino", "rossmann", "aldi", "zabka", "delikatesy", "leclerc", "maxizoo", "komfort", "ccc", "lewiatan", "natura", "action", "deichmann", "zooplus", "kaufland", "carrefour", "auchan", "netto"]);
+/** 13 Nov 2026: when the source was read, the leaflet's dates, and whether the chain's leaflets were read whole. */
+const leafletRead = z.strictObject({ readAt: z.string().datetime(), validFrom: day.optional(), validTo: day.optional(), complete: z.boolean() });
 export const OfferSchema = z.strictObject({
   chain: readChain,
   product: z.string().min(1).max(160),
@@ -246,6 +248,9 @@ export const OfferSchema = z.strictObject({
   cut: z.strictObject({ percent: z.number().int().min(1).max(99) }).optional(),
   buyUrl: z.string().url().startsWith("https://").optional(),
   limit: z.number().int().positive().optional(),
+  // 13 Nov 2026: how it matched the item (in `similar`, always "similar") and when its source was read.
+  match: z.enum(["exact", "brand", "similar"]).optional(),
+  leafletRead: leafletRead.optional(),
 });
 export const PromotionSchema = z.strictObject({
   chain: readChain,
@@ -256,6 +261,7 @@ export const PromotionSchema = z.strictObject({
   validFrom: day.optional(),
   validTo: day.optional(),
   source: z.strictObject({ url: z.string().url().startsWith("https://"), page: z.number().int().positive().optional() }),
+  leafletRead: leafletRead.optional(),
 });
 /** Fewer pages read than were worth reading: read is below of. */
 const pagesRead = z.strictObject({ read: z.number().int().min(0), of: z.number().int().positive() }).refine((p) => p.read < p.of);
@@ -265,11 +271,12 @@ export const ResponseSchema = z.strictObject({
     z.strictObject({
       chain: anyChain, status: z.literal("checked"),
       leaflet: z.strictObject({ title: z.string().optional(), url: z.string().url(), validFrom: day.optional(), validTo: day.optional() }),
-      pages: pagesRead.optional(),
+      pages: pagesRead.optional(), readAt: z.string().datetime().optional(), complete: z.boolean().optional(),
     }),
     z.strictObject({ chain: anyChain, status: z.literal("link_only"), leafletUrl: z.string().url() }),
-    z.strictObject({ chain: anyChain, status: z.literal("failed"), pages: pagesRead.optional() }),
-    z.strictObject({ chain: anyChain, status: z.enum(["no_match", "no_leaflet", "blocked"]) }),
+    z.strictObject({ chain: anyChain, status: z.literal("failed"), pages: pagesRead.optional(), readAt: z.string().datetime().optional(), complete: z.boolean().optional() }),
+    z.strictObject({ chain: anyChain, status: z.literal("no_match"), readAt: z.string().datetime().optional(), complete: z.boolean().optional() }),
+    z.strictObject({ chain: anyChain, status: z.enum(["no_leaflet", "blocked"]) }),
   ])),
   items: z.array(z.strictObject({ query: z.string(), offers: z.array(OfferSchema).max(6), promotions: z.array(PromotionSchema).min(1).max(3).optional(), similar: z.array(OfferSchema).min(1).max(3).optional() })),
   // ADR-666: addresses only. `buyUrl` only from an affiliate rule.

@@ -5,7 +5,7 @@
 // recording, no per-call overrides. The server refuses to call while the live agent differs from this
 // spec (src/taskCalls/agentSafety.ts), so change the agent here, never in the dashboard.
 //
-//   ELEVENLABS_API_KEY=… TASK_CALL_VOICE_ID=<a Polish voice id> node scripts/setup-task-call-agent.mjs [--dry-run]
+//   ELEVENLABS_API_KEY=… TASK_CALL_VOICE_ID=<a Polish voice id> node scripts/setup-task-call-agent.mjs [--agent book|order] [--dry-run]
 //
 // --dry-run prints the request instead of sending it.
 // Afterwards: set ELEVENLABS_TASK_AGENT_ID on the server, and point the workspace's post-call webhook
@@ -15,20 +15,26 @@
 import { readFileSync } from "node:fs";
 
 const dryRun = process.argv.includes("--dry-run");
+// --agent book creates the booking agent "Doddy (books for you)" from voice-agent/task-call-book/
+// (decision docs/decisions/2026-11-12-book-agent.md); set its id as ELEVENLABS_TASK_BOOK_AGENT_ID.
+const book = process.argv.includes("--agent") && process.argv[process.argv.indexOf("--agent") + 1] === "book";
+// --agent order creates the food-order agent "Doddy (orders for you)" from voice-agent/task-call-order/
+// (decision docs/decisions/2026-11-12-food-by-phone.md); set its id as ELEVENLABS_TASK_ORDER_AGENT_ID.
+const order = process.argv.includes("--agent") && process.argv[process.argv.indexOf("--agent") + 1] === "order";
 const { ELEVENLABS_API_KEY: apiKey, TASK_CALL_VOICE_ID: voiceId } = process.env;
 if (!dryRun && (!apiKey || !voiceId)) {
   console.error("Set ELEVENLABS_API_KEY and TASK_CALL_VOICE_ID (a Polish voice from your ElevenLabs library), or use --dry-run.");
   process.exit(1);
 }
 
-const specDir = new URL("../../../voice-agent/task-call/", import.meta.url);
+const specDir = new URL(order ? "../../../voice-agent/task-call-order/" : book ? "../../../voice-agent/task-call-book/" : "../../../voice-agent/task-call/", import.meta.url);
 const read = (name) => readFileSync(new URL(name, specDir), "utf8");
 const tools = JSON.parse(read("tools.json"));
 const session = JSON.parse(read("session.json"));
 const prompt = read("instructions.md").trim();
 const el = session.elevenlabs;
 
-if (tools.tools.length) throw new Error("voice-agent/task-call/tools.json must have no function tools");
+if (tools.tools.length) throw new Error(`${specDir.pathname}tools.json must have no function tools`);
 
 // System tools in the shape the API returns them (read from a live agent on 2026-10-18).
 const builtInTools = Object.fromEntries(tools.system_tools.map((t) => [t.name, {
@@ -82,5 +88,6 @@ if (!res.ok) {
   console.error(`HTTP ${res.status}: ${JSON.stringify(json)}`);
   process.exit(1);
 }
-console.log(`Done. ELEVENLABS_TASK_AGENT_ID=${json.agent_id}`);
-console.log("Next: set ELEVENLABS_TASK_AGENT_ID on the server, then GET /v1/call-cases/availability lists any setting the server still finds unsafe (agentProblems).");
+const envName = order ? "ELEVENLABS_TASK_ORDER_AGENT_ID" : book ? "ELEVENLABS_TASK_BOOK_AGENT_ID" : "ELEVENLABS_TASK_AGENT_ID";
+console.log(`Done. ${envName}=${json.agent_id}`);
+console.log(`Next: set ${envName} on the server,`+" then GET /v1/call-cases/availability lists any setting the server still finds unsafe (agentProblems).");

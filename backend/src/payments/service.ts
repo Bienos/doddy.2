@@ -6,7 +6,10 @@ import { argumentDigest, UsageLimiter } from "../policy.js";
 import type { Store } from "../store.js";
 import { AskGate, type AskBinding } from "../tools/askFirst.js";
 import {
+  PAY_READ_TOOL,
   PAY_TOOL,
+  type PaymentPageCard,
+  PaymentPageSchema,
   PaymentPaySchema,
   PaymentPrepareSchema,
   type PaymentPrepared,
@@ -43,8 +46,13 @@ export interface PaymentsPolicy {
   confirmAmount: number;
   userDaily: number;
   serviceDaily: number;
-  /** Empty: any public https site (each payment still needs its own approval). */
+  /**
+   * Empty: any public https site, in mock mode only. In live mode an empty list means no payment can start: the
+   * page is a model's choice, so it may only be one of the sites the owner listed (config refuses this too).
+   */
   allowedHosts: readonly string[];
+  /** Sites whose page addresses may keep a query string ("?..."). Empty: none may; such an address is refused. */
+  queryHosts: readonly string[];
 }
 
 export interface PaymentsServiceDeps {
@@ -76,19 +84,24 @@ const MAX_READ_CHARS = 4_000;
 type Operation = PaymentReceipt["operation"];
 
 /**
- * Doddy paying for things, one page at a time. A model may only propose a page (a URL). Everything
- * that decides money is typed code in this order:
+ * Doddy paying for things, one page at a time. A model may only propose a page (a URL). Nothing is
+ * fetched from that address until the person has seen it and said yes (DOD-07). Everything that decides
+ * money is typed code in this order:
  *
- *   prepare: signed-in -> wallet set up -> user's switch on -> public https URL -> read the page's
- *            402 offer -> offer within policy (USDC, this network, under the per-payment cap, daily
- *            room) -> a single-use approval bound to {page, recipient, amount, token, wallet}.
+ *   page:    signed-in -> wallet set up (and, live, a list of sites) -> user's switch on -> public https
+ *            URL on the list, no query unless its site may have one -> a single-use approval to READ
+ *            exactly that address. Nothing is fetched; the card shows the site and the path.
+ *   prepare: same gates -> use up the read approval for exactly this address -> read the page's 402
+ *            offer -> offer within policy (USDC, this network, under the per-payment cap, daily room)
+ *            -> a single-use approval to PAY, bound to {page, recipient, amount, token, wallet}.
  *   pay:     same gates -> read the offer AGAIN -> it must hash to what was approved (a changed price or
  *            recipient needs a new approval) -> reserve the daily spend -> use up the approval ->
  *            write the ledger row -> sign -> send ONCE -> say "paid" only on the seller's valid
  *            settlement answer; anything unclear after sending is outcome_unknown and is never retried.
  *
- * What leaves this process: the page address to the seller, and a signed transfer authorization that
- * is only valid for the approved recipient and amount, for at most two minutes. No key is ever here.
+ * What leaves this process: the page address to the seller (only after the person approved that exact
+ * address), and a signed transfer authorization that is only valid for the approved recipient and amount,
+ * for at most two minutes. No key is ever here.
  */
 export class PaymentsService {
   readonly mode: "mock" | "live";
@@ -102,6 +115,8 @@ export class PaymentsService {
   private readonly ask: AskGate;
   private readonly now: () => number;
   private readonly nonce: () => string;
+  /** Live mode without a list of sites: a model could name any site, so no payment route can start. */
+  private readonly sitesMissing: boolean;
 
   constructor(deps: PaymentsServiceDeps) {
     this.mode = deps.mode;
@@ -111,6 +126,7 @@ export class PaymentsService {
     this.wallet = deps.wallet;
     this.http = deps.http;
     this.policy = deps.policy;
+    this.sitesMissing = deps.mode === "live" && deps.policy.allowedHosts.length === 0;
     this.limits = deps.limits;
     this.limiter = new UsageLimiter(deps.store, deps.limits);
     this.now = deps.now ?? Date.now;
@@ -139,12 +155,12 @@ export class PaymentsService {
       mode: this.mode,
       wallet: {
         kind: this.wallet?.kind ?? "none",
-        configured: this.wallet !== null,
+        configured: this.wallet !== null && !this.sitesMissing,
         account: this.wallet ? shortAddress(this.wallet.address) : null,
         network: this.policy.network,
         testNetwork: network.testnet,
       },
-      enabled: this.wallet !== null && (await this.store.toolEnabled(userId, PAY_TOOL)),
+      enabled: this.wallet !== null && !this.sitesMissing && (await this.store.toolEnabled(userId, PAY_TOOL)),
       limits: {
         perPayment: formatUsdc(this.policy.maxPerPayment),
         perDay: formatUsdc(this.policy.userDaily),
@@ -163,31 +179,69 @@ export class PaymentsService {
 
   async setSwitch(userId: string, body: unknown): Promise<{ status: PaymentStatus; receipt: PaymentReceipt }> {
     const request = parse(PaymentSwitchSchema, body);
-    if (request.enabled && this.wallet === null) {
-      throw await this.refuse(userId, "switch", "live_not_configured", "No payment wallet is set up on this server.", "wallet_not_set_up");
+    if (request.enabled) {
+      const missing = await this.notSetUp(userId, "switch");
+      if (missing) throw missing;
     }
     await this.store.setToolEnabled(userId, PAY_TOOL, request.enabled, this.now());
     const receipt = await this.receipt(userId, { operation: "switch", status: "succeeded", summary: `Payments switched ${request.enabled ? "on" : "off"}.` });
     return { status: await this.status(userId), receipt };
   }
 
+  // ---------------------------------------------------------------- page (nothing is read)
+
+  /**
+   * Step 1. A model proposed this page; nothing is fetched from it. Returns the site and the page exactly as
+   * Doddy would open them, for the card that asks whether to check the price there, and a single-use approval
+   * to read that one address. The app sends the approval back only after the person's yes.
+   */
+  async page(userId: string, body: unknown): Promise<PaymentPageCard> {
+    const request = parse(PaymentPageSchema, body);
+    const now = this.now();
+    await this.limiter.reserveRequest(userId, now);
+    const wallet = await this.requireUsable(userId, "prepare");
+    const { url, host } = await this.requireUrl(userId, "prepare", request.url);
+    await this.refuseIfUnconfirmed(userId, url, host, now);
+    const { approvalId, expiresAt } = await this.ask.issue(this.readBinding(userId, url, wallet.address));
+    const address = new URL(url);
+    const path = `${address.pathname}${address.search}`;
+    return {
+      mode: this.mode,
+      page: { host, path },
+      preview: {
+        title: `Check the price on ${host}?`,
+        lines: [`Site: ${host}`, `Page: ${path}`, "Doddy opens this page to read its price only after you say yes. Nothing is paid yet."],
+        confirmLabel: "Check the price",
+      },
+      approvalId,
+      expiresAt: new Date(expiresAt).toISOString(),
+    };
+  }
+
   // ---------------------------------------------------------------- prepare
 
-  /** Shows exactly what would be paid and returns a single-use approval bound to those terms. Pays nothing. */
+  /**
+   * Step 2, after the person's yes to the page: reads the page's offer only with the approval `page` issued for
+   * exactly this address, used up right before the one plain GET. Then shows exactly what would be paid and
+   * returns a single-use approval bound to those terms. Pays nothing.
+   */
   async prepare(userId: string, body: unknown): Promise<PaymentPrepared> {
     const request = parse(PaymentPrepareSchema, body);
     const now = this.now();
     await this.limiter.reserveRequest(userId, now);
     const wallet = await this.requireUsable(userId, "prepare");
     const { url, host } = await this.requireUrl(userId, "prepare", request.url);
-    if (await this.store.hasUnconfirmedPaymentFor(userId, urlHash(url), now - DUPLICATE_WINDOW_MS)) {
-      throw await this.refuse(
-        userId, "prepare", "capability_disabled",
-        "A payment to this page was sent a moment ago and was never confirmed. Check your wallet's history before paying again.",
-        "payment_unconfirmed", host,
-      );
-    }
-    const offer = await this.limiter.withSlot(userId, () => this.readOffer(userId, "prepare", url, host));
+    await this.refuseIfUnconfirmed(userId, url, host, now);
+    const read = (mode: "check" | "use"): Promise<boolean> => this.ask.allows(this.readBinding(userId, url, wallet.address), request.approvalId, mode);
+    const notApproved = () =>
+      this.refuse(userId, "prepare", "capability_disabled", "Doddy opens a payment page only after you say yes to its address. Nothing was read or paid.", "confirmation_required", host);
+    // Checked first, so a request without the person's yes never waits for a slot; used up inside the slot, right
+    // before the page is read, so one yes reads the page once and a refused slot (busy) doesn't cost the yes.
+    if (!(await read("check"))) throw await notApproved();
+    const offer = await this.limiter.withSlot(userId, async () => {
+      if (!(await read("use"))) throw await notApproved();
+      return this.readOffer(userId, "prepare", url, host);
+    });
     const amountText = formatUsdc(offer.accepted.amount);
     const room = await this.roomToday(userId, now);
     if (offer.accepted.amount > room.user || offer.accepted.amount > room.service) {
@@ -220,6 +274,12 @@ export class PaymentsService {
     await this.limiter.reserveRequest(userId, now);
     const wallet = await this.requireUsable(userId, "pay");
     const { url, host } = await this.requireUrl(userId, "pay", request.url);
+    // The page is read again below only for someone holding a live approval to pay (which the price card gave,
+    // after the person's yes to the page): a request without one reads nothing. The full check, against the
+    // terms, follows the read.
+    if (!(await this.ask.issuedFor({ userId, tool: PAY_TOOL, accountId: wallet.address }, request.approvalId))) {
+      throw await this.refuse(userId, "pay", "capability_disabled", "This payment needs a fresh confirmation. Nothing was paid.", "confirmation_required", host);
+    }
     return this.limiter.withSlot(userId, async () => {
       const offer = await this.readOffer(userId, "pay", url, host);
       const { accepted } = offer;
@@ -352,6 +412,22 @@ export class PaymentsService {
     return { required: parsed.value, accepted: chosen.accepted };
   }
 
+  /** The approval to read one page: this person, this wallet, and exactly this address (path and query included). */
+  private readBinding(userId: string, url: string, from: string): AskBinding {
+    return { userId, tool: PAY_READ_TOOL, accountId: from, argsDigest: argumentDigest({ v: 1, read: url }) };
+  }
+
+  /** A page whose last payment was sent and never confirmed can't be paid again for a while. Nothing is read. */
+  private async refuseIfUnconfirmed(userId: string, url: string, host: string, now: number): Promise<void> {
+    if (await this.store.hasUnconfirmedPaymentFor(userId, urlHash(url), now - DUPLICATE_WINDOW_MS)) {
+      throw await this.refuse(
+        userId, "prepare", "capability_disabled",
+        "A payment to this page was sent a moment ago and was never confirmed. Check your wallet's history before paying again.",
+        "payment_unconfirmed", host,
+      );
+    }
+  }
+
   /** The single-use approval's binding: this person, this tool, this wallet, and the page with its exact terms. */
   private binding(userId: string, url: string, accepted: Accepted, from: string): AskBinding {
     return { userId, tool: PAY_TOOL, accountId: from, argsDigest: this.offerDigest(url, accepted, from) };
@@ -400,16 +476,25 @@ export class PaymentsService {
 
   // ---------------------------------------------------------------- gates and receipts
 
-  /** Wallet set up and the person's own switch on. A blocked receipt is written when not. */
+  /** The refusal when this server can't take payments at all (no wallet, or live without a list of sites); null when it can. */
+  private async notSetUp(userId: string, op: Operation): Promise<AppError | null> {
+    if (this.wallet === null) return this.refuse(userId, op, "live_not_configured", "No payment wallet is set up on this server.", "wallet_not_set_up");
+    if (this.sitesMissing) return this.refuse(userId, op, "live_not_configured", "Payments need a list of allowed sites on this server first.", "sites_not_set_up");
+    return null;
+  }
+
+  /** Wallet set up (and, live, a list of sites) and the person's own switch on. A blocked receipt is written when not. */
   private async requireUsable(userId: string, op: Operation): Promise<PaymentWallet> {
-    if (this.wallet === null) throw await this.refuse(userId, op, "live_not_configured", "No payment wallet is set up on this server.", "wallet_not_set_up");
+    const missing = await this.notSetUp(userId, op);
+    if (missing) throw missing;
+    const wallet = this.wallet!;
     if (!(await this.store.toolEnabled(userId, PAY_TOOL))) throw await this.refuse(userId, op, "capability_disabled", "Payments are turned off in Settings.", "capability_disabled");
-    return this.wallet;
+    return wallet;
   }
 
   private async requireUrl(userId: string, op: Operation, raw: string): Promise<{ url: string; host: string }> {
     try {
-      const url = checkSellerUrl(raw, this.policy.allowedHosts);
+      const url = checkSellerUrl(raw, this.policy.allowedHosts, this.policy.queryHosts);
       return { url, host: new URL(url).hostname };
     } catch (error) {
       const reason: UrlRefusal = error instanceof UrlRefused ? error.reason : "not_a_url";
@@ -468,6 +553,7 @@ const URL_TEXT: Record<UrlRefusal, string> = {
   address_literal: "Doddy only pays on public websites.",
   internal_name: "Doddy only pays on public websites.",
   host_not_allowed: "That site isn't on the list of sites Doddy may pay.",
+  query: "Doddy doesn't open payment addresses with extra parameters (the part after \"?\") on this site.",
 };
 
 function refusalText(reason: RefusalReason, policy: PaymentsPolicy, amount: number | undefined): string {

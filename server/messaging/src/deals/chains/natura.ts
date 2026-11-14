@@ -14,8 +14,9 @@
 //     the carousel "Promocje z gazetki" (7 products on 30 Oct). The leaflet itself is a 20-page PDF flipbook on
 //     heyzine.com, not the shop's host, so it isn't read: the carousel is only part of the leaflet.
 //   /kategoria/promocje-4949: the online shop's promotions, first page only ("Pozycje od 1 do 56 ze 11177"). Its
-//     tiles carry no dates. On 30 Oct this page was 3.8 MB, over the fetcher's 3 MB cap, so the service's
-//     fetcher answers `too_large` and the read says so; the leaflet page was 2.4 MB.
+//     tiles carry no dates. On 30 Oct this page was 3.8 MB (3.9 MB on 13 Nov), over the fetcher's 3 MB cap, so every
+//     read said `some_pages_failed`; since 13 Nov 2026 both pages are asked for with a cap of NATURA_MAX_BYTES (the
+//     leaflet page was 2.4 MB).
 // Every page also carries a site-wide "Nie zapomnij o:" carousel (forms with a `product-…-popup` class): not part
 // of either list, so skipped. A tile whose price depends on a variant (a "from" price) is skipped.
 // The shop's tooltips are not read: on 30 Oct a blank label on 50 products carried "Drugi produkt za 50% ceny".
@@ -23,6 +24,7 @@
 // Nothing of the person's words reaches the shop. Because the leaflet is read only in part and the promotions only
 // on their first page, every read says `incomplete`: finding nothing at Natura is never "no match".
 import { currentWeek, dayMonth, decodeEntities, fetchOfficial, isObject, moneyOf, officialUrl, str } from "./common.js";
+import { elements, findFrom, firstElement, forwardFinder, startTags, stripTags } from "../../htmlScan.js";
 import { packSize } from "./maxizoo.js";
 import { parsePrintedUnitPrice, parseSize } from "../match.js";
 import { parsePrice } from "../vision.js";
@@ -32,6 +34,8 @@ export const NATURA_HOSTS = ["drogerienatura.pl", "www.drogerienatura.pl"] as co
 const ORIGIN = "https://drogerienatura.pl";
 export const NATURA_LEAFLET = `${ORIGIN}/gazetka-promocyjna`;
 export const NATURA_PROMOTIONS = `${ORIGIN}/kategoria/promocje-4949`;
+/** Natura's two pages are server-rendered HTML of 2.4 and 3.9 MB (13 Nov 2026); this cap leaves them room to grow. */
+export const NATURA_MAX_BYTES = 6 * 1024 * 1024;
 
 // ---------- text ----------
 
@@ -45,14 +49,16 @@ const NAMED: Record<string, string> = {
 
 /** Tags out, entities decoded, spaces (and no-break spaces) collapsed. */
 export function plainText(html: string): string {
-  const named = html.replace(/<[^>]*>/g, " ").replace(/&([a-z]+);/gi, (all, n: string) => NAMED[n] ?? all);
+  const named = stripTags(html).replace(/&([a-z]+);/gi, (all, n: string) => NAMED[n] ?? all);
   return decodeEntities(named).replace(/[\s ]+/g, " ").trim();
 }
 
 /** The attributes of one start tag, values decoded ("class", "href", "data-price-amount", …). */
 function attributes(tag: string): Record<string, string> {
   const out: Record<string, string> = {};
-  for (const m of tag.matchAll(/([\w:@.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
+  // A name is only tried from its first character: from the middle of a name it can't match where the whole name
+  // failed, and retrying every position made a long run of letters cost its square.
+  for (const m of tag.matchAll(/(?<![\w:@.-])([\w:@.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)) {
     const name = m[1]!.toLowerCase();
     if (!(name in out)) out[name] = decodeEntities(m[2] ?? m[3] ?? "");
   }
@@ -61,11 +67,58 @@ function attributes(tag: string): Record<string, string> {
 
 /** The first start tag of `name` in `html` whose attributes pass `test`, with where its element's content starts. */
 function findTag(html: string, name: string, test: (a: Record<string, string>) => boolean): { attrs: Record<string, string>; end: number } | undefined {
-  for (const m of html.matchAll(new RegExp(`<${name}\\b[^>]*>`, "gi"))) {
-    const attrs = attributes(m[0]);
-    if (test(attrs)) return { attrs, end: m.index + m[0].length };
+  for (const tag of startTags(html, new RegExp(`<${name}\\b`, "gi"))) {
+    const attrs = attributes(tag.text);
+    if (test(attrs)) return { attrs, end: tag.end };
   }
   return undefined;
+}
+
+/**
+ * The content of the first <div> whose class attribute names `cls`, up to the first "</div>" after its start tag:
+ * what /<div\b[^>]*class\s*=\s*"[^"]*\bCLS\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i finds, in linear time. As there, a ">"
+ * inside the class value (a Tailwind class such as `[&>svg]:w-4`) doesn't end the tag.
+ */
+function classDiv(html: string, cls: string): string | undefined {
+  const named = new RegExp(String.raw`\b${cls}\b`, "i");
+  for (let from = 0; ;) {
+    const open = findFrom(html, /<div\b/gi, from);
+    if (!open) return undefined;
+    const gt = html.indexOf(">", open.end);
+    if (gt < 0) return undefined;
+    // The class attribute starts before the first ">"; the last one that names `cls` wins, as the regex's greedy
+    // `[^>]*` had it. Its value runs to the next quote, past a ">" if need be.
+    let valueEnd = -1;
+    for (const a of html.slice(open.end, gt).matchAll(/class\s*=\s*"/gi)) {
+      const start = open.end + a.index + a[0].length;
+      const close = html.indexOf('"', start);
+      if (close >= 0 && named.test(html.slice(start, close))) valueEnd = close;
+    }
+    if (valueEnd >= 0) {
+      const tagEnd = html.indexOf(">", valueEnd + 1);
+      const c = tagEnd < 0 ? undefined : findFrom(html, /<\/div>/gi, tagEnd + 1);
+      return c ? html.slice(tagEnd + 1, c.index) : undefined;
+    }
+    from = gt + 1; // a <div inside this tag has a subset of its class attributes, so it can't match either
+  }
+}
+
+/** The product id in a tile's `<input name="product" value="…">`: what
+ * /<input\b[^>]*name\s*=\s*"product"[^>]*value\s*=\s*"(\d{1,10})"/i finds, in linear time. */
+function inputProductId(html: string): string | undefined {
+  for (let from = 0; ;) {
+    const open = findFrom(html, /<input\b/gi, from);
+    if (!open) return undefined;
+    const gt = html.indexOf(">", open.end);
+    const tag = html.slice(open.end, gt < 0 ? undefined : gt);
+    const name = /name\s*=\s*"product"/i.exec(tag);
+    // The last value after the first name="product", as the regex's greedy `[^>]*` had it.
+    const values = name ? [...tag.slice(name.index + name[0].length).matchAll(/value\s*=\s*"(\d{1,10})"/gi)] : [];
+    const last = values[values.length - 1];
+    if (last) return last[1];
+    if (gt < 0) return undefined;
+    from = gt + 1;
+  }
 }
 
 const hasClass = (a: Record<string, string>, c: string) => (a.class ?? "").split(/\s+/).includes(c);
@@ -83,8 +136,8 @@ export function productLabels(html: string): Map<string, string[]> {
     if (!product || !/^\d{1,10}$/.test(product)) return;
     // The label's text is the first amlabel-text after its config and before the next label's.
     const rest = html.slice(m.index + m[0].length, configs[i + 1]?.index ?? m.index + m[0].length + 8000);
-    const text = /<div\b[^>]*class\s*=\s*"[^"]*\bamlabel-text\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i.exec(rest);
-    const label = text ? plainText(text[1]!).slice(0, 80) : "";
+    const text = classDiv(rest, "amlabel-text");
+    const label = text !== undefined ? plainText(text).slice(0, 80) : "";
     if (!label) return;
     const list = out.get(product) ?? [];
     if (!list.includes(label)) list.push(label);
@@ -166,11 +219,12 @@ function priceOf(tile: string, type: string): Money | undefined {
 
 /** "Najniższa cena towaru w okresie 30 dni przed wprowadzeniem obniżki 15,99 zł": only a price labelled so. */
 function lowest30dOf(tile: string): Money | undefined {
-  const m = /<div\b[^>]*class\s*=\s*"[^"]*\bhistorical-price\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i.exec(tile);
-  if (!m) return undefined;
-  const parts = /^([\s\S]*?)<span\b[^>]*>([\s\S]*?)<\/span>/i.exec(m[1]!);
-  if (!parts || !/najni[żz]sza\s+cena[\s\S]{0,60}\b30\s+dni/i.test(plainText(parts[1]!))) return undefined;
-  return parsePrice(plainText(parts[2]!).replace(/(\d)\s(?=\d{3}(?:\D|$))/g, "$1"));
+  const box = classDiv(tile, "historical-price");
+  if (box === undefined) return undefined;
+  // The label before the box's first <span>, the price inside it (/^([\s\S]*?)<span\b[^>]*>([\s\S]*?)<\/span>/i).
+  const span = firstElement(box, /<span\b/gi, /<\/span>/gi);
+  if (!span || !/najni[żz]sza\s+cena[\s\S]{0,60}\b30\s+dni/i.test(plainText(box.slice(0, span.tag.index)))) return undefined;
+  return parsePrice(plainText(span.content).replace(/(\d)\s(?=\d{3}(?:\D|$))/g, "$1"));
 }
 
 /** One tile as a data product, or undefined (the site-wide carousel, a variant's "from" price, no price or page). */
@@ -189,9 +243,9 @@ function tileProduct(form: string, body: string, labels: Map<string, string[]>):
   const regular = priceOf(body, "oldPrice");
   const lowest30d = lowest30dOf(body);
   const size = packSize(name);
-  const unitBox = /<div\b[^>]*class\s*=\s*"[^"]*\bcapacity-per-price\b[^"]*"[^>]*>([\s\S]*?)<\/div>/i.exec(body);
-  const unitText = printedUnit(unitBox ? plainText(unitBox[1]!) : undefined, size);
-  const id = /<input\b[^>]*name\s*=\s*"product"[^>]*value\s*=\s*"(\d{1,10})"/i.exec(body)?.[1] ?? /\/product\/(\d{1,10})\//.exec(attrs.action ?? "")?.[1];
+  const unitBox = classDiv(body, "capacity-per-price");
+  const unitText = printedUnit(unitBox !== undefined ? plainText(unitBox) : undefined, size);
+  const id = inputProductId(body) ?? /\/product\/(\d{1,10})\//.exec(attrs.action ?? "")?.[1];
   const conditions = new Map<string, Condition>();
   for (const label of (id ? labels.get(id) : undefined) ?? []) {
     const c = labelCondition(label);
@@ -211,16 +265,29 @@ function tileProduct(form: string, body: string, labels: Map<string, string[]>):
 function pageProducts(html: string): DataProduct[] {
   const labels = productLabels(html);
   const out = new Map<string, DataProduct>();
-  for (const m of html.matchAll(/<form\b[^>]*>/gi)) {
-    const start = m.index + m[0].length;
-    const close = html.indexOf("</form>", start);
-    const product = tileProduct(m[0], html.slice(start, close < 0 ? undefined : close), labels);
+  const forms = [...startTags(html, /<form\b/gi)];
+  const closeAt = forwardFinder(html, "</form>");
+  forms.forEach((form, i) => {
+    // A form's content runs to its "</form>", and never past the next form (forms don't nest), so a page of
+    // unclosed forms isn't read to its end once per form.
+    const end = Math.min(closeAt(form.end)?.index ?? html.length, forms[i + 1]?.index ?? html.length);
+    const product = tileProduct(form.text, html.slice(form.end, end), labels);
     if (product && !out.has(product.url)) out.set(product.url, product);
-  }
+  });
   return [...out.values()];
 }
 
-const hasTiles = (html: string) => /<form\b[^>]*\bproduct_addtocart_form\b/i.test(html);
+/** Whether the page has a product tile: what /<form\b[^>]*\bproduct_addtocart_form\b/i finds, in linear time. */
+function hasTiles(html: string): boolean {
+  for (let from = 0; ;) {
+    const open = findFrom(html, /<form\b/gi, from);
+    if (!open) return false;
+    const gt = html.indexOf(">", open.end);
+    if (/\bproduct_addtocart_form\b/i.test(html.slice(open.end, gt < 0 ? undefined : gt))) return true;
+    if (gt < 0) return false;
+    from = gt + 1;
+  }
+}
 
 // ---------- the two pages ----------
 
@@ -228,8 +295,8 @@ export interface NaturaLeaflet { products: DataProduct[]; validFrom?: string; va
 
 /** "ważna od 15.10 do 2.11.2026" in a heading: the leaflet's first and last day. */
 export function leafletDates(html: string, today: string): { validFrom?: string; validTo?: string } {
-  for (const m of html.matchAll(/<h[1-3]\b[^>]*>([\s\S]*?)<\/h[1-3]>/gi)) {
-    const d = /wa[żz]n[aey]\s+od\s+(\d{1,2})\.(\d{1,2})(?:\.(\d{4}))?\s*(?:r\.?\s*)?do\s+(\d{1,2})\.(\d{1,2})(?:\.(\d{4}))?/i.exec(plainText(m[1]!));
+  for (const h of elements(html, /<h[1-3]\b/gi, /<\/h[1-3]>/gi)) {
+    const d = /wa[żz]n[aey]\s+od\s+(\d{1,2})\.(\d{1,2})(?:\.(\d{4}))?\s*(?:r\.?\s*)?do\s+(\d{1,2})\.(\d{1,2})(?:\.(\d{4}))?/i.exec(plainText(h.content));
     if (!d) continue;
     const [fd, fm, fy, td, tm, ty] = d.slice(1).map((x) => (x === undefined ? undefined : Number(x)));
     const validTo = dayMonth(td!, tm!, today, ty);
@@ -253,10 +320,10 @@ export interface NaturaListing { products: DataProduct[]; more: boolean }
 
 /** The promotions page: its products and whether its listing has more pages than this one. */
 export function parseNaturaPromotions(html: string): NaturaListing | undefined {
-  const amount = /<p\b[^>]*\bid\s*=\s*"toolbar-amount"[^>]*>([\s\S]*?)<\/p>/i.exec(html);
+  const amount = firstElement(html, /<p\b/gi, /<\/p>/gi, (tag) => /\bid\s*=\s*"toolbar-amount"/i.test(tag.text));
   if (!amount && !hasTiles(html)) return undefined;
   // "Pozycje od 1 do 56 ze 11177"
-  const n = amount ? /do\s+([\d\s]+?)\s+z[e]?\s+([\d\s]+)$/i.exec(plainText(amount[1]!)) : null;
+  const n = amount ? /do\s+([\d\s]+?)\s+z[e]?\s+([\d\s]+)$/i.exec(plainText(amount.content)) : null;
   const shown = n ? Number(n[1]!.replace(/\s/g, "")) : NaN;
   const total = n ? Number(n[2]!.replace(/\s/g, "")) : NaN;
   const more = Number.isFinite(shown) && Number.isFinite(total) ? total > shown : /\bpages-item-next\b/.test(html);
@@ -275,7 +342,7 @@ export const natura: ChainAdapter = {
     const seen = new Set<string>();
     const fresh = (products: DataProduct[]) => products.filter((p) => !seen.has(p.url) && seen.add(p.url));
 
-    const leafletPage = await fetchOfficial(ctx, NATURA_LEAFLET, NATURA_HOSTS, "text/html");
+    const leafletPage = await fetchOfficial(ctx, NATURA_LEAFLET, NATURA_HOSTS, "text/html", { maxBytes: NATURA_MAX_BYTES });
     if (!leafletPage.ok) failures.push(leafletPage.read);
     else {
       const l = parseNaturaLeaflet(leafletPage.body.toString("utf8"), ctx.today);
@@ -297,7 +364,7 @@ export const natura: ChainAdapter = {
     // Once the shop has said no, nothing more is asked of it in this request.
     if (failures.some((f) => f.kind === "blocked") || ctx.signal.aborted) failures.push({ kind: "failed", reason: "not_asked" });
     else {
-      const listPage = await fetchOfficial(ctx, NATURA_PROMOTIONS, NATURA_HOSTS, "text/html");
+      const listPage = await fetchOfficial(ctx, NATURA_PROMOTIONS, NATURA_HOSTS, "text/html", { maxBytes: NATURA_MAX_BYTES });
       if (!listPage.ok) failures.push(listPage.read);
       else {
         const list = parseNaturaPromotions(listPage.body.toString("utf8"));

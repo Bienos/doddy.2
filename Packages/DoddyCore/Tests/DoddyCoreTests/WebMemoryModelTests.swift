@@ -71,8 +71,13 @@ private let allOff = WebMemoryState(notes: false, conversations: false)
 
 @MainActor
 final class WebMemoryModelTests: XCTestCase {
-    private func model(_ fake: FakeMemory?, renewed: FakeMemory? = nil, defaults: UserDefaults? = nil) -> WebMemoryModel {
-        WebMemoryModel(makeClient: { fake }, renewClient: { renewed }, defaults: defaults ?? freshDefaults(), now: { Date(timeIntervalSince1970: 5_000) })
+    private func model(
+        _ fake: FakeMemory?, renewed: FakeMemory? = nil, defaults: UserDefaults? = nil,
+        gate: @escaping @MainActor () -> LocalDataUpload = { .allowed }
+    ) -> WebMemoryModel {
+        WebMemoryModel(
+            makeClient: { fake }, renewClient: { renewed }, uploadGate: gate, defaults: defaults ?? freshDefaults(),
+            now: { Date(timeIntervalSince1970: 5_000) })
     }
 
     func testEverythingStartsOff() {
@@ -358,5 +363,79 @@ final class WebMemoryModelTests: XCTestCase {
         await model.sendConversation(big, language: "en", isPrivate: false)
         await model.retryConversations(from: [big], language: "en")
         XCTAssertEqual(fake.sentConversations.count, 1)
+    }
+
+    // MARK: Local data belongs to the account that made it (decision 2026-11-12-local-data-owner)
+
+    /// Another account's notes and conversations are on this iPhone: nothing is sent, whichever way it is asked.
+    func testAnotherAccountsDataIsNeverSent() async {
+        let defaults = freshDefaults()
+        defaults.set("account-a", forKey: LocalDataOwner.ownerKey)
+        let fake = FakeMemory()
+        fake.states = [.success(on)]
+        let signedIn = model(fake, defaults: defaults) { LocalDataOwner.upload(for: "account-b", defaults: defaults) }
+
+        let turnedOn = await signedIn.setKept(.notes, on: true, records: [note(1, "A's note")], privateNotes: PrivateNotes())
+        XCTAssertFalse(turnedOn)
+        XCTAssertEqual(signedIn.problem, .otherAccountsData)
+        XCTAssertTrue(fake.stateCalls.isEmpty, "the server isn't even asked to keep them")
+
+        // Switched on earlier (by the owner): still nothing goes while account B is signed in.
+        defaults.set(true, forKey: WebMemoryModel.notesKey)
+        defaults.set(true, forKey: WebMemoryModel.conversationsKey)
+        let earlier = model(fake, defaults: defaults) { LocalDataOwner.upload(for: "account-b", defaults: defaults) }
+        await earlier.sendNotes([note(1, "A's note")], privateNotes: PrivateNotes())
+        earlier.scheduleNotes([note(2, "A's other note")], privateNotes: PrivateNotes(), delay: .zero)
+        await earlier.settle()
+        earlier.retryIfNeeded([note(3, "x")], privateNotes: PrivateNotes(), notesLoaded: true)
+        await earlier.settle()
+        await earlier.sendConversation(log(), language: "pl", isPrivate: false)
+        await earlier.retryConversations(from: [log()], language: "pl")
+        XCTAssertTrue(fake.sentNotes.isEmpty)
+        XCTAssertTrue(fake.sentConversations.isEmpty)
+        XCTAssertEqual(earlier.notesStatus, .failed(.otherAccountsData))
+        XCTAssertTrue(earlier.needsNotesRetry, "sent once the data may go again")
+
+        // The owner signs in again: the list goes.
+        let owner = model(fake, defaults: defaults) { LocalDataOwner.upload(for: "account-a", defaults: defaults) }
+        await owner.sendNotes([note(1, "A's note")], privateNotes: PrivateNotes())
+        XCTAssertEqual(fake.sentNotes.map { $0.map(\.text) }, [["A's note"]])
+    }
+
+    func testNobodySignedInSendsNothingAndSaysNothingAboutAnotherAccount() async {
+        let defaults = freshDefaults()
+        defaults.set(true, forKey: WebMemoryModel.notesKey)
+        let fake = FakeMemory()
+        let signedOut = model(fake, defaults: defaults) { LocalDataOwner.upload(for: nil, defaults: defaults) }
+        await signedOut.sendNotes([note(1, "x")], privateNotes: PrivateNotes())
+        XCTAssertTrue(fake.sentNotes.isEmpty)
+        XCTAssertEqual(signedOut.notesStatus, .idle)
+        let turnedOn = await signedOut.setKept(.conversations, on: true, records: [], privateNotes: PrivateNotes())
+        XCTAssertFalse(turnedOn)
+        XCTAssertEqual(signedOut.problem, .signedOut)
+    }
+
+    func testSigningOutTurnsBothKindsOffWithoutAskingTheServer() async {
+        let defaults = freshDefaults()
+        let fake = FakeMemory()
+        fake.states = [.success(on)]
+        fake.conversations = [.failure(.transport)]
+        let model = model(fake, defaults: defaults)
+        await model.setKept(.notes, on: true, records: [note(1, "x")], privateNotes: PrivateNotes())
+        await model.sendConversation(log(), language: "pl", isPrivate: false)
+        XCTAssertEqual(defaults.stringArray(forKey: "webMemory.pendingConversations")?.count, 1)
+        let asked = fake.stateCalls.count
+
+        model.accountSignedOut()
+        XCTAssertFalse(model.notesOn)
+        XCTAssertFalse(model.conversationsOn)
+        XCTAssertEqual(model.notesStatus, .idle)
+        XCTAssertFalse(model.needsNotesRetry)
+        XCTAssertEqual(fake.stateCalls.count, asked, "the server isn't asked: what the account keeps stays with it")
+        XCTAssertEqual(fake.deleteCalls, 0)
+        XCTAssertEqual(defaults.stringArray(forKey: "webMemory.pendingConversations") ?? [], [], "nothing waits to be sent")
+        let relaunched = self.model(fake, defaults: defaults)
+        XCTAssertFalse(relaunched.notesOn)
+        XCTAssertFalse(relaunched.conversationsOn)
     }
 }

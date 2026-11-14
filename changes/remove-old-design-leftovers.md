@@ -1,3 +1,0 @@
-Removed what was left of the old designs (decision `2026-11-09-remove-old-design-leftovers`): the breathing and "Hey Doddy" island states, art and strings; two dead memory views; art no screen shows (storybook, memory scenery, sit strip, four widget copies); three old design studies; the brand candidate and v1.3 brand extracts; unused site images, styles and script. Nothing a user can reach changes.
-Ran on Linux: strings catalog, site i18n, day page, site and web tokens, pack verification, voice agent spec, capability guard checks; site tests (24 of 24). Not run here: any Swift (no toolchain); the hosted `core` and `ios-build` jobs are the first compile.
-No deploy or owner step. Merging deploys the site (only unused files and styles removed).

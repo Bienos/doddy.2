@@ -1,8 +1,8 @@
 import XCTest
 @testable import DoddyCore
 
-/// ADR-652: the stopwatch by voice. Start and stop need a tap, reading asks "yes" first, and
-/// Doddy says only what the clock says.
+/// ADR-652: the stopwatch by voice. Since decision 2026-11-11-asked-for-runs-at-once starting, stopping
+/// and reading run at once (Doddy's own timer, undone in one step), and Doddy says only what the clock says.
 final class StopwatchVoiceTests: XCTestCase {
     private let t0 = Date(timeIntervalSince1970: 1_792_000_000)
 
@@ -18,25 +18,20 @@ final class StopwatchVoiceTests: XCTestCase {
         XCTAssertEqual(parse("check_stopwatch"), .checkStopwatch)
     }
 
-    func testStartingAndStoppingNeedATapAndReadingAsksYes() throws {
-        let start = AskFirst.need(for: .startStopwatch(label: "Bieg"))
-        guard case .tapFirst(let card) = start else { return XCTFail("\(start)") }
-        XCTAssertEqual(card.title, "Start a stopwatch?")
-        XCTAssertEqual(card.lines, ["“Bieg”"], "the card shows exactly the label")
-        XCTAssertTrue(AskFirst.needsTap(start))
-        guard case .tapFirst(let plain) = AskFirst.need(for: .startStopwatch(label: nil)) else { return XCTFail() }
-        XCTAssertEqual(plain.lines, ["It counts up until you stop it"])
-        XCTAssertTrue(AskFirst.needsTap(AskFirst.need(for: .stopStopwatch)))
-        let read = AskFirst.need(for: .checkStopwatch)
-        guard case .yesFirst = read else { return XCTFail("\(read)") }
-        XCTAssertFalse(AskFirst.needsTap(read), "a spoken yes is enough to read it")
+    func testStartingStoppingAndReadingRunAtOnce() throws {
+        for request in [VoiceToolRequest.startStopwatch(label: "Bieg"), .startStopwatch(label: nil), .stopStopwatch, .checkStopwatch] {
+            let need = AskFirst.need(for: request)
+            XCTAssertEqual(need, .runsNow, "\(request)")
+            XCTAssertFalse(AskFirst.needsTap(need), "\(request)")
+            XCTAssertEqual(AskFirst.need(for: request, polish: true), .runsNow, "\(request)")
+        }
     }
 
-    func testTheCatalogAgreesWithTheCards() throws {
+    func testTheCatalogAgreesThatTheyRunAtOnce() throws {
         for (name, effect, approval) in [
-            (VoiceToolName.startStopwatch, ToolDescriptor.Effect.localChange, ToolDescriptor.Approval.card),
-            (VoiceToolName.stopStopwatch, .localChange, .card),
-            (VoiceToolName.checkStopwatch, .lookup, .askFirst),
+            (VoiceToolName.startStopwatch, ToolDescriptor.Effect.localChange, ToolDescriptor.Approval.runsNow),
+            (VoiceToolName.stopStopwatch, .localChange, .runsNow),
+            (VoiceToolName.checkStopwatch, .lookup, .runsNow),
         ] {
             let descriptor = try XCTUnwrap(ToolCatalog.descriptor(name), name)
             XCTAssertEqual(descriptor.effect, effect, name)
@@ -51,7 +46,7 @@ final class StopwatchVoiceTests: XCTestCase {
         XCTAssertNil(VoiceConnection.serving(VoiceToolName.startStopwatch))
     }
 
-    func testInTheCarTheReadingIsAnsweredAndStartingWaitsForATap() {
+    func testInTheCarTheReadingIsAnsweredAndStartingIsRefused() {
         XCTAssertEqual(CarProfile.decision(for: .checkStopwatch), .run)
         for request in [VoiceToolRequest.startStopwatch(label: nil), .stopStopwatch] {
             guard case .refuse = CarProfile.decision(for: request) else { return XCTFail("\(request)") }
