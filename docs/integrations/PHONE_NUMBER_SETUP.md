@@ -276,7 +276,7 @@ Send Claude what you saw and heard. Never send codes, the PIN or keys.
 | 7 | Book one for two minutes from now and don't answer | It rings once. Doddy doesn't call again. |
 | 8 | **What Doddy did** | A row "Call you later from Doddy's number" with the time, never the reason |
 | 9 | Render logs | `scheduled call` lines with ids and states only, never a reason or a number |
-| 10 | With the iPhone in Polish, book a call and answer | Doddy's first sentence is in Polish ("Cześć, tu Doddy, asystent AI…"). Tell Claude if it sounds read with English pronunciation: the phone agent is set up with English as its language. |
+| 10 | With the iPhone in Polish, book a call and answer | Doddy's first sentence is in Polish ("Cześć, tu Doddy, asystent AI…"). Since 14 Nov 2026 the phone agent's language is Polish, and a call to or from a +48 number without a booked reason opens with "Cześć, tu Doddy, asystent AI. W czym mogę pomóc?". |
 
 ## When something goes wrong
 | What you see | Likely cause |
