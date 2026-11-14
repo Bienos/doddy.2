@@ -46,6 +46,9 @@ enum ScreenLanguage {
         guard let code else { return nil }
         var components = Locale.Components(locale: .current)
         components.languageComponents = Locale.Language.Components(identifier: code)
+        // `Components(locale:)` keeps "US" of en_US inside the language components, so replacing them
+        // dropped the region (found by `ScreenLanguageTests.testTheLocaleKeepsTheRegion` in the hosted job).
+        components.region = Locale.current.region
         return Locale(components: components)
     }
 
