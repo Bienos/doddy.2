@@ -10,7 +10,7 @@ import { apnsJwt } from "../src/providers/apns.js";
 import { ElevenLabsCallRegistrar } from "../src/providers/elevenlabs.js";
 import { isValidTwilioSignature, TwilioClient, TwilioVoiceCaller, twilioSignature } from "../src/providers/twilio.js";
 import { approvalHash, callApprovalHash, textApprovalHash, deliveryApprovalHash } from "../src/approval.js";
-import { callOpening, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../src/calls.js";
+import { callOpening, numberLanguage, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../src/calls.js";
 import { DEFAULT_ABUSE_LIMITS } from "../src/config.js";
 import { DEFAULT_ALLOWED_COUNTRY_CODES } from "../src/phoneCountries.js";
 import { TEXT_MAX_LENGTH } from "../src/routes/texts.js";
@@ -398,14 +398,19 @@ test("quiet hours come from QUIET_HOURS_START and QUIET_HOURS_END, 21:00 to 08:0
 
 test("the phone agent's first sentence always says Doddy is an AI, and says a scheduled call's reason word for word", () => {
   assert.equal(callOpening(undefined, "en"), "Hi, this is Doddy, an AI assistant. How can I help?");
+  // The fixed first message the live agent spoke until 14 Nov 2026, so Polish callers hear no change.
+  assert.equal(callOpening(undefined, "pl"), "Cześć, tu Doddy, asystent AI. W czym mogę pomóc?");
   assert.equal(callOpening("Take the cake out", "en"), "Hi, this is Doddy, an AI assistant. You asked me to call you about this: Take the cake out");
   assert.equal(callOpening("Wyjmij ciasto", "pl"), "Cześć, tu Doddy, asystent AI. Dzwonię zgodnie z Twoją prośbą w sprawie: Wyjmij ciasto");
   for (const opening of [callOpening(undefined, "pl"), callOpening("x", "en"), callOpening("x", "pl")]) assert.match(opening, /\bAI\b/);
-  // The agent's settings use the same sentence when a call carries no variables (dashboard tests).
+  // Without a scheduled call's language, the user's number picks it: Polish only for +48.
+  assert.deepEqual(["+48500000001", "+44700900001", "+49151000001", "+4850"].map(numberLanguage), ["pl", "en", "en", "pl"]);
+  // The agent's settings use the same sentence when a call carries no variables (dashboard tests), in its language.
   const session = JSON.parse(readFileSync(new URL("../../../../voice-agent/phone/session.json", import.meta.url), "utf8")) as
-    { first_message: { en: string }; elevenlabs: { placeholders: Record<string, string> } };
-  assert.equal(session.first_message.en, "{{doddy_call_opening}}");
-  assert.equal(session.elevenlabs.placeholders.doddy_call_opening, callOpening(undefined, "en"));
+    { first_message: Record<string, string>; languages: string[]; elevenlabs: { placeholders: Record<string, string> } };
+  assert.deepEqual(session.languages, ["pl"]);
+  assert.deepEqual(session.first_message, { pl: "{{doddy_call_opening}}" });
+  assert.equal(session.elevenlabs.placeholders.doddy_call_opening, callOpening(undefined, "pl"));
   assert.equal(session.elevenlabs.placeholders.doddy_call_reason, "none");
 });
 

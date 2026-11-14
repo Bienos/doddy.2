@@ -32,7 +32,7 @@ export const TASK_BOOK_AGENT_SPEC = {
 export const TASK_ORDER_AGENT_SPEC = {
   ...TASK_AGENT_SPEC,
   /** sha256 of voice-agent/task-call-order/instructions.md, trimmed, as the setup script sends it. */
-  promptSha256: "ba6d0ba8035457bea8d80ba1671c2ca9c949302e32b6f8b37b69cc1747db6210",
+  promptSha256: "4d88bace9339e7d993abbdc73797699053839c06b20375132517a7e1389482f7",
 } as const;
 
 /**
@@ -45,6 +45,8 @@ export const TASK_ORDER_AGENT_SPEC = {
  * fixed sentence (payload.ts), so the old prompts get no goal text either while they are still live.
  * 13 Nov 2026: both prompts sound like the person's own assistant; the opening line (server-built) says "wirtualny
  * asystent". An older live prompt still answers honestly when asked, so it stays accepted until the owner's sync.
+ * 14 Nov 2026: the order agent's prompt sounds like the person's assistant too (owner: "wybierz best options"); its
+ * first prompt, live on "Doddy 7" since that day, stays accepted until the live agent has the new one.
  */
 export const SYNC_PENDING_PROMPTS: Readonly<Record<string, readonly string[]>> = {
   // task-call: main before 12 Nov 2026, then main from 12 to 13 Nov 2026 (before the assistant's natural voice,
@@ -57,6 +59,10 @@ export const SYNC_PENDING_PROMPTS: Readonly<Record<string, readonly string[]>> =
   [TASK_BOOK_AGENT_SPEC.promptSha256]: [
     "422476155c457b8d0d59a5706cbecfcd99c74386f8a65ef300a0d76b97ec2fa4",
     "e8ee34fef4e6ef97eb75bcf7c3ddf054f9fd0919f7b34abe4bf7e563cd01d03c",
+  ],
+  // task-call-order: its first prompt (13 to 14 Nov 2026, before the assistant's natural voice)
+  [TASK_ORDER_AGENT_SPEC.promptSha256]: [
+    "ba6d0ba8035457bea8d80ba1671c2ca9c949302e32b6f8b37b69cc1747db6210",
   ],
 };
 

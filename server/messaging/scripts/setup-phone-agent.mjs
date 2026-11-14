@@ -82,7 +82,7 @@ const agent = await api("POST", "/v1/convai/agents/create", {
   tags: el.tags,
   conversation_config: {
     agent: {
-      first_message: session.first_message.en,
+      first_message: session.first_message[session.languages[0]],
       language: session.languages[0],
       // Placeholders for tests in the dashboard; real values come with each call (register-call).
       dynamic_variables: { dynamic_variable_placeholders: el.placeholders },

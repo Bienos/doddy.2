@@ -7,7 +7,7 @@ import type { Db } from "../src/db.js";
 import { bodyAad } from "../src/outbox.js";
 import { twilioSignature } from "../src/providers/twilio.js";
 import { checkAgentSafety, sha256Hex } from "../src/taskCalls/agentSafety.js";
-import { SYNC_PENDING_PROMPTS, TASK_AGENT_SPEC, TASK_BOOK_AGENT_SPEC } from "../src/taskCalls/agentSpec.js";
+import { SYNC_PENDING_PROMPTS, TASK_AGENT_SPEC, TASK_BOOK_AGENT_SPEC, TASK_ORDER_AGENT_SPEC } from "../src/taskCalls/agentSpec.js";
 import { bookingConfirmLine, bookingDateAllowed, bookingLines, bookingQuestion, type Booking } from "../src/taskCalls/booking.js";
 import { briefSchema, checkBriefContent } from "../src/taskCalls/brief.js";
 import { AGENT_VARIABLE_NAMES, compilePayload } from "../src/taskCalls/payload.js";
@@ -16,8 +16,8 @@ import { buildCallResult, type CallResult, type ResultFacts, type WriterInput, t
 import { answerOf } from "../src/taskCalls/tasks.js";
 import { processResults } from "../src/taskCalls/worker.js";
 import {
-  BASE_URL, BOOK_PROMPT, compliantAgent, TASK_PROMPT, dbSkip, DODDY_FROM, EL_WEBHOOK_SECRET, freshDb, TASK_ACCOUNT_SID, TASK_AGENT_ID, TASK_AUTH_TOKEN,
-  TASK_BOOK_AGENT_ID, taskTestApp, testCipher, type TaskTestOptions,
+  BASE_URL, BOOK_PROMPT, compliantAgent, ORDER_PROMPT, TASK_PROMPT, dbSkip, DODDY_FROM, EL_WEBHOOK_SECRET, freshDb, TASK_ACCOUNT_SID, TASK_AGENT_ID,
+  TASK_AUTH_TOKEN, TASK_BOOK_AGENT_ID, TASK_ORDER_AGENT_ID, taskTestApp, testCipher, type TaskTestOptions,
 } from "./helpers.js";
 
 const table: Booking = { name: "Anna Kowalska", date: "2026-11-13", time: "19:00", partySize: 2 };
@@ -166,7 +166,7 @@ test("the goal is never sent to either agent; the prompts no longer name it", ()
   assert.ok((AGENT_VARIABLE_NAMES as readonly string[]).includes("doddy_goal"), "still sent, as a fixed sentence, for the live prompts from before");
 });
 
-test("until the owner syncs the live agents, the drift check also accepts the two earlier prompts of each agent, and nothing else", () => {
+test("until the live agents are synced, the drift check also accepts the earlier prompts of each agent, and nothing else", () => {
   // The prompts on main from 12 to 13 Nov 2026, kept as files: before the assistant's natural voice (13 Nov).
   const fixture = (name: string) =>
     readFileSync(new URL(`../../test/fixtures/taskCallPrompts/${name}`, import.meta.url), "utf8").trim();
@@ -179,7 +179,16 @@ test("until the owner syncs the live agents, the drift check also accepts the tw
     "The only goal of this call:\n{{doddy_goal}}\n\nThe booking the person approved. Only this, exactly as written:");
   assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_AGENT_SPEC.promptSha256], [sha256Hex(oldAsk), sha256Hex(nov12Ask)]);
   assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_BOOK_AGENT_SPEC.promptSha256], [sha256Hex(oldBook), sha256Hex(nov12Book)]);
-  assert.deepEqual(Object.keys(SYNC_PENDING_PROMPTS).sort(), [TASK_AGENT_SPEC.promptSha256, TASK_BOOK_AGENT_SPEC.promptSha256].sort());
+  // The order agent's first prompt (13 to 14 Nov 2026), before it sounded like the person's assistant.
+  const firstOrder = fixture("task-call-order-2026-11-13.md");
+  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_ORDER_AGENT_SPEC.promptSha256], [sha256Hex(firstOrder)]);
+  assert.equal(sha256Hex(firstOrder), "ba6d0ba8035457bea8d80ba1671c2ca9c949302e32b6f8b37b69cc1747db6210", "the order prompt on main on 13 Nov");
+  assert.deepEqual(checkAgentSafety(compliantAgent(firstOrder, TASK_ORDER_AGENT_ID), TASK_ORDER_AGENT_SPEC), []);
+  assert.deepEqual(checkAgentSafety(compliantAgent(ORDER_PROMPT, TASK_ORDER_AGENT_ID), TASK_ORDER_AGENT_SPEC), []);
+  assert.deepEqual(checkAgentSafety(compliantAgent(firstOrder, TASK_BOOK_AGENT_ID), TASK_BOOK_AGENT_SPEC), ["prompt_changed"], "never another agent's");
+  assert.deepEqual(checkAgentSafety(compliantAgent(firstOrder)), ["prompt_changed"], "never another agent's");
+  assert.deepEqual(Object.keys(SYNC_PENDING_PROMPTS).sort(),
+    [TASK_AGENT_SPEC.promptSha256, TASK_BOOK_AGENT_SPEC.promptSha256, TASK_ORDER_AGENT_SPEC.promptSha256].sort());
   assert.equal(sha256Hex(oldAsk), "129f2aecdee4c501b32148112e64efe3f57a126e82e7358cfd2816ff27a26454", "the ask prompt on main before 12 Nov");
   assert.equal(sha256Hex(oldBook), "422476155c457b8d0d59a5706cbecfcd99c74386f8a65ef300a0d76b97ec2fa4", "the booking prompt on main before 12 Nov");
   assert.equal(sha256Hex(nov12Ask), "0f2c05bcc3090802ae6ad0656c8f69ba6af9c6bdbfa8f63596088b8b1a25099a", "the ask prompt on main on 12 Nov");
@@ -196,8 +205,8 @@ test("until the owner syncs the live agents, the drift check also accepts the tw
   assert.deepEqual(checkAgentSafety(compliantAgent(`${oldAsk} Możesz potwierdzać terminy.`)), ["prompt_changed"]);
 });
 
-test("the ask and booking prompts keep the plain answer when asked what Doddy is (DOD-03), and never the word for a person", () => {
-  for (const prompt of [TASK_PROMPT, BOOK_PROMPT]) {
+test("the ask, booking and order prompts keep the plain answer when asked what Doddy is (DOD-03), and never the word for a person", () => {
+  for (const prompt of [TASK_PROMPT, BOOK_PROMPT, ORDER_PROMPT]) {
     assert.match(prompt, /You are an AI, not a person/);
     assert.match(prompt, /never deny it and never dodge/);
     assert.match(prompt, /Tak, jestem asystentem AI/);
