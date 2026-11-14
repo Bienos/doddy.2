@@ -1227,7 +1227,8 @@ export class CloudToolsService {
 
   private claudeReady(tool: ClaudeToolName): string | null {
     if (!this.deps.claude || !this.deps.claude.isConfigured()) return "Claude isn't set up on this server.";
-    if (tool !== ASK_CLAUDE_TOOL && !this.deps.documentLinks) return "Making files isn't set up on this server.";
+    // A file is kept only encrypted (decision 2026-11-12-documents-at-rest): no key, no files.
+    if (tool !== ASK_CLAUDE_TOOL && (!this.deps.documentLinks || !this.store.keepsDocuments)) return "Making files isn't set up on this server.";
     return null;
   }
 
@@ -1313,14 +1314,15 @@ export class CloudToolsService {
       const info = KIND_INFO[doc.kind];
       const name = fileName(doc.title, info.ext);
       const id = await this.store.startDocument(userId, name, info.mime, now);
-      const url = this.deps.documentLinks!.link(id, new Date(now));
+      const url = this.deps.documentLinks!.link(id, userId, new Date(now));
       const job = this.makeDocumentInBackground(userId, id, doc, claude).finally(() => {
         slot?.();
         this.background.delete(job);
       });
       jobOwnsSlot = true;
       this.background.add(job);
-      const receipt = await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "succeeded", `Started a ${info.label}: ${doc.title}`.slice(0, 200), null, null);
+      // The kind only: the title is the user's own words, and receipts are kept as a log (decision 2026-11-12-documents-at-rest).
+      const receipt = await this.receipt(userId, CLAUDE_SECTION_ID, "read", tool, "succeeded", `Started a ${info.label}.`, null, null);
       return {
         mode: this.mode,
         tool,
@@ -1387,7 +1389,7 @@ export class CloudToolsService {
               signal,
             )
           : await claude.makeDocument(args, signal, this.fileLedger(userId));
-      await this.store.finishDocument(id, file.name, file.mime, file.bytes);
+      await this.store.finishDocument(userId, id, file.name, file.mime, file.bytes);
       this.deps.log?.({ level: "info", event: "document_ready", kind: args.kind, bytes: file.bytes.length });
     } catch (error) {
       await this.store.failDocument(id).catch(() => {});

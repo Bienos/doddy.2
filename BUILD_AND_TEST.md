@@ -335,7 +335,9 @@ Without the backend you can drive the same flow with curl, e.g.
    `<public URL>/v1/oauth/verify` (recommended).
 3. `cp backend/.env.example backend/.env.local`, fill it in (`DODDY_MODE=live`, `DODDY_AUTH_MODE=signed`,
    `DODDY_SESSION_SIGNING_KEY=$(openssl rand -base64 32)`, Composio values). The server **refuses to start** if
-   anything is missing; it never falls back to demo data.
+   anything is missing; it never falls back to demo data. Files Doddy makes, kept memory and the Messages copy are
+   stored encrypted and need `DODDY_MEMORY_KEY=$(openssl rand -base64 32)`; without it they say "not set up"
+   (decision `2026-11-12-documents-at-rest`).
 4. `npm run build && npm run start:env`; mint a device token with
    `node --env-file=.env.local dist/src/mintSession.js` and paste it in the app.
 5. Connect from the app, read tomorrow, then optionally `npm run live-check` (read-only; prints counts only; it
