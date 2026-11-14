@@ -15,6 +15,9 @@ import { AccountCheckUnavailable, authenticateDoddyAccount } from "./doddy-accou
 import {
   conversationClientFromEnv, conversationIdentity, sweepAccountConversations, validInstallUserId,
 } from "./conversations.js";
+import {
+  ACCESS_TOKEN_LABEL, APPLE_TOKEN_SEAL_LABEL, allMasters, asKeyRing, identifierHash, keyRingFromEnv, mastersNamed, purposeKey,
+} from "./keys.js";
 
 const APPLE_ISSUER = "https://appleid.apple.com";
 const APPLE_KEYS_URL = "https://appleid.apple.com/auth/keys";
@@ -397,13 +400,13 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
   if (!["sign-in", "refresh", "sign-out", "delete-account", "apple-link", "apple-revoke", "delete-conversations"].includes(action)) return finish(400, "unknown_action");
 
   let store;
-  let signingKey;
+  let keys;
   try {
     store = deps.store ?? createVoiceAuthStore({
       url: env.UPSTASH_REDIS_REST_URL, token: env.UPSTASH_REDIS_REST_TOKEN,
       fetch: deps.storeFetch ?? fetch, timeoutMs: deps.storeTimeoutMs,
     });
-    signingKey = signingSecret(env.DODDY_SESSION_SIGNING_KEY);
+    keys = voiceKeys(env);
   } catch {
     return finish(503, "server_not_configured");
   }
@@ -430,13 +433,15 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
       const unknownCaller = address === "unknown";
       const callerFlag = unknownCaller ? { noClientAddress: true } : {};
       const factor = unknownCaller ? UNKNOWN_CLIENT_LIMIT_FACTOR : 1;
-      const turn = await store.hitSignInLimits(hmac(signingKey, `client:${address}`),
+      const turn = await store.hitSignInLimits(identifierHash(keys, `client:${address}`),
         signIns.perHour * factor, signIns.perDay * factor, now());
       if (!turn.allowed) {
         return finish(429, "rate_limited", undefined, { "retry-after": String(turn.retryAfterSeconds) },
           { limit: turn.limit, ...callerFlag });
       }
-      const userId = hmac(signingKey, `apple-sub:${claims.sub}`);
+      // The pseudonym is a keyed hash of Apple's subject made with the identifier key, which is what it has always been
+      // made with: it is the person's account, so it never changes when the signing key does (src/keys.js).
+      const userId = identifierHash(keys, `apple-sub:${claims.sub}`);
       const sessionId = randomBytes(24).toString("base64url");
       const refreshToken = randomBytes(32).toString("base64url");
       const refreshHash = sha256(refreshToken);
@@ -453,12 +458,12 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
         try {
           const appleToken = await (deps.exchangeAppleAuthorizationCode ?? exchangeAppleAuthorizationCode)(
             body.authorizationCode, env, { fetch: deps.fetch ?? fetch, now: now(), expectedSub: claims.sub });
-          if (appleToken) await store.setAppleToken(userId, sealAppleToken(appleToken, signingKey), REFRESH_TOKEN_SECONDS);
+          if (appleToken) await store.setAppleToken(userId, sealAppleToken(appleToken, keys), REFRESH_TOKEN_SECONDS);
         } catch {
           // The account works without it; deleting it later just can't revoke at Apple.
         }
       }
-      return finish(200, null, sessionReply(signingKey, userId, sessionId, refreshToken, now()), {}, callerFlag);
+      return finish(200, null, sessionReply(keys, userId, sessionId, refreshToken, now()), {}, callerFlag);
     }
 
     if (action === "refresh") {
@@ -478,7 +483,7 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
       // content-free log line says why.
       if (rotated?.reused) return finish(401, "session_expired", undefined, {}, { reuse: true });
       if (!rotated) return finish(401, "session_expired");
-      return finish(200, null, sessionReply(signingKey, prior.userId, prior.sessionId, nextToken, now()));
+      return finish(200, null, sessionReply(keys, prior.userId, prior.sessionId, nextToken, now()));
     }
 
     if (action === "delete-conversations") {
@@ -501,7 +506,7 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
       // Each call can reach ElevenLabs many times, so it counts against the same per-caller limits as a sign-in.
       const signIns = signInLimits(env);
       if (!signIns || typeof store.hitSignInLimits !== "function") return finish(503, "server_not_configured");
-      const turn = await store.hitSignInLimits(hmac(signingKey, `delete-conversations:${account.userId}`),
+      const turn = await store.hitSignInLimits(identifierHash(keys, `delete-conversations:${account.userId}`),
         signIns.perHour, signIns.perDay, now());
       if (!turn.allowed) {
         return finish(429, "rate_limited", undefined, { "retry-after": String(turn.retryAfterSeconds) }, { limit: turn.limit });
@@ -540,7 +545,7 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
         // Each call can reach Apple, so it counts against the same per-caller limits as a sign-in.
         const signIns = signInLimits(env);
         if (!signIns || typeof store.hitSignInLimits !== "function") return finish(503, "server_not_configured");
-        const turn = await store.hitSignInLimits(hmac(signingKey, `apple-link:${account.userId}`),
+        const turn = await store.hitSignInLimits(identifierHash(keys, `apple-link:${account.userId}`),
           signIns.perHour, signIns.perDay, now());
         if (!turn.allowed) {
           return finish(429, "rate_limited", undefined, { "retry-after": String(turn.retryAfterSeconds) }, { limit: turn.limit });
@@ -554,12 +559,12 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
           body.authorizationCode, env, { fetch: deps.fetch ?? fetch, now: now(), expectedSub: claims.sub });
         // The account works without it; deleting it later just can't revoke at Apple.
         if (!appleToken) return finish(200, null, { linked: false }, {}, { apple: "not_linked" });
-        await store.setAppleToken(account.userId, sealAppleToken(appleToken, signingKey), APPLE_LINK_SECONDS);
+        await store.setAppleToken(account.userId, sealAppleToken(appleToken, keys), APPLE_LINK_SECONDS);
         return finish(200, null, { linked: true }, {}, { apple: "linked" });
       }
       // apple-revoke: Apple first, then forget the token. A failed revoke keeps it, so asking again can work.
       const sealed = await store.getAppleToken(account.userId);
-      const appleToken = sealed ? openAppleToken(sealed, signingKey) : null;
+      const appleToken = sealed ? openAppleToken(sealed, keys) : null;
       const apple = !appleToken ? "no_token"
         : await (deps.revokeAppleToken ?? revokeAppleToken)(appleToken, env, { fetch: deps.fetch ?? fetch, now: now() })
           ? "revoked" : "failed";
@@ -567,7 +572,7 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
       return finish(200, null, { appleRevoked: apple === "revoked", apple }, {}, { apple });
     }
 
-    const access = await authenticateVoiceSession(request, env, { store, signingKey, now: now() });
+    const access = await authenticateVoiceSession(request, env, { store, keys, now: now() });
     if (!access) return finish(401, "session_expired");
     if (action === "sign-out") {
       await store.revokeSession(access.sessionId, access.userId);
@@ -578,7 +583,7 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
     let apple = "not_configured";
     if (appleRevocationConfigured(env)) {
       const sealed = await store.getAppleToken(access.userId);
-      const appleToken = sealed ? openAppleToken(sealed, signingKey) : null;
+      const appleToken = sealed ? openAppleToken(sealed, keys) : null;
       apple = !appleToken ? "no_token"
         : await (deps.revokeAppleToken ?? revokeAppleToken)(appleToken, env, { fetch: deps.fetch ?? fetch, now: now() })
           ? "revoked" : "failed";
@@ -604,11 +609,13 @@ export async function handleVoiceAuthRequest(request, env, deps = {}) {
 
 export async function authenticateVoiceSession(request, env, deps = {}) {
   const store = deps.store;
-  const signingKey = deps.signingKey ?? signingSecret(env.DODDY_SESSION_SIGNING_KEY);
-  if (!store || !signingKey) throw new VoiceAuthStoreUnavailable();
+  // `deps.keys` (or the older `deps.signingKey`) is a key set, or the signing secret itself; otherwise the environment's.
+  const keys = deps.keys !== undefined || deps.signingKey !== undefined
+    ? asKeyRing(deps.keys ?? deps.signingKey) : keyRingFromEnv(env);
+  if (!store || !keys) throw new VoiceAuthStoreUnavailable();
   const token = bearer(request.headers.get("authorization"));
   if (!token) return null;
-  const claims = verifyAccessToken(token, signingKey, deps.now ?? Date.now());
+  const claims = verifyAccessToken(token, keys, deps.now ?? Date.now());
   if (!claims) return null;
   const session = await store.getSession(claims.sid);
   if (!session || session.userId !== claims.sub || session.sessionId !== claims.sid) return null;
@@ -622,27 +629,48 @@ export function sessionStoreFromEnv(env, deps = {}) {
   });
 }
 
-export function signAccessToken(payload, secret, nowMs = Date.now()) {
+/**
+ * A 10-minute access token: an HS256 JWT signed with the access-token key derived from the current signing key, and
+ * naming that key in its `kid` header. `keys` is a key set (`src/keys.js`) or the signing secret itself. The previous
+ * key never signs.
+ */
+export function signAccessToken(payload, keys, nowMs = Date.now()) {
+  const ring = asKeyRing(keys);
+  if (!ring) throw new Error("voice keys are not configured");
   const nowSeconds = Math.floor(nowMs / 1_000);
-  const header = base64urlJSON({ alg: "HS256", typ: "JWT" });
+  const header = base64urlJSON({ alg: "HS256", typ: "JWT", kid: ring.current.kid });
   const claims = base64urlJSON({ iss: "doddy-voice", aud: "voice", sub: payload.userId, sid: payload.sessionId,
     iat: nowSeconds, exp: nowSeconds + ACCESS_TOKEN_SECONDS });
   const input = `${header}.${claims}`;
-  return `${input}.${createHmac("sha256", secret).update(input).digest("base64url")}`;
+  return `${input}.${createHmac("sha256", purposeKey(ring.current.master, ACCESS_TOKEN_LABEL)).update(input).digest("base64url")}`;
 }
 
-export function verifyAccessToken(token, secret, nowMs = Date.now()) {
+/**
+ * The claims of a valid access token, or null. A token naming a key id is checked with the access-token key of the
+ * current or the previous signing key, whichever the id names; an unknown id is refused. A token with no key id is
+ * the format from before key ids, signed with the signing key itself: it is checked with the current key and the
+ * previous one, until it expires (10 minutes), so a deploy or a rotation signs nobody out.
+ */
+export function verifyAccessToken(token, keys, nowMs = Date.now()) {
   try {
-    if (typeof token !== "string" || token.length > 4_096) return null;
+    const ring = asKeyRing(keys);
+    if (!ring || typeof token !== "string" || token.length > 4_096) return null;
     const [headerPart, claimsPart, signaturePart, ...extra] = token.split(".");
     if (!headerPart || !claimsPart || !signaturePart || extra.length) return null;
-    const input = `${headerPart}.${claimsPart}`;
-    const expected = createHmac("sha256", secret).update(input).digest();
-    const actual = Buffer.from(signaturePart, "base64url");
-    if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) return null;
     const header = parseJSON(Buffer.from(headerPart, "base64url").toString("utf8"));
+    if (header?.alg !== "HS256") return null;
+    const input = `${headerPart}.${claimsPart}`;
+    const actual = Buffer.from(signaturePart, "base64url");
+    const candidates = header.kid === undefined
+      ? allMasters(ring)
+      : mastersNamed(ring, header.kid).map((master) => purposeKey(master, ACCESS_TOKEN_LABEL));
+    const signed = candidates.some((key) => {
+      const expected = createHmac("sha256", key).update(input).digest();
+      return actual.length === expected.length && timingSafeEqual(actual, expected);
+    });
+    if (!signed) return null;
     const claims = parseJSON(Buffer.from(claimsPart, "base64url").toString("utf8"));
-    if (header?.alg !== "HS256" || claims?.iss !== "doddy-voice" || claims?.aud !== "voice"
+    if (claims?.iss !== "doddy-voice" || claims?.aud !== "voice"
         || typeof claims.sub !== "string" || typeof claims.sid !== "string"
         || !Number.isSafeInteger(claims.exp) || claims.exp <= Math.floor(nowMs / 1_000)) return null;
     return claims;
@@ -745,22 +773,66 @@ async function postAppleForm(url, fields, fetchImpl) {
   }
 }
 
-function appleTokenKey(signingKey) {
-  return createHmac("sha256", signingKey).update("apple-refresh-token:v1").digest();
+/**
+ * The key Apple's refresh token was sealed with before key ids: an HMAC of a fixed word under the signing key itself.
+ * Kept only to open what was sealed then (it lasts up to 400 days, `APPLE_LINK_SECONDS`); nothing is sealed with it now.
+ */
+function formerAppleTokenKey(master) {
+  return createHmac("sha256", master).update("apple-refresh-token:v1").digest();
 }
 
-export function sealAppleToken(token, signingKey) {
+/** The layout of a sealed value, `v2.<key id>.<base64url of iv, ciphertext, tag>`: the dots tell it from the format before. */
+const SEAL_VERSION = "v2";
+
+/**
+ * Apple's refresh token, sealed (AES-256-GCM, a fresh nonce each time) with the Apple-token key derived from the current
+ * signing key: `v2.<key id>.<iv, ciphertext and tag>`. `keys` is a key set (`src/keys.js`) or the signing secret itself.
+ * The previous key never seals.
+ */
+export function sealAppleToken(token, keys) {
+  const ring = asKeyRing(keys);
+  if (!ring) throw new Error("voice keys are not configured");
   const iv = randomBytes(12);
-  const cipher = createCipheriv("aes-256-gcm", appleTokenKey(signingKey), iv);
+  const cipher = createCipheriv("aes-256-gcm", purposeKey(ring.current.master, APPLE_TOKEN_SEAL_LABEL), iv);
   const sealed = Buffer.concat([cipher.update(token, "utf8"), cipher.final()]);
-  return Buffer.concat([iv, sealed, cipher.getAuthTag()]).toString("base64url");
+  return `${SEAL_VERSION}.${ring.current.kid}.${Buffer.concat([iv, sealed, cipher.getAuthTag()]).toString("base64url")}`;
 }
 
-export function openAppleToken(value, signingKey) {
+/**
+ * The token inside a sealed value, or null (untouched values only, made with a key this server has). A `v2` value
+ * names its key: the current or the previous signing key's Apple-token key. A value with no dots is the format from
+ * before key ids, made with the key derived from the signing key itself: it opens with the current key or the previous
+ * one, for as long as it lives.
+ */
+export function openAppleToken(value, keys) {
   try {
-    const raw = Buffer.from(value, "base64url");
+    const ring = asKeyRing(keys);
+    if (!ring || typeof value !== "string") return null;
+    const parts = value.split(".");
+    if (parts.length === 1) {
+      for (const master of allMasters(ring)) {
+        const token = openSealed(value, formerAppleTokenKey(master));
+        if (token !== null) return token;
+      }
+      return null;
+    }
+    if (parts.length !== 3 || parts[0] !== SEAL_VERSION) return null;
+    for (const master of mastersNamed(ring, parts[1])) {
+      const token = openSealed(parts[2], purposeKey(master, APPLE_TOKEN_SEAL_LABEL));
+      if (token !== null) return token;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** AES-256-GCM: iv (12 bytes), ciphertext, tag (16 bytes), all base64url. Null when anything does not check out. */
+function openSealed(base64, key) {
+  try {
+    const raw = Buffer.from(base64, "base64url");
     if (raw.length < 12 + 16 + 1) return null;
-    const decipher = createDecipheriv("aes-256-gcm", appleTokenKey(signingKey), raw.subarray(0, 12));
+    const decipher = createDecipheriv("aes-256-gcm", key, raw.subarray(0, 12));
     decipher.setAuthTag(raw.subarray(raw.length - 16));
     return Buffer.concat([decipher.update(raw.subarray(12, raw.length - 16)), decipher.final()]).toString("utf8");
   } catch {
@@ -790,14 +862,16 @@ async function appleSigningKeys(fetchImpl, requiredKid, now) {
   }
 }
 
-function sessionReply(signingKey, userId, sessionId, refreshToken, nowMs) {
-  return { accessToken: signAccessToken({ userId, sessionId }, signingKey, nowMs), refreshToken,
+function sessionReply(keys, userId, sessionId, refreshToken, nowMs) {
+  return { accessToken: signAccessToken({ userId, sessionId }, keys, nowMs), refreshToken,
     expiresIn: ACCESS_TOKEN_SECONDS };
 }
 
-function signingSecret(value) {
-  if (typeof value !== "string" || Buffer.byteLength(value, "utf8") < 32) throw new VoiceAuthStoreUnavailable();
-  return value;
+/** The key set from the environment (`src/keys.js`); a missing or unusable setting is "not configured". */
+function voiceKeys(env) {
+  const keys = keyRingFromEnv(env);
+  if (!keys) throw new VoiceAuthStoreUnavailable();
+  return keys;
 }
 
 function validSessionRecord(value) {
@@ -884,7 +958,6 @@ function parseJSON(text) {
 
 function base64urlJSON(value) { return Buffer.from(JSON.stringify(value)).toString("base64url"); }
 function sha256(value) { return createHash("sha256").update(value).digest("hex"); }
-function hmac(secret, value) { return createHmac("sha256", secret).update(value).digest("hex"); }
 function isHttpsURL(value) {
   try {
     const url = new URL(value);
