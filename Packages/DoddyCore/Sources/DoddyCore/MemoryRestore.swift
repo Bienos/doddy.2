@@ -126,6 +126,16 @@ public enum MemoryRestore {
         return ids
     }
 
+    /// The notes `plan` adds that the file names as private: what is marked Private before they are added
+    /// (`MemoryStore.restore(privateIDs:)`). A note already on this iPhone keeps its own state, and a mark for a note
+    /// that is not in the file or not added is dropped. A damaged list refuses the file, so this is read when the file
+    /// is prepared, before anything is offered to the person.
+    public static func privateIDs(
+        _ data: Data, adding plan: MemoryRestorePlan, maxBytes: Int = maxFileBytes
+    ) throws(MemoryRestoreError) -> Set<UUID> {
+        try privateIDs(data, maxBytes: maxBytes).intersection(plan.toAdd.map(\.id))
+    }
+
     public static func plan(
         _ incoming: [MemoryRecord], corrections: [MemoryCorrection] = [], existing: [MemoryRecord], exportedAt: Date?
     ) -> MemoryRestorePlan {
