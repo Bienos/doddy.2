@@ -36,23 +36,25 @@ final class RealtimeVoiceTests: XCTestCase {
             return true
         })
         XCTAssertEqual(RealtimeToolCatalog.unhandledPhoneTools(tools, handled: routable), [])
-        // The online-account tools exist in the spec, run on the phone, and only the writes ask for a
-        // tap. Since decision 2026-11-11-asked-for-runs-at-once every read through Doddy's server runs
-        // at once, as web search, news and places already did (ADR-575); none waits for a spoken yes.
+        // The online-account tools exist in the spec, run on the phone, and only the writes show a card,
+        // which a spoken yes or a tap answers, and a booking a tap only (decision 2026-11-14-spoken-yes-and-fewer-cards).
+        // Since decision 2026-11-11-asked-for-runs-at-once every read through Doddy's server runs at once,
+        // as web search, news and places already did (ADR-575).
         let cloud = tools.filter { CloudToolName.all.contains($0.name) }
         XCTAssertEqual(Set(cloud.map(\.name)), CloudToolName.all)
         XCTAssertTrue(cloud.allSatisfy { $0.runsOn == .phone })
         XCTAssertEqual(Set(cloud.filter(\.confirmOnScreen).map(\.name)), CloudToolName.writes)
-        XCTAssertEqual(Set(cloud.filter { $0.ask == .tap }.map(\.name)), CloudToolName.writes)
-        XCTAssertEqual(Set(cloud.filter { $0.ask == .yesOrTap }.map(\.name)), [])
+        XCTAssertEqual(Set(cloud.filter { $0.ask != .runsNow }.map(\.name)), CloudToolName.writes)
+        XCTAssertEqual(Set(cloud.filter { $0.ask == .tap }.map(\.name)), CloudToolName.writes.intersection(ConfirmationTiers.tapOnly))
         let cloudReads = CloudToolName.all.subtracting(CloudToolName.writes)
         XCTAssertEqual(Set(cloud.filter { $0.ask == .runsNow }.map(\.name)), cloudReads)
         XCTAssertTrue(cloudReads.isSuperset(of: ["web_search", "news_search", "find_places", "check_email", "read_email", "ask_claude",
                                                  "make_document", "list_todoist_tasks"]))
-        // In the whole spec: a tool runs at once exactly when the app says so, and no tool is yes_or_tap.
+        // In the whole spec: a tool runs at once exactly when the app says so, every other one shows a card,
+        // and only money and bookings take a tap only.
         XCTAssertEqual(Set(tools.filter { $0.ask == .runsNow }.map(\.name)), Set(tools.map(\.name).filter(AskFirst.runsAtOnce)))
-        XCTAssertEqual(tools.filter { $0.ask == .yesOrTap }.map(\.name), [])
-        XCTAssertEqual(Set(tools.filter { $0.ask == .tap }.map(\.name)), Set(tools.filter(\.confirmOnScreen).map(\.name)))
+        XCTAssertEqual(Set(tools.filter { $0.ask == .tap }.map(\.name)), ConfirmationTiers.tapOnly)
+        XCTAssertEqual(Set(tools.filter { $0.ask != .runsNow }.map(\.name)), Set(tools.filter(\.confirmOnScreen).map(\.name)))
         let save = try XCTUnwrap(tools.first { $0.name == VoiceToolName.saveMemory })
         XCTAssertEqual(save.runsOn, .phone)
         XCTAssertTrue(save.confirmOnScreen)

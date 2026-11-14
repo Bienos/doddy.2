@@ -54,6 +54,7 @@ const FROZEN = [
   "037_order_calls.sql",
   "038_deal_watches.sql",
   "039_contact_texts.sql",
+  "040_device_token_lifetimes.sql",
 ];
 
 // 017 is shared by two files merged side by side. They sort the same on every database, so it is
