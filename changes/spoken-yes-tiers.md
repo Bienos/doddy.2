@@ -1,0 +1,3 @@
+DoddyCore: `ConfirmationTiers`, the owner's table of 14 Nov 2026 for how each voice tool is confirmed: at once (Doddy's own undoable things on the phone, plus what runs at once today), a spoken yes (every other change, send and call), or a tap only (payments and bookings); after text from an email or a page, a spoken yes becomes a tap. Nothing reads the table yet. Decision `2026-11-14-spoken-yes-and-fewer-cards` (step 1 of 3).
+Ran: `ConfirmationTierTests` (red first), `scripts/ci.sh --only checks,swift`. Not run: app code, device.
+Next: step 2, the voice controller follows the table (after #453), with `doddy_rules.yaml`, `tools.json` and the spec script in the same pull request; step 3, the live agent's prompt, on the owner's separate word.
