@@ -53,4 +53,5 @@
 - Read on the web (12 Nov 2026): ElevenLabs' changelog of 27 July 2026 and its "List conversations" and "Users" reference pages.
 - Read on 13 Nov 2026 (read-only, ElevenLabs connector): the main agent's `privacy` has `record_voice: true`, `retention_days: -1` (no limit), `delete_audio: false`, `zero_retention_mode: false`. So **no time limit already holds, and audio is recorded**. The translator agent's file says the same (`voice-agent/translator/session.json`).
 - **Live settings to change, only when the owner says so for each** (`AGENTS.md`): `record_voice` → `false` on the main agent and, if the owner agrees, the translator. This is the "no audio" answer above; today it is not in effect.
+- **Done 14 Nov 2026 (owner: "Main and translator"):** `record_voice` → `false` on the main agent and the translator, read back; the versions and the rollback are in `voice-agent/README.md`. Audio recorded before that is still held; transcripts stay, with no time limit.
 - Not run: any call to ElevenLabs that changes anything, a token request against the live server.

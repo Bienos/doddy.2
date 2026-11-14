@@ -1,0 +1,2 @@
+Live ElevenLabs change, on the owner's yes: `record_voice` is now `false` on the main voice agent and the translator, so the audio of new conversations is no longer kept; transcripts stay with no time limit, and audio recorded before stays until it is deleted. Logged with versions and the rollback in `voice-agent/README.md`; the translator's spec file, the decision file and owner-queue row 54 now say the same.
+Read back after each save and again with a fresh read. Not tested with a voice conversation. No code changed.

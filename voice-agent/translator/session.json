@@ -145,9 +145,9 @@
       "opening_line": ""
     },
     "privacy": {
-      "record_voice": true,
+      "record_voice": false,
       "retention_days": -1,
-      "note": "Same as the main agent: ElevenLabs keeps its own recording, as the translator's privacy text says. Whether to turn recording off for this agent is the owner's decision."
+      "note": "Turned off on 14 Nov 2026 (owner's yes), as on the main agent: ElevenLabs no longer keeps the audio of new conversations. The transcript is still kept, with no time limit (retention_days -1), as decided on 13 Nov 2026."
     },
     "versions": "agtvrsn_4901m787fh47e1ar2hfv3z1b55cy (the copy) … agtvrsn_5601m788fn1bfdcr2dzjcjffy893 (reasoning low)"
   }
