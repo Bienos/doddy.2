@@ -41,7 +41,7 @@ import { WebRoutes } from "./web/routes.js";
 import { oldestKeptDay } from "./web/logbook.js";
 import { REDEEM_LIMITS, SESSION_IDLE_MS, WebAuth } from "./web/sessions.js";
 import { SocialSignIn, SupabaseUserRemover } from "./web/social.js";
-import { OwnerPanel, SupabaseUserDirectory } from "./web/owner.js";
+import { OWNER_AUDIT_KEPT_DAYS, OwnerPanel, SupabaseUserDirectory } from "./web/owner.js";
 import { WebStatic } from "./web/static.js";
 
 /** Composition root: picks adapters strictly from validated config (mock never silently replaces live). */
@@ -285,6 +285,7 @@ export async function buildApp(
       .then(() => store.failStaleDocuments(Date.now(), DOCUMENT_STALE_AFTER_MS))
       .then(() => store.pruneDocuments(Date.now()))
       .then(() => store.pruneLogbook(oldestKeptDay(Date.now())))
+      .then(() => store.pruneOwnerAudit(Date.now() - OWNER_AUDIT_KEPT_DAYS * 86_400_000))
       .then(() => store.pruneTokenFloors(Date.now()))
       .then(() => store.pruneAccountLinkCodes(Date.now()))
       .then(() => (web ? store.pruneWeb(Date.now(), SESSION_IDLE_MS) : 0))

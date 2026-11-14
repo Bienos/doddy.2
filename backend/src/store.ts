@@ -36,6 +36,9 @@ export interface ConnectionRow {
   last_checked_at: number | null;
 }
 
+/** What the owner panel showed (`owner_audit.action`): the totals, the list of accounts, or one account's own Logbook. */
+export type OwnerAction = "overview" | "accounts" | "account_logbook";
+
 /** A remote connection Doddy queued for removal, and whose it is. */
 export interface QueuedCleanup {
   connectionId: string;
@@ -469,6 +472,20 @@ export const SCHEMA_SQL = `
     received_at BIGINT NOT NULL
   );
   CREATE INDEX IF NOT EXISTS message_threads_age ON message_threads(received_at);
+  -- One row each time the owner panel showed something (web/owner.ts). Ids, a word for what was
+  -- opened and a time only: no email, name, count, word or credential, and no column that could hold one.
+  -- The ids are opaque and the rows are pruned after a year (OWNER_AUDIT_KEPT_DAYS). Account erasure does not
+  -- touch them, so an erased account id can stay in a row until then (decision 2026-11-14-owner-panel-fresh-sign-in).
+  -- No semicolons in these comments: SCHEMA_SQL is split on them.
+  CREATE TABLE IF NOT EXISTS owner_audit (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    at BIGINT NOT NULL,
+    actor_id TEXT NOT NULL,
+    session_id TEXT NOT NULL,
+    action TEXT NOT NULL CHECK (action IN ('overview', 'accounts', 'account_logbook')),
+    target_id TEXT
+  );
+  CREATE INDEX IF NOT EXISTS owner_audit_at ON owner_audit(at);
 `;
 
 /**
@@ -1358,6 +1375,25 @@ export class Store {
 
   // ------------------------------------------------------------ Owner panel (decision 2026-11-09-usage-counts-on-by-default)
   // Read only, and only for the owner panel (`web/owner.ts`), which checks the caller first.
+
+  /**
+   * Records one use of the owner panel, before its answer is sent. `targetId` is the account whose own
+   * Logbook was opened, for that action only. Ids, an action word and a time: nothing the panel showed.
+   */
+  async recordOwnerUse(use: { at: number; actorId: string; sessionId: string; action: OwnerAction; targetId: string | null }): Promise<void> {
+    await this.db.query("INSERT INTO owner_audit (at, actor_id, session_id, action, target_id) VALUES ($1, $2, $3, $4, $5)", [
+      use.at,
+      use.actorId,
+      use.sessionId,
+      use.action,
+      use.targetId,
+    ]);
+  }
+
+  /** Records of owner-panel use older than `oldest` (ms) go. Separate from `prune` so its counts stay as they were. */
+  async pruneOwnerAudit(oldest: number): Promise<number> {
+    return (await this.db.query("DELETE FROM owner_audit WHERE at < $1", [oldest])).rowCount;
+  }
 
   /** Every user's Logbook days from `since` on, oldest first. */
   async allLogbookDays(since: string): Promise<(LogbookDayRow & { user_id: string })[]> {
