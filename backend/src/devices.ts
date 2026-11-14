@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { type AuthenticatedUser, type DeviceTokenGate, TokenFloors } from "./auth.js";
 import { AppError } from "./errors.js";
-import type { DeviceListRow, DeviceStateRow, Store } from "./store.js";
+import type { AccountDeviceRegistration, AccountDeviceResult, DeviceListRow, DeviceStateRow, Store } from "./store.js";
 import type { DeviceView } from "./web/contracts.js";
 
 /**
@@ -28,6 +28,13 @@ import type { DeviceView } from "./web/contracts.js";
  * a plain message, however often it asks, and no route clears it. A person brings the iPhone back by signing in on it with
  * the account's own Apple or Google sign-in, which is a different token that names no iPhone, so nothing here stands in
  * its way. What is not allowed is the quiet way back: the app's automatic renewal with the device id.
+ *
+ * An iPhone's account session (`POST /v1/session/account`, decision 2026-11-12-one-token-per-server) is a row here too, with
+ * the account it is for (`account_id`) and a key derived from the account and the device id together as its `device_user_id`,
+ * so the device-session rule above never applies to it and it never shares a row with it. Its token names the row (`dev`) and
+ * the account (`acc`, `sub`); `allows` accepts it only on a live row of that account. A revoke (the list's, or the iPhone's
+ * own sign-out, which is the same call) marks the row, and the very next request is refused. The way back is the exchange with
+ * a fresh Supabase token of the account: it gives the row a NEW id, so no token made before the revoke comes back with it.
  *
  * A join that has ended sends the iPhone back to its own account at its next sign-in, as Leave does (ADR-819). It is made
  * again by signing in with the same Apple or Google (`POST /v1/web/oauth/join`), which renews it, and only while that
@@ -97,6 +104,15 @@ export class DeviceRegistry implements DeviceSignIns, DeviceTokenGate {
     return id;
   }
 
+  /**
+   * An iPhone signs in with the Doddy account's token (`POST /v1/session/account`, `accountSession.ts`). The answer is what the
+   * store wrote and read back in one transaction: the row's id, how it came to be (`new`, `renewed`, or `returned`: a revoked
+   * iPhone signing in again with the account's fresh token, which gets a new id), or why there is none (`limit`, `cut_off`).
+   */
+  accountSignedIn(input: Omit<AccountDeviceRegistration, "id">): Promise<AccountDeviceResult> {
+    return this.store.registerAccountDevice({ ...input, id: randomUUID() });
+  }
+
   // ------------------------------------------------------------ every request
 
   async allows(user: AuthenticatedUser, issuedAt: number, nowMs: number): Promise<boolean> {
@@ -104,7 +120,13 @@ export class DeviceRegistry implements DeviceSignIns, DeviceTokenGate {
     if (user.deviceId === undefined) return issuedAt >= (await this.cutoffs.floorOf(user.userId, nowMs));
     const state = await this.stateOf(user.deviceId, nowMs);
     if (!state || state.revoked_at !== null) return false;
-    if (user.userId !== state.device_user_id) {
+    if (user.account !== undefined) {
+      // An account session is good only on the row this account signed in with an account session. A device token never
+      // names such a row, and an account session never names a device-session row or another account's.
+      if (state.account_id !== user.account) return false;
+    } else if (state.account_id !== null) {
+      return false;
+    } else if (user.userId !== state.device_user_id) {
       // A token of a joined account is good only while that iPhone's join to that account is on.
       const on = state.join_user_id === user.userId && state.join_renewed_at !== null && Number(state.join_renewed_at) > nowMs - this.joinMs;
       if (!on) return false;

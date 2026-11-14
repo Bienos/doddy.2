@@ -24,9 +24,16 @@ export interface AuthenticatedUser {
   scope?: "ask";
   /**
    * The stored iPhone (`devices.ts`) a device-session token was made for. Only a `ds1` token made since iPhones
-   * are stored carries one; an earlier token, a browser session and an account's own token have none.
+   * are stored carries one; an earlier token, a browser session and an account's own Supabase token have none.
    */
   deviceId?: string;
+  /**
+   * Set only for an account session (`POST /v1/session/account`, `accountSession.ts`): the Doddy account (its Supabase user
+   * id) the session was made for. The session is that account's, so `userId` starts out equal to it. An account that took
+   * over an iPhone's earlier data works on that data, so `LinkedAccountVerifier` may then change `userId` and leave this
+   * as the account.
+   */
+  account?: string;
 }
 
 /**
@@ -78,6 +85,12 @@ interface SessionClaims {
    * no one else's. A random id, not the device id the iPhone keeps. Signed with the rest, so it can't be removed or changed.
    */
   dev?: string;
+  /**
+   * Only on an account session (`POST /v1/session/account`): `sub` is the Doddy account, and the token is that account's on the
+   * iPhone `dev` names. Always with `dev`, never with `scp`. Signed with the rest, so it can't be added to a device session
+   * or taken off an account session.
+   */
+  acc?: 1;
 }
 
 const b64url = (data: Buffer | string) => Buffer.from(data).toString("base64url");
@@ -105,7 +118,22 @@ export class SignedSessionVerifier implements SessionVerifier {
     if (!UUID.test(userId)) throw new Error("userId must be a UUID");
     if (deviceId !== undefined && !UUID.test(deviceId)) throw new Error("deviceId must be a UUID");
     const iat = Math.floor(now.getTime() / 1000);
-    const claims: SessionClaims = { v: 1, sub: userId, iat, exp: iat + ttlSeconds, ...(scope ? { scp: scope } : {}), ...(deviceId ? { dev: deviceId } : {}) };
+    return this.sign({ v: 1, sub: userId, iat, exp: iat + ttlSeconds, ...(scope ? { scp: scope } : {}), ...(deviceId ? { dev: deviceId } : {}) });
+  }
+
+  /**
+   * An account session (`POST /v1/session/account`): the Doddy account's own session on the iPhone `deviceId` names (the
+   * stored row of `devices.ts`). The same `ds1` token, signed the same way with the session key. Its claims add `acc`, so it
+   * is told apart from a device session, and it always names its iPhone, so a revoke of that iPhone ends it.
+   */
+  mintAccount(accountId: string, deviceId: string, now: Date, ttlSeconds: number): string {
+    if (!UUID.test(accountId)) throw new Error("accountId must be a UUID");
+    if (!UUID.test(deviceId)) throw new Error("deviceId must be a UUID");
+    const iat = Math.floor(now.getTime() / 1000);
+    return this.sign({ v: 1, sub: accountId, iat, exp: iat + ttlSeconds, dev: deviceId, acc: 1 });
+  }
+
+  private sign(claims: SessionClaims): string {
     const payload = b64url(JSON.stringify(claims));
     return `ds1.${payload}.${this.keys.sign(message(payload))}`;
   }
@@ -127,9 +155,16 @@ export class SignedSessionVerifier implements SessionVerifier {
       return null;
     }
     if (!isClaims(claims)) return null;
+    // An account session was only ever signed with a key id: the earlier, master-key format is for tokens that were out before it.
+    if (claims.acc !== undefined && shape !== "keyed") return null;
     const nowSeconds = Math.floor(now.getTime() / 1000);
     if (claims.exp <= nowSeconds || claims.iat > nowSeconds + 60) return null;
-    return { userId: claims.sub, ...(claims.scp ? { scope: claims.scp } : {}), ...(claims.dev ? { deviceId: claims.dev } : {}) };
+    return {
+      userId: claims.sub,
+      ...(claims.scp ? { scope: claims.scp } : {}),
+      ...(claims.dev ? { deviceId: claims.dev } : {}),
+      ...(claims.acc === 1 ? { account: claims.sub } : {}),
+    };
   }
 }
 
@@ -146,7 +181,9 @@ function isClaims(value: unknown): value is SessionClaims {
     Number.isInteger(c.iat) &&
     Number.isInteger(c.exp) &&
     (c.scp === undefined || c.scp === "ask") &&
-    (c.dev === undefined || (typeof c.dev === "string" && UUID.test(c.dev)))
+    (c.dev === undefined || (typeof c.dev === "string" && UUID.test(c.dev))) &&
+    // An account session names its iPhone and is never a guest's; nothing else carries the claim.
+    (c.acc === undefined || (c.acc === 1 && typeof c.dev === "string" && c.scp === undefined))
   );
 }
 
@@ -432,6 +469,7 @@ export interface DeviceTokenGate {
  *
  * With `devices` it also ends one iPhone's tokens at once, the way the cut-off ends a person's: a token that names a
  * revoked iPhone, or an account that iPhone no longer joins, is refused on the next request (`DeviceRegistry.allows`).
+ * An account session (`POST /v1/session/account`) is checked the same way: its iPhone must be one this account signed in.
  *
  * A signing key that is no longer held (neither current nor previous, `signingKeys.ts`) still revokes every
  * token made with it at once. A device's user ID follows the identifier key, not the signing keys (see
@@ -453,6 +491,8 @@ export class RevocableSessionVerifier implements SessionVerifier {
     if (issuedAt === null) return null;
     try {
       if (issuedAt < (await this.floors.floorOf(user.userId, now.getTime()))) return null;
+      // An account session of an account that took over an iPhone's data: the account's own cut-off counts too.
+      if (user.account !== undefined && user.account !== user.userId && issuedAt < (await this.floors.floorOf(user.account, now.getTime()))) return null;
       if (this.devices && !(await this.devices.allows(user, issuedAt, now.getTime()))) return null;
     } catch {
       throw new AppError("provider_unavailable", { message: "Doddy couldn't check your sign-in right now. Try again shortly." });

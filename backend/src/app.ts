@@ -3,6 +3,7 @@ import { AccountEraser } from "./account.js";
 import { type AssistReply, AssistService } from "./assist.js";
 import { ASK_DEDUP, RequestOnce } from "./idempotency.js";
 import { AccountLinker, LinkedAccountVerifier } from "./accountLinks.js";
+import { AccountSessionIssuer } from "./accountSession.js";
 import { AnyOfSessionVerifier, DevSessionVerifier, type FetchJson, RevocableSessionVerifier, type SessionVerifier, SignedSessionVerifier, SupabaseSessionVerifier, TokenFloors } from "./auth.js";
 import { defaultRegistry } from "./capabilities.js";
 import type { Config } from "./config.js";
@@ -180,6 +181,21 @@ export async function buildApp(
           log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
         })
       : null;
+  // The Doddy account's Supabase token exchanged once for this server's own session on an iPhone (decision
+  // 2026-11-12-one-token-per-server): where the server checks Supabase tokens and has a session key to sign with. The session
+  // is checked by the verifier above, next to the Supabase token, which this does not stop accepting anywhere.
+  const accountSessions =
+    supabase && config.signingKeys && config.identifierKey
+      ? new AccountSessionIssuer({
+          accounts: supabase,
+          keys: config.signingKeys,
+          identifierKey: config.identifierKey,
+          store,
+          floors,
+          devices,
+          log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`),
+        })
+      : null;
   // Doddy Web (ADR-600): only when DODDY_WEB_ORIGIN is set.
   const webAuth = config.web
     ? new WebAuth(store, config.web.origin, config.web.trustProxy, { ...REDEEM_LIMITS, perClientPerQuarter: config.web.signInTriesPerClient })
@@ -271,6 +287,7 @@ export async function buildApp(
     ...(shopify ? { shopifyLimiter: new UsageLimiter(store, config.limits) } : {}),
     verifier,
     deviceSessions,
+    accountSessions,
     web,
     assist,
     account: accountEraser,
