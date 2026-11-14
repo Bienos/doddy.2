@@ -1,0 +1,2 @@
+iPhone: Settings › Language starts with a Polski | English switch, and a choice now shows at once instead of after Doddy is closed and opened again (`ScreenLanguage`, `AppLanguage.screenLanguage`; decision `2026-11-14-language-switch-at-once`). "Same as this iPhone", widgets, Siri phrases and permission prompts still change from the next start.
+Ran: `python3 -I tools/build_strings_catalog.py --check` (PASS), `scripts/ci.sh --only checks`. Not run: DoddyCore tests and the hosted `DoddyTests/ScreenLanguageTests` (no Swift here); not seen on a device.

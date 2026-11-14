@@ -2,9 +2,11 @@ import Foundation
 
 /// The language Doddy's screens are shown in (ADR-459): Polish unless the person picks another
 /// in Settings (ADR-573; it was English until 21 Oct 2026). iOS decides the screens' language when the app starts, from the app's own
-/// `AppleLanguages` setting (the one iOS Settings › Doddy › Language writes too), so a change
-/// shows the next time Doddy is opened. This type holds the choices and the rule for what to
-/// write at launch; the app does the writing.
+/// `AppleLanguages` setting (the one iOS Settings › Doddy › Language writes too). Since 14 Nov 2026
+/// (decision `2026-11-14-language-switch-at-once`) a choice made in Doddy also shows at once: the app
+/// looks its words up in the chosen language's table until the next start (`screenLanguage`). This
+/// type holds the choices, the rule for what to write at launch and the rule for what to show now;
+/// the app does the writing.
 ///
 /// Platforms: iPhone and iPad use it. The Watch and Mac apps don't show the picker.
 public enum AppLanguage: String, CaseIterable, Sendable {
@@ -27,6 +29,11 @@ public enum AppLanguage: String, CaseIterable, Sendable {
     /// What a person gets before choosing (owner, 21 Oct 2026: "it should be Polish", ADR-573;
     /// before that, 13 Oct: "english by default").
     public static let `default`: AppLanguage = .polish
+
+    /// The two languages of the switch at the top of Settings › Language (owner, 14 Nov 2026: "add
+    /// switch between polish and English language in settings"). The other languages and "Same as
+    /// this iPhone" are in the list under it.
+    public static let switchChoices: [AppLanguage] = [.polish, .english]
 
     /// The saved choice, or Polish when nothing valid is saved.
     public init(stored: String?) {
@@ -75,6 +82,20 @@ public enum AppLanguage: String, CaseIterable, Sendable {
         if let stored { return AppLanguage(stored: stored) }
         if let first = appLanguages?.first, let language = matching(first) { return language }
         return .default
+    }
+
+    /// The table (`.lproj` name) the screens should use now, when it isn't the one iOS picked as
+    /// Doddy started (`launchLocalization`: the app's first preferred localization at launch, "pl",
+    /// "en", "pt-BR"…). Nil when iOS's pick is already the chosen language, or for "Same as this
+    /// iPhone": only iOS knows the iPhone's languages, so that one shows from the next start.
+    ///
+    /// iOS reads `AppleLanguages` once, when an app starts, so until 14 Nov 2026 a choice in
+    /// Settings showed only after Doddy was closed and opened again; the owner saw it as a setting
+    /// that changed nothing.
+    public static func screenLanguage(chosen: AppLanguage, launchLocalization: String?) -> String? {
+        guard let code = chosen.code else { return nil }
+        if let launchLocalization, matching(launchLocalization) == chosen { return nil }
+        return code
     }
 
     /// What to do to the app's own `AppleLanguages` when Doddy starts.

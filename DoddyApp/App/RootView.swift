@@ -9,7 +9,7 @@ enum PreferenceKey {
     static let memoriesShowsLists = "memoriesShowsLists"
     static let notificationExplainerSeen = "notificationExplainerSeen"
     static let appearance = "appearance"
-    /// Settings › App language (ADR-459): a language code, or "system" for the iPhone's language. Absent means English.
+    /// Settings › Language (ADR-459): a language code, or "system" for the iPhone's language. Absent means Polish (ADR-573).
     static let appLanguage = "appLanguage"
     /// Memories list order (`MemorySort` raw value); display only (ADR-186).
     static let memorySort = "memorySort"
@@ -159,6 +159,14 @@ struct RootView: View {
     /// Counts the times the Face ID lock came back; the screens under the cover are made new each time,
     /// so no sheet state of theirs can open a screen over it (ADR-723).
     @State private var lockEpoch = 0
+    /// Settings › Language. The screens are made new when it changes, so every word is looked up again in
+    /// the new language at once (decision 2026-11-14-language-switch-at-once); the tab stays.
+    @AppStorage(PreferenceKey.appLanguage) private var appLanguage: String?
+    /// What makes the screens new: the Face ID lock coming back or another language.
+    private struct ScreensID: Hashable {
+        let lockEpoch: Int
+        let language: String?
+    }
     /// Settings › "Show the welcome again" (ADR-598).
     @AppStorage(PreferenceKey.welcomeReplay) private var welcomeReplay = false
     /// The welcome was finished in this run, so it doesn't show again until a replay is asked for.
@@ -552,7 +560,7 @@ struct RootView: View {
 
     private var tabs: some View {
         ZStack {
-            tabContent.id(lockEpoch)
+            tabContent.id(ScreensID(lockEpoch: lockEpoch, language: appLanguage))
             // Motion v2: the one Doddy in the air (flights and fades). Under every sheet and cover.
             DoddyOverlay()
             // The first-launch welcome (ADR-598) sits over everything here; the Face ID cover is

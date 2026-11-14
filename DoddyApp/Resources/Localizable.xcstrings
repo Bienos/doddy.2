@@ -6477,6 +6477,65 @@
         }
       }
     },
+    "All languages": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Sprachen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todos los idiomas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toutes les langues"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Svi jezici"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutte le lingue"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "すべての言語"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystkie języki"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todos os idiomas"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所有语言"
+          }
+        }
+      }
+    },
     "All of this goes to Doddy's server; the words, the note and what matters most also go to Anthropic, whose Claude does the research. Search phrases Claude writes from them go to Google Shopping through Serper, and Doddy's server opens shops' pages. The server deletes its copy once this iPhone has saved the result.": {
       "extractionState": "manual",
       "localizations": {
@@ -25190,65 +25249,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy wypatrzył"
-          }
-        }
-      }
-    },
-    "Doddy starts in English until you pick another language. A change shows the next time you open Doddy: close it first, then open it again.": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy startet auf Englisch, bis du eine andere Sprache wählst. Eine Änderung siehst du beim nächsten Öffnen von Doddy: Schließe Doddy zuerst und öffne ihn dann erneut."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy empieza en inglés hasta que elijas otro idioma. El cambio se ve la próxima vez que abras Doddy: ciérralo primero y vuelve a abrirlo."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy démarre en anglais tant que tu n’as pas choisi une autre langue. Un changement apparaît à la prochaine ouverture de Doddy : ferme-le d’abord, puis rouvre-le."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy se pokreće na engleskom dok ne odabereš drugi jezik. Promjena će se vidjeti pri sljedećem otvaranju Doddyja: prvo ga zatvori, pa ga ponovno otvori."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy parte in inglese finché non scegli un’altra lingua. Una modifica si vede alla prossima apertura di Doddy: chiudilo prima, poi riaprilo."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "別の言語を選ぶまで、Doddyは英語で始まります。変更は次にDoddyを開いたときに反映されます。先にDoddyを閉じてから、もう一度開いてください。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy startuje po angielsku, dopóki nie wybierzesz innego języka. Zmiana pojawi się przy następnym otwarciu Doddy'ego: zamknij go, a potem otwórz ponownie."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Doddy começa em inglês até você escolher outro idioma. A mudança aparece na próxima vez que você abrir o Doddy: feche-o primeiro e abra de novo."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在你选择其他语言之前，Doddy 会以英语启动。更改会在你下次打开 Doddy 时生效：请先关闭 Doddy，再重新打开。"
           }
         }
       }
@@ -69825,6 +69825,191 @@
         }
       }
     },
+    "Same as this iPhone shows the next time you open Doddy. Widgets, Siri phrases and the iPhone's permission questions follow the iPhone's language.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "„Wie dieses iPad“ gilt ab dem nächsten Öffnen von Doddy. Widgets, Siri-Sätze und die Berechtigungsfragen des iPad folgen der Sprache des iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "„Wie dieses iPhone“ gilt ab dem nächsten Öffnen von Doddy. Widgets, Siri-Sätze und die Berechtigungsfragen des iPhone folgen der Sprache des iPhone."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Same as this iPad shows the next time you open Doddy. Widgets, Siri phrases and the iPad's permission questions follow the iPad's language."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Same as this iPhone shows the next time you open Doddy. Widgets, Siri phrases and the iPhone's permission questions follow the iPhone's language."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«Igual que este iPad» se aplica la próxima vez que abras Doddy. Los widgets, las frases de Siri y las preguntas de permisos del iPad siguen el idioma del iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«Igual que este iPhone» se aplica la próxima vez que abras Doddy. Los widgets, las frases de Siri y las preguntas de permisos del iPhone siguen el idioma del iPhone."
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "« Comme cet iPad » s’applique à la prochaine ouverture de Doddy. Les widgets, les phrases Siri et les demandes d’autorisation de l’iPad suivent la langue de l’iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "« Comme cet iPhone » s’applique à la prochaine ouverture de Doddy. Les widgets, les phrases Siri et les demandes d’autorisation de l’iPhone suivent la langue de l’iPhone."
+                }
+              }
+            }
+          }
+        },
+        "hr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "„Isto kao na ovom iPadu” vrijedi od sljedećeg otvaranja Doddyja. Widgeti, Siri fraze i iPadova pitanja o dopuštenjima prate jezik iPada."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "„Isto kao na ovom iPhoneu” vrijedi od sljedećeg otvaranja Doddyja. Widgeti, Siri fraze i iPhoneova pitanja o dopuštenjima prate jezik iPhonea."
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«Come questo iPad» vale dalla prossima apertura di Doddy. Widget, frasi di Siri e richieste di autorizzazione dell’iPad seguono la lingua dell’iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«Come questo iPhone» vale dalla prossima apertura di Doddy. Widget, frasi di Siri e richieste di autorizzazione dell’iPhone seguono la lingua dell’iPhone."
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "「このiPadと同じ」は次にDoddyを開いたときに反映されます。ウィジェット、Siriのフレーズ、iPadの許可の確認はiPadの言語になります。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "「このiPhoneと同じ」は次にDoddyを開いたときに反映されます。ウィジェット、Siriのフレーズ、iPhoneの許可の確認はiPhoneの言語になります。"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "„Taki jak na tym iPadzie” zadziała przy następnym otwarciu Doddy’ego. Widżety, frazy Siri i pytania iPada o pozwolenia są w języku iPada."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "„Taki jak na tym iPhonie” zadziała przy następnym otwarciu Doddy’ego. Widżety, frazy Siri i pytania iPhone’a o pozwolenia są w języku iPhone’a."
+                }
+              }
+            }
+          }
+        },
+        "pt-BR": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "“Igual a este iPad” vale a partir da próxima vez que você abrir o Doddy. Widgets, frases da Siri e os pedidos de permissão do iPad seguem o idioma do iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "“Igual a este iPhone” vale a partir da próxima vez que você abrir o Doddy. Widgets, frases da Siri e os pedidos de permissão do iPhone seguem o idioma do iPhone."
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "“与这台 iPad 相同”会在下次打开 Doddy 时生效。小组件、Siri 短语和 iPad 的权限请求跟随 iPad 的语言。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "“与这台 iPhone 相同”会在下次打开 Doddy 时生效。小组件、Siri 短语和 iPhone 的权限请求跟随 iPhone 的语言。"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Sample": {
       "extractionState": "manual",
       "localizations": {
@@ -89053,6 +89238,65 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法确认保存，所以不算已保存。你的文字还在这里。"
+          }
+        }
+      }
+    },
+    "The screens change at once. The language Doddy speaks in is under Voice and personality.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Bildschirme wechseln sofort. Die Sprache, in der Doddy spricht, findest du unter Stimme und Persönlichkeit."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las pantallas cambian al instante. El idioma en que habla Doddy está en Voz y personalidad."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les écrans changent tout de suite. La langue dans laquelle Doddy parle se règle dans Voix et personnalité."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zasloni se mijenjaju odmah. Jezik kojim Doddy govori nalazi se pod Glas i osobnost."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le schermate cambiano subito. La lingua in cui parla Doddy è in Voce e personalità."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画面はすぐに切り替わります。Doddyが話す言語は「声と性格」で設定します。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekrany zmieniają język od razu. Język, którym mówi Doddy, ustawisz w „Głos i osobowość”."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As telas mudam na hora. O idioma em que o Doddy fala fica em Voz e personalidade."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "界面会立即切换。Doddy 说话的语言在“语音与个性”中设置。"
           }
         }
       }
