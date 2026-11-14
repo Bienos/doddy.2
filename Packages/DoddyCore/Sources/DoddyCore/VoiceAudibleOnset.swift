@@ -10,8 +10,8 @@ import Foundation
 ///
 /// What it is, and isn't:
 /// - It is the first buffer of sound **handed to the output**, found from its loudness. It is not heard
-///   at the ear: the iPhone's own output delay (`AVAudioSession.outputLatency`, a Bluetooth headset has
-///   more) comes on top, and the app logs that beside it.
+///   at the ear: the iPhone's own output delay comes on top (a Bluetooth headset has more), and the app
+///   logs it beside this.
 /// - The meter starts listening when his audio track appears, on the first speaking event, so a sound
 ///   that began before that can't be seen. `listeningFrom` says when the meter's first buffer came: a
 ///   `sound` equal to it means the sound was already playing and "no earlier than this" is all that is known.
