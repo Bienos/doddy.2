@@ -88,7 +88,7 @@ enum TalkInIsland {
     static func press(mode: TalkLaunchMode, now: Date) async -> TalkButton.Outcome {
         let onScreen = UIApplication.shared.applicationState == .active
         let step = TalkLaunchPlanner.step(mode: mode, conversation: pressState, appOnScreen: onScreen, now: now)
-        log.notice("talk button: \(String(describing: step), privacy: .public), mode \(mode.rawValue, privacy: .public)")
+        note("talk button: \(String(describing: step)), mode \(mode.rawValue)")
         switch step {
         case .ignore:
             return .done
@@ -234,7 +234,7 @@ enum TalkInIsland {
 
         // Another conversation began while this press waited (a tap in the app): leave it.
         guard VoiceSessionController.runningConversation == nil else {
-            log.notice("talk in the island: a conversation started meanwhile")
+            note("talk in the island: a conversation started meanwhile")
             return
         }
         try Task.checkCancellation()
@@ -299,7 +299,7 @@ enum TalkInIsland {
                 var done = handedTimeline
                 done.mark(.connect, at: ProcessInfo.processInfo.systemUptime)
                 recordTiming(launch: launchLine, timing: done.line(at: ProcessInfo.processInfo.systemUptime, token: controller.tokenSource))
-                if case .failed = controller.phase { log.notice("talk in the island: the connection failed after the intent returned") }
+                if case .failed = controller.phase { note("talk in the island: the connection failed after the intent returned") }
                 if background != .invalid { UIApplication.shared.endBackgroundTask(background) }
                 connecting = nil
             }
@@ -338,7 +338,7 @@ enum TalkInIsland {
         island.show(state, startedAt: .now)
         let shown = island.isShowing
         let word = shown ? "shown" : "refused by iOS"
-        log.notice("talk in the island: island \(word, privacy: .public) before the set-up")
+        note("talk in the island: island \(word) before the set-up")
         return shown
     }
 
@@ -346,7 +346,7 @@ enum TalkInIsland {
     private static func settleIslandFirst(shownByPress: Bool) {
         let live = VoiceSessionController.current != nil
         guard TalkIslandFirst.afterwards(shownByPress: shownByPress, conversationLive: live) == .end else { return }
-        log.notice("talk in the island: the press's island was ended, no conversation took it over")
+        note("talk in the island: the press island was ended, no conversation took it over")
         VoiceLiveActivity.shared.end()
     }
 
@@ -361,6 +361,15 @@ enum TalkInIsland {
         await VoiceLiveActivity.shared.settle()
     }
 
+    /// One step of a press, to the log and, so it can be read without a Mac, to the journal in Settings › About ›
+    /// Advanced › Start timing (decision 2026-11-14-start-timing-on-the-phone): what the press decided, which check
+    /// refused a start, whether the island was shown. Fixed words only (`StartTimingJournal` refuses anything
+    /// else), and written off this thread, so a press doesn't wait for it.
+    private static func note(_ text: String) {
+        log.notice("\(text, privacy: .public)")
+        StartTimingStore.shared.record(text)
+    }
+
     /// The timing lines of one press, to the log and, so they can be read without a Mac, to the journal in
     /// Settings › About › Advanced › Start timing (decision 2026-11-14-start-timing-on-the-phone). Called when the
     /// start has ended or handed back, after the island is up, so keeping them costs the island nothing. Fixed
@@ -373,12 +382,12 @@ enum TalkInIsland {
     }
 
     private static func refused(_ check: String, needsApp message: String) -> StartProblem {
-        log.notice("talk in the island not started: \(check, privacy: .public)")
+        note("talk in the island not started: \(check)")
         return StartProblem(kind: .needsApp(message))
     }
 
     private static func refused(_ check: String, failed message: String) -> StartProblem {
-        log.notice("talk in the island not started: \(check, privacy: .public)")
+        note("talk in the island not started: \(check)")
         return StartProblem(kind: .failed(message))
     }
 }

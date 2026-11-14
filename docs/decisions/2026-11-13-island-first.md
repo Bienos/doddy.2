@@ -37,7 +37,7 @@ What was kept, and why:
 Console.app, subsystem `com.bienos.doddy2.dev`, category `voice-audio`, one press:
 - `talk in the island: island shown before the set-up` (or `refused by iOS`);
 - `talk start timing: island shown … · account … · profile … · island … · connect … · total …`. `island shown` is the time from the intent's `perform()` starting to the island, not from the press: loading the app comes before it, see the launch line below; the old `island` stage is now the time until the audio session is up;
-- after a refused press: `talk in the island: the press's island was ended, no conversation took it over`.
+- after a refused press: `talk in the island: the press island was ended, no conversation took it over` ("the press's island" until 14 Nov 2026; the apostrophe is not allowed in the Start timing page's lines).
 
 ## Evidence
 - `make test-core` with Swift 6.1.2 on Linux (Ubuntu 24.04): 3150 tests, 0 failures, including the new `TalkStartRulesTests` (2) and `VoiceStartTimelineTests` (1) cases and the updated stage-word test.
