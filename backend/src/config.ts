@@ -6,6 +6,7 @@ import { TOOLKIT_IDS, type ToolkitId } from "./tools/catalog.js";
 import { MONID_DEFAULT_BASE_URL } from "./tools/websearch.js";
 import { DUFFEL_DEFAULT_URL } from "./flights/duffel.js";
 import { KIWI_DEFAULT_URL } from "./flights/kiwi.js";
+import { SigningKeys } from "./signingKeys.js";
 
 /**
  * Environment configuration. Every value is read once at start-up and validated.
@@ -122,8 +123,17 @@ export interface Config {
   /** PEM of a private CA for the database's certificate; null uses the system's trusted CAs. */
   databaseCaCert: string | null;
   authMode: AuthMode;
-  /** Owner-minted tokens (`signed`; also accepted next to Supabase in development when set). */
-  sessionSigningKey: Buffer | null;
+  /**
+   * The signing keys of owner-minted and device tokens, and of file links (`signed`; also accepted next to
+   * Supabase in development when set): one key per purpose from DODDY_SESSION_SIGNING_KEY, with
+   * DODDY_SESSION_SIGNING_KEY_PREVIOUS accepted for checking during a rotation (`signingKeys.ts`).
+   */
+  signingKeys: SigningKeys | null;
+  /**
+   * Makes each iPhone's user id and an invite code's counter id (`deviceUserId`). DODDY_IDENTIFIER_KEY when
+   * set, else the session signing key itself, so nothing moves at deploy. Not rotated with the signing keys.
+   */
+  identifierKey: Buffer | null;
   /** AES-256 key for the notes and conversations kept on request (ADR-603). Null: that feature says "not set up". */
   memoryKey: Buffer | null;
   /** Claude for chatting with your memory (ADR-603); defaults to a small, quick model. Null without an Anthropic key. */
@@ -245,6 +255,10 @@ const EnvSchema = z.object({
   DODDY_AUTH_MODE: z.enum(["dev", "signed", "supabase"]).default("dev"),
   SUPABASE_URL: z.string().optional(),
   DODDY_SESSION_SIGNING_KEY: z.string().optional(),
+  /** The signing key this one replaced, accepted for checking only, during a rotation. Removed once the longest token has run out. */
+  DODDY_SESSION_SIGNING_KEY_PREVIOUS: z.string().optional(),
+  /** Makes each iPhone's user id (`deviceUserId`). Unset: the session signing key, as before. Pin it to the signing key's value before rotating that. */
+  DODDY_IDENTIFIER_KEY: z.string().optional(),
   /** Encrypts the notes and conversations a person chooses to keep on the server (ADR-603): base64 of exactly 32 random bytes. */
   DODDY_MEMORY_KEY: z.string().optional(),
   /** The model that answers questions about your own notes and conversations (ADR-603). */
@@ -387,7 +401,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     if (!isLoopbackHost(e.DODDY_HOST)) problems.push("DODDY_AUTH_MODE=dev requires a loopback DODDY_HOST");
   }
 
-  let sessionSigningKey: Buffer | null = null;
+  let signingKeys: SigningKeys | null = null;
+  let masterKey: Buffer | null = null;
   // In supabase mode the owner's minted tokens keep working in development only, while the app
   // gets Apple and Google sign-in; production accepts Supabase sign-ins alone.
   const ownerTokens =
@@ -398,8 +413,36 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     if (!key || key.length < 32) {
       problems.push("DODDY_SESSION_SIGNING_KEY must be base64 of at least 32 random bytes");
     } else {
-      sessionSigningKey = key;
+      masterKey = key;
     }
+    // The key this one replaced, for checking only (`signingKeys.ts`). Only the setting's name is reported, never a value.
+    let previous: Buffer | null = null;
+    const previousText = (e.DODDY_SESSION_SIGNING_KEY_PREVIOUS ?? "").trim();
+    if (previousText !== "") {
+      // A rotation under way with no identifier key would move every iPhone's user id with the signing key (the voice
+      // token server refuses the same way): the identifier key must be set first, to the value the signing key had.
+      if ((e.DODDY_IDENTIFIER_KEY ?? "").trim() === "") {
+        problems.push("DODDY_SESSION_SIGNING_KEY_PREVIOUS needs DODDY_IDENTIFIER_KEY: set it to the value DODDY_SESSION_SIGNING_KEY had before the rotation, so identifiers stay as they were");
+      }
+      const decoded = Buffer.from(previousText, "base64");
+      if (decoded.length < 32) {
+        problems.push("DODDY_SESSION_SIGNING_KEY_PREVIOUS must be base64 of at least 32 random bytes");
+      } else if (masterKey?.equals(decoded)) {
+        problems.push("DODDY_SESSION_SIGNING_KEY_PREVIOUS must be a different key from DODDY_SESSION_SIGNING_KEY");
+      } else {
+        previous = decoded;
+      }
+    }
+    if (masterKey) signingKeys = new SigningKeys(masterKey, previous);
+  }
+  // Identifiers (an iPhone's user id) come from their own key, so a rotation of the signing keys moves nobody's
+  // data. Unset, it is the signing key itself, the same bytes as before keys per purpose.
+  let identifierKey: Buffer | null = masterKey;
+  const identifierText = (e.DODDY_IDENTIFIER_KEY ?? "").trim();
+  if (identifierText !== "") {
+    const decoded = Buffer.from(identifierText, "base64");
+    if (decoded.length < 32) problems.push("DODDY_IDENTIFIER_KEY must be base64 of at least 32 random bytes");
+    else identifierKey = decoded;
   }
 
   // Device sessions (ADR-563): the app signs itself in with a device ID and the beta invite code,
@@ -616,7 +659,8 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     databaseUrl,
     databaseCaCert: e.DATABASE_CA_CERT?.trim() ? e.DATABASE_CA_CERT.trim().replace(/\\n/g, "\n") : null,
     authMode: e.DODDY_AUTH_MODE,
-    sessionSigningKey,
+    signingKeys,
+    identifierKey,
     memoryKey,
     deviceSignup: e.DODDY_DEVICE_SIGNUP,
     deviceInviteCodes,

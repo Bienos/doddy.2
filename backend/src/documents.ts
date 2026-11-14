@@ -1,15 +1,17 @@
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { MemoryCipher } from "./memory/crypto.js";
+import { keyringOf, PurposeKeys, type SigningKeys } from "./signingKeys.js";
 import type { Store } from "./store.js";
 
 /**
  * Links to files Claude made (ADR-564). The phone opens them in Safari, which shows a deck, a Word
  * file, a spreadsheet or a PDF with Quick Look and a Share button, so the link can't carry the app's
  * session token. Instead it is a capability: the document's random ID (144 bits) plus an HMAC
- * signature over the ID, the account it was made for and an expiry, made with the server's signing
- * key. Every open looks the file up again: a deleted file, or one that isn't that account's, doesn't
- * open. The link is shown only in the app, never sent to the voice agent.
+ * signature over the ID, the account it was made for and an expiry, made with the file-link key (a key of
+ * its own, derived from the server's master key, with a key id: `signingKeys.ts`). Every open looks the
+ * file up again: a deleted file, or one that isn't that account's, doesn't open. The link is shown only in
+ * the app, never sent to the voice agent.
  *
  * A link works for a day (decision 2026-11-12-documents-at-rest), the file is kept a week: after a day
  * the app's own Share and Files download it with the app's sign-in (`GET /v1/web/documents/:id/file`).
@@ -35,14 +37,24 @@ export interface LinkClaim {
 export type LinkCheck = "ok" | "expired" | "invalid";
 
 export class DocumentLinks {
-  constructor(
-    private readonly key: Buffer,
-    private readonly publicBaseUrl: string,
-  ) {}
+  private readonly keys: PurposeKeys;
 
+  /** A master key alone, or the keyring (with a previous key during a rotation). */
+  constructor(
+    keys: SigningKeys | Buffer,
+    private readonly publicBaseUrl: string,
+  ) {
+    this.keys = keyringOf(keys).for("file-link");
+  }
+
+  /**
+   * The signature is the key id and a MAC made with the file-link key (`signingKeys.ts`), all in the one `sig`
+   * parameter: the messaging server rebuilds a link from `exp` and `sig` alone and takes a `sig` of 20 to 64
+   * characters (`server/messaging/src/fileWatches.ts`), so the key id can't be a parameter of its own.
+   */
   link(id: string, userId: string, now: Date): string {
     const exp = Math.floor(now.getTime() / 1000) + DOCUMENT_LINK_TTL_SECONDS;
-    return `${this.publicBaseUrl}/v1/documents/${id}?exp=${exp}&sig=${this.sign(id, userId, exp)}`;
+    return `${this.publicBaseUrl}/v1/documents/${id}?exp=${exp}&sig=${this.keys.sign(linkMessage(id, userId, exp))}`;
   }
 
   /** The parts of anything shaped like a document link, else null. Nothing is checked yet. */
@@ -57,30 +69,27 @@ export class DocumentLinks {
 
   /**
    * Whether the link was made by this server for `userId` (the owner of the row it names, read at the
-   * time of the request). A link made before the account was part of the signature (the older `v1`
-   * signature, 7 days) only ever reads as expired: it is never served again.
+   * time of the request). A link signed the earlier way (the master key directly and no key id, made before
+   * keys per purpose) still opens until its day is up. A link made before the account was part of the
+   * signature (the oldest `v1` signature, 7 days) only ever reads as expired: it is never served again.
    */
   check(claim: LinkClaim, userId: string, now: Date): LinkCheck {
-    if (equal(this.sign(claim.id, userId, claim.exp), claim.sig)) {
-      return claim.exp < Math.floor(now.getTime() / 1000) ? "expired" : "ok";
+    const shape = PurposeKeys.shapeOf(claim.sig);
+    const live = claim.exp < Math.floor(now.getTime() / 1000) ? "expired" : "ok";
+    if (shape === "keyed") return this.keys.verify(linkMessage(claim.id, userId, claim.exp), claim.sig) ? live : "invalid";
+    if (shape === "earlier") {
+      if (this.keys.verifyEarlier(earlierLinkMessage(claim.id, userId, claim.exp), claim.sig)) return live;
+      return this.keys.verifyEarlier(oldestLinkMessage(claim.id, claim.exp), claim.sig) ? "expired" : "invalid";
     }
-    return equal(this.signV1(claim.id, claim.exp), claim.sig) ? "expired" : "invalid";
-  }
-
-  private sign(id: string, userId: string, exp: number): string {
-    return createHmac("sha256", this.key).update(`doddy-document:v2:${id}:${userId}:${exp}`).digest("base64url");
-  }
-
-  private signV1(id: string, exp: number): string {
-    return createHmac("sha256", this.key).update(`doddy-document:v1:${id}:${exp}`).digest("base64url");
+    return "invalid";
   }
 }
 
-function equal(expected: string, given: string): boolean {
-  const a = Buffer.from(expected);
-  const b = Buffer.from(given);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
+/** What a link's signature covers: the file, the account it was made for and the expiry. */
+const linkMessage = (id: string, userId: string, exp: number) => `doddy-document:v3:${id}:${userId}:${exp}`;
+/** What the signature covered before key ids, and before the account was part of it. Only ever checked, never made. */
+const earlierLinkMessage = (id: string, userId: string, exp: number) => `doddy-document:v2:${id}:${userId}:${exp}`;
+const oldestLinkMessage = (id: string, exp: number) => `doddy-document:v1:${id}:${exp}`;
 
 /**
  * A document's name and file, encrypted at rest (decision 2026-11-12-documents-at-rest) with the key and
