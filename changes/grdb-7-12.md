@@ -1,0 +1,2 @@
+GRDB.swift 7.9.0 → 7.12.0 (Dependabot #219): `Packages/DoddyCore/Package.swift` (exact version) and its `Package.resolved`, plus the app's own pin in `Config/Package.resolved` (revision `92a554cd`, the `v7.12.0` tag, checked with `git ls-remote`) so the Mac job's pin check matches what Xcode resolves. `DEPENDENCIES_AND_LICENSES.md` names the new version. No code change.
+Ran: `scripts/ci.sh --only checks`. Not run here: Swift (no toolchain in this session); `swift`, `core` and the hosted Mac `ios-build` in CI are the first compile and test run with 7.12.0.
