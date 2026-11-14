@@ -15,17 +15,27 @@ public enum FactProposer {
     public static func propose(
         from suggestions: [SaveSuggestion], savedTexts: [String], date: Date
     ) -> LearningProposal? {
+        proposeAll(from: suggestions, savedTexts: savedTexts, date: date).first
+    }
+
+    /// Every preference, then every personal fact, in the order they were said, as proposals. Quiet memory keeps a
+    /// few of them (`keptQuietly`, decision 2026-11-14-quiet-memory); the card shows only the first.
+    public static func proposeAll(
+        from suggestions: [SaveSuggestion], savedTexts: [String], date: Date, keptQuietly: Bool = false
+    ) -> [LearningProposal] {
         let saved = Set(savedTexts.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) })
         let candidates = suggestions.filter { !saved.contains($0.text.trimmingCharacters(in: .whitespacesAndNewlines)) }
-        let pick = candidates.first(where: { $0.reason == .preference }) ?? candidates.first(where: { $0.reason == .personalFact })
-        guard let pick else { return nil }
-        let kind: LearnedFactKind = pick.reason == .preference ? .preference : .person
-        guard let provenance = try? LearningProvenance(proposer: .rule, reason: pick.reason.rawValue, episodeDates: [date]),
-              let fact = try? FactProposal(
-                kind: kind, value: pick.text, scope: .general, confidence: kind == .preference ? 70 : 60,
-                provenance: provenance, sourceEpisodeIDs: [sentenceEvidenceID(pick.text)])
-        else { return nil }
-        return .fact(fact)
+        let picks = candidates.filter { $0.reason == .preference } + candidates.filter { $0.reason == .personalFact }
+        return picks.compactMap { pick in
+            let kind: LearnedFactKind = pick.reason == .preference ? .preference : .person
+            guard let provenance = try? LearningProvenance(
+                    proposer: .rule, reason: pick.reason.rawValue, episodeDates: [date], keptQuietly: keptQuietly),
+                  let fact = try? FactProposal(
+                    kind: kind, value: pick.text, scope: .general, confidence: kind == .preference ? 70 : 60,
+                    provenance: provenance, sourceEpisodeIDs: [sentenceEvidenceID(pick.text)])
+            else { return nil }
+            return .fact(fact)
+        }
     }
 }
 

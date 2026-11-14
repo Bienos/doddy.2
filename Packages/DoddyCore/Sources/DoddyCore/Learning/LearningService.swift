@@ -13,11 +13,15 @@ public struct LearningMoment: Sendable {
     public let sensitiveMode: Bool
     /// The iPhone's language is Polish: a suggested routine name is made in Polish.
     public let polish: Bool
+    /// The person's own yes to quiet memory (decision 2026-11-14-quiet-memory): what they say about themselves is kept
+    /// without a card. Off unless they turned it on; `learningOn` must be on too.
+    public let keepsQuietly: Bool
 
     public init(
         learningOn: Bool, connectionsPaused: Bool, connectionsOn: Set<VoiceConnection>, isPrivate: Bool,
-        sensitiveMode: Bool = false, polish: Bool = false
+        sensitiveMode: Bool = false, polish: Bool = false, keepsQuietly: Bool = false
     ) {
+        self.keepsQuietly = keepsQuietly
         self.polish = polish
         self.learningOn = learningOn
         self.connectionsPaused = connectionsPaused
@@ -177,7 +181,10 @@ public struct LearningService: Sendable {
         candidates += ProcedureDetector.detect(
             events: events, knownDigests: known, existingSequences: sequences, now: current, calendar: calendar,
             polish: moment.polish)
-        if let fact = FactProposer.propose(from: leftoverSuggestions, savedTexts: [], date: current) { candidates.append(fact) }
+        // With quiet memory on, facts are kept by `keepQuietlyAfterConversation` instead, so none is also asked about.
+        if !moment.keepsQuietly, let fact = FactProposer.propose(from: leftoverSuggestions, savedTexts: [], date: current) {
+            candidates.append(fact)
+        }
 
         for candidate in candidates {
             let validated: ValidatedProposal
@@ -195,11 +202,47 @@ public struct LearningService: Sendable {
         return []
     }
 
+    /// Cards shown today: facts kept quietly were never a card, so they don't count.
     private func rowsCreatedToday(_ current: Date) async throws -> Int {
         let start = calendar.startOfDay(for: current)
-        let factRows = try await facts.list(status: nil).filter { $0.createdAt >= start }.count
+        let factRows = try await facts.list(status: nil).filter { $0.createdAt >= start && !$0.provenance.keptQuietly }.count
         let procedureRows = try await procedures.list(status: nil).filter { $0.createdAt >= start }.count
         return factRows + procedureRows
+    }
+
+    // MARK: Quiet memory
+
+    /// After a conversation ends, with learning on and quiet memory on (decision 2026-11-14-quiet-memory): the
+    /// preferences and personal facts the person said about themselves are kept as confirmed learned facts without a
+    /// card, at most `quietPerConversation` from one conversation and `quietPerDay` a day. Each passes the same checks as
+    /// a card's proposal (`LearningPolicy`: nothing sensitive, never a sentence once refused or already kept, not while
+    /// connections are paused or in sensitive mode) and is returned only as read back from the store. Nothing in a
+    /// private conversation. Nothing here tells the person; the Memory screen shows what was kept.
+    public func keepQuietlyAfterConversation(suggestions: [SaveSuggestion], moment: LearningMoment) async throws -> [LearnedFact] {
+        guard moment.learningOn, moment.keepsQuietly, !moment.isPrivate else { return [] }
+        let current = now()
+        let start = calendar.startOfDay(for: current)
+        let keptToday = try await facts.list(status: nil).filter { $0.provenance.keptQuietly && $0.createdAt >= start }.count
+        var room = min(limits.quietPerConversation, limits.quietPerDay - keptToday)
+        guard room > 0 else { return [] }
+        var known = try await facts.knownDigests()
+        var kept: [LearnedFact] = []
+        for proposal in FactProposer.proposeAll(from: suggestions, savedTexts: [], date: current, keptQuietly: true) {
+            guard room > 0 else { break }
+            let validated: ValidatedProposal
+            do {
+                validated = try LearningPolicy.validate(
+                    proposal, environment: moment.environment, counts: .none, knownDigests: known, limits: limits, now: current)
+            } catch {
+                continue // dropped: not kept, not stored
+            }
+            let proposed = try await facts.propose(validated)
+            let confirmed = try await facts.confirm(id: proposed.id, exactText: proposed.value)
+            kept.append(confirmed)
+            known.insert(validated.evidenceDigest)
+            room -= 1
+        }
+        return kept
     }
 
     // MARK: Answers on a card, and "That's wrong"
