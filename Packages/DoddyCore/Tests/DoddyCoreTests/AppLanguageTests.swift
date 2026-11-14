@@ -87,4 +87,34 @@ final class AppLanguageTests: XCTestCase {
     func testPolishKeepsTheOwnersLanguageWhenChosen() {
         XCTAssertEqual(AppLanguage.launchAction(stored: "pl", appLanguages: ["en"]), .set(["pl"]))
     }
+
+    func testTheSwitchIsPolishThenEnglish() {
+        // Owner, 14 Nov 2026: "add switch between polish and English language in settings".
+        XCTAssertEqual(AppLanguage.switchChoices, [.polish, .english])
+        XCTAssertEqual(AppLanguage.switchChoices.compactMap(\.nativeName), ["Polski", "English"])
+    }
+
+    func testAChoiceShowsAtOnceWhenIOSStartedDoddyInAnotherLanguage() {
+        // Doddy started in Polish and the person flips the switch: English now, not after a restart.
+        XCTAssertEqual(AppLanguage.screenLanguage(chosen: .english, launchLocalization: "pl"), "en")
+        XCTAssertEqual(AppLanguage.screenLanguage(chosen: .polish, launchLocalization: "en"), "pl")
+        XCTAssertEqual(AppLanguage.screenLanguage(chosen: .german, launchLocalization: "pl"), "de")
+        XCTAssertEqual(AppLanguage.screenLanguage(chosen: .chineseSimplified, launchLocalization: "en"), "zh-Hans")
+        // No localization reported at all: the choice is used.
+        XCTAssertEqual(AppLanguage.screenLanguage(chosen: .polish, launchLocalization: nil), "pl")
+    }
+
+    func testNothingToChangeWhenIOSAlreadyPickedTheChoice() {
+        // Back to the language Doddy started in, in the same run: the screens use iOS's own pick again.
+        XCTAssertNil(AppLanguage.screenLanguage(chosen: .polish, launchLocalization: "pl"))
+        XCTAssertNil(AppLanguage.screenLanguage(chosen: .english, launchLocalization: "en"))
+        XCTAssertNil(AppLanguage.screenLanguage(chosen: .portugueseBrazil, launchLocalization: "pt-BR"))
+        XCTAssertNil(AppLanguage.screenLanguage(chosen: .chineseSimplified, launchLocalization: "zh-Hans"))
+    }
+
+    func testSameAsThisIPhoneWaitsForTheNextStart() {
+        XCTAssertNil(AppLanguage.screenLanguage(chosen: .followPhone, launchLocalization: "pl"))
+        XCTAssertNil(AppLanguage.screenLanguage(chosen: .followPhone, launchLocalization: "en"))
+        XCTAssertNil(AppLanguage.screenLanguage(chosen: .followPhone, launchLocalization: nil))
+    }
 }
