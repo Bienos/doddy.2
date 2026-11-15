@@ -43,6 +43,13 @@ AGENTS = {"app": SPEC, "phone": SPEC / "phone", "task-call": SPEC / "task-call",
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}")
 RUNS_ON = {"phone", "web"}
 SPEAK_BEFORE = {"auto", "force"}
+# What the user's speech does while a tool runs (decision docs/decisions/2026-11-14-voice-agent-does-the-work-live.md).
+# "allow" (the default when the field is absent): speech interrupts and ElevenLabs abandons the tool. "finish": the
+# tool runs to its end and what was said is transcribed into the next turn (ElevenLabs interruption_mode
+# disable_during_tool, with the agent's turn setting transcribe_on_disabled_interruptions on). Only a tool that runs
+# at once may finish: a tool with a card waits for the person, who must be able to speak to Doddy meanwhile.
+WHILE_RUNNING = {"allow", "finish"}
+EL_INTERRUPTION_MODE = {"allow": "allow", "finish": "disable_during_tool"}
 # ASK-01: a tool shows a card first ("yes_or_tap" or "tap") or runs at once ("runs_now"). ADR-575: a public
 # lookup (the web, the weather, Wikipedia, news, places, sums, conversions) runs at once. Since 14 Nov 2026
 # (decision docs/decisions/2026-11-14-spoken-yes-and-fewer-cards.md) a card takes the person's own spoken yes or a
@@ -53,7 +60,8 @@ ASK = {"yes_or_tap", "tap", "runs_now"}
 # tools.json in step with it.
 TAP_ONLY = {"pay_for_page", "book_flight", "call_places"}
 # Read nothing of the user's and change nothing (AskFirst.publicLookups in DoddyCore must match).
-PUBLIC_LOOKUPS = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
+# research_now (14 Nov 2026): Claude on Doddy's server searches the web and reads two or three pages; a look-up like web_search.
+PUBLIC_LOOKUPS = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places", "research_now",
                   "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"}
 # Translator mode starts and stops at once, without asking (owner, 24 Oct 2026, ADR-619).
 RUNS_NOW_MODES = {"start_translator", "stop_translator"}
@@ -135,6 +143,10 @@ def check(tools, session, instructions):
             errors.append(f"{where}: x_doddy.speak_before must be one of {sorted(SPEAK_BEFORE)}")
         if x.get("confirm_on_screen") and x.get("speak_before") != "force":
             errors.append(f"{where}: on-screen confirmation needs speak_before 'force' so the user is told to look")
+        if x.get("while_running", "allow") not in WHILE_RUNNING:
+            errors.append(f"{where}: x_doddy.while_running must be one of {sorted(WHILE_RUNNING)}")
+        if x.get("while_running") == "finish" and (x.get("ask") != "runs_now" or x.get("confirm_on_screen")):
+            errors.append(f"{where}: only a tool that runs at once may finish while the user speaks (a card waits for them)")
         if not isinstance(x.get("timeout_secs"), int) or x["timeout_secs"] <= 0:
             errors.append(f"{where}: x_doddy.timeout_secs must be a positive integer")
         if x.get("runs_on") == "web":
@@ -380,6 +392,8 @@ def elevenlabs_tool(tool):
         "response_timeout_secs": x["timeout_secs"],
         "pre_tool_speech": x["speak_before"],
         "force_pre_tool_speech": x["speak_before"] == "force",
+        "interruption_mode": EL_INTERRUPTION_MODE[x.get("while_running", "allow")],
+        "disable_interruptions": x.get("while_running", "allow") == "finish",
     }
     if x["runs_on"] == "phone":
         return {**common, "type": "client", "expects_response": True, "parameters": {
@@ -462,6 +476,9 @@ def compare(tools, instructions, export, where="voice-agent/"):
             diffs.append(f"tool {name}: timeout {cfg.get('response_timeout_secs')} live vs {x['timeout_secs']} spec")
         if cfg.get("pre_tool_speech") != x["speak_before"]:
             diffs.append(f"tool {name}: pre_tool_speech {cfg.get('pre_tool_speech')} live vs {x['speak_before']} spec")
+        want_mode = EL_INTERRUPTION_MODE[x.get("while_running", "allow")]
+        if cfg.get("interruption_mode", "allow") != want_mode:
+            diffs.append(f"tool {name}: interruption_mode {cfg.get('interruption_mode', 'allow')} live vs {want_mode} spec")
         if live[name].get("id") and x.get("elevenlabs_tool_id") and live[name]["id"] != x["elevenlabs_tool_id"]:
             diffs.append(f"tool {name}: live id {live[name]['id']} vs spec {x['elevenlabs_tool_id']}")
         want = {k: (v["type"], v.get("description", ""), v.get("enum")) for k, v in s["parameters"]["properties"].items()}

@@ -405,13 +405,18 @@ test("helpers: file IDs only from code-execution results; file names never carry
 test("config: Claude is live-only, checked, and has its own caps", () => {
   const key = Buffer.alloc(32, 1).toString("base64");
   const live = { DODDY_MODE: "live", DODDY_AUTH_MODE: "signed", DODDY_SESSION_SIGNING_KEY: key, MONID_API_KEY: "monid_live_abcdefghij", DODDY_PUBLIC_BASE_URL: "https://doddy.test" };
-  assert.deepEqual(loadConfig({ ...live, ANTHROPIC_API_KEY: "sk-ant-api03-abcdefghij" }).claude, { apiKey: "sk-ant-api03-abcdefghij", model: "claude-sonnet-5-5" });
+  assert.deepEqual(loadConfig({ ...live, ANTHROPIC_API_KEY: "sk-ant-api03-abcdefghij" }).claude, { apiKey: "sk-ant-api03-abcdefghij", model: "claude-sonnet-5-5", researchModel: "claude-sonnet-5-5" });
+  assert.equal(loadConfig({ ...live, ANTHROPIC_API_KEY: "sk-ant-api03-abcdefghij", DODDY_RESEARCH_MODEL: "claude-opus-5-5" }).claude?.researchModel, "claude-opus-5-5");
+  assert.throws(() => loadConfig({ ...live, DODDY_RESEARCH_MODEL: "gpt-6" }), (e: ConfigError) => e.problems.some((p) => /DODDY_RESEARCH_MODEL/.test(p)));
   assert.equal(loadConfig(live).claude, null);
   assert.equal(loadConfig({ DODDY_MODE: "mock", ANTHROPIC_API_KEY: "sk-ant-api03-abcdefghij" }).claude, null);
   assert.throws(() => loadConfig({ ...live, ANTHROPIC_API_KEY: "nope" }), (e: ConfigError) => e.problems.some((p) => /ANTHROPIC_API_KEY/.test(p) && !/nope/.test(p)));
   const limits = loadConfig({ DODDY_LIMIT_USER_DAILY_CLAUDE: "5", DODDY_LIMIT_SERVICE_DAILY_CLAUDE: "50" }).limits;
   assert.equal(limits.userDailyClaude, 5);
   assert.equal(limits.serviceDailyClaude, 50);
+  // research_now has a daily count of its own, 40 unless set.
+  assert.equal(limits.userDailyResearch, 40);
+  assert.equal(loadConfig({ DODDY_LIMIT_USER_DAILY_RESEARCH: "7" }).limits.userDailyResearch, 7);
 });
 
 test("document links: signed, expiring after a day, and bound to one ID and one account", () => {

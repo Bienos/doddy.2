@@ -66,6 +66,9 @@ class ScriptedClaude implements ClaudeProvider {
   async makeDocument(): Promise<never> {
     throw new Error("not used");
   }
+  async research(): Promise<never> {
+    throw new Error("not used");
+  }
   async structured(input: StructuredInput): Promise<StructuredResult> {
     this.calls.push(input);
     return this.reply(input);

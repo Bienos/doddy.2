@@ -113,7 +113,7 @@ final class ToolCatalogTests: XCTestCase {
                            .union(CloudToolName.all.subtracting(CloudToolName.writes)),
                        "public lookups, looks at the user's own things, Doddy's own small actions and own changes with Undo or that change nothing (step 2b), every read through Doddy's server, translator start and stop (ADR-619), and text_me to the user's own number (decision 2026-11-09-restaurant-calls-one-tap)")
         XCTAssertEqual(AskFirst.publicLookups, ["calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
-                                                "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"])
+                                                "research_now", "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"])
         for name in AskFirst.publicLookups { XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .lookup, name) }
         XCTAssertEqual(AskFirst.ownLooks, ["search_memories", "read_list", "read_calendar", "find_free_time", "lookup_contact", "upcoming_birthdays",
                                            "find_photos", "look_at_screen", "read_steps", "read_health_week", "list_alarms", "check_stopwatch",
@@ -198,11 +198,12 @@ final class ToolCatalogTests: XCTestCase {
         XCTAssertFalse(server.isEmpty, "couldn't read CLOUD_TOOLS from catalog.ts")
         // websearch.ts also holds the fixed Monid tools (ADR-489); claude.ts the Claude tools (ADR-564).
         XCTAssertEqual(
-            Set(server.keys).union([CloudToolName.webSearch, "news_search", "find_places", CloudToolName.askClaude, CloudToolName.makeDocument])
+            Set(server.keys).union([CloudToolName.webSearch, "news_search", "find_places", CloudToolName.askClaude, CloudToolName.makeDocument,
+                                    CloudToolName.researchNow])
                 .union(CloudToolName.flightTools),
             CloudToolName.all)
         let claude = try String(contentsOf: repoRoot.appendingPathComponent("backend/src/tools/claude.ts"), encoding: .utf8)
-        for name in [CloudToolName.askClaude, CloudToolName.makeDocument] {
+        for name in [CloudToolName.askClaude, CloudToolName.makeDocument, CloudToolName.researchNow] {
             XCTAssertTrue(claude.contains("\"\(name)\""), "\(name) not in claude.ts")
             XCTAssertFalse(CloudToolName.isWrite(name), "\(name) changes nothing outside Doddy")
             XCTAssertFalse(CloudToolName.needsAccount(name), name)

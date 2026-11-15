@@ -289,6 +289,16 @@ if [ -f "$voice_controller" ] && ! { grep -q 'planApproval.answer(' "$voice_cont
     && ! grep -q 'approval?.preparedAt' "$voice_controller"; }; then
   echo "FAIL: DOD-07: $voice_controller must run a plan card only through PlanApprovalGate (planApproval.answer, planApproval.show) and never make a plan step's approval after its card was shown." >&2; status=1
 fi
+# DOD-08, DOD-11 (decision 2026-11-14-voice-mute-when-protected-data-unavailable): with the Face ID lock on, a conversation ends
+# when the iPhone locks, and until it has ended a tool that reaches the person's things is refused in words. The controller
+# must listen for iOS's two notices, feed them (and the start's own reading) to ProtectedDataGuard (`protectedData.receive`,
+# `protectedData.sync`), ask it before a tool runs (`protectedData.decide`) and end only through `stop(` with the reason it names.
+if [ -f "$voice_controller" ] && ! { grep -q 'UIApplication.protectedDataWillBecomeUnavailableNotification' "$voice_controller" \
+    && grep -q 'UIApplication.protectedDataDidBecomeAvailableNotification' "$voice_controller" \
+    && grep -q 'protectedData.receive(' "$voice_controller" && grep -q 'protectedData.sync(' "$voice_controller" \
+    && grep -q 'protectedData.decide(tool:' "$voice_controller" && grep -q 'await stop(reason)' "$voice_controller"; }; then
+  echo "FAIL: DOD-08/DOD-11: $voice_controller must end the conversation when the iPhone locks with the Face ID lock on (ProtectedDataGuard: both protected-data notices, protectedData.receive, protectedData.sync, protectedData.decide, stop(reason))." >&2; status=1
+fi
 if grep -RInE --include='*.swift' "$wake_only" "${dirs[@]}" | code_only; then
   echo "FAIL: wake-word engine code is back (removed in ADR-549)." >&2; status=1
 fi

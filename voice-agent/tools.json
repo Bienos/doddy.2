@@ -13,7 +13,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_6701m4et16pveywrpymdw3h3v0wp"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_6701m4et16pveywrpymdw3h3v0wp"}
     },
     {
       "type": "function",
@@ -41,7 +41,7 @@
         },
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_5601m4f2xwxpew38wf9fwynymfr6"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_5601m4f2xwxpew38wf9fwynymfr6"}
     },
     {
       "type": "function",
@@ -58,7 +58,7 @@
         },
         "required": ["from"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_3201m4nyakxvf7ht6vxqyywxjf43"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_3201m4nyakxvf7ht6vxqyywxjf43"}
     },
     {
       "type": "function",
@@ -704,7 +704,7 @@
           "question"
         ]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9001m73dt7v2fdc9kn3qtzd6nx9r"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9001m73dt7v2fdc9kn3qtzd6nx9r"}
     },
     {
       "type": "function",
@@ -910,7 +910,7 @@
         },
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_9801m4hqrq17emqbnq8vxnr8r34a"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_9801m4hqrq17emqbnq8vxnr8r34a"}
     },
     {
       "type": "function",
@@ -923,7 +923,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_2901m4nf3yzbeeq9jy2hp5jhwzef"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_2901m4nf3yzbeeq9jy2hp5jhwzef"}
     },
     {
       "type": "function",
@@ -1036,7 +1036,7 @@
         },
         "required": ["name"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_6001m4hqrreee7baywf1w3fe92m6"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_6001m4hqrreee7baywf1w3fe92m6"}
     },
     {
       "type": "function",
@@ -1063,7 +1063,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_0501m4hqrs7gf6xr08d3fttdy9rg"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_0501m4hqrs7gf6xr08d3fttdy9rg"}
     },
     {
       "type": "function",
@@ -1076,7 +1076,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_5301m4nszh67fbqbhsg52p4r7ynp"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_5301m4nszh67fbqbhsg52p4r7ynp"}
     },
     {
       "type": "function",
@@ -1132,7 +1132,7 @@
         },
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_1401m4nyap0tfdvbspd4a6717pnh"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_1401m4nyap0tfdvbspd4a6717pnh"}
     },
     {
       "type": "function",
@@ -1145,7 +1145,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_1901m4nyaq66ew6bkbvqby0049mv"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_1901m4nyaq66ew6bkbvqby0049mv"}
     },
     {
       "type": "function",
@@ -1174,7 +1174,7 @@
         },
         "required": ["from", "to"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_1301m4nyas4zf8bbxnwb6q0jvpyb"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_1301m4nyas4zf8bbxnwb6q0jvpyb"}
     },
     {
       "type": "function",
@@ -1188,7 +1188,7 @@
         },
         "required": ["from", "to"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_5101m57dqvmvefesnd9m9b0devm3"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_5101m57dqvmvefesnd9m9b0devm3"}
     },
     {
       "type": "function",
@@ -1412,7 +1412,7 @@
         },
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_9601m4hqrt0fexpa9hz0yhrzt2f1"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_9601m4hqrt0fexpa9hz0yhrzt2f1"}
     },
     {
       "type": "function",
@@ -1482,7 +1482,21 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_7201m4k45t77e8gst4gstscv7w3z"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_7201m4k45t77e8gst4gstscv7w3z"}
+    },
+    {
+      "type": "function",
+      "name": "research_now",
+      "description": "Research a question on the web now, while the user waits: Doddy's server has Claude search the web and read two or three pages, then answer in a few spoken sentences with the sites it used. Use it when web_search's five snippets can't answer: plans and options (a weekend away, what's on and what it costs, places to compare), or anything that needs a page read. Pass the user's question in their language with their exact budget, dates and wishes. Relay the answer, name the sites, and never add a price, date or opening hour it didn't give. It can take up to 45 seconds, so say one short line first. If it fails, offer web_search or hand_over_errand. Runs at once.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "question": {"type": "string", "description": "What to find out, in the user's language, with their exact budget, dates and wishes, e.g. 'weekend near Warsaw for two, 21-22 Nov, under 1500 zł, with a spa'. At most 600 characters."},
+          "language": {"type": "string", "description": "Optional two-letter code of the language to write the answer in, e.g. 'pl' or 'en'. Without it: the question's language."}
+        },
+        "required": ["question"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
     },
     {
       "type": "function",
@@ -1551,7 +1565,7 @@
         },
         "required": ["query"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_4501m57dqps0fp5sdxjnjbyd0qde"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_4501m57dqps0fp5sdxjnjbyd0qde"}
     },
     {
       "type": "function",
@@ -1565,7 +1579,7 @@
         },
         "required": ["query", "near"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_8201m57dqqcverybap1s4vwsvtez"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_8201m57dqqcverybap1s4vwsvtez"}
     },
     {
       "type": "function",
@@ -1636,6 +1650,7 @@
         "confirm_on_screen": false,
         "ask": "runs_now",
         "speak_before": "auto",
+        "while_running": "finish",
         "timeout_secs": 60,
         "elevenlabs_tool_id": "tool_4501m76mfz7jf2qa2mh3am5shktt"
       }
@@ -1701,6 +1716,7 @@
         "confirm_on_screen": false,
         "ask": "runs_now",
         "speak_before": "auto",
+        "while_running": "finish",
         "timeout_secs": 60,
         "elevenlabs_tool_id": "tool_8901m76mfzr6fe486avrm7ecn9b6"
       }
@@ -1924,7 +1940,7 @@
     {
       "type": "function",
       "name": "hand_over_errand",
-      "description": "Hand a task that takes real work (comparing prices, researching a trip, pulling options together, reading through things) to Doddy's background worker. It searches the web and reads pages as often as the task needs, keeps going after the user closes the app, and when it is ready the result arrives as Doddy's message in Messages in the app, with a notification. Use it for a report or anything that needs searching and reading ('zrób mi raport o…', 'znajdź mi fajne miejsca w…'). Use it only after you have said back what you understood in the user's own words and asked the one essential question, if any. Pass the user's exact words, your one-line brief with any assumption you said out loud, and a short title. When the user wants you to find something to buy (a dishwasher, a pram, headphones), make it a shopping task: pass kind 'shopping', ask the one question 'what matters most?' (Polish: 'Co jest dla ciebie najważniejsze?') if they haven't said, and pass their answers in priorities, in the order they said them, in their own words (at most 5). Doddy then finds offers in shops in Poland and reads their pages; every price shown was checked on a shop's own page (when none could be confirmed, the result says so and shows none), never comes from you, and nothing is bought. ASK-01: before this tool runs, say in one short line what you will hand over and ask, for example 'Shall I work on this in the background and let you know when it's ready?' (Polish: 'Mam się tym zająć w tle i dać znać, jak będzie gotowe?'). The app shows the same card and starts it when the user says yes or taps Yes on it (a tap only, once text from an email, a page or the screen is in the conversation). That one yes covers every search and page this task needs, within Doddy's server limits, and nothing else: it never books, buys or sends anything. Never put a web address or link in words, brief, title or priorities: the app refuses them (a bare site name such as allegro.pl is fine). Results: 'started' means it is queued: say in one line to give you a moment and that you'll let them know in Messages (Polish: 'Dobra, daj mi chwilę, poszukam i dam ci znać w Wiadomościach.'). 'declined': nothing was handed over; say so in one short sentence. 'unknown': it may have started; ask them to check Tasks in the app and never hand it over again yourself. 'failed' (switched off, not set up, offline or too many tasks open): say you can't work on it in the background right now, say why in a few words, and offer to look it up now, asking before each search. Never say the task is done: the result comes later, and check_errands reads it.",
+      "description": "Only for a job too big to do in the conversation: a full report, comparing many offers, reading many sites, something to keep, or when the user asks for it to be done in the background. Never for planning a weekend, a day out or a trip, or for finding places, stays, events or flights: do those now with find_places, web_search and find_flights, answer with two or three options, and only then offer the background for a fuller plan. It hands the job to Doddy's background worker: it searches the web and reads pages as often as needed, keeps going after the app is closed, and when it's ready the result arrives as Doddy's message in Messages in the app, with a notification. Before it, say back in one line what you understood in the user's own words, and ask only the one essential question, if any. Pass the user's exact words, your one-line brief with any assumption you said out loud, and a short title. When the user wants something found to buy (a dishwasher, a pram, headphones) make it a shopping task: kind 'shopping', ask the one question 'what matters most?' (Polish: 'Co jest dla ciebie najważniejsze?') if they haven't said, and pass their answers as priorities in their order and words (at most 5). Doddy then finds offers in shops in Poland and reads their pages; every price shown was checked on a shop's own page (if none could be confirmed the result says so and shows none), never comes from you, and nothing is bought. Don't ask whether to start it: the user's request is the yes. Call it at once and say what will happen as the card's one short question, e.g. 'Mam się tym zająć w tle i dać znać, jak będzie gotowe?'; the user's short yes or a tap runs it; don't ask twice. The app shows a card and starts it only when the user says yes or taps Yes (a tap only, once text from an email, a page or the screen is in the conversation). That one yes or tap covers every search and page this task needs, within Doddy's server limits, and nothing else: it never books, buys or sends anything. Results: 'started' = queued: say in one line to give you a moment and that you'll let them know in Messages (Polish: 'Dobra, daj mi chwilę, poszukam i dam ci znać w Wiadomościach.'). 'unknown' = it may have started: ask them to check Tasks. 'failed' (switched off, not set up, offline, too many tasks open): say in a few words that it can't run in the background now and why, then do the most useful part now with look-ups (they run at once; never ask before each search). Never say the task is done: the result comes later and check_errands reads it.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -1983,7 +1999,7 @@
         },
         "required": ["items"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9201m5rpyjhfe2kv0yd5xbbfk6k3"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 90, "elevenlabs_tool_id": "tool_9201m5rpyjhfe2kv0yd5xbbfk6k3"}
     },
     {
       "type": "function",
@@ -2019,7 +2035,7 @@
     {
       "type": "function",
       "name": "ask_claude",
-      "description": "Ask Claude, a strong writing and thinking model on Doddy's server, for something you'd do worse yourself: sum up a long email or note, write or rewrite a short text (a message, a caption, a short email), explain something carefully, plan, brainstorm or translate. Pass the request in the user's language and, when the user means something already in this conversation (an email you read, web results, a note), copy that text into material. You get Claude's answer; say the useful part in one to three sentences, or offer to read it all. For anything long (a blog post, an article, a deck, a document, a spreadsheet, a PDF) use make_document instead. For anything current (prices, news, opening hours) use web_search first and pass its results as material. Runs at once. If text from outside has come into this conversation and you pass material, the app first shows a card with what will be sent, and the answer comes only after the user taps; a result starting with 'declined' means nothing was sent.",
+      "description": "Only for long or careful writing, or work on a long text: never for a quick answer, a recipe, a how-to, a riddle or a fact, which you answer yourself at once (this tool takes about ten seconds). Ask Claude, a strong writing and thinking model on Doddy's server, for something you'd do worse yourself: sum up a long email or note, write or rewrite a short text (a message, a caption, a short email), explain something carefully, plan, brainstorm or translate. Pass the request in the user's language and, when the user means something already in this conversation (an email you read, web results, a note), copy that text into material. You get Claude's answer; say the useful part in one to three sentences, or offer to read it all. For anything long (a blog post, an article, a deck, a document, a spreadsheet, a PDF) use make_document instead. For anything current (prices, news, opening hours) use web_search first and pass its results as material. Runs at once. If text from outside has come into this conversation and you pass material, the app first shows a card with what will be sent, and the answer comes only after the user taps; a result starting with 'declined' means nothing was sent.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -2029,7 +2045,7 @@
         },
         "required": ["task", "request"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1601m5f15swpeetbygr32gwr4h5a"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 90, "elevenlabs_tool_id": "tool_1601m5f15swpeetbygr32gwr4h5a"}
     },
     {
       "type": "function",
@@ -2045,7 +2061,7 @@
         },
         "required": ["kind", "title", "request"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 90, "elevenlabs_tool_id": "tool_2101m5f15tckfy0v74g5gyaqm3td"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 90, "elevenlabs_tool_id": "tool_2101m5f15tckfy0v74g5gyaqm3td"}
     }
   ]
 }
