@@ -17,8 +17,9 @@ name: iOS build and tests
 
 on:
   # The default branch, `main` (renamed from `claude/loving-dirac-uuxoux` on 7 Nov 2026), is what
-  # Render deploys and Xcode Cloud builds. Every push to it runs every job (ADR-811), so `main`'s own
-  # result says the whole app and every server were built and tested at that commit.
+  # Render deploys and Xcode Cloud builds. Every push to it runs every Linux group (ADR-811), and the
+  # Mac jobs whenever the push changed a file that can reach the app (decision 2026-11-15-faster-mac-ci;
+  # a skipped ios-build on `main` means "not needed for this push", never "passed").
   push:
     branches: [main]
   pull_request:
@@ -64,26 +65,36 @@ jobs:
         id: files
         env:
           EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
         run: |
-          # An empty list makes both scripts run everything: the safe answer.
+          # An empty list makes both scripts run everything: the safe answer. changed.txt is for the
+          # Linux groups, mac-changed.txt for the Mac jobs.
           : > "$RUNNER_TEMP/changed.txt"
+          : > "$RUNNER_TEMP/mac-changed.txt"
           if [ "$EVENT" = "push" ]; then
-            # A push to `main` runs everything (ADR-811). Testing only what the push changed (ADR-675)
-            # left `main` green on a docs commit whose app or servers were never tested (7 Nov 2026,
-            # run 42379647254 after #195's messaging failure and #198's cancelled run).
-            echo "Push to main: everything runs." >&2
+            # A push to `main` runs every Linux group (ADR-811). Testing only what the push changed
+            # (ADR-675) left `main` green on a docs commit whose app or servers were never tested (7 Nov
+            # 2026, run 42379647254 after #195's messaging failure and #198's cancelled run); since then
+            # each push to main has its own run that nothing cancels.
+            echo "Push to main: every Linux group runs." >&2
+            # The Mac jobs read what the push changed, with the list pull requests use (decision
+            # 2026-11-15-faster-mac-ci): a push of documents, change notes or server code takes no Mac
+            # (on 15 Nov a docs-only merge took one for 75 minutes, run 43715540139). Its ios-build then
+            # shows as skipped, never as passed. Anything the script can't tell runs the Mac.
+            scripts/ci_push_changed_files.sh "$BEFORE" > "$RUNNER_TEMP/mac-changed.txt" || : > "$RUNNER_TEMP/mac-changed.txt"
           elif [ "$EVENT" != "pull_request" ]; then
             echo "Run by hand: everything runs." >&2
           elif git rev-parse --verify -q 'HEAD^2' >/dev/null \
             && git diff --name-only --no-renames 'HEAD^1' HEAD > "$RUNNER_TEMP/changed.txt.new"; then
             mv "$RUNNER_TEMP/changed.txt.new" "$RUNNER_TEMP/changed.txt"
+            cp "$RUNNER_TEMP/changed.txt" "$RUNNER_TEMP/mac-changed.txt"
           else
             echo "Couldn't list what the pull request changes: everything runs." >&2
           fi
 
       - name: Does this change need the macOS build?
         id: decide
-        run: scripts/ci_needs_mac.sh < "$RUNNER_TEMP/changed.txt" >> "$GITHUB_OUTPUT"
+        run: scripts/ci_needs_mac.sh < "$RUNNER_TEMP/mac-changed.txt" >> "$GITHUB_OUTPUT"
 
       - name: Which Linux groups does this change need?
         id: groups

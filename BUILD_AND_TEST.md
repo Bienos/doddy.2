@@ -177,8 +177,11 @@ tests primary success, download/install failures, fallback failure and cleanup.
   It no longer
   waits for `core`, and no longer repeats the Node suites. Run the workflow by hand (Actions → iOS build and
   tests → Run workflow) and it always runs.
-- Pushes to `main` (ADR-811) run every job, each commit in its own run that nothing cancels; pull requests
-  keep the path selection above, and a newer push to a pull request cancels its older run.
+- Pushes to `main` (ADR-811) run every Linux group, each commit in its own run that nothing cancels; the Mac
+  jobs run when the push changed a file that can reach the app (`scripts/ci_push_changed_files.sh` lists the
+  push's files for `scripts/ci_needs_mac.sh`; decision `2026-11-15-faster-mac-ci`), so a skipped `ios-build`
+  on `main` means "not needed", never "passed". Pull requests keep the path selection above, and a newer push
+  to a pull request cancels its older run.
 - UI tests on pull requests are the smoke classes only (`DODDY_UI_TESTS=smoke`: `LaunchSmokeTests`,
   `WelcomeUITests`, `LegalAcceptanceUITests`, `PolishSmokeTests`, about 8 of the suite's 27 minutes on
   7 Nov 2026); pushes to `main`, runs by hand and pull requests labelled `full-ui-tests` run every UI

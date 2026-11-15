@@ -1,9 +1,9 @@
 # The Mac CI boots its simulator during the build, leaves the package tests to Linux on pull requests, and builds Release in a job of its own
 
 - **Date:** 2026-11-15
-- **Decided by:** owner ("jak można ogólnie te buildy przyspieszyć, ten iOS za długo trwa", then "okej to dawaj zaaktualizuj to żeby to było szybciej")
+- **Decided by:** owner ("jak można ogólnie te buildy przyspieszyć, ten iOS za długo trwa", then "okej to dawaj zaaktualizuj to żeby to było szybciej"; then, asked which bigger change to make, chose "Docs na main bez Maca")
 - **Status:** accepted
-- **Replaces:** nothing; narrows ADR-680 (DoddyCore on Apple's Foundation now runs on pushes to `main` and runs by hand, not on pull requests) and moves ADR-811's Release compile into its own job
+- **Replaces:** nothing; narrows ADR-680 (DoddyCore on Apple's Foundation now runs on pushes to `main` and runs by hand, not on pull requests), moves ADR-811's Release compile into its own job, and narrows ADR-811's "every push to `main` runs every job" to every Linux group plus the Mac jobs when the push can reach the app
 
 ## Why
 Measured from the job logs of 15 Nov 2026:
@@ -18,13 +18,15 @@ Measured from the job logs of 15 Nov 2026:
 2. `DODDY_SKIP_PACKAGE_TESTS=1` with `--app-only` leaves out the Swift package tests and lists them as SKIPPED. `ios-build` sets it on pull requests only; pushes to `main` and runs by hand still run them on Apple's Foundation.
 3. `DODDY_RELEASE_BUILD=only` builds only Release for a generic iOS device, unsigned, with no simulator and no tests. The new job `ios-release` (pushes to `main` and full runs by hand, same image and Xcode, restores the package cache but never saves it) runs it beside `ios-build`; `ios-build` no longer builds Release (`DODDY_RELEASE_BUILD=0`). `ios-release` is not a required check; pull requests never run it, as before.
 4. `ios-build` no longer installs PyYAML (about 15 s): its one reader, `scripts/check_platform_specs.py`, is in the `checks` group, which `--app-only` skips.
+5. A push to `main` runs the Mac jobs (`ios-build`, `ios-release`) only when it changed a file that can reach the app, judged by `scripts/ci_needs_mac.sh`, the list pull requests already use (documents, change notes, `server/`, `backend/`, `site/` and the rest of its list take no Mac). `scripts/ci_push_changed_files.sh` lists the push's files from `github.event.before` to the pushed commit; when it can't (a new branch, a commit it can't fetch, a failed diff) the list is empty and the Mac runs. Every Linux group still runs on every push. On 15 Nov a docs-only merge (#520, run 43715540139) took a Mac for 75 minutes while pull requests waited for one.
 
 ## Consequences
 - Expected: about 3 minutes less on every Mac run from the early boot, about 3 more on pull requests from the package tests, and a `main` run that ends about 18 minutes sooner. These are estimates from the logs above; this pull request's own run is the first measurement of 1 and 2, and the first push to `main` after it measures 3.
 - A difference that only Apple's Foundation shows in DoddyCore is found one merge later, on `main`, the same trade ADR-811 made for the full UI suite.
 - A push to `main` now takes two Macs at once for about 20 minutes instead of one Mac for 18 more minutes, so the Mac minutes are about the same; while several merges land together, a pull request can wait a little longer for a free Mac.
 - The early boot competes with the compiler for the hosted Mac's cores; if the build step gets slower by more than the boot saves, undo item 1.
-- Not done, waiting on the owner: skipping the Mac on pushes to `main` that change only documents (ADR-811 says every push runs everything), splitting the full UI suite across two Macs, and caching compiled build products.
+- A skipped `ios-build` on `main` means the push couldn't reach the app, never that the app passed: the app's state at that commit is the last `main` run whose `ios-build` ran. Since 7 Nov each push to `main` has its own run that nothing cancels, so that run is always there to read (the gap ADR-811 closed came from a cancelled run).
+- Not done: splitting the full UI suite across two Macs and caching compiled build products (the owner didn't choose them; the packages are about 2 of the build's 5.5 minutes, so a cache would save at most that). The UI tests spend most of their time scrolling (`XCUIApplication.reveal`, a drag and several screen queries a step); opening the page under test directly would be a change to the tests themselves, left for its own pull request.
 
 ## Evidence
-`scripts/test_ci_mac_phases.sh` (stand-ins for xcrun, xcodebuild, xcodegen and swift; 24 checks, in the `checks` group; 11 of them fail against the previous `scripts/ci.sh`), `scripts/test_ci_package_pins.sh` and `scripts/ci.sh --only checks` on Linux. Not run here: the hosted Mac jobs (no Xcode in this session).
+`scripts/test_ci_push_changed_files.sh` (a throwaway repository and a depth-2 clone like the hosted checkout, chained into `ci_needs_mac.sh`; 8 cases), `scripts/test_ci_mac_phases.sh` (stand-ins for xcrun, xcodebuild, xcodegen and swift; 24 checks, in the `checks` group; 11 of them fail against the previous `scripts/ci.sh`), `scripts/test_ci_package_pins.sh` and `scripts/ci.sh --only checks` on Linux. Not run here: the hosted Mac jobs (no Xcode in this session).

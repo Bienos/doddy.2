@@ -242,6 +242,7 @@ run_step "Web app tokens and brand files match the app (ADR-600)" python3 -I too
 run_step "Site colour tokens match the app" python3 -I tools/gen_site_tokens.py --check
 run_step "One scripts/regen.sh run brings every generated file up to date" scripts/test_regen.sh
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
+run_step "Which pushes to main need the macOS build (decision 2026-11-15-faster-mac-ci)" scripts/test_ci_push_changed_files.sh
 run_step "UI tests that failed only because the app would not start are named for one more run (2026-11-13)" scripts/test_ci_launch_failures.sh
 run_step "Binary packages' dSYMs into the archive (ADR-693)" scripts/test_copy_binary_dsyms.sh
 run_step "Xcode Cloud post-clone script (ADR-697)" scripts/test_xcode_cloud_post_clone.sh
