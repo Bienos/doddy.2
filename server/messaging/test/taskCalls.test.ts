@@ -124,7 +124,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     const ok = await createCase(w, u.h);
     assert.equal(ok.statusCode, 201);
     const p = ok.json();
-    assert.match(p.openingLine, /^Dzień dobry, tu Doddy, wirtualny asystent Anny\. Mam jedno krótkie pytanie\. Czy laptop z serwisu jest gotowy\?$/);
+    assert.match(p.openingLine, /^Dzień dobry, tu Doddy, wirtualny asystent Anny\. Dzwonię z krótkim pytaniem, czy mogę zająć chwilkę\?$/);
     assert.equal(p.recordsAudio, false);
     assert.equal(p.notice, "off");
     assert.equal(p.maxDurationSecs, 240);
@@ -266,7 +266,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     await status(w, d, "completed", 3, "41");
     const reply = "Tak, laptop jest gotowy, można odebrać jutro od dziesiątej.";
     w.voice.conversations.set("conv_2", conversation(d.attemptId, "conv_2", [
-      ["agent", "Dzień dobry, tu Doddy, wirtualny asystent Anny. Mam jedno krótkie pytanie. Czy laptop z serwisu jest gotowy?"],
+      ["agent", "Dzień dobry, tu Doddy, wirtualny asystent Anny. Dzwonię z krótkim pytaniem, czy mogę zająć chwilkę?"],
       ["user", reply], ["agent", "Dziękuję bardzo, do widzenia."]]) as never);
     assert.equal((await postCall(w, w.voice.conversations.get("conv_2")!)).statusCode, 200);
     assert.equal(await processResults(w.ctx), 1);
@@ -298,7 +298,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     await status(w, d, "completed", 3, "41");
     const reply = "Tak, laptop jest gotowy, można odebrać jutro od dziesiątej.";
     w.voice.conversations.set("conv_1", conversation(d.attemptId, "conv_1", [
-      ["agent", "Dzień dobry, tu Doddy, wirtualny asystent Anny. Mam jedno krótkie pytanie. Czy laptop z serwisu jest gotowy?"],
+      ["agent", "Dzień dobry, tu Doddy, wirtualny asystent Anny. Dzwonię z krótkim pytaniem, czy mogę zająć chwilkę?"],
       ["user", reply], ["agent", "Dziękuję bardzo, do widzenia."]]) as never);
     assert.equal((await postCall(w, w.voice.conversations.get("conv_1")!)).statusCode, 200);
     assert.equal(await processResults(w.ctx), 1);
@@ -548,7 +548,7 @@ describe("call cases against real Postgres", { skip: dbSkip }, () => {
     await answer(w, d2);
     await status(w, d2, "completed", 3, "30");
     assert.equal((await postCall(w, conversation(d2.attemptId, "conv_ok", [
-      ["agent", "Dzień dobry, tu Doddy, wirtualny asystent Anny. Mam jedno krótkie pytanie. Czy laptop z serwisu jest gotowy?"],
+      ["agent", "Dzień dobry, tu Doddy, wirtualny asystent Anny. Dzwonię z krótkim pytaniem, czy mogę zająć chwilkę?"],
       ["user", "Tak, jest gotowy."]]))).statusCode, 200);
     await processResults(w.ctx);
     const again = await api(w, "POST", `/v1/call-cases/${d2.caseId}/approve`, u.h, { digest: d2.preview.digest, at });

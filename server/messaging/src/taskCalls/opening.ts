@@ -15,15 +15,16 @@ export const NOTICE_TEXT: Record<RecordingNotice, string> = {
 };
 
 /**
- * "Dzień dobry, tu Doddy, wirtualny asystent Anny. [notice] Mam jedno krótkie pytanie. …?"
- * Since 15 Nov 2026 (owner: the call sounded stiff; decision docs/decisions/2026-11-15-calls-sound-natural.md) it is
- * shorter and spoken, without "Dzwonię w imieniu … Chciałbym zapytać:". The disclosure is still the first thing said.
+ * "Dzień dobry, tu Doddy, wirtualny asystent Anny. [notice] Dzwonię z krótkim pytaniem, czy mogę zająć chwilkę?"
+ * Since 15 Nov 2026 the question itself is not in the opening: the agent asks it word for word once they say yes
+ * (owner: "niech kończy «czy mogę zająć chwilkę» – bardziej kulturalne"; decisions
+ * docs/decisions/2026-11-15-calls-sound-natural.md and 2026-11-15-call-opening-asks-for-a-moment.md).
+ * The disclosure is still the first thing said, and the model never phrases it.
  */
-export function openingLine(principalGenitive: string, notice: RecordingNotice, question: string): string {
-  const q = /[?？]$/.test(question) ? question : `${question}?`;
+export function openingLine(principalGenitive: string, notice: RecordingNotice): string {
   const parts = [`Dzień dobry, tu Doddy, wirtualny asystent ${principalGenitive}.`];
   if (NOTICE_TEXT[notice]) parts.push(NOTICE_TEXT[notice]);
-  parts.push(`Mam jedno krótkie pytanie. ${q}`);
+  parts.push("Dzwonię z krótkim pytaniem, czy mogę zająć chwilkę?");
   return parts.join(" ");
 }
 

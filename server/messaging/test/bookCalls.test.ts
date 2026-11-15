@@ -76,11 +76,11 @@ test("the brief: a booking needs its details; its question is never written by a
 const facts = (lines: [string, string][], over: Partial<ResultFacts> = {}): ResultFacts => ({
   endReason: "completed", answered: true, voiceConnected: true, takenOverAtSecs: null, durationSecs: 40,
   question: bookingQuestion(table), callbackLine: "Sprawdzę to u Anny i oddzwonię.",
-  allowedTexts: [`Dzień dobry, tu Doddy, wirtualny asystent Anny. Mam jedno krótkie pytanie. ${bookingQuestion(table)}`, bookingQuestion(table), bookingConfirmLine(table)],
+  allowedTexts: [`Dzień dobry, tu Doddy, wirtualny asystent Anny. Dzwonię z krótkim pytaniem, czy mogę zająć chwilkę?`, bookingQuestion(table), bookingConfirmLine(table)],
   transcript: lines.map(([speaker, text]) => ({ speaker: speaker as "doddy" | "callee", text, atSecs: null })),
   source: "elevenlabs", voicemailToolUsed: false, bookingConfirmLine: bookingConfirmLine(table), ...over,
 });
-const opening = `Dzień dobry, tu Doddy, wirtualny asystent Anny. Mam jedno krótkie pytanie. ${bookingQuestion(table)}`;
+const opening = `Dzień dobry, tu Doddy, wirtualny asystent Anny. Dzwonię z krótkim pytaniem, czy mogę zająć chwilkę?`;
 
 test("the confirmation sentence is the one commitment allowed; any other still warns", () => {
   const ok = buildCallResult(facts([["doddy", opening], ["callee", "Tak, mamy wolne o 19."],
@@ -181,11 +181,18 @@ test("until the live agents are synced, the drift check also accepts the earlier
   const nov14Ask = fixture("task-call-2026-11-14.md");
   const nov14Book = fixture("task-call-book-2026-11-14.md");
   const nov14Order = fixture("task-call-order-2026-11-14.md");
-  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_AGENT_SPEC.promptSha256], [sha256Hex(oldAsk), sha256Hex(nov12Ask), sha256Hex(nov14Ask)]);
-  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_BOOK_AGENT_SPEC.promptSha256], [sha256Hex(oldBook), sha256Hex(nov12Book), sha256Hex(nov14Book)]);
+  // And those live from 15 Nov 2026, about 14:07 UTC, before the opening asked for a moment.
+  const nov15Ask = fixture("task-call-2026-11-15.md");
+  const nov15Book = fixture("task-call-book-2026-11-15.md");
+  const nov15Order = fixture("task-call-order-2026-11-15.md");
+  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_AGENT_SPEC.promptSha256], [sha256Hex(oldAsk), sha256Hex(nov12Ask), sha256Hex(nov14Ask), sha256Hex(nov15Ask)]);
+  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_BOOK_AGENT_SPEC.promptSha256], [sha256Hex(oldBook), sha256Hex(nov12Book), sha256Hex(nov14Book), sha256Hex(nov15Book)]);
   // The order agent's first prompt (13 to 14 Nov 2026), before it sounded like the person's assistant.
   const firstOrder = fixture("task-call-order-2026-11-13.md");
-  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_ORDER_AGENT_SPEC.promptSha256], [sha256Hex(firstOrder), sha256Hex(nov14Order)]);
+  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_ORDER_AGENT_SPEC.promptSha256], [sha256Hex(firstOrder), sha256Hex(nov14Order), sha256Hex(nov15Order)]);
+  assert.deepEqual(checkAgentSafety(compliantAgent(nov15Ask)), [], "the ask agent live from 15 Nov, 14:07 UTC");
+  assert.deepEqual(checkAgentSafety(compliantAgent(nov15Book, TASK_BOOK_AGENT_ID), TASK_BOOK_AGENT_SPEC), []);
+  assert.deepEqual(checkAgentSafety(compliantAgent(nov15Order, TASK_ORDER_AGENT_ID), TASK_ORDER_AGENT_SPEC), []);
   assert.deepEqual(checkAgentSafety(compliantAgent(nov14Ask)), [], "the ask agent live until the 15 Nov sync");
   assert.deepEqual(checkAgentSafety(compliantAgent(nov14Book, TASK_BOOK_AGENT_ID), TASK_BOOK_AGENT_SPEC), []);
   assert.deepEqual(checkAgentSafety(compliantAgent(nov14Order, TASK_ORDER_AGENT_ID), TASK_ORDER_AGENT_SPEC), []);
@@ -216,7 +223,11 @@ test("the ask, booking and order prompts keep the plain answer when asked what D
   for (const prompt of [TASK_PROMPT, BOOK_PROMPT, ORDER_PROMPT]) {
     assert.match(prompt, /You are an AI, not a person/);
     assert.match(prompt, /never deny it and never dodge/);
-    assert.match(prompt, /Tak, jestem asystentem AI/);
+    // Asked if it is a robot or an AI: always yes. Asked if it is a human: always no (15 Nov 2026).
+    assert.match(prompt, /the answer is always yes, said first/);
+    assert.match(prompt, /"Tak, ale bardzo kulturalnym\./);
+    assert.match(prompt, /a human or a real person, the answer is always no: "Nie, jestem wirtualnym asystentem/);
+    assert.match(prompt, /Never answer "tak" to whether you are a human/);
     assert.equal(/jestem (człowiekiem|osobą|prawdziwą osobą)/i.test(prompt), false);
   }
 });

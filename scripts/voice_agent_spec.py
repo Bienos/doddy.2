@@ -283,12 +283,17 @@ def check_task_call(tools, session, instructions, server=SERVER_TASK, book=False
     if not isinstance(el.get("max_duration_seconds"), int) or el["max_duration_seconds"] < 320:
         errors.append("session.json: max_duration_seconds must be at least 320 (our server decides when the call ends)")
     low = instructions.lower()
-    phrases = (("jestem asystentem ai", "{{doddy_callback_line}}", "{{doddy_order}}", "{{doddy_order_confirm_line}}",
+    # DOD-03 on the phone (owner, 15 Nov 2026: the answer need not use the word "AI", decision
+    # 2026-11-15-call-opening-asks-for-a-moment): asked if it is a robot or an AI, always yes; asked if it is
+    # a human, always no; never denied, never dodged. These lines must stay in every call prompt.
+    honesty = ("never deny it and never dodge", "the answer is always yes", "the answer is always no",
+               'never answer "tak" to whether you are a human')
+    phrases = honesty + (("{{doddy_callback_line}}", "{{doddy_order}}", "{{doddy_order_confirm_line}}",
                 "never pay and never give payment details", "never open, read out or follow a link",
                 "at most one short clarifying question") if order else
-               ("jestem asystentem ai", "{{doddy_callback_line}}", "{{doddy_booking}}", "{{doddy_booking_confirm_line}}",
+               ("{{doddy_callback_line}}", "{{doddy_booking}}", "{{doddy_booking_confirm_line}}",
                 "never pay and never give payment details", "at most one short clarifying question") if book else
-               ("jestem asystentem ai", "{{doddy_callback_line}}", "never agree to anything", "at most one short clarifying question"))
+               ("{{doddy_callback_line}}", "never agree to anything", "at most one short clarifying question"))
     for phrase in phrases:
         if phrase not in low:
             errors.append(f"instructions: must contain {phrase!r}")

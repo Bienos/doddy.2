@@ -123,7 +123,7 @@ export function compilePayload({ caseId, brief, destination, fromNumber, notice 
     },
     agent: {
       variables: {
-        doddy_opening_line: openingLine(g, notice, question),
+        doddy_opening_line: openingLine(g, notice),
         doddy_question: question,
         doddy_principal: g,
         doddy_callee: brief.callee.name,

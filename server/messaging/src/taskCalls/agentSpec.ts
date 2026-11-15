@@ -4,7 +4,7 @@
 // server/messaging, so the expected values live here.
 export const TASK_AGENT_SPEC = {
   /** sha256 of voice-agent/task-call/instructions.md, trimmed, as the setup script sends it. */
-  promptSha256: "121edb3eb1498818ef2235e3902179b48f40dab61f1e7a7bee48f25b3d965d73",
+  promptSha256: "b37f996b3ee61a2defb041d11a5478c527a1480fd2ea6f207c1bba642cbeabdf",
   firstMessage: "{{doddy_opening_line}}",
   language: "pl",
   systemTools: ["end_call", "voicemail_detection"] as readonly string[],
@@ -21,7 +21,7 @@ export const TASK_AGENT_SPEC = {
 export const TASK_BOOK_AGENT_SPEC = {
   ...TASK_AGENT_SPEC,
   /** sha256 of voice-agent/task-call-book/instructions.md, trimmed, as the setup script sends it. */
-  promptSha256: "6c47339ee6c7c83cebc111d3f88fd036f8706a8eb4c6eb025bdcede6a2fc88b3",
+  promptSha256: "962bcea75c8910df201ef71e7d5bb16af9a2dea3ea566411f79b74a36a41c641",
 } as const;
 
 /**
@@ -32,7 +32,7 @@ export const TASK_BOOK_AGENT_SPEC = {
 export const TASK_ORDER_AGENT_SPEC = {
   ...TASK_AGENT_SPEC,
   /** sha256 of voice-agent/task-call-order/instructions.md, trimmed, as the setup script sends it. */
-  promptSha256: "3b7779ed874e549feca215399c316b8d2d3b3342ced61243237ae6716726bb05",
+  promptSha256: "66090aa0353a8f61da83e3e21859bed04f071e900d80ef68d5ea815ba5bcd8d2",
 } as const;
 
 /**
@@ -50,6 +50,8 @@ export const TASK_ORDER_AGENT_SPEC = {
  * 15 Nov 2026: all three prompts sound like a relaxed person on the phone, and "what is it about?" is no longer treated
  * as a wrong number (owner: "żeby były luźne i brzmiały jak człowiek"; decision docs/decisions/2026-11-15-calls-sound-natural.md).
  * Each one's prompt from before stays accepted until its live agent has the new one.
+ * Later on 15 Nov 2026: the opening asks for a moment and the agent asks the question after a yes; asked whether it is a
+ * robot or an AI, Doddy says yes lightly, and asked whether it is a human, no (decision 2026-11-15-call-opening-asks-for-a-moment).
  */
 export const SYNC_PENDING_PROMPTS: Readonly<Record<string, readonly string[]>> = {
   // task-call: main before 12 Nov 2026, then main from 12 to 13 Nov 2026 (before the assistant's natural voice,
@@ -59,6 +61,8 @@ export const SYNC_PENDING_PROMPTS: Readonly<Record<string, readonly string[]>> =
     "0f2c05bcc3090802ae6ad0656c8f69ba6af9c6bdbfa8f63596088b8b1a25099a",
     // main from 13 to 15 Nov 2026
     "8c8d5c482fccffbdf179ebbe4297e317988f8960c1d1f6213408fd30e734a83b",
+    // main on 15 Nov 2026, before the opening asked for a moment
+    "121edb3eb1498818ef2235e3902179b48f40dab61f1e7a7bee48f25b3d965d73",
   ],
   // task-call-book: the same two
   [TASK_BOOK_AGENT_SPEC.promptSha256]: [
@@ -66,12 +70,16 @@ export const SYNC_PENDING_PROMPTS: Readonly<Record<string, readonly string[]>> =
     "e8ee34fef4e6ef97eb75bcf7c3ddf054f9fd0919f7b34abe4bf7e563cd01d03c",
     // main from 13 to 15 Nov 2026
     "9a9eb76821299973cde1b70087342982a1d0e2127305c3f8eb7e5eb1670de42c",
+    // main on 15 Nov 2026, before the opening asked for a moment
+    "6c47339ee6c7c83cebc111d3f88fd036f8706a8eb4c6eb025bdcede6a2fc88b3",
   ],
   // task-call-order: its first prompt (13 to 14 Nov 2026, before the assistant's natural voice)
   [TASK_ORDER_AGENT_SPEC.promptSha256]: [
     "ba6d0ba8035457bea8d80ba1671c2ca9c949302e32b6f8b37b69cc1747db6210",
     // main from 14 to 15 Nov 2026
     "4d88bace9339e7d993abbdc73797699053839c06b20375132517a7e1389482f7",
+    // main on 15 Nov 2026, before the opening asked for a moment
+    "3b7779ed874e549feca215399c316b8d2d3b3342ced61243237ae6716726bb05",
   ],
 };
 
