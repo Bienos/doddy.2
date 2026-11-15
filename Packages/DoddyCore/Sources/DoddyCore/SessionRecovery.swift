@@ -16,6 +16,9 @@ public enum VoiceSessionEnd: Equatable, Sendable {
     /// "Stop listening" (OP-024, ADR-361): from Siri or the listening indicator, which also stop
     /// a voice memo.
     case stoppedListening
+    /// The iPhone locked while the Face ID lock was on (`ProtectedDataGuard`): the conversation was ended, not dropped,
+    /// so nothing is kept as a draft and nothing restarts by itself on the unlock.
+    case iPhoneLocked
     /// It stopped before either side ended it.
     case dropped(Drop)
 
@@ -60,6 +63,7 @@ public enum VoiceSessionEnd: Equatable, Sendable {
         case .userEnded: "user"
         case .doddyEnded: "doddy"
         case .stoppedListening: "stopped"
+        case .iPhoneLocked: "locked"
         case .dropped(.offline): "dropped-offline"
         case .dropped(.connectionLost): "dropped-connection"
         case .dropped(.error): "dropped-error"
@@ -120,7 +124,7 @@ public enum SessionRecovery {
         switch end {
         case .userEnded, .doddyEnded:
             return ("Conversation ended", nil)
-        case .stoppedListening:
+        case .stoppedListening, .iPhoneLocked:
             return ("Stopped listening", "Doddy's microphone is off.")
         case .dropped(.offline):
             return ("You're offline", "Doddy's voice needs the internet.")

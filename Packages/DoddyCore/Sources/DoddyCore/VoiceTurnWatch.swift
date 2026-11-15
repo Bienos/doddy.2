@@ -31,7 +31,8 @@ public enum VoiceWaitActivity: String, Sendable, CaseIterable {
         case "find_places", "geocode_place": .findingPlaces
         case "make_document", "make_presentation", "make_something": .makingDocument
         case "get_weather": .checkingWeather
-        case "wikipedia_search", "wikipedia_summary": .lookingUp
+        // plan_trip reads the trip and searches Kiwi.com, up to 30 s: "Looking it up…", with no new wording.
+        case "wikipedia_search", "wikipedia_summary", "plan_trip": .lookingUp
         case "read_calendar", "read_google_calendar", "read_outlook_calendar", "find_free_time": .checkingCalendar
         default: nil
         }
