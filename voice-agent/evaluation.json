@@ -1,0 +1,73 @@
+{
+  "_note": "What the live main agent (agent_0501m4et27vyeawrwqfdxxfszfa6) scores after every conversation. Applied 14 Nov 2026 with agents_update_analysis (versions agtvrsn_1201m7dyz6xdeharp66kmmazayce and agtvrsn_2201m7dyzktqfcc9k4djgfjgf5mc); a record, not synced by scripts/voice_agent_spec.py. Change it on the live agent only on the owner's word and log it in voice-agent/README.md.",
+  "analysis_llm": "gemini-2.5-flash",
+  "evaluation_criteria": [
+    {
+      "id": "doddy_did_the_task",
+      "name": "Did what was asked",
+      "analysis_item_id": "aitem_9701m7dyz6xeed79yzft02khv43k",
+      "conversation_goal_prompt": "You judge a voice conversation between a user and Doddy, an AI assistant on the user's iPhone with tools for web search, reading pages, places, flights, calendar, weather, reminders, messages, phone calls and documents. Success: every clear request the user made was done (a tool ran and Doddy reported its real result), or answered from general knowledge when that was enough, or honestly declined because it is truly unsupported or unsafe. Failure: a clear request was left undone: Doddy gave up, gave no answer, changed the subject, only promised to do it later without starting it, or the conversation ended before the result came. Unknown: the user made no clear request (a greeting, small talk, a test).",
+      "type": "prompt",
+      "scoring_mode": "binary",
+      "scope": "conversation"
+    },
+    {
+      "id": "doddy_no_false_cant",
+      "name": "No wrong \"I can't\"",
+      "analysis_item_id": "aitem_6701m7dyz6xte3vbh2x326r8majh",
+      "conversation_goal_prompt": "Failure if Doddy said he can't, isn't able, has no access or has no tool for something his tools could do (look things up on the web, read pages, find places or events, search flights, plan a day, a weekend or a trip, check the calendar or the weather, set reminders, draft messages, make documents), or if he asked permission before a simple look-up the user had already asked for (for example 'Mam poszukać?', 'Want me to look it up?', 'Mam się tym zająć w tle?') instead of doing it. Success if he never did either. Unknown if no request in the conversation needed a tool.",
+      "type": "prompt",
+      "scoring_mode": "binary",
+      "scope": "conversation"
+    },
+    {
+      "id": "doddy_tools_worked",
+      "name": "Tools worked",
+      "analysis_item_id": "aitem_9901m7dyz6y0f4g8wpc1c4t40syn",
+      "conversation_goal_prompt": "Look at every tool call and its result in the transcript. Failure if any tool returned an error, failed, timed out, was abandoned ('Tool execution was abandoned due to user input'), returned something Doddy couldn't use, or Doddy told the user that something didn't go through or that the server couldn't be reached. Success if every tool call returned a usable result. Unknown if no tool was called.",
+      "type": "prompt",
+      "scoring_mode": "binary",
+      "scope": "conversation"
+    },
+    {
+      "id": "doddy_true_to_results",
+      "name": "Said only what tools returned",
+      "analysis_item_id": "aitem_8801m7dyz6y5fx0b8z4w5zgqyv9r",
+      "conversation_goal_prompt": "Failure if Doddy stated a specific fact that has to come from a tool (a price, a date, an opening hour, a flight time, an address, an event, a calendar entry) that appears in no tool result in the transcript, or said something was booked, sent, saved, set or done when no tool result confirmed it. Success if every such fact and every 'done' matches a tool result. Unknown if Doddy stated no such fact and claimed nothing was done.",
+      "type": "prompt",
+      "scoring_mode": "binary",
+      "scope": "conversation"
+    }
+  ],
+  "system_evaluation_criteria": [
+    "__system_eval_criteria_frustration"
+  ],
+  "data_collection": {
+    "failure_kind": {
+      "analysis_item_id": "aitem_2001m7dyz6yaex4t2gdvhq8b84fj",
+      "type": "string",
+      "enum": [
+        "none",
+        "said_cant",
+        "asked_instead_of_doing",
+        "tool_failed",
+        "tool_abandoned",
+        "wrong_tool",
+        "slow",
+        "made_up_detail",
+        "other"
+      ],
+      "description": "The main thing that went wrong for the user in this conversation, as one value: none (nothing went wrong), said_cant (Doddy wrongly said he can't), asked_instead_of_doing (asked before a look-up the user had asked for), tool_failed (a tool error, timeout or unreachable server), tool_abandoned (a tool was abandoned because the user spoke), wrong_tool (Doddy used a tool that didn't fit, or none when one was needed), slow (the user complained about waiting), made_up_detail (a fact or a 'done' no tool result supports), other."
+    },
+    "failed_request": {
+      "analysis_item_id": "aitem_7301m7dyz6yffsbak1907498300y",
+      "type": "string",
+      "description": "In at most 12 English words, what the user asked for that didn't work, for example 'plan a weekend near Warsaw' or 'cheapest flight to Rome in December'. Empty if nothing failed. Never include names, phone numbers, email or street addresses, or any other personal detail."
+    }
+  },
+  "already_on": {
+    "sentiment_analysis": true,
+    "topic_discovery": true
+  },
+  "rollback": "agents_update_analysis with analysis_items {evaluation_criteria: [], data_collection: []}; there were none before 14 Nov 2026."
+}
