@@ -136,6 +136,8 @@ public enum ActivityText {
         "Save parking spot": "Zapisz miejsce parkowania",
         "Found parking spot": "Odczytano miejsce parkowania",
         "Clear parking spot": "Usuń miejsce parkowania",
+        // Decision 2026-11-14-approximate-location-by-voice.
+        "Checked where you are": "Sprawdzono, gdzie jesteś",
         "Read an email": "Przeczytano e-mail",
         "Complete a task": "Ukończ zadanie",
         "Move a task": "Przesuń zadanie",

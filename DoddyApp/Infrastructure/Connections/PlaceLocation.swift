@@ -22,12 +22,19 @@ struct PlaceSearchResult: Identifiable, Equatable, Sendable {
 /// "Always"; reads one position when the user taps "Use where I am now"; searches Apple Maps when
 /// the user types a place. It never tracks where the user goes: iOS watches the reminder's place
 /// itself (`UNLocationNotificationTrigger`) and wakes nothing in Doddy when it fires.
+/// Since 14 Nov 2026 also "where am I?" by voice (decision 2026-11-14-approximate-location-by-voice): one reading about
+/// a kilometre sure, and the area's name from Apple's geocoder for that position rounded (`WhereAmI` in DoddyCore).
 @MainActor
 final class PlaceLocation: NSObject, CLLocationManagerDelegate {
     static let shared = PlaceLocation()
 
     private let manager = CLLocationManager()
     private var waiting: [CheckedContinuation<Void, Never>] = []
+    /// Calls of `approximateFix` waiting for the one `requestLocation()` in flight; each ends at its own timeout.
+    private var fixWaiters: [UUID: CheckedContinuation<LocationFix?, Never>] = [:]
+    /// One geocoder for "where am I?": Apple's geocoder takes one request at a time.
+    private let geocoder = CLGeocoder()
+    private var areaWaiters: [UUID: CheckedContinuation<AreaNames?, Never>] = [:]
 
     override private init() {
         super.init()
@@ -92,6 +99,81 @@ final class PlaceLocation: NSObject, CLLocationManagerDelegate {
             group.cancelAll()
             return first
         }
+    }
+
+    // MARK: Where am I? (decision 2026-11-14-approximate-location-by-voice)
+
+    /// One reading about a kilometre sure (`kCLLocationAccuracyKilometer`: iOS may answer from Wi-Fi and cell towers
+    /// without GPS), or nil after `timeout` seconds or when iOS reports an error. Read only now, never kept here.
+    func approximateFix(timeout: TimeInterval) async -> LocationFix? {
+        await withCheckedContinuation { (continuation: CheckedContinuation<LocationFix?, Never>) in
+            let id = UUID()
+            let alreadyAsked = !fixWaiters.isEmpty
+            fixWaiters[id] = continuation
+            if !alreadyAsked {
+                manager.desiredAccuracy = kCLLocationAccuracyKilometer
+                manager.requestLocation()
+            }
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(timeout))
+                self?.finishFix(id, with: nil)
+            }
+        }
+    }
+
+    /// The last position iOS gave Doddy, with its own timestamp. `WhereAmI.best` decides whether it is recent enough.
+    func lastKnownFix() -> LocationFix? {
+        manager.location.map { Self.fix($0) }
+    }
+
+    /// The district, town, region and country Apple's geocoder gives for a position the caller already rounded
+    /// (`WhereAmI.area`): only that rounded position goes to Apple. Nil when the geocoder is busy, fails or takes longer
+    /// than `timeout` seconds.
+    func areaNames(latitude: Double, longitude: Double, timeout: TimeInterval) async -> AreaNames? {
+        guard !geocoder.isGeocoding else { return nil }
+        return await withCheckedContinuation { (continuation: CheckedContinuation<AreaNames?, Never>) in
+            let id = UUID()
+            areaWaiters[id] = continuation
+            geocoder.reverseGeocodeLocation(CLLocation(latitude: latitude, longitude: longitude)) { placemarks, _ in
+                let names = placemarks?.first.map {
+                    AreaNames(district: $0.subLocality, town: $0.locality, region: $0.administrativeArea, country: $0.country)
+                }
+                Task { @MainActor in self.finishArea(id, with: names) }
+            }
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(timeout))
+                self?.finishArea(id, with: nil)
+            }
+        }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        // Only `approximateFix` asks this manager for updates (place reminders and parking use `CLLocationUpdate`).
+        let newest = locations.last.map { Self.fix($0) }
+        Task { @MainActor in self.finishAllFixes(with: newest) }
+    }
+
+    nonisolated func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        Task { @MainActor in self.finishAllFixes(with: nil) }
+    }
+
+    private func finishFix(_ id: UUID, with fix: LocationFix?) {
+        fixWaiters.removeValue(forKey: id)?.resume(returning: fix)
+    }
+
+    private func finishAllFixes(with fix: LocationFix?) {
+        let resumed = fixWaiters
+        fixWaiters = [:]
+        resumed.values.forEach { $0.resume(returning: fix) }
+    }
+
+    private func finishArea(_ id: UUID, with names: AreaNames?) {
+        areaWaiters.removeValue(forKey: id)?.resume(returning: names)
+    }
+
+    nonisolated private static func fix(_ location: CLLocation) -> LocationFix {
+        LocationFix(latitude: location.coordinate.latitude, longitude: location.coordinate.longitude,
+                    accuracyMeters: location.horizontalAccuracy, takenAt: location.timestamp)
     }
 
     /// Apple Maps search. Sends the typed words (and, if given, the area around `near`) to Apple.
