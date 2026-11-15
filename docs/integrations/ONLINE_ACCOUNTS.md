@@ -116,7 +116,7 @@ neither answer has been seen live.
 
 The owner asked for a faster search ("Możemy ogarnąć szybszą wyszukiwarkę"). `web_search` now asks Exa `/search` through
 Monid by default, and Search1API stays one setting away. **It reaches users only with a deploy of `doddy`**
-(`docs/OWNER_QUEUE.md` 121).
+(`docs/OWNER_QUEUE.md` 118).
 - **Request:** `{ query, type: "fast", numResults: 5, contents: { highlights: { numSentences: 3 } } }`, fixed in
   `webSearchRequest`; `highlightsPerUrl` is not sent (Exa answered it with "no longer supported").
 - **Answer read:** per result the title, the site (from `url`), the date (`publishedDate`, kept only as a real

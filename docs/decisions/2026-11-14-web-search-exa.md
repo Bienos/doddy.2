@@ -1,7 +1,7 @@
 # Doddy's web search asks Exa through Monid instead of Search1API, with Search1API one setting away
 
 - **Date:** 2026-11-14
-- **Decided by:** owner, 14 Nov 2026: "Możemy ogarnąć szybszą wyszukiwarkę" (we can sort out a faster search engine). The choice of Exa, the setting, the deadlines and the fallback are this proposal's; shipping it is a deploy of `doddy`, on the owner's word (`docs/OWNER_QUEUE.md` 121).
+- **Decided by:** owner, 14 Nov 2026: "Możemy ogarnąć szybszą wyszukiwarkę" (we can sort out a faster search engine). The choice of Exa, the setting, the deadlines and the fallback are this proposal's; shipping it is a deploy of `doddy`, on the owner's word (`docs/OWNER_QUEUE.md` 118).
 - **Status:** proposed; applied in the pull request that adds `webSearchRequest` to `backend/src/tools/websearch.ts`. Nothing is live until `doddy` is deployed with it.
 - **Replaces:** the endpoint part of ADR-173 (Search1API `/search` as web search's one endpoint). ADR-489 (news and places, the price on the card) is unchanged.
 
@@ -30,7 +30,7 @@ One real Exa run through the Monid connector, 14 Nov 2026 21:19 UTC, run `01M7DY
 - **Cost ×7:** $0.007 instead of $0.001 per search, about **$7 per 1,000 searches** instead of $1. The daily caps are unchanged (30 per user, 200 per server: at most $1.40 a day for web search, deck research included). A fallback search costs Search1API's $0.001 (the refused Exa run isn't billed). Spend limit on the Monid wallet: owner queue 13.
 - **Faster at the tail:** the p95 falls from 15.8 s to 4.4 s by the catalog, and a stuck search fails at 8 s instead of 15 s. Not measured on Doddy's server or on a phone yet.
 - **Longer text per result** (about 600 characters instead of 300, 3,500 at most in all): more for the voice model to read, so slightly more tokens per answer.
-- **Privacy:** search words now go to Exa (through Monid) as well as Search1API (news, the fallback). The published privacy pages name "Search1API for web and news"; their wording is the owner's (owner queue 122, with the proposed lines). `docs/legal/PRIVACY_POLICY_DRAFT.md` names Monid only and is unchanged.
+- **Privacy:** search words now go to Exa (through Monid) as well as Search1API (news, the fallback). The published privacy pages name "Search1API for web and news"; their wording is the owner's (owner queue 118, part (2), with the proposed lines). `docs/legal/PRIVACY_POLICY_DRAFT.md` names Monid only and is unchanged.
 - **Watch:** `web_search_fallback` lines in `doddy`'s log (Exa refusing); the first live receipts after the deploy (whether Monid's REST API takes Exa's body as the connector did).
 - **Ships only with a deploy of `doddy`**, on the owner's word, together with owner queue 113: that deploy carries the production-rules check, so this goes out with it, not on its own. No variable has to be set: `exa` is the default.
 - **Rollback:** set `DODDY_WEB_SEARCH_PROVIDER=search1api` on `doddy`. Saving a variable redeploys the newest `main`, so while owner queue 113 is open, roll back by redeploying the earlier commit instead.
