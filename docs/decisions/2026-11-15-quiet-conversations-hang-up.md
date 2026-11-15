@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-15
 - **Decided by:** owner ("Bruh there is no way it was turned on for 2hours I think there is something that captures voice all the time and using credits because of it find it and fix it"); the limits below are the agent's proposal, the owner can change them
-- **Status:** proposed (app half in the pull request on branch `claude/nifty-bell-dit0iu`; the live agents' own setting waits for the owner, `docs/OWNER_QUEUE.md` 114)
+- **Status:** accepted. App half: the pull request on branch `claude/nifty-bell-dit0iu`. Live agents: applied 15 Nov 2026 (owner: "Set it now"), `voice-agent/README.md`
 
 ## Why
 The owner's ElevenLabs export for 7 to 14 Nov 2026 shows 148.7 minutes of "Agents v0" and 15.7 minutes of "Agents (when silent)". Read on 15 Nov from the ElevenLabs conversation list (all agents, every conversation started from 9 Nov, read only):
@@ -22,12 +22,13 @@ The app ends a conversation in which nothing has happened for the limit of its s
 
 ## Consequences
 - **Cost and privacy:** a forgotten conversation now costs at most about 30 to 60 seconds instead of up to 10 minutes, and the microphone stops hearing a room nobody is talking to Doddy in (DOD-11).
-- **Only builds with this change.** Builds already on phones keep the old behaviour. The live agents' own `silence_end_call_timeout` would cover every build and every client, including typed checks; changing it is the owner's call (`docs/OWNER_QUEUE.md` 114, with the exact values).
+- **Builds without this change** are covered by the live agents' own `silence_end_call_timeout`, set on 15 Nov 2026 on the owner's word: 60 s on the main agent, 120 s on the translator (seconds since the user last spoke). It also covers any other client, typed checks included. The app's limit is shorter in the background (30 s) and also counts Doddy's own lines and cards.
 - **What to watch:** someone who thinks for over a minute with Doddy on screen has to start again; a translator conversation with a pause of more than two minutes ends. If either happens often, raise the limit in `VoiceQuietWatch` (one constant each).
-- **Not changed:** the 10-minute cap, ElevenLabs' turn and soft timeouts, how a conversation starts, the short greeting-only starts (they are starts, not leaks), and the live agents.
+- **Not changed:** the 10-minute cap, ElevenLabs' turn and soft timeouts, the live prompt and tools, how a conversation starts, and the short greeting-only starts (they are starts, not leaks).
 - **Live checks cost minutes too:** the 12 Nov translator checks were about 40 minutes. Typed checks against a live agent are billed like conversations.
 
 ## Evidence
-- Read (read only): ElevenLabs conversation list from 9 Nov 2026 (300 conversations), conversation `conv_2701m7bt77g9f8e9mwk0vvxre7v3`, the main agent's and the translator's `conversation_config.turn` and `max_duration_seconds`. Nothing on any live agent was changed.
+- Read: ElevenLabs conversation list from 9 Nov 2026 (300 conversations), conversation `conv_2701m7bt77g9f8e9mwk0vvxre7v3`, the main agent's and the translator's `conversation_config.turn` and `max_duration_seconds`.
+- Changed on the owner's word: `silence_end_call_timeout` on both live agents, read back (`voice-agent/README.md`). Not checked yet: a live conversation that reaches it.
 - Ran: `make test-core` on Linux with Swift 6.1.2: 3700 tests, 0 failures, 2 skipped, including the new `VoiceQuietWatchTests` (10, one replays the 14 Nov Maps conversation and ends it at 0:47) and `.quiet` added to the end-reason tests in `SessionRecoveryTests` and `ActionStatusTextTests`. `swiftc -parse` on `VoiceSessionController.swift`.
 - Not run: the app build (no Xcode here, so the controller change is **not compiled**), the iOS unit and UI tests, anything on a phone.
