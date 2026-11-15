@@ -62,7 +62,34 @@ adding one adapter, not rewriting the app or the agent.
 
 Every tool asks first (ASK-01, `x_doddy.ask`). `runs_now`: looks, reads, public lookups, the translator and Doddy's own small actions run at once (ADR-575, ADR-619, decision `2026-11-11-asked-for-runs-at-once`). `yes_or_tap` (53 tools since 14 Nov 2026, decision `2026-11-14-spoken-yes-and-fewer-cards`; 64 before its step 2b moved 11 to `runs_now`): a card with the exact payload that the person's own spoken yes or a tap answers; the app asks for a tap instead once outside text is in the conversation. `tap` (3 tools): money and bookings, `pay_for_page`, `book_flight`, `call_places`.
 
-**Not applied to the live agent (14 Nov 2026):** only `x_doddy.ask` (and, for the 11 tools step 2b runs at once, `confirm_on_screen`) changed in `tools.json` (Doddy's own field, never sent to ElevenLabs). The tool descriptions' "Ask: tap only." tags, the forced pre-tool speech and the prompt's "A spoken yes is not enough there" are unchanged here and on the live agent; changing them is step 3 of the decision, after a TestFlight build with the app's half, and only on the owner's word. Until then the agent still asks people to tap, and the app also runs a card on their spoken yes.
+**Applied to the live main agent on 14 Nov 2026, about 19:05 to 19:45 UTC** (owner: "Zsynchronizuj też. Agenta też zmień"; decision `2026-11-14-spoken-yes-and-fewer-cards`, step 3; `docs/OWNER_QUEUE.md` 111 and 114). The repository's `instructions.md` and `tools.json` say the same in their own words.
+- **The prompt:** 11 passages, written in the live prompt's own wording, because the live prompt is the owner's shorter rewrite, not `instructions.md`.
+  - The ASK-01 section: own undoable changes and drafts run at once, with no question. Everything else shows a card, and the card's one short question is answered by the user's "tak" or a tap. `book_flight` and `call_places` need a tap. Every change needs a tap once an email, a page, a document, an account or the screen has been read. One yes or tap covers one action.
+  - The lines on lists, notes, the first conversation, calling the user, the background task, "Unsupported" and "Guardrails" now say "a yes or a tap".
+  - Published as `agtvrsn_5201m7drcvttfg4a2vytate8vp9n` and read back at 30,056 characters (28,854 plus the 11 edits, checked by length after each edit). **Rollback:** `agtvrsn_6401m7dqs20ff85aytdjxcy1vrh0`.
+- **The tools:** 71 descriptions changed, plus `response_timeout_secs` 60 → 90 for `look_at_screen`, `ask_claude`, `make_document`, `add_to_list` and `check_off`. Each tool was read right before it was written, every other field went back as read, and the stored text was read back.
+  - 14 whose live text equalled `tools.json` on `main` now equal `tools.json` here.
+  - 56 kept the owner's shorter live wording, and only the confirmation words changed:
+    - "the user must tap X" became "the user says yes or taps X";
+    - "Card: one short line asking to confirm on screen" became the one short question;
+    - for tools that run at once: "It runs at once, with no card and no question" and "Don't ask first".
+
+    `open_map`, `draft_message` and `open_camera` also say that a card appears when Doddy isn't on screen. These 56 are not the text of `tools.json`, so `compare` still shows them as drift.
+  - `undo_last` had no confirmation wording and was left as it was.
+  - **Rollback:** each tool's description and timeout from before the sync is in `sync-log/2026-11-14-spoken-yes-tools-before.json`.
+- **Another session changed the same agent at the same time** (the owner's session on trip planning):
+  - version `agtvrsn_0301m7dqgq4eed1v7cd2s7r573tx` (`turn.transcribe_on_disabled_interruptions` became true);
+  - the interruption settings of several look-ups;
+  - prompt version `agtvrsn_6401m7dqs20ff85aytdjxcy1vrh0`, which answers trips and weekends in the conversation;
+  - `hand_over_errand`'s description.
+
+  The prompt passages above went on top of that version, and `hand_over_errand` got the confirmation words on top of that session's text. Both were read just before. Its own changes are its to log.
+- **Not changed, because they are not on the live agent:**
+  - `make_presentation`: its id in `tools.json` is not attached to the agent. That is a finding, and it was not fixed here.
+  - `open_food_app`, `make_something` and `pay_for_page`: never synced.
+  - `text_me`: detached since 19 Oct. Its tap-card wording is in `tools.json` only.
+- **Timers and alarms** stay a card answered by a yes on the live agent, as the app on `main` still shows one. They change when step 2c ships.
+- **It needs a build with #470 and #477.** On an older build the agent asks for a "tak" the app doesn't take, and the card needs a tap. Not tested by voice.
 
 | What | Tools | Who does the work |
 |---|---|---|

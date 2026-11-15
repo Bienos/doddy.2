@@ -163,7 +163,8 @@ enum TalkInIsland {
         defer { isStarting = false }
         // How old this process is and how long iOS took to load Doddy before this press (the timeline below
         // begins here, so it can't show that): fixed words and seconds only.
-        log.notice("talk start launch: \(LaunchWork.launchTiming().line(), privacy: .public)")
+        let launchLine = LaunchWork.launchTiming().line()
+        log.notice("talk start launch: \(launchLine, privacy: .public)")
         // Where the seconds go between the press and a connected conversation (decision 2026-11-10-voice-start-timing):
         // fixed stage words and seconds only, on the "voice-audio" log, whatever way the start ends.
         let requestedAt = ProcessInfo.processInfo.systemUptime
@@ -171,7 +172,7 @@ enum TalkInIsland {
         // After a hand-back the connect task writes the line itself, when it ends.
         var handedBack = false
         defer {
-            if !handedBack { log.notice("talk start timing: \(timeline.line(at: ProcessInfo.processInfo.systemUptime), privacy: .public)") }
+            if !handedBack { recordTiming(launch: launchLine, timing: timeline.line(at: ProcessInfo.processInfo.systemUptime)) }
         }
 
         // The checks that need nothing but this iPhone come first, so a press that can't start never flashes
@@ -297,7 +298,7 @@ enum TalkInIsland {
                 await startTask.value
                 var done = handedTimeline
                 done.mark(.connect, at: ProcessInfo.processInfo.systemUptime)
-                log.notice("talk start timing: \(done.line(at: ProcessInfo.processInfo.systemUptime, token: controller.tokenSource), privacy: .public)")
+                recordTiming(launch: launchLine, timing: done.line(at: ProcessInfo.processInfo.systemUptime, token: controller.tokenSource))
                 if case .failed = controller.phase { log.notice("talk in the island: the connection failed after the intent returned") }
                 if background != .invalid { UIApplication.shared.endBackgroundTask(background) }
                 connecting = nil
@@ -305,7 +306,7 @@ enum TalkInIsland {
             return
         }
         timeline.mark(.connect, at: ProcessInfo.processInfo.systemUptime)
-        log.notice("talk start timing: \(timeline.line(at: ProcessInfo.processInfo.systemUptime, token: controller.tokenSource), privacy: .public)")
+        recordTiming(launch: launchLine, timing: timeline.line(at: ProcessInfo.processInfo.systemUptime, token: controller.tokenSource))
         handedBack = true
         switch controller.phase {
         case .failed(let message):
@@ -358,6 +359,17 @@ enum TalkInIsland {
         // answer cannot revive it. Do not await the uncooperative network operation itself.
         await controller.stop()
         await VoiceLiveActivity.shared.settle()
+    }
+
+    /// The timing lines of one press, to the log and, so they can be read without a Mac, to the journal in
+    /// Settings › About › Advanced › Start timing (decision 2026-11-14-start-timing-on-the-phone). Called when the
+    /// start has ended or handed back, after the island is up, so keeping them costs the island nothing. Fixed
+    /// words and seconds only; `StartTimingJournal` refuses anything else.
+    private static func recordTiming(launch: String, timing: String) {
+        log.notice("talk start timing: \(timing, privacy: .public)")
+        let store = StartTimingStore.shared
+        store.record("talk start launch: " + launch)
+        store.record("talk start timing: " + timing)
     }
 
     private static func refused(_ check: String, needsApp message: String) -> StartProblem {

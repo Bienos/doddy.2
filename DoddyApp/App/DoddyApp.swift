@@ -16,7 +16,8 @@ struct DoddyApp: App {
     init() {
         LaunchWork.appInitBegan()
         defer { LaunchWork.appInitEnded() }
-        // The screens' language is read when the app starts: English unless the person picked another (ADR-459).
+        // The screens' language is read when the app starts: Polish unless the person picked another (ADR-459, ADR-573).
+        // A choice made in Doddy shows at once (`ScreenLanguage`, decision 2026-11-14-language-switch-at-once).
         AppLanguageStore.applyAtLaunch()
         // Back Tap's old "Small island" becomes Settings › "Expand when Doddy speaks" (ADR-579),
         // before anything reads either preference.
@@ -118,6 +119,8 @@ struct DoddyApp: App {
                 .environment(profiles)
                 .environment(noteReminders)
                 .environment(\.appEnvironment, store.environment)
+                // The language picked in Settings › Language, for SwiftUI's words, dates and numbers.
+                .modifier(ScreenLanguageEnvironment())
                 // Start-up work waits for the first screen (ADR-547): the cheap local jobs at once,
                 // the network and notification jobs a moment later, one at a time (`LaunchWork`).
                 .task(id: profiles.hasLoaded) {

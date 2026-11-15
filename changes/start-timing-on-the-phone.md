@@ -1,0 +1,2 @@
+Settings › About › Advanced › Start timing: the Action Button's timing lines (launch, timing, first sound) are kept on the iPhone, last 18, with Copy and Clear, so they can be read without a Mac. Only fixed words and seconds are accepted (`StartTimingJournal`); erased with "Erase everything". Decision `2026-11-14-start-timing-on-the-phone`.
+Ran: `make test-core` (Linux, Swift 6.1.2), `swiftc -parse` on the changed app files, `scripts/ci.sh --only checks`, `tools/build_strings_catalog.py`. Not run: the app build (no Xcode), anything on a device.
