@@ -1,6 +1,6 @@
 # What waits on the owner
 
-One list, soonest deadline first (ADR-675). Each item says why it is yours, what to do, and what happens if it waits. Remove an item when it's done; add new ones here instead of inside STATUS paragraphs. Last checked 15 Nov 2026 (docs review, against `main` at `6a5121c9` and the Render, Vercel and GitHub reads of 15 Nov, about 01:00 UTC); a row's own date says when its facts were read.
+One list, soonest deadline first (ADR-675). Each item says why it is yours, what to do, and what happens if it waits. Remove an item when it's done; add new ones here instead of inside STATUS paragraphs. Last checked 15 Nov 2026 (docs review, against `main` at `3d92ec13` and the Render, Vercel and GitHub reads of 15 Nov, about 01:00 UTC); a row's own date says when its facts were read.
 
 | # | Deadline | What | Why only you | What happens if it waits |
 |---|---|---|---|---|
