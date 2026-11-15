@@ -167,11 +167,12 @@ const schema = z.object({
   // Spoken after the AI disclosure. "off" until the owner confirms the legal basis (calls.md).
   CALL_RECORDING_NOTICE: z.enum(["off", "nagrywana", "zapisywana"]).default("off"),
   // Limits: these can only be lowered; the maximums are the code's ceilings.
-  TASK_CALL_LIMIT_USER_HOUR: z.coerce.number().int().min(0).max(3).default(3),
+  // Raised on 15 Nov 2026 (owner: "zwiększ limity"; decision docs/decisions/2026-11-15-higher-task-call-limits.md).
+  TASK_CALL_LIMIT_USER_HOUR: z.coerce.number().int().min(0).max(6).default(6),
   TASK_CALL_LIMIT_USER_DAY: z.coerce.number().int().min(0).max(10).default(10),
-  TASK_CALL_LIMIT_DEST_USER_DAY: z.coerce.number().int().min(0).max(2).default(2),
-  TASK_CALL_LIMIT_DEST_DAY: z.coerce.number().int().min(0).max(3).default(3),
-  TASK_CALL_DEST_GAP_MINUTES: z.coerce.number().int().min(15).max(1440).default(15),
+  TASK_CALL_LIMIT_DEST_USER_DAY: z.coerce.number().int().min(0).max(5).default(5),
+  TASK_CALL_LIMIT_DEST_DAY: z.coerce.number().int().min(0).max(6).default(6),
+  TASK_CALL_DEST_GAP_MINUTES: z.coerce.number().int().min(5).max(1440).default(5),
   TASK_CALL_LIMIT_GLOBAL_DAY: z.coerce.number().int().min(0).max(200).default(50),
   TASK_CALL_MAX_SECS: z.coerce.number().int().min(60).max(300).default(300),
   // Numbers Doddy must never call for a user (ADR-705): E.164, comma-separated. An operator's stop list for a callee
@@ -790,8 +791,8 @@ export const DEFAULT_TASK_CALL_SETTINGS: TaskCallSettings = {
   killSwitch: false,
   notice: "off",
   limits: {
-    userPerHour: 3, userPerDay: 10, destinationPerUserDay: 2, destinationPerDay: 3,
-    destinationGapMinutes: 15, globalPerDay: 50, maxDurationSecs: 300,
+    userPerHour: 6, userPerDay: 10, destinationPerUserDay: 5, destinationPerDay: 6,
+    destinationGapMinutes: 5, globalPerDay: 50, maxDurationSecs: 300,
   },
   prices: {},
   sayVoice: "Polly.Ewa",

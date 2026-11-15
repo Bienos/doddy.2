@@ -14,9 +14,21 @@ test("empty variables count as unset, and task calls stay off until fully config
 });
 
 test("limits can only be lowered below the code's ceilings", () => {
-  assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", TASK_CALL_LIMIT_USER_HOUR: "4" }));
+  assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", TASK_CALL_LIMIT_USER_HOUR: "7" }));
+  assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", TASK_CALL_LIMIT_DEST_USER_DAY: "6" }));
+  assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", TASK_CALL_LIMIT_DEST_DAY: "7" }));
+  assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", TASK_CALL_DEST_GAP_MINUTES: "4" }));
   assert.throws(() => loadConfig({ DATABASE_URL: "postgres://x/y", TASK_CALL_MAX_SECS: "301" }));
   assert.equal(loadConfig({ DATABASE_URL: "postgres://x/y", TASK_CALL_LIMIT_USER_HOUR: "1" }).taskCallSettings.limits.userPerHour, 1);
+});
+
+test("task-call limits default to the ceilings raised on 15 Nov 2026: 6 an hour, 5 a day to one number, 6 in all, 5 minutes apart", () => {
+  const l = loadConfig({ DATABASE_URL: "postgres://x/y" }).taskCallSettings.limits;
+  assert.equal(l.userPerHour, 6);
+  assert.equal(l.userPerDay, 10);
+  assert.equal(l.destinationPerUserDay, 5);
+  assert.equal(l.destinationPerDay, 6);
+  assert.equal(l.destinationGapMinutes, 5);
 });
 
 test("errands: off by default (switched on with ERRANDS_ENABLED=1), Opus 5.5 at high effort, 30 minutes, 5 open; empty values count as unset", () => {
