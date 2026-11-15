@@ -51,13 +51,18 @@ import Foundation
 // A fifth change, 14 Nov 2026 (owner: "co chwilę trzeba coś potwierdzać … karty potwierdzenia lepiej nie cb to mówi a
 // nie potrzebuje kliknięcia zawsze", then "„Tak” głosem na wszystko"; decision 2026-11-14-spoken-yes-and-fewer-cards):
 // a card is still shown before every change, with the exact payload, but the person's own short spoken yes runs it as
-// a tap would, except for money and bookings (`ConfirmationTiers.tapOnly`), a tool nobody classified, and every change
-// once text from outside is in the conversation. That replaces "a spoken yes is not enough there" above, ADR-716's tap
+// a tap would, except for money and bookings (`ConfirmationTiers.tapOnly`) and a tool nobody classified (until 15 Nov
+// 2026 also every change once text from outside was in the conversation; see the sixth change). That replaces "a spoken yes is not enough there" above, ADR-716's tap
 // for a handed-over task and ADR-742's tap for a Studio job. The cards made here (removing from a list, forgetting the
-// parking spot, a task handed over, a Studio job, opening a food app) are `.yesFirst`, and `need(for:in:)` turns them
-// back into `.tapFirst` once text from outside has been seen. The payload cards of the tools' own flows and the
+// parking spot, a task handed over, a Studio job, opening a food app) are `.yesFirst`. The payload cards of the tools' own flows and the
 // server's write cards take the same yes in the voice controller (`SpokenConfirmation`). DOD-07 holds: the yes is
 // bound to exactly the payload on the card, used once, and only the person's own transcribed words count.
+//
+// A sixth change, 15 Nov 2026 (owner: "2"; decision 2026-11-15-after-outside-text-one-question): once text from outside
+// is in the conversation, Doddy asks one spoken question before a change and the person's own short yes is enough. The
+// cards above and the session rule's cards stay `.yesFirst` (`need(for:in:)`); Doddy's own at-once things ask through
+// their own cards (`ConfirmationTiers.afterOutsideContent`). Only a card whose tier is tap only, or one nobody named,
+// becomes `.tapFirst` there.
 //
 // This file is the rule as code, so it is tested on Linux: which ask each tool needs (`AskFirst`),
 // what counts as a spoken yes (`SpokenYes`), and the one check the app makes before running a
@@ -87,8 +92,9 @@ public enum AskFirst {
         /// job, opening a food app): this card shows exactly what will happen, and a tap or the user's own spoken yes
         /// said after the card appeared runs it (decision 2026-11-14-spoken-yes-and-fewer-cards).
         case yesFirst(AskCard)
-        /// The same card where only a tap runs it: one of the cards above once text from outside is in the
-        /// conversation, and the session rule's cards (`need(for:in:)`, OutsideContent.swift).
+        /// The same card where only a tap runs it: one whose tier is tap only, or one `need(for:in:)` can't name, once
+        /// text from outside is in the conversation (OutsideContent.swift). Since 15 Nov 2026 the session rule's own
+        /// cards are `.yesFirst`.
         case tapFirst(AskCard)
         /// The tool's own flow shows the exact payload on a card and changes something only on a
         /// tap or, unless the tool is tap only, a spoken yes (notes, calendar, reminders, alarms, timers, messages,

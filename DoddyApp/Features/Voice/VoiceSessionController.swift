@@ -2123,33 +2123,40 @@ final class VoiceSessionController {
     }
 
     /// DOD-07, on top of `AskFirst.need(for:)`: once text from outside has reached this conversation, the few tools that
-    /// could carry it out of the phone (a text, a file or a question to Claude with material, a look at the screen,
-    /// items on a shared list) ask for a tap too, and `make_document` and the first look always do; so do the cards a
-    /// spoken yes answers otherwise (`AskFirst.need(for:in:listIsShared:)`). `.cardShown` when it showed that card and
-    /// the call stops here; `.tapped` when the user tapped it for exactly this call; `.notHeld` when the session rule
-    /// adds nothing and the baseline check follows.
+    /// could carry it out of the phone (a text, a file or a question to Claude with material, a look at the screen) and
+    /// items for a list the user didn't say themselves ask first, and the first look and a shared list always do
+    /// (`AskFirst.need(for:in:listIsShared:)`). Since 15 Nov 2026 (option 2) those cards take the person's own spoken yes
+    /// as well as a tap. `.cardShown` when it showed that card and the call stops here; `.answered` when the user said
+    /// yes to it or tapped it for exactly this call; `.notHeld` when the session rule adds nothing and the baseline
+    /// check follows.
     private func asksBecauseOfOutsideContent(_ call: ClientToolCallEvent, request: VoiceToolRequest) async -> SessionAsk {
         let onSharedList = await targetsSharedList(request)
         let need = AskFirst.need(for: request, in: outsideContent, listIsShared: onSharedList, polish: Self.cardsInPolish)
-        guard need != AskFirst.need(for: request, polish: Self.cardsInPolish), case .tapFirst(let card) = need else { return .notHeld }
+        guard need != AskFirst.need(for: request, polish: Self.cardsInPolish) else { return .notHeld }
+        let card: AskCard
+        switch need {
+        case .yesFirst(let asked), .tapFirst(let asked): card = asked
+        default: return .notHeld
+        }
         guard askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
-            askLedger.asked(call.toolCallId, request: request, needsTap: true, at: Date())
-            propose(.ask(toolCallID: call.toolCallId, card: card, needsTap: true, toolName: call.toolName, parameters: call.parametersData),
+            let needsTap = AskFirst.needsTap(need)
+            askLedger.asked(call.toolCallId, request: request, needsTap: needsTap, at: Date())
+            propose(.ask(toolCallID: call.toolCallId, card: card, needsTap: needsTap, toolName: call.toolName, parameters: call.parametersData),
                     toolCallID: call.toolCallId)
             return .cardShown
         }
-        return .tapped
+        return .answered
     }
 
     /// What the outside-content rule did with a call.
     private enum SessionAsk {
         /// It holds nothing back: the call asks, or runs, as `AskFirst.need(for:)` says.
         case notHeld
-        /// It showed its tap-only card; the call stops here until the tap.
+        /// It showed its card; the call stops here until the person's yes or tap.
         case cardShown
-        /// The person tapped that card for exactly this call (the ledger's yes is used up), so the call asks nothing
-        /// more: a card a spoken yes could have answered (`.yesFirst`) is not shown a second time.
-        case tapped
+        /// The person said yes to that card or tapped it for exactly this call (the ledger's yes is used up), so the
+        /// call asks nothing more: the baseline's own card (`.yesFirst`) is not shown a second time.
+        case answered
     }
 
     /// True when `request` adds to or ticks items on a list that other people are on. Their changes sync to everyone
@@ -3083,14 +3090,14 @@ final class VoiceSessionController {
             }
         }
         // ASK-01 (ADR-483) as it stands since 14 Nov 2026: a change with no card of its own waits here for the
-        // user's tap, or their own spoken yes (`spokenAnswer`), for exactly this call; after outside text, a tap only.
+        // user's tap, or their own spoken yes (`spokenAnswer`), for exactly this call; after outside text too (option 2).
         // Tools with a payload card of their own (and the server's writes) ask through that card. What the user asked
         // to see or start of their own runs at once (`.runsNow`). Decision 2026-11-14-spoken-yes-and-fewer-cards.
         let sessionAsk = await asksBecauseOfOutsideContent(call, request: request)
         if sessionAsk == .cardShown { return }
         switch AskFirst.need(for: request, polish: Self.cardsInPolish) {
         case .yesFirst(let card), .tapFirst(let card):
-            guard sessionAsk == .tapped || askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
+            guard sessionAsk == .answered || askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
                 let needsTap = AskFirst.needsTap(AskFirst.need(for: request))
                 askLedger.asked(call.toolCallId, request: request, needsTap: needsTap, at: Date())
                 propose(.ask(toolCallID: call.toolCallId, card: card, needsTap: needsTap, toolName: call.toolName, parameters: call.parametersData),
@@ -4171,7 +4178,7 @@ final class VoiceSessionController {
         switch action {
         case .ask(let id, _, let needsTap, _, _):
             // AskFirst's own card keeps the ledger's contract: one yes, for exactly this request, used once. An ask
-            // made with needsTap (the session rule's cards after outside text) is never answered by words.
+            // made with needsTap (a tool whose tier is tap only) is never answered by words.
             guard !needsTap, askLedger.answer(.userSaid(text), for: id, at: now) == .granted, pendingAction == action else { return }
             pendingAction = nil
             await runAsked(action, attempt: startAttempt)
@@ -4658,8 +4665,12 @@ final class VoiceSessionController {
     /// (`AskFirst.ownChangesAtOnce`, decision 2026-11-14-spoken-yes-and-fewer-cards, step 2b), by the tool the agent
     /// called. The ones that open another app or the camera do so only while Doddy is on screen: iOS opens nothing from
     /// the background, and "opened" is never said of what didn't open, so otherwise their card stays for a tap or a yes.
+    /// After text from outside (an email, a page, a document, the screen) none of them runs at once: the card shows
+    /// what will happen, Doddy asks once, and the person's own "tak" or a tap runs it (owner, 15 Nov 2026, option 2;
+    /// decision 2026-11-15-after-outside-text-one-question; `ConfirmationTiers.afterOutsideContent`).
     private func runsWithoutItsCard(_ action: PendingAction) -> Bool {
         guard let tool = callsAsReceived[action.toolCallID]?.toolName, AskFirst.ownChangesAtOnce.contains(tool) else { return false }
+        if outsideContent.outsideContentSeen { return false }
         if AskFirst.opensSomethingElse.contains(tool) { return UIApplication.shared.applicationState == .active }
         return true
     }

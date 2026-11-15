@@ -49,14 +49,18 @@ public enum ConfirmationTiers {
         } else {
             base = .spokenYes
         }
-        return afterOutsideContent(base, outsideContentSeen)
+        return afterOutsideContent(base, outsideContentSeen, asksOnce: ownUndoableAtOnce.contains(tool))
     }
 
     /// `parking_spot` is three things: saving and finding run at once, forgetting the spot goes on a spoken yes
-    /// (nothing brings it back).
+    /// (nothing brings it back). After outside text, saving asks once like Doddy's other own things; finding the car
+    /// is a look and still runs at once.
     public static func tier(forParking action: ParkingAction, outsideContentSeen: Bool = false) -> ConfirmationTier {
-        if case .clear = action { return afterOutsideContent(.spokenYes, outsideContentSeen) }
-        return tier(for: "parking_spot", outsideContentSeen: outsideContentSeen)
+        switch action {
+        case .clear: return afterOutsideContent(.spokenYes, outsideContentSeen, asksOnce: false)
+        case .find: return .atOnce
+        case .save: return tier(for: "parking_spot", outsideContentSeen: outsideContentSeen)
+        }
     }
 
     /// The tier of a call as the app received it: `parking_spot` by what it does with the spot, every other tool by
@@ -69,17 +73,24 @@ public enum ConfirmationTiers {
     }
 
     /// Once text from outside (an email, a web page, a document, an online account, the shared screen) has come into
-    /// the conversation (`OutsideContentSession`), a spoken yes is not enough: words from there could have led to the
-    /// ask, so only a tap runs it. Doddy's own undoable things stay at once.
-    static func afterOutsideContent(_ tier: ConfirmationTier, _ outsideContentSeen: Bool) -> ConfirmationTier {
-        outsideContentSeen && tier == .spokenYes ? .tapOnly : tier
+    /// the conversation (`OutsideContentSession`), Doddy asks one spoken question before any change, and the person's
+    /// own short yes is enough (owner, 15 Nov 2026, option 2; decision `2026-11-15-after-outside-text-one-question`):
+    /// - Doddy's own things that otherwise run at once (`asksOnce`: a note, a reminder, a timer, a list, a draft…) stop
+    ///   running at once and wait for that yes, so words from an email can never change anything silently;
+    /// - a change that already asks keeps taking a spoken yes (until 15 Nov it needed a tap here);
+    /// - money and bookings stay tap only, and looks and reads still run at once;
+    /// - Doddy's session things that touch nothing outside it and stop in one step (the stopwatch, focus, wind-down,
+    ///   the translator, following a news topic, the training plan screen, noting a missing capability) also still
+    ///   start at once; items for a list ask through the session rule (`AskFirst.need(for:in:listIsShared:)`).
+    static func afterOutsideContent(_ tier: ConfirmationTier, _ outsideContentSeen: Bool, asksOnce: Bool) -> ConfirmationTier {
+        outsideContentSeen && tier == .atOnce && asksOnce ? .spokenYes : tier
     }
 }
 
 /// The person's own words while a card is up (step 2 of decision `2026-11-14-spoken-yes-and-fewer-cards`). They run
 /// exactly what the card shows, as a tap would, only when all of this holds:
-/// - the tool is not tap only (`ConfirmationTier.acceptsSpokenYes`: money, bookings, anything unclassified, and every
-///   change once text from outside is in the conversation need a finger);
+/// - the tool is not tap only (`ConfirmationTier.acceptsSpokenYes`: money, bookings and anything unclassified need a
+///   finger; since 15 Nov 2026 text from outside in the conversation no longer does);
 /// - the words are a short yes and nothing else (`SpokenYes`: "tak, ale…", "nie", "czekaj" are not);
 /// - they came at least `earliest` after the card appeared, so Doddy had begun reading it out and they aren't words
 ///   left over from before it, and no later than `latest`, the time a card waits for a tap (`AskLedger.window`);

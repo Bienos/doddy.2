@@ -9,6 +9,8 @@ import Foundation
 // request. This file keeps one small fact per conversation, "text someone else wrote has reached it", and a pure
 // rule that turns that fact into a card for exactly those tools. The baseline (`AskFirst.need(for:)`, which
 // `voice-agent/tools.json` mirrors) is unchanged: this only ever makes a call ask, never lets one skip a card.
+// Since 15 Nov 2026 (owner, option 2; decision 2026-11-15-after-outside-text-one-question) those cards take the
+// person's own short spoken yes as well as a tap: Doddy asks once, out loud, and "tak" is enough.
 
 /// What one voice conversation has taken in from outside, and what the user said last. One value per
 /// conversation: the app starts each conversation with a new one, so nothing carries over.
@@ -21,8 +23,8 @@ public struct OutsideContentSession: Equatable, Sendable {
     public private(set) var otherContentSeen = false
     /// A look at the shared screen was answered: the screen shows other people's content.
     public private(set) var screenContentSeen = false
-    /// A look at the screen has run in this conversation, so the person tapped for the first one (or it is
-    /// still the first and nothing has run yet).
+    /// A look at the screen has run in this conversation, so the person said yes to the first one or tapped it (or
+    /// it is still the first and nothing has run yet).
     public private(set) var screenLookApproved = false
     /// The user's own words, from the speech-to-text of their side of the conversation: only their last line.
     public private(set) var latestUserWords: String?
@@ -82,7 +84,8 @@ public struct OutsideContentSession: Equatable, Sendable {
     }
 }
 
-/// The tools the session rule can hold behind a card. Each one runs at once in the baseline.
+/// The tools the session rule can hold behind a card. Each one runs at once in the baseline. (Doddy's own undoable
+/// things, `ConfirmationTiers.ownUndoableAtOnce`, ask through their own payload cards, by their tier.)
 public enum OutsideContentRule {
     public static let guardedTools: Set<String> = [
         VoiceToolName.textMe, VoiceToolName.lookAtScreen, VoiceToolName.addToList, VoiceToolName.checkOff,
@@ -91,48 +94,53 @@ public enum OutsideContentRule {
 }
 
 extension AskFirst {
-    /// The ask for this call in this conversation: the baseline (`need(for:)`), then the session rule.
-    /// - `text_me`, and `ask_claude` with text from the conversation as material: a tap once text from outside
+    /// The ask for this call in this conversation: the baseline (`need(for:)`), then the session rule. Every card it
+    /// adds is `.yesFirst`: the person's own short spoken yes or a tap (owner, 15 Nov 2026, option 2).
+    /// - `text_me`, and `ask_claude` with text from the conversation as material: a card once text from outside
     ///   has been seen.
-    /// - `make_document`: a tap, with the whole brief on the card, once text from outside has been seen. Without
-    ///   it a file is made at once, as the owner decided (`2026-11-13-file-being-made-island-note`).
-    /// - `look_at_screen`: a tap for the first look in a conversation, and again for any look after text from
+    /// - `make_document`: a card with the whole brief once text from outside has been seen. Without it a file is
+    ///   made at once, as the owner decided (`2026-11-13-file-being-made-island-note`).
+    /// - `look_at_screen`: a card for the first look in a conversation, and again for any look after text from
     ///   somewhere other than the screen has been seen.
-    /// - `add_to_list` and `check_off` on a shared list (`listIsShared`, decided by the app from the list it
-    ///   resolved): a tap with the exact items, unless every item is in what the user just said.
-    /// - A card a spoken yes could answer (`.yesFirst`: removing from a list, forgetting the parking spot, a task
-    ///   handed over, a Studio job) needs a tap once text from outside has been seen, with the same words, as its tier
-    ///   says (decision `2026-11-14-spoken-yes-and-fewer-cards`). Opening a food app is on the at-once tier, so its card
-    ///   keeps taking a yes.
-    /// A call that already asks keeps its ask. Nothing here runs anything: a tap is still answered through
+    /// - `add_to_list` and `check_off` with the exact items, unless every item is in what the user just said: on a
+    ///   shared list (`listIsShared`, decided by the app from the list it resolved) always, and on any list once text
+    ///   from outside has been seen.
+    /// - A card a spoken yes answers (`.yesFirst`: removing from a list, forgetting the parking spot, a task handed
+    ///   over, a Studio job, a food app) keeps taking a yes after outside text, as its tier says; only a tool whose
+    ///   tier is tap only would need a tap.
+    /// A call that already asks keeps its ask. Nothing here runs anything: the answer still goes through
     /// `AskLedger`, once, for exactly this request.
     public static func need(
         for request: VoiceToolRequest, in session: OutsideContentSession, listIsShared: Bool = false,
         calendar: Calendar = .current, polish: Bool = false
     ) -> Need {
         let baseline = need(for: request, calendar: calendar, polish: polish)
-        if case .yesFirst(let card) = baseline, session.outsideContentSeen, ownCardTier(request, outsideContentSeen: true) != .atOnce {
+        // A card nobody named here fails safe: a tap, as before 15 Nov 2026.
+        if case .yesFirst(let card) = baseline, session.outsideContentSeen,
+           (ownCardTier(request, outsideContentSeen: true) ?? .tapOnly) == .tapOnly {
             return .tapFirst(card)
         }
         guard baseline == .runsNow else { return baseline }
         switch request {
         case .textMe(let body):
             guard session.outsideContentSeen else { return baseline }
-            return .tapFirst(OutsideContentAsk.textMeCard(body, polish: polish))
+            return .yesFirst(OutsideContentAsk.textMeCard(body, polish: polish))
         case .cloudTool(let call) where call.name == CloudToolName.makeDocument:
             guard session.outsideContentSeen else { return baseline }
-            return .tapFirst(OutsideContentAsk.makeDocumentCard(call, polish: polish))
+            return .yesFirst(OutsideContentAsk.makeDocumentCard(call, polish: polish))
         case .cloudTool(let call) where call.name == CloudToolName.askClaude:
             guard session.outsideContentSeen, OutsideContentAsk.material(of: call) != nil else { return baseline }
-            return .tapFirst(OutsideContentAsk.askClaudeCard(call, polish: polish))
+            return .yesFirst(OutsideContentAsk.askClaudeCard(call, polish: polish))
         case .lookAtScreen:
             guard !session.screenLookApproved || session.otherContentSeen else { return baseline }
-            return .tapFirst(ScreenLookSpeech.askCard(polish: polish))
+            return .yesFirst(ScreenLookSpeech.askCard(polish: polish))
         case .addToList(let list), .checkOff(let list):
-            guard listIsShared, !session.userSaidAll(list.items) else { return baseline }
+            guard listIsShared || session.outsideContentSeen, !session.userSaidAll(list.items) else { return baseline }
             let adding: Bool
             if case .addToList = request { adding = true } else { adding = false }
-            return .tapFirst(OutsideContentAsk.sharedListCard(list, adding: adding, polish: polish))
+            return .yesFirst(listIsShared
+                ? OutsideContentAsk.sharedListCard(list, adding: adding, polish: polish)
+                : OutsideContentAsk.listAfterOutsideTextCard(list, adding: adding, polish: polish))
         default:
             return baseline
         }
@@ -154,7 +162,7 @@ extension AskFirst {
 }
 
 /// The cards the session rule shows. They carry exactly what would be sent or changed, in English or Polish
-/// (the same lines in the same order), and only a tap answers them.
+/// (the same lines in the same order); the person's own short spoken yes or a tap answers them.
 public enum OutsideContentAsk {
     /// How much of a text taken from the conversation is shown on a card; its full length is always said.
     public static let previewLength = 300
@@ -238,6 +246,19 @@ public enum OutsideContentAsk {
         return AskCard(
             title: polish ? "Przygotować ten plik?" : "Make this file?", lines: lines,
             confirmLabel: polish ? "Tak, przygotuj" : "Yes, make it")
+    }
+
+    /// Items for one of the person's own lists, asked about because text from outside is in the conversation and the
+    /// person didn't say every item themselves.
+    public static func listAfterOutsideTextCard(_ request: ListVoiceRequest, adding: Bool, polish: Bool) -> AskCard {
+        let name = quoted(request.list, polish: polish)
+        let note = reason(polish: polish)
+        switch (adding, polish) {
+        case (true, false): return AskCard(title: "Add to \(name)?", lines: request.items + [note], confirmLabel: "Add")
+        case (true, true): return AskCard(title: "Dodać do listy \(name)?", lines: request.items + [note], confirmLabel: "Dodaj")
+        case (false, false): return AskCard(title: "Tick off on \(name)?", lines: request.items + [note], confirmLabel: "Tick off")
+        case (false, true): return AskCard(title: "Odhaczyć na liście \(name)?", lines: request.items + [note], confirmLabel: "Odhacz")
+        }
     }
 
     public static func sharedListCard(_ request: ListVoiceRequest, adding: Bool, polish: Bool) -> AskCard {

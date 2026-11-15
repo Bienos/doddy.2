@@ -378,11 +378,14 @@ final class StudioTests: XCTestCase {
             ],
             confirmLabel: "Allow", declineLabel: "Not now")))
         XCTAssertFalse(AskFirst.needsTap(need), "the person's own spoken yes after the card starts it (owner, 14 Nov 2026)")
+        // Once text from the web is in the conversation the same card is still shown, word for word, and the person's own
+        // yes or a tap starts the job (owner, 15 Nov 2026, option 2).
         var afterAPage = OutsideContentSession()
         afterAPage.noteRun(of: "web_search")
-        guard case .tapFirst = AskFirst.need(for: .makeSomething(fullJob), in: afterAPage) else {
-            return XCTFail("once text from the web is in the conversation, only a tap starts a job")
-        }
+        let needAfterAPage = AskFirst.need(for: .makeSomething(fullJob), in: afterAPage)
+        XCTAssertEqual(needAfterAPage, need, "the same card after a page")
+        XCTAssertFalse(AskFirst.needsTap(needAfterAPage))
+        XCTAssertEqual(ConfirmationTiers.tier(for: VoiceToolName.makeSomething, outsideContentSeen: true), .spokenYes)
         let polish = StudioAsk.card(job)
         XCTAssertEqual(polish.title, "Przygotować to z Doddym?")
         XCTAssertEqual(polish.lines.first, "Doddy poszuka w sieci informacji o „Pompy ciepła w polskich domach” i przygotuje raport (PDF) oraz infografikę.")

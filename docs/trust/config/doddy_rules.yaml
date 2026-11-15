@@ -79,10 +79,14 @@ action_policy:
     # tap answers (AskFirst.need(for:in:), Packages/DoddyCore/Sources/DoddyCore/OutsideContent.swift). Outside text is
     # anything an email, a page, an online account, a leaflet, an errand result, Wikipedia, the weather or the shared
     # screen put into the conversation; the flag is kept per conversation and starts empty in the next one.
-    outside_content_needs_a_tap:
-      after_outside_text_has_been_seen: [text_me, ask_claude_with_material, make_document, look_at_screen_after_text_other_than_the_screen]
+    # Change (owner, 2026-11-15, option 2; decision docs/decisions/2026-11-15-after-outside-text-one-question.md): these
+    # cards take the person's own short spoken yes as well as a tap, and items for any list ask once outside text has
+    # been seen, unless the user just said every item. Doddy's own undoable things ask through their own cards then.
+    outside_content_asks_first:
+      after_outside_text_has_been_seen: [text_me, ask_claude_with_material, make_document, look_at_screen_after_text_other_than_the_screen, own_changes_run_at_once, add_to_list_and_check_off_unless_the_user_just_said_every_item]
       first_look_in_a_conversation: [look_at_screen]
       on_a_shared_list_unless_the_user_just_said_every_item: [add_to_list, check_off]
+      answered_by: the_users_spoken_yes_or_a_tap
     reads: run_at_once_when_the_user_asked
     # Change (owner, 2026-11-14: "„Tak” głosem na wszystko"; decision docs/decisions/2026-11-14-spoken-yes-and-fewer-cards.md):
     # every change still shows a card with the exact payload first, and a tap or the user's own short spoken yes runs it
@@ -95,7 +99,9 @@ action_policy:
     # Since step 2b the ones with Undo, and the drafts and hand-overs, run at once (own_changes_run_at_once above); timers,
     # alarms, new lists, note and leave-by reminders and the parking spot keep their card until they have an Undo.
     changes: card_with_exact_payload_then_a_tap_or_the_users_spoken_yes
-    tap_only: [pay_for_page, book_flight, call_places, unclassified_tool, card_waiting_for_a_choice, any_change_after_outside_text]
+    # Since 2026-11-15 (option 2) a change after outside text takes a spoken yes, and Doddy's own at-once things ask
+    # once first (outside_content_asks_first above); any_change_after_outside_text left this list.
+    tap_only: [pay_for_page, book_flight, call_places, unclassified_tool, card_waiting_for_a_choice]
     spoken_yes_counts: {said_by: the_user, earliest_after_card_seconds: 1, latest_after_card_seconds: 120, strict_phrases_with_vetoes: true}
     one_yes_covers: one_action
     # Change (2026-11-14; decision docs/decisions/2026-11-14-plan-card-ran-out.md; DOD-07, DOD-08): the plan card
