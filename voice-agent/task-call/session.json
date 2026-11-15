@@ -34,7 +34,7 @@
     "silence_end_call_timeout": 20,
     "disable_first_message_interruptions": true,
     "placeholders": {
-      "doddy_opening_line": "Dzień dobry, tu Doddy, wirtualny asystent Anny. Mam jedno krótkie pytanie. Czy laptop z serwisu jest gotowy?",
+      "doddy_opening_line": "Dzień dobry, tu Doddy, wirtualny asystent Anny. Dzwonię z krótkim pytaniem, czy mogę zająć chwilkę?",
       "doddy_question": "Czy laptop z serwisu jest gotowy?",
       "doddy_principal": "Anny",
       "doddy_callee": "Serwis Laptop",

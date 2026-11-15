@@ -95,7 +95,7 @@ describe("agent drift check", () => {
 });
 
 describe("answer card", () => {
-  const opening = "Dzień dobry, tu Doddy, wirtualny asystent Anny. Mam jedno krótkie pytanie. Czy laptop z serwisu jest gotowy?";
+  const opening = "Dzień dobry, tu Doddy, wirtualny asystent Anny. Dzwonię z krótkim pytaniem, czy mogę zająć chwilkę?";
   const base = (transcript: Line[], over: Partial<ResultFacts> = {}): ResultFacts => ({
     endReason: "completed", answered: true, voiceConnected: true, takenOverAtSecs: null, durationSecs: 40,
     question: "Czy laptop z serwisu jest gotowy?", callbackLine: "Sprawdzę to u Anny i oddzwonię.",
@@ -166,12 +166,13 @@ describe("answer card", () => {
     const plain = buildCallResult(base([d(opening), c("Tak, gotowy, proszę przyjść jutro o 10."), d("Dobrze, dziękuję, do widzenia.")]));
     assert.deepEqual(plain.warnings, []);
     // A card that asks about 19:00: "o 21" is another time, and "pasuje" agrees to it.
-    const q = "Dzień dobry, tu Doddy, wirtualny asystent Anny. Mam jedno krótkie pytanie. Czy mają Państwo wolny stolik dla dwóch osób dziś o 19:00?";
-    const r = buildCallResult(base([d(q), c("O 19 nie, ale o 21 mamy."), d("Dobrze, pasuje.")], { allowedTexts: [q] }));
+    // Since 15 Nov 2026 the question is asked after the opening; the card's texts hold both, as the worker passes them.
+    const q = "Czy mają Państwo wolny stolik dla dwóch osób dziś o 19:00?";
+    const r = buildCallResult(base([d(opening), c("Tak, słucham."), d(q), c("O 19 nie, ale o 21 mamy."), d("Dobrze, pasuje.")], { allowedTexts: [opening, q] }));
     assert.deepEqual(r.warnings.map((w) => w.kind), ["possible_other_booking"]);
     assert.equal(r.confidence, "low");
     assert.equal(r.nextStep.kind, "call_yourself");
-    const same = buildCallResult(base([d(q), c("Tak, o 19 mamy."), d("Dobrze, dziękuję, do widzenia.")], { allowedTexts: [q] }));
+    const same = buildCallResult(base([d(opening), c("Tak, słucham."), d(q), c("Tak, o 19 mamy."), d("Dobrze, dziękuję, do widzenia.")], { allowedTexts: [opening, q] }));
     assert.deepEqual(same.warnings, [], "yes to the card's own time");
     assert.deepEqual(audit([d(opening), c("Zapisać Panią?"), d("Tak, proszę nas zapisać."), d("Niech będzie.")], [opening]).map((x) => x.kind),
       ["possible_commitment", "possible_commitment"]);
