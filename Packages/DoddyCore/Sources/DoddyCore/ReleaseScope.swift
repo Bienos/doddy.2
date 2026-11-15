@@ -284,6 +284,8 @@ public struct ReleaseScope: Equatable, Sendable {
         VoiceToolName.lookupContact, VoiceToolName.draftMessage,
         VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency,
         VoiceToolName.openMap, VoiceToolName.runShortcut,
+        // The rough area for places, searches and the weather near the person (decision 2026-11-14-approximate-location-by-voice).
+        VoiceToolName.whereAmI,
         // Home's Food button is in every scope, so opening a food app by voice is too (decision 2026-11-12-food-by-voice).
         VoiceToolName.openFoodApp,
         VoiceToolName.noteCapabilityGap,

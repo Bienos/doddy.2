@@ -395,6 +395,9 @@ public struct ActivityRequest: Equatable, Sendable {
         case .lostWallet:
             // A checklist on screen (ADR-692): nothing changes, and what was lost isn't kept in the log.
             return nil
+        case .whereAmI:
+            // Decision 2026-11-14-approximate-location-by-voice: that Doddy looked, never where. No place, no coordinates.
+            return ActivityRequest(app: .maps, title: "Checked where you are", detail: nil, isLookup: true)
         case .handOverErrand(let draft):
             // ADR-570: the 30-day log keeps that a task was handed over, not its title or words.
             return ActivityRequest(app: .web, title: "Hand over a task", detail: "“\(draft.title)”", logDetail: nil, isLookup: false)
@@ -536,7 +539,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         self.reminderKey = reminderKey
         self.checkedAt = checkedAt
         self.plan = plan
-        self.undo = outcome == .done ? undo : nil
+        self.undo = Self.keepsUndo(outcome, undo) ? undo : nil
         self.undoState = undoState
         self.operationKey = operationKey ?? reminderKey
         self.receipt = outcome.status == .confirmed ? receipt : nil

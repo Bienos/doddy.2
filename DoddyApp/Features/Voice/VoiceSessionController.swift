@@ -3277,6 +3277,8 @@ final class VoiceSessionController {
             await handleParking(action, toolCallID: call.toolCallId)
         case .leaveBy(let request):
             await handleLeaveBy(request, toolCallID: call.toolCallId)
+        case .whereAmI:
+            await handleWhereAmI(toolCallID: call.toolCallId)
         case .addIngredients(let proposal):
             guard let list = await resolveList(proposal.list, toolCallID: call.toolCallId) else { return }
             guard isCurrent(call.toolCallId) else { return dropStale(call.toolCallId) }
@@ -3308,6 +3310,12 @@ final class VoiceSessionController {
         case .setTimer(let draft):
             // AlarmKit on iOS 26 needs no notification permission (ADR-650).
             guard await devices.timerAccess() == .granted else {
+                await notConnected(call.toolCallId, .timers)
+                return
+            }
+            // It runs with no card (step 2c), so iOS's first question about alarms can't wait for a tap: in the
+            // background iOS can't show it, and Doddy's own permission card asks instead.
+            if alarmPermissionNeedsTheScreen {
                 await notConnected(call.toolCallId, .timers)
                 return
             }
@@ -3417,6 +3425,10 @@ final class VoiceSessionController {
             case .needsNewerIOS: await reply(call.toolCallId, VoiceToolReply.alarmNeedsNewerIOS)
             case .notAllowed: await reply(call.toolCallId, VoiceToolReply.alarmNotAllowed)
             case .available:
+                if alarmPermissionNeedsTheScreen {
+                    await notConnected(call.toolCallId, .timers)
+                    return
+                }
                 guard await mayTryAgain(call.toolCallId, app: .timers) else { return }
                 propose(.alarm(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
             }
@@ -4422,6 +4434,43 @@ final class VoiceSessionController {
         }
     }
 
+    /// "Gdzie jestem?" (decision 2026-11-14-approximate-location-by-voice): the person's rough area, so a look-up near them
+    /// needs no city. iOS's own question (While Using the App) is asked the first time and only while Doddy is on screen;
+    /// one reading about a kilometre sure, then Apple's geocoder for that position rounded (`WhereAmI`). Nothing is kept:
+    /// What Doddy did gets a row without a place, and the area goes only to the agent, as this tool's result.
+    private func handleWhereAmI(toolCallID: String) async {
+        let location = PlaceLocation.shared
+        var readiness = await location.readiness()
+        if readiness == .notDetermined {
+            // From the background iOS shows no question, and the wait for its answer would never end.
+            guard UIApplication.shared.applicationState == .active else {
+                await reply(toolCallID, VoiceToolReply.whereAmINotAskedOffScreen)
+                return
+            }
+            readiness = await location.requestWhenInUse()
+        }
+        switch WhereAmI.step(for: readiness) {
+        case .read: break
+        case .askIOS:
+            await reply(toolCallID, VoiceToolReply.whereAmINotAnswered)
+            return
+        case .notAllowed:
+            await reply(toolCallID, VoiceToolReply.whereAmINotAllowed)
+            return
+        case .servicesOff:
+            await reply(toolCallID, VoiceToolReply.whereAmIServicesOff)
+            return
+        }
+        let fresh = await location.approximateFix(timeout: WhereAmI.fixTimeout)
+        guard let fix = WhereAmI.best(fresh: fresh, lastKnown: location.lastKnownFix(), now: Date()) else {
+            await reply(toolCallID, VoiceToolReply.whereAmIUnknown(onScreen: UIApplication.shared.applicationState == .active))
+            return
+        }
+        let area = WhereAmI.area(of: fix)
+        let names = await location.areaNames(latitude: area.latitude, longitude: area.longitude, timeout: WhereAmI.geocodeTimeout)
+        await reply(toolCallID, VoiceToolReply.whereAmI(area, names: names, now: Date()))
+    }
+
     // MARK: Texts from Doddy's number (ADR-750 U2)
 
     /// One messaging client for approved texts while Doddy runs, shared by every conversation, so
@@ -4726,6 +4775,12 @@ final class VoiceSessionController {
     /// (`AskFirst.ownChangesAtOnce`, decision 2026-11-14-spoken-yes-and-fewer-cards, step 2b), by the tool the agent
     /// called. The ones that open another app or the camera do so only while Doddy is on screen: iOS opens nothing from
     /// the background, and "opened" is never said of what didn't open, so otherwise their card stays for a tap or a yes.
+    /// iOS has never been asked about alarms and Doddy isn't on screen, where iOS could ask. A timer or an alarm then
+    /// waits for Doddy's permission card rather than starting from the background without the question.
+    private var alarmPermissionNeedsTheScreen: Bool {
+        !AlarmScheduler.permissionAsked && UIApplication.shared.applicationState != .active
+    }
+
     private func runsWithoutItsCard(_ action: PendingAction) -> Bool {
         guard let tool = callsAsReceived[action.toolCallID]?.toolName, AskFirst.ownChangesAtOnce.contains(tool) else { return false }
         if AskFirst.opensSomethingElse.contains(tool) { return UIApplication.shared.applicationState == .active }
@@ -5186,9 +5241,13 @@ final class VoiceSessionController {
         switch outcome {
         case .started(let timer):
             result.receipt = ActivityReceipt(timer: timer, draft: draft, calendar: .current, readAt: Date())
+            // Undo in What Doddy did stops it while the iPhone has it (step 2c), so it needs no card.
+            result.undo = ActivityUndo.startedTimer(outcome, draft: draft)
             if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .timers) }
         case .alreadyRunning(let timer):
             result.receipt = ActivityReceipt(timer: timer, draft: draft, calendar: .current, readAt: Date())
+            // The unconfirmed try's row has no Undo, so this one carries it.
+            result.undo = ActivityUndo.startedTimer(outcome, draft: draft)
         default:
             break
         }
@@ -5207,7 +5266,15 @@ final class VoiceSessionController {
         switch outcome {
         case .set(let alarm), .alreadySet(let alarm):
             result.receipt = ActivityReceipt(alarm: alarm, readAt: Date())
-            if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .timers) }
+            // Undo turns it off while the iPhone has it (step 2c): one set just now, or after an unconfirmed try the
+            // one that try set after all (that try's row has no Undo).
+            var afterUnconfirmedTry = false
+            if case .checkFirst = retry {
+                afterUnconfirmedTry = true
+                result.reply = VoiceToolReply.checkedFirst(result.reply, app: .timers)
+            }
+            result.undo = ActivityUndo.setAlarm(
+                outcome, draft: draft, calendar: .current, afterUnconfirmedTry: afterUnconfirmedTry)
         default:
             break
         }

@@ -127,8 +127,10 @@ public enum ToolCatalog {
         // Counts and times from the photo library; the pictures stay on screen (ADR-569).
         .init(VoiceToolName.findPhotos, .lookup, .runsNow),
         .init(VoiceToolName.lookAtScreen, .lookup, .runsNow),
-        .init(VoiceToolName.setTimer, .localChange, .card),
-        .init(VoiceToolName.setAlarm, .localChange, .card),
+        // Run when asked since step 2c (decision 2026-11-14-spoken-yes-and-fewer-cards): Undo in What Doddy did
+        // stops the timer while it counts down and turns the alarm off while the iPhone has it.
+        .init(VoiceToolName.setTimer, .localChange, .runsNow),
+        .init(VoiceToolName.setAlarm, .localChange, .runsNow),
         .init(VoiceToolName.listAlarms, .lookup, .runsNow),
         .init(VoiceToolName.cancelAlarm, .localChange, .card),
         // Follow something in Following (ADR-657): Doddy's own feature on this iPhone.
@@ -147,6 +149,8 @@ public enum ToolCatalog {
         // the strictest of its three actions.
         .init(VoiceToolName.parkingSpot, .localChange, .card),
         .init(VoiceToolName.remindWhenToLeave, .localChange, .card),
+        // The person's rough area for a look-up near them, read once and never kept (decision 2026-11-14-approximate-location-by-voice).
+        .init(VoiceToolName.whereAmI, .lookup, .runsNow),
         // Worked out on the iPhone, or the ECB's public rates file (ADR-270, ADR-300). Run at once (ADR-575).
         .init(VoiceToolName.calculate, .lookup, .runsNow),
         .init(VoiceToolName.convertUnits, .lookup, .runsNow),

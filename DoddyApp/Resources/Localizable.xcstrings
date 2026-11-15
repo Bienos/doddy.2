@@ -4704,13 +4704,13 @@
         }
       }
     },
-    "Add a reminder, after you tap Add": {
+    "Add a reminder when you ask, with Undo in What Doddy did": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dodać przypomnienie, gdy stukniesz Dodaj"
+            "value": "Dodać przypomnienie, gdy o to poprosisz, z możliwością cofnięcia w „Co zrobił Doddy”"
           }
         }
       }
@@ -74605,13 +74605,13 @@
         }
       }
     },
-    "Set an alarm that rings even in Silent mode, after you tap Set alarm (iOS 26 and later)": {
+    "Set an alarm that rings even in Silent mode when you ask, with Undo in What Doddy did (iOS 26 and later)": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ustawić budzik, który dzwoni nawet w trybie cichym, gdy stukniesz Ustaw budzik (iOS 26 i nowszy)"
+            "value": "Ustawić budzik, który dzwoni nawet w trybie cichym, gdy o to poprosisz, z możliwością cofnięcia w „Co zrobił Doddy” (iOS 26 i nowszy)"
           }
         }
       }
@@ -79010,13 +79010,13 @@
         }
       }
     },
-    "Start a countdown, after you tap Start": {
+    "Start a countdown when you ask, with Undo in What Doddy did": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zacząć odliczanie, gdy stukniesz Zacznij"
+            "value": "Zacząć odliczanie, gdy o to poprosisz, z możliwością cofnięcia w „Co zrobił Doddy”"
           }
         }
       }
