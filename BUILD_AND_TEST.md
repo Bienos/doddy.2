@@ -295,8 +295,10 @@ team, use `make project-iphone`: it sets `DODDY_APP_ENTITLEMENTS`, `DODDY_WIDGET
 `backend/` is the server the app calls `doddy` (Render). It signs the phone in, runs the online-account tools through
 Composio (Gmail, Outlook, Google Calendar, Drive, Notion, Todoist: anything that changes something waits for the
 person's tap on the exact card), web search, Claude's answers, quick web research (`research_now`: Claude with
-Anthropic's own web search and web fetch; tested offline against a fake Anthropic API in `backend/test/research-now.test.ts`)
-and the documents Doddy makes, account deletion, and Doddy Web (`docs/platforms/web.md`). On your own computer it starts in **mock mode**: demo data, no keys, a "Demo
+Anthropic's own web search and web fetch; tested offline against a fake Anthropic API in `backend/test/research-now.test.ts`),
+the trip planner by voice (`plan_trip`: the Trips planner's model step and Kiwi.com search in one call; tested offline with
+stand-ins for both in `backend/test/plan-trip.test.ts`; like `find_flights` it answers "not set up" without
+`FLIGHT_SEARCH_ENABLED=1`, so it doesn't run in mock mode) and the documents Doddy makes, account deletion, and Doddy Web (`docs/platforms/web.md`). On your own computer it starts in **mock mode**: demo data, no keys, a "Demo
 server" banner. Live mode refuses to start while a setting it needs is missing, and never falls back to demo data.
 
 It began on 9 Oct as a read-only Google Calendar view, which a Debug build still has (below). Background:

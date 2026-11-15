@@ -176,6 +176,8 @@ public enum ActivityText {
         "Book a flight": "Zarezerwuj lot",
         "Searched flights": "Wyszukano loty",
         "Checked a flight booking": "Sprawdzono rezerwację lotu",
+        // plan_trip, the trip planner by voice (TRAVEL_PLANNER.md).
+        "Plan a trip": "Zaplanowano podróż",
         // ADR-564
         "Ask Claude": "Zapytano Claude’a",
         "Make a document with Claude": "Zlecono Claude’owi dokument",
