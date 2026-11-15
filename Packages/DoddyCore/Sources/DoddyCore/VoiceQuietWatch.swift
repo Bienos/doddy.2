@@ -43,7 +43,10 @@ public struct VoiceQuietWatch: Equatable, Sendable {
     public static let onScreenLimit: TimeInterval = 60
     /// Doddy in the background: nobody is looking at him, and the microphone hears the room.
     public static let backgroundLimit: TimeInterval = 30
-    /// Translator mode, or a card waiting for a tap.
+    /// Translator mode, on screen or not (owner, 15 Nov 2026: "give 45s translator"); the live translator
+    /// agent's `silence_end_call_timeout` is the same 45 s.
+    public static let translatorLimit: TimeInterval = 45
+    /// A card waiting for a tap: the person may be reading it.
     public static let patientLimit: TimeInterval = 120
     /// The longest Doddy speaking or working holds the clock with nothing else happening.
     public static let busyCeiling: TimeInterval = 300
@@ -51,9 +54,10 @@ public struct VoiceQuietWatch: Equatable, Sendable {
     /// a few seconds.
     public static let lookEvery: TimeInterval = 5
 
-    /// The quiet limit for `situation`. The most patient reason wins.
+    /// The quiet limit for `situation`: a card waiting first, then translator mode, then the screen.
     public static func limit(for situation: Situation) -> TimeInterval {
-        if situation.translating || situation.cardWaiting { return patientLimit }
+        if situation.cardWaiting { return patientLimit }
+        if situation.translating { return translatorLimit }
         return situation.onScreen ? onScreenLimit : backgroundLimit
     }
 

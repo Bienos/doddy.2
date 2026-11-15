@@ -49,14 +49,21 @@ final class VoiceQuietWatchTests: XCTestCase {
         XCTAssertEqual(endTime(situation: { _ in self.background }), 30)
     }
 
-    func testTranslatingOrACardWaitingGetsTwoMinutes() {
+    func testTranslatingGets45SecondsOnScreenOrNot() {
+        // Owner, 15 Nov 2026: "give 45s translator".
+        for screen in [true, false] {
+            let situation = VoiceQuietWatch.Situation(busy: false, onScreen: screen, translating: true, cardWaiting: false)
+            XCTAssertEqual(VoiceQuietWatch.limit(for: situation), 45, "\(situation)")
+            XCTAssertEqual(endTime(situation: { _ in situation }), 45, "\(situation)")
+        }
+    }
+
+    func testACardWaitingGetsTwoMinutes() {
         for translating in [true, false] {
-            for card in [true, false] where translating || card {
-                for screen in [true, false] {
-                    let situation = VoiceQuietWatch.Situation(busy: false, onScreen: screen, translating: translating, cardWaiting: card)
-                    XCTAssertEqual(VoiceQuietWatch.limit(for: situation), 120, "\(situation)")
-                    XCTAssertEqual(endTime(situation: { _ in situation }), 120, "\(situation)")
-                }
+            for screen in [true, false] {
+                let situation = VoiceQuietWatch.Situation(busy: false, onScreen: screen, translating: translating, cardWaiting: true)
+                XCTAssertEqual(VoiceQuietWatch.limit(for: situation), 120, "\(situation)")
+                XCTAssertEqual(endTime(situation: { _ in situation }), 120, "\(situation)")
             }
         }
     }
