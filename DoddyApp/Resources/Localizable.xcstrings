@@ -7775,6 +7775,17 @@
         }
       }
     },
+    "Another morning call was set up in the meantime; it's shown here. Change its time or days to replace it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W międzyczasie ustawiono inny poranny telefon; widać go tutaj. Zmień jego godzinę lub dni, żeby go zastąpić."
+          }
+        }
+      }
+    },
     "Answer": {
       "extractionState": "manual",
       "localizations": {
@@ -10253,6 +10264,47 @@
         }
       }
     },
+    "Between 05:00 and 11:59 on this iPhone's clock (%@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Between 05:00 and 11:59 on this iPad's clock (%@)."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Between 05:00 and 11:59 on this iPhone's clock (%@)."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Między 05:00 a 11:59 według zegara tego iPada (%@)."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Między 05:00 a 11:59 według zegara tego iPhone’a (%@)."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Birthdays": {
       "extractionState": "manual",
       "localizations": {
@@ -12546,6 +12598,17 @@
         }
       }
     },
+    "Change time or days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmień godzinę lub dni"
+          }
+        }
+      }
+    },
     "Change timer": {
       "extractionState": "manual",
       "localizations": {
@@ -13584,6 +13647,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wybierz, co Doddy może robić z tym kontem. Możesz to zmienić w każdej chwili w Ustawieniach."
+          }
+        }
+      }
+    },
+    "Chosen days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybrane dni"
           }
         }
       }
@@ -16255,6 +16329,28 @@
         }
       }
     },
+    "Couldn't check with Doddy's server before showing the card. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się sprawdzić ustawień na serwerze Doddy’ego przed pokazaniem karty. %@"
+          }
+        }
+      }
+    },
+    "Couldn't confirm Doddy's server set up the morning call. The switch shows what the server says now. If it's off, setting up the same time and days again is safe: the server sets it up at most once.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się potwierdzić, że serwer Doddy’ego ustawił poranny telefon. Przełącznik pokazuje to, co serwer mówi teraz. Jeśli jest wyłączony, ponowne ustawienie tej samej godziny i dni jest bezpieczne: serwer ustawi go najwyżej raz."
+          }
+        }
+      }
+    },
     "Couldn't confirm that what Doddy's server keeps for you was deleted, so your voice account was kept. Check your connection and try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -17032,6 +17128,17 @@
         }
       }
     },
+    "Couldn't stop the morning calls. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się zatrzymać porannych telefonów. %@"
+          }
+        }
+      }
+    },
     "Couldn't turn the reminder off. Nothing changed.": {
       "extractionState": "manual",
       "localizations": {
@@ -17643,6 +17750,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "日"
+          }
+        }
+      }
+    },
+    "Days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dni"
           }
         }
       }
@@ -25996,6 +26114,17 @@
         }
       }
     },
+    "Doddy's server already makes as many morning calls as it may. Try again later, or ask Doddy to call you once at a set time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego wykonuje już tyle porannych telefonów, ile może. Spróbuj później albo poproś Doddy’ego o jeden telefon o wybranej godzinie."
+          }
+        }
+      }
+    },
     "Doddy's server can't be reached. Nothing was sent or saved.": {
       "extractionState": "manual",
       "localizations": {
@@ -26121,6 +26250,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Doddy's server didn't accept that time or those days. Turn the switch on again and choose them again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie przyjął tej godziny lub tych dni. Włącz przełącznik jeszcze raz i wybierz je ponownie."
           }
         }
       }
@@ -26533,6 +26673,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego wysłał coś, czego aplikacja nie mogła odczytać. Nic tu nie zmieniono."
+          }
+        }
+      }
+    },
+    "Doddy's server turned it down. Try again in a few minutes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego odmówił. Spróbuj ponownie za kilka minut."
           }
         }
       }
@@ -32938,6 +33089,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Świeże artykuły znanych wydawców o tym, co śledzisz. Dotknij „Streszczenie AI”, żeby dostać sedno w kilku zdaniach."
+          }
+        }
+      }
+    },
+    "Friday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piątek"
           }
         }
       }
@@ -45603,6 +45765,17 @@
         }
       }
     },
+    "Monday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poniedziałek"
+          }
+        }
+      }
+    },
     "Monday morning": {
       "extractionState": "manual",
       "localizations": {
@@ -46093,6 +46266,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "Poranny telefon"
+          }
+        }
+      }
+    },
+    "Morning call set up: %@. Each day is checked again before it rings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poranny telefon ustawiony: %@. Każdy dzień jest sprawdzany jeszcze raz przed telefonem."
+          }
+        }
+      }
+    },
+    "Morning calls are off on Doddy's server right now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poranne telefony są teraz wyłączone na serwerze Doddy’ego."
           }
         }
       }
@@ -48222,6 +48417,17 @@
         }
       }
     },
+    "Next shows a card with exactly what Doddy will do. Nothing is set up until you tap its button.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„Dalej” pokaże kartę z dokładnie tym, co zrobi Doddy. Nic nie zostanie ustawione, dopóki nie stukniesz jej przycisku."
+          }
+        }
+      }
+    },
     "Next step": {
       "extractionState": "manual",
       "localizations": {
@@ -49913,17 +50119,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Brak. Poproś Doddy’ego, na przykład „Zadzwoń do mnie o szóstej w sprawie ciasta”."
-          }
-        }
-      }
-    },
-    "None. Ask Doddy, for example “Call me every day at 8 with the plan of the day.”": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Brak. Poproś Doddy’ego, na przykład „Dzwoń do mnie codziennie o 8 z planem dnia”."
           }
         }
       }
@@ -55303,6 +55498,17 @@
         }
       }
     },
+    "Off. Turn it on to choose the time and days, or ask Doddy, for example “Call me every day at 8 with the plan of the day.”": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłączony. Włącz go, żeby wybrać godzinę i dni, albo poproś Doddy’ego, na przykład „Dzwoń do mnie codziennie o 8 z planem dnia”."
+          }
+        }
+      }
+    },
     "Offline baseline": {
       "extractionState": "manual",
       "localizations": {
@@ -56968,6 +57174,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wysyłane jest tylko podsumowanie, które widzisz: liczby z tygodnia, bez surowych danych ze Zdrowia."
+          }
+        }
+      }
+    },
+    "Only this button sets it up, with exactly what the card shows. Afterwards the switch shows what Doddy's server says.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko ten przycisk ustawia telefony, dokładnie tak, jak pokazuje karta. Potem przełącznik pokazuje to, co mówi serwer Doddy’ego."
           }
         }
       }
@@ -70028,6 +70245,17 @@
         }
       }
     },
+    "Saturday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sobota"
+          }
+        }
+      }
+    },
     "Saturday and Sunday": {
       "extractionState": "manual",
       "localizations": {
@@ -81440,6 +81668,17 @@
         }
       }
     },
+    "Sunday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niedziela"
+          }
+        }
+      }
+    },
     "Sushi": {
       "extractionState": "manual",
       "localizations": {
@@ -84292,6 +84531,17 @@
         }
       }
     },
+    "That morning call is already set up, so nothing changed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten poranny telefon jest już ustawiony, więc nic się nie zmieniło."
+          }
+        }
+      }
+    },
     "That number can't receive codes. Check it and try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -84863,6 +85113,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "该时间已经过去。请选择至少一分钟之后的时间。"
+          }
+        }
+      }
+    },
+    "That time is inside quiet hours. Pick a later time, or turn on “Call even in quiet hours” on the card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta godzina wypada w godzinach ciszy. Wybierz późniejszą albo włącz na karcie „Dzwoń nawet w godzinach ciszy”."
           }
         }
       }
@@ -87405,6 +87666,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy 的麦克风已关闭。请在“设置”应用中开启以录音。"
+          }
+        }
+      }
+    },
+    "The morning call wasn't set up. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poranny telefon nie został ustawiony. %@"
           }
         }
       }
@@ -92795,6 +93067,17 @@
         }
       }
     },
+    "This morning call was stopped after an earlier try. Turn the switch on again to set it up.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten poranny telefon został zatrzymany po wcześniejszej próbie. Włącz przełącznik jeszcze raz, żeby go ustawić."
+          }
+        }
+      }
+    },
     "This note can't be read any more, so it can't be saved.": {
       "extractionState": "manual",
       "localizations": {
@@ -94450,6 +94733,17 @@
         }
       }
     },
+    "Thursday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czwartek"
+          }
+        }
+      }
+    },
     "Tick": {
       "extractionState": "manual",
       "localizations": {
@@ -94645,6 +94939,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "勾选 Doddy 清单上的项目"
+          }
+        }
+      }
+    },
+    "Tick at least one day.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaznacz co najmniej jeden dzień."
           }
         }
       }
@@ -96949,6 +97254,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Na przykład:"
+          }
+        }
+      }
+    },
+    "Tuesday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wtorek"
           }
         }
       }
@@ -101242,6 +101558,17 @@
         }
       }
     },
+    "Wednesday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Środa"
+          }
+        }
+      }
+    },
     "Week %lld of %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -101378,6 +101705,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "仅工作日"
+          }
+        }
+      }
+    },
+    "Weekend": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekend"
           }
         }
       }
@@ -103349,6 +103687,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "何时"
+          }
+        }
+      }
+    },
+    "When Doddy calls": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiedy Doddy dzwoni"
           }
         }
       }
@@ -109155,6 +109504,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的号码"
+          }
+        }
+      }
+    },
+    "Your number changed after the card was shown. Turn the switch on again for a new card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój numer zmienił się po pokazaniu karty. Włącz przełącznik jeszcze raz, żeby zobaczyć nową kartę."
           }
         }
       }

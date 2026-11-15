@@ -249,6 +249,10 @@ extension DoddyServerClient {
             return booked.state == "active" ? .booked(id: booked.id) : .refused("already_done")
         }
         let code = (try? JSONDecoder().decode(MorningError.self, from: response.body))?.error
+        // The server says the booking under this key is over (stopped or replaced since): a later card of the same
+        // schedule is a new booking, so it gets a new key, or every try would be answered `already_done`. No duplicate
+        // can follow: the server keeps one active morning call per account and refuses an equal one (`already_booked`).
+        if response.status == 409, code == "already_done" { forgetCallKey(hash) }
         switch (response.status, code) {
         case (400, _): return .refused("invalid")
         case (409, _): return .refused(code ?? "status_409")

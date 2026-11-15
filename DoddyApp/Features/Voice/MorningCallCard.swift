@@ -5,12 +5,17 @@ import SwiftUI
 /// last digits, how the call opens and what it covers (only what Doddy's server holds; the calendar stays on the
 /// iPhone), who hears it, the quiet-hours switch the approval covers, the morning call it replaces, and how to stop.
 /// The card's own button or the person's spoken yes approves exactly this; nothing is set up before that.
+/// The voice card and Settings › Phone calls › Doddy calls you › Morning call (owner, 15 Nov 2026) show this same view;
+/// each passes its own quiet-hours switch and whether an earlier try of this schedule was left unconfirmed.
 struct MorningCallCard: View {
     let draft: MorningCallDraft
     let to: String
     let quietHours: CallQuietHours
     let replaces: MorningCall?
-    let controller: VoiceSessionController
+    /// "Call even in quiet hours": part of the approval.
+    @Binding var allowQuietHours: Bool
+    /// An earlier try of this schedule had an unclear outcome, so it may already be set up.
+    let earlierTryUnconfirmed: Bool
 
     var body: some View {
         let language = NotificationLanguage.current
@@ -46,16 +51,16 @@ struct MorningCallCard: View {
         Label("Anyone who answers your phone hears this, and so does your voicemail.", systemImage: "speaker.wave.2")
             .font(.footnote)
             .foregroundStyle(Theme.secondaryText)
-        Toggle(isOn: Binding(get: { controller.callLaterAllowQuiet }, set: { controller.callLaterAllowQuiet = $0 })) {
+        Toggle(isOn: $allowQuietHours) {
             Text(String(format: NSLocalizedString("Call even in quiet hours (%@–%@)", comment: ""), quietHours.start, quietHours.end))
         }
         .frame(minHeight: 44)
         .accessibilityIdentifier("voice.morningCall.quietHours")
-        if draft.inQuietHours(quietHours) && !controller.callLaterAllowQuiet {
+        if draft.inQuietHours(quietHours) && !allowQuietHours {
             Label("This time is in quiet hours. Turn on the switch to set it up anyway, or ask Doddy for a later time.", systemImage: "moon")
                 .font(.footnote)
         }
-        if VoiceSessionController.unconfirmedCalls.contains(draft.identity(to: to, language: language)) {
+        if earlierTryUnconfirmed {
             Label("Doddy couldn't confirm an earlier try of these morning calls. They may already be set up: Doddy's server never sets up the same schedule twice.",
                   systemImage: "exclamationmark.triangle")
                 .font(.footnote)
@@ -63,5 +68,16 @@ struct MorningCallCard: View {
         Text("Each day is checked again before it rings: your number, calls from Doddy on, quiet hours where your iPhone is, and the limit on calls. Twilio places the call. Say “stop the morning calls”, or tap Stop in Settings, Phone calls.")
             .font(.footnote)
             .foregroundStyle(Theme.secondaryText)
+    }
+}
+
+extension MorningCallCard {
+    /// The voice card (`VoiceView`): the switch is the conversation's `callLaterAllowQuiet`, and an unclear earlier try is
+    /// one the conversation recorded. The same as before the card took a binding.
+    init(draft: MorningCallDraft, to: String, quietHours: CallQuietHours, replaces: MorningCall?, controller: VoiceSessionController) {
+        self.init(
+            draft: draft, to: to, quietHours: quietHours, replaces: replaces,
+            allowQuietHours: Binding(get: { controller.callLaterAllowQuiet }, set: { controller.callLaterAllowQuiet = $0 }),
+            earlierTryUnconfirmed: VoiceSessionController.unconfirmedCalls.contains(draft.identity(to: to, language: .current)))
     }
 }

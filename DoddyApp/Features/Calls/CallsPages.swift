@@ -128,9 +128,11 @@ struct CallDoddyPage: View {
 
 // MARK: Doddy calls you
 
-/// Whether Doddy may call, the button that makes him call now, and the calls booked for later.
+/// Whether Doddy may call, the button that makes him call now, the calls booked for later, and the morning call.
 struct DoddyCallsYouPage: View {
     let model: CallsModel
+    /// The time and days, then the card, after the Morning call switch was turned on (or Change time or days).
+    @State private var settingUpMorning = false
 
     var body: some View {
         Form {
@@ -145,11 +147,14 @@ struct DoddyCallsYouPage: View {
                 if s.available.outbound {
                     scheduledSection(s)
                 }
-                morningSection
+                morningSection(s)
             }
         }
         .navigationTitle("Doddy calls you")
         .callsPage(model: model)
+        .sheet(isPresented: $settingUpMorning) {
+            MorningCallSetupSheet(model: model, active: model.morning?.call)
+        }
     }
 
     /// The answer to "Call me now" shows right under the button, not at the bottom of a long page.
@@ -215,21 +220,51 @@ struct DoddyCallsYouPage: View {
         }
     }
 
-    /// The morning call (decision 2026-11-14-morning-call): its schedule, the last days' calls and one tap to stop it.
-    /// Shown only once the server has said it makes morning calls, or while one is still set up.
+    /// The morning call (decision 2026-11-14-morning-call; the switch, owner 15 Nov 2026): a switch that shows only what
+    /// the server last said (`MorningCallSwitch`), its schedule, the last days' calls and one tap to stop it. On opens the
+    /// time and days and then the card; only the card's button books it (DOD-07). Off stops it at once (DOD-05).
+    /// Shown while Doddy's phone line is set up, and while a morning call is still set up so it can be stopped.
     @ViewBuilder
-    private var morningSection: some View {
+    private func morningSection(_ s: CallSettings) -> some View {
         if let problem = model.morningProblem {
             Section("Morning call") {
                 Text(problem)
                     .foregroundStyle(Theme.secondaryText)
+                // Nothing is shown as on or off while the server's state isn't known.
+                Button("Try again") { Task { await model.refresh() } }
+                    .accessibilityIdentifier("calls.morning.retry")
+                morningMessage
             }
-        } else if let status = model.morning, status.enabled || status.call != nil {
+        } else if let status = model.morning, MorningCallSwitch.isShown(settings: s, status: status) {
+            let toggle = MorningCallSwitch(settings: s, status: status)
             Section {
-                if let call = status.call, let days = call.dayList {
-                    let schedule = MorningCallDraft(time: call.time, days: days, timeZoneID: call.timeZone).scheduleText(.current)
-                    Text(verbatim: schedule)
-                        .font(.body)
+                Toggle("Morning call", isOn: Binding(
+                    get: { toggle.isOn },
+                    set: { on in
+                        // The switch moves only when the server says so: on opens the card, off asks the server to stop.
+                        if on, !toggle.isOn {
+                            settingUpMorning = true
+                        } else if !on, toggle.isOn {
+                            Task { await model.stopMorningCalls() }
+                        }
+                    }))
+                    .disabled(!toggle.isEnabled)
+                    .accessibilityIdentifier("calls.morning.switch")
+                if let blocker = toggle.blocker {
+                    Text(blocker.localized)
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                        .accessibilityIdentifier("calls.morning.blocker")
+                }
+                if toggle.isOn, let call = status.call {
+                    if let days = call.dayList {
+                        let schedule = MorningCallDraft(time: call.time, days: days, timeZoneID: call.timeZone).scheduleText(.current)
+                        Text(verbatim: schedule)
+                            .font(.body)
+                    } else {
+                        Text(verbatim: call.time)
+                            .font(.body)
+                    }
                     Text(String(format: NSLocalizedString("Time in %@", comment: "Morning call: the zone its time is in"), call.timeZone))
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
@@ -238,14 +273,20 @@ struct DoddyCallsYouPage: View {
                             .font(.footnote)
                             .foregroundStyle(Theme.secondaryText)
                     }
+                    if toggle.canChange {
+                        Button("Change time or days") { settingUpMorning = true }
+                            .frame(minHeight: 44)
+                            .accessibilityIdentifier("calls.morning.change")
+                    }
                     Button("Stop the morning calls", role: .destructive) { Task { await model.stopMorningCalls() } }
                         .frame(minHeight: 44)
                         .disabled(model.isWorking)
                         .accessibilityIdentifier("calls.morning.stop")
-                } else {
-                    Text("None. Ask Doddy, for example “Call me every day at 8 with the plan of the day.”")
+                } else if toggle.blocker == nil {
+                    Text("Off. Turn it on to choose the time and days, or ask Doddy, for example “Call me every day at 8 with the plan of the day.”")
                         .foregroundStyle(Theme.secondaryText)
                 }
+                morningMessage
                 ForEach(Array(status.recent.enumerated()), id: \.offset) { _, day in
                     Text(verbatim: "\(DateText.full(ServerDates.parse(day.at))) · \(Self.scheduledState(state: day.state, errorCode: day.errorCode))")
                         .font(.footnote)
@@ -256,6 +297,15 @@ struct DoddyCallsYouPage: View {
             } footer: {
                 Text("Each morning Doddy says the date and only what its server holds for you that day: calls you booked, notes waiting, results of tasks you handed over, new stories on your radar and when the daily news comes. It can't see your calendar or reminders. Each day is checked again before it rings, and quiet hours apply.")
             }
+        }
+    }
+
+    /// What the server said about the last change to the morning call, next to its switch rather than at the top.
+    @ViewBuilder
+    private var morningMessage: some View {
+        if let message = model.morningMessage {
+            Label(message, systemImage: "info.circle")
+                .accessibilityIdentifier("calls.morning.message")
         }
     }
 
