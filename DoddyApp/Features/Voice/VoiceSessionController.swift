@@ -224,6 +224,8 @@ final class VoiceSessionController {
             Self.conversationInProgress = isLive
             if !isLive { turnFeedback.reset() }
             if isLive { Self.current = self } else if Self.current === self { Self.current = nil }
+            // A quiet conversation hangs up by itself (decision 2026-11-15-quiet-conversations-hang-up).
+            quietWatchPhaseChanged()
             ListeningIndicatorModel.shared.refresh()
             switch phase {
             case .listening, .thinking, .speaking: connectedOnce = true
@@ -1351,6 +1353,70 @@ final class VoiceSessionController {
         let session = AVAudioSession.sharedInstance()
         let mixing = session.categoryOptions.contains(.mixWithOthers) ? "mixing with other apps ON" : "mixing with other apps OFF"
         return "\(session.category.rawValue), mode \(session.mode.rawValue), \(mixing), other app audio playing: \(session.isOtherAudioPlaying)"
+    }
+
+    // MARK: Quiet conversations hang up (decision 2026-11-15-quiet-conversations-hang-up)
+
+    /// The quiet clock (`VoiceQuietWatch`, DoddyCore): set once Doddy is ready, nil while connecting and after
+    /// the conversation. ElevenLabs bills every minute a conversation is open, and the live agents never hang
+    /// up on silence, so without it a conversation left open (Doddy opened Maps, the phone was put down) kept
+    /// the microphone on until ElevenLabs' 10-minute cap.
+    @ObservationIgnored private var quietWatch: VoiceQuietWatch?
+    @ObservationIgnored private var quietLook: Task<Void, Never>?
+
+    /// From `phase`'s didSet: the clock starts when Doddy is first ready, every change of state after that is
+    /// something happening, and it stops with the conversation. Connecting starts a new conversation (also the
+    /// translator's, which replaces the one before it), so the clock waits for that one to be ready.
+    private func quietWatchPhaseChanged() {
+        guard isLive, phase != .connecting else {
+            quietLook?.cancel()
+            quietLook = nil
+            quietWatch = nil
+            return
+        }
+        guard quietWatch != nil else {
+            quietWatch = VoiceQuietWatch(startedAt: ProcessInfo.processInfo.systemUptime)
+            scheduleQuietLook(after: VoiceQuietWatch.lookEvery)
+            return
+        }
+        noteQuietActivity()
+    }
+
+    /// A line from either side, or a change of state: the quiet clock starts again.
+    private func noteQuietActivity() {
+        quietWatch?.activity(at: ProcessInfo.processInfo.systemUptime)
+    }
+
+    private func scheduleQuietLook(after seconds: TimeInterval) {
+        quietLook?.cancel()
+        let attempt = startAttempt
+        quietLook = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(seconds))
+            guard !Task.isCancelled, let self, attempt == self.startAttempt else { return }
+            self.lookForQuiet()
+        }
+    }
+
+    private func lookForQuiet() {
+        guard isLive, phase != .connecting, var watch = quietWatch else { return }
+        let longTurnDraft: Bool = if case .draft = longTurn { true } else { false }
+        let situation = VoiceQuietWatch.Situation(
+            busy: phase == .speaking || phase == .thinking || turnFeedback.label != nil
+                || longTurn.isListening || longTurn == .writingOut,
+            onScreen: UIApplication.shared.applicationState == .active,
+            translating: translator != nil,
+            cardWaiting: pendingAction != nil || paymentApproval != nil || permissionRequest != nil || longTurnDraft)
+        let decision = watch.look(at: ProcessInfo.processInfo.systemUptime, situation: situation)
+        quietWatch = watch
+        switch decision {
+        case .lookAgain(let after):
+            scheduleQuietLook(after: after)
+        case .end(let quietFor):
+            // Fixed words and seconds only; nothing said is logged.
+            let note = "conversation ended: quiet for \(Int(quietFor.rounded())) s (on screen \(situation.onScreen), translating \(situation.translating), card waiting \(situation.cardWaiting), busy \(situation.busy))"
+            Self.audioLog.notice("\(note, privacy: .public)")
+            Task { await stop(.quiet) }
+        }
     }
 
     /// `reason`: why it ends. Anything already known (a drop or failure) is kept.
@@ -2714,6 +2780,8 @@ final class VoiceSessionController {
 
     private func append(_ text: String, fromUser: Bool) {
         guard !text.allSatisfy(\.isWhitespace) else { return }
+        // Someone said something, translating too: the quiet clock starts again.
+        noteQuietActivity()
         // Translating: the lines belong to the translator screen, never to the conversation log.
         if translator != nil {
             if fromUser {
