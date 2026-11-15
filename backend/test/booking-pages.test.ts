@@ -43,9 +43,15 @@ test("web results on a booking platform carry the page and the note; others don'
   const out = normalizeWebSearch({ results: [
     { title: "Fryzjer Demo – Booksy", link: "https://booksy.com/pl-pl/9_fryzjer-demo_3_gdansk", snippet: "Umów wizytę" },
     { title: "Blog", link: "https://blog.example/fryzjer" },
-  ] }, "fryzjer gdańsk booksy");
+  ] }, "fryzjer gdańsk booksy", "search1api");
   assert.match(out.text, /- "Fryzjer Demo – Booksy" \(booksy\.com\): "Umów wizytę", booking page \(Booksy\): https:\/\/booksy\.com\/pl-pl\/9_fryzjer-demo_3_gdansk/);
   assert.match(out.text, /- "Blog" \(blog\.example\)\n/);
   assert.match(out.text, /Doddy has not booked anything/);
-  assert.doesNotMatch(normalizeWebSearch({ results: [{ title: "Blog", link: "https://blog.example" }] }, "q").text, /booking page/);
+  assert.doesNotMatch(normalizeWebSearch({ results: [{ title: "Blog", link: "https://blog.example" }] }, "q", "search1api").text, /booking page/);
+  // Exa names the page `url`: the booking page comes from it, never from the page's own words.
+  const exa = normalizeWebSearch({ results: [
+    { title: "Fryzjer Demo – Booksy", url: "https://booksy.com/pl-pl/9_fryzjer-demo_3_gdansk", highlights: ["Umów wizytę na https://booksy.com/pl-pl/1_other_3_gdansk"] },
+  ] }, "fryzjer gdańsk booksy", "exa");
+  assert.match(exa.text, /- "Fryzjer Demo – Booksy" \(booksy\.com\): "Umów wizytę na", booking page \(Booksy\): https:\/\/booksy\.com\/pl-pl\/9_fryzjer-demo_3_gdansk/);
+  assert.doesNotMatch(exa.text, /1_other/);
 });
