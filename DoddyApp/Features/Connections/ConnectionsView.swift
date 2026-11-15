@@ -13,7 +13,7 @@ struct ConnectionsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 26) {
-                Text("Doddy can use these only when you say so. Each one starts off. Nothing is added, started, sent or opened until you tap.")
+                Text("Doddy can use these only when you say so. Each one starts off. What Doddy can undo happens when you ask; anything else waits for your spoken yes or a tap on its card, and paying or booking always for a tap.")
                     .foregroundStyle(Theme.secondaryText)
 
                 // A group whose every switch the build hides (decision 2026-11-07-release-scope) goes with its heading.
@@ -320,18 +320,18 @@ struct ConnectionInfo {
                 examples: [NSLocalizedString("What's on tomorrow?", comment: ""), NSLocalizedString("Am I free on Thursday afternoon?", comment: ""), NSLocalizedString("Add dentist on Monday at three", comment: "")],
                 canDo: [
                     NSLocalizedString("Read your events for today, tomorrow, the week, or a day you name", comment: ""),
-                    NSLocalizedString("Add an event, after you tap Add", comment: ""),
-                    NSLocalizedString("Move, rename or delete one event, change its place or add a note to it, after you tap Change or Delete", comment: ""),
+                    NSLocalizedString("Add an event, after you say yes or tap Add", comment: ""),
+                    NSLocalizedString("Move, rename or delete one event, change its place or add a note to it, after you say yes or tap Change or Delete", comment: ""),
                 ],
                 leavesPhone: NSLocalizedString("Event titles and times, when Doddy uses them in a conversation.", comment: ""),
-                staysHere: NSLocalizedString("An event's place is read only to show it on the card when you ask to change it, and notes are only added to. Neither is sent to Doddy's voice. Doddy changes or deletes events only after you tap.", comment: ""))
+                staysHere: NSLocalizedString("An event's place is read only to show it on the card when you ask to change it, and notes are only added to. Neither is sent to Doddy's voice. Doddy changes or deletes events only after you say yes or tap.", comment: ""))
         case .reminders:
             ConnectionInfo(
                 symbol: "checklist",
                 examples: [NSLocalizedString("Remind me to call Marta at six", comment: ""), NSLocalizedString("Add buy milk to my reminders", comment: "")],
                 canDo: [
                     NSLocalizedString("Add a reminder when you ask, with Undo in What Doddy did", comment: ""),
-                    NSLocalizedString("Move, complete or delete one open reminder, after you tap", comment: ""),
+                    NSLocalizedString("Move, complete or delete one open reminder, after you say yes or tap", comment: ""),
                 ],
                 leavesPhone: NSLocalizedString("The reminder text and due time, when Doddy adds one.", comment: ""),
                 staysHere: NSLocalizedString("Doddy reads your open reminders only to find the one you name. Notes on reminders aren't read.", comment: ""))
@@ -372,7 +372,7 @@ struct ConnectionInfo {
             ConnectionInfo(
                 symbol: "map",
                 examples: [NSLocalizedString("Show me Mokotów Tower on the map", comment: ""), NSLocalizedString("Open the Old Town in Maps", comment: "")],
-                canDo: [NSLocalizedString("Open a place or address in Apple Maps, after you tap Open in Maps", comment: "")],
+                canDo: [NSLocalizedString("Open a place or address in Apple Maps when you ask, while Doddy is on screen; otherwise after you say yes or tap Open in Maps", comment: "")],
                 leavesPhone: NSLocalizedString("The place name you asked for, when you open it in Maps.", comment: ""),
                 staysHere: NSLocalizedString("Doddy doesn't read your location or search for places by itself.", comment: ""))
         case .shortcuts:
@@ -380,7 +380,7 @@ struct ConnectionInfo {
                 symbol: "square.stack.3d.up",
                 examples: [NSLocalizedString("Run my morning routine", comment: ""), NSLocalizedString("Start the movie shortcut", comment: ""), NSLocalizedString("Open the camera", comment: "")],
                 canDo: [
-                    NSLocalizedString("Run one of your Shortcuts, after you tap Run", comment: ""),
+                    NSLocalizedString("Run one of your Shortcuts, after you say yes or tap Run", comment: ""),
                     NSLocalizedString("The Shortcuts app opens for a moment", comment: ""),
                 ],
                 leavesPhone: NSLocalizedString("The shortcut's name, when you ask Doddy to run it.", comment: ""),
@@ -392,7 +392,7 @@ struct ConnectionInfo {
                 examples: [NSLocalizedString("Make me five slides about our trip", comment: ""), NSLocalizedString("Turn my notes on the launch into a presentation", comment: "")],
                 canDo: [
                     NSLocalizedString("Show every slide on a card first: the title, then each slide's title and points", comment: ""),
-                    NSLocalizedString("Make the presentation after you tap Make presentation, as a PowerPoint file that Keynote opens", comment: ""),
+                    NSLocalizedString("Make the presentation when you ask, as a PowerPoint file that Keynote opens", comment: ""),
                     NSLocalizedString("Open the share sheet, so you pick Keynote, Files or someone to send it to", comment: ""),
                 ],
                 leavesPhone: NSLocalizedString("What you ask for and the slides Doddy writes are part of the conversation, which runs on ElevenLabs.", comment: ""),
@@ -425,7 +425,7 @@ struct ConnectionInfo {
                 symbol: "camera",
                 examples: [NSLocalizedString("Take a photo", comment: ""), NSLocalizedString("Open the camera", comment: "")],
                 canDo: [
-                    NSLocalizedString("Open Doddy's camera, after you tap Open camera", comment: ""),
+                    NSLocalizedString("Open Doddy's camera when you ask, while Doddy is on screen", comment: ""),
                     NSLocalizedString("Put the photo you keep into a new note, with its text read on this iPhone, for you to check and save", comment: ""),
                 ],
                 // 12 Nov 2026: Home's + › Take a photo sends the photo with a question in Messages (MESSAGES_PHOTOS.md),
@@ -437,7 +437,7 @@ struct ConnectionInfo {
             ConnectionInfo(
                 symbol: "house",
                 examples: [NSLocalizedString("Turn off the living room lamp", comment: ""), NSLocalizedString("Run Good night", comment: "")],
-                canDo: [NSLocalizedString("Turn a light, outlet or fan on or off, or run a scene, after you tap Yes on a card naming it", comment: "")],
+                canDo: [NSLocalizedString("Turn a light, outlet or fan on or off, or run a scene, after you say yes to a card naming it or tap Yes on it", comment: "")],
                 leavesPhone: NSLocalizedString("Nothing leaves your iPhone: HomeKit talks to your home from here.", comment: ""),
                 staysHere: NSLocalizedString("Doddy never controls locks, garage doors, alarms, cameras or doorbells.", comment: ""))
         case .blik:

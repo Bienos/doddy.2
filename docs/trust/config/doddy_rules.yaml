@@ -64,7 +64,10 @@ action_policy:
     # small actions that are undone in one step run at once, with no card and no spoken question. The standing
     # consents stay: each Connections switch is allowed once on its own sheet, an account is connected once, and
     # screen sharing is started by the person in iOS's own sheet. Changes keep their card (DOD-07).
-    own_looks_run_at_once: [search_memories, read_list, read_calendar, find_free_time, lookup_contact, upcoming_birthdays, find_photos, look_at_screen, read_steps, read_health_week, list_alarms, check_stopwatch, check_focus, check_errands, find_deals, parking_spot_find]
+    # Addition (owner, 2026-11-14; decision docs/decisions/2026-11-14-approximate-location-by-voice.md): where_am_i, the
+    # person's rough area (district, town, a position rounded to two decimals), read once when asked; iOS's own location
+    # question (While Using the App) is the consent, as Calendar's is for read_calendar. See privacy_policy for what is kept.
+    own_looks_run_at_once: [search_memories, read_list, read_calendar, find_free_time, lookup_contact, upcoming_birthdays, find_photos, look_at_screen, read_steps, read_health_week, list_alarms, check_stopwatch, check_focus, check_errands, find_deals, parking_spot_find, where_am_i]
     own_small_actions_run_at_once: [start_stopwatch, stop_stopwatch, start_focus, stop_focus, start_wind_down, stop_wind_down, add_to_list, check_off, follow_news, open_training_plan, note_capability_gap]
     # Change (owner, 2026-11-14; decision docs/decisions/2026-11-14-spoken-yes-and-fewer-cards.md, step 2b): Doddy's own changes
     # that have Undo in "What Doddy did", and the drafts and hand-overs that change nothing anywhere, run when asked with no
@@ -137,6 +140,11 @@ memory_policy:
   cross_user_isolation: required
 privacy_policy:
   minimum_needed_permissions: true
+  # where_am_i (decision docs/decisions/2026-11-14-approximate-location-by-voice.md): While Using the App only, a reading
+  # about a kilometre sure, the geocoder sees the position rounded to two decimals, the agent hears the area and that
+  # rounded position, and the app keeps no reading or place of its own; what Doddy says aloud is part of the conversation
+  # (kept only with Remember what we talked about on), and ElevenLabs' transcript can hold it (WhereAmI.swift).
+  approximate_location_by_voice: {permission: when_in_use_only, accuracy: about_1_km, rounded_decimals: 2, max_reading_age_seconds: 600, reading_or_place_kept_by_the_app: never, spoken_words_kept_as_any_conversation: true, elevenlabs_transcript_may_hold_it: true, goes_to: [apple_geocoder_rounded_position, elevenlabs_conversation, searches_the_agent_makes]}
   accurate_remote_processing_disclosure: true
   user_revoke_access: true
   raw_secrets_in_model_prompt_or_logs: forbidden

@@ -118,7 +118,9 @@ final class ToolCatalogTests: XCTestCase {
         for name in AskFirst.publicLookups { XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .lookup, name) }
         XCTAssertEqual(AskFirst.ownLooks, ["search_memories", "read_list", "read_calendar", "find_free_time", "lookup_contact", "upcoming_birthdays",
                                            "find_photos", "look_at_screen", "read_steps", "read_health_week", "list_alarms", "check_stopwatch",
-                                           "check_focus", "check_errands", "find_deals"])
+                                           "check_focus", "check_errands", "find_deals",
+                                           // Decision 2026-11-14-approximate-location-by-voice.
+                                           "where_am_i"])
         for name in AskFirst.ownLooks {
             XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .lookup, name)
             XCTAssertEqual(ToolCatalog.descriptor(name)?.isCloud, false, "\(name) is the app's own look")

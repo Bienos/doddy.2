@@ -159,6 +159,8 @@ final class AskFirstTests: XCTestCase {
             "search_memories", "read_list", "read_calendar", "find_free_time", "lookup_contact", "upcoming_birthdays",
             "find_photos", "look_at_screen", "read_steps", "read_health_week", "list_alarms", "check_stopwatch",
             "check_focus", "check_errands", "find_deals",
+            // Decision 2026-11-14-approximate-location-by-voice: iOS's own location question is its consent.
+            "where_am_i",
         ])
         XCTAssertEqual(AskFirst.ownSmallActions, [
             "start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",
@@ -368,8 +370,12 @@ final class AskFirstTests: XCTestCase {
     }
 
     func testSpokenYesInTheAppLanguages() {
-        for yes in ["Yes", "yes please", "OK, go ahead", "tak", "Jasne!", "ja", "oui", "sí", "sim", "va bene", "ja graag"] {
+        for yes in ["Yes", "yes please", "OK, go ahead", "tak", "Jasne!", "Ja bitte.", "klar", "oui", "sí", "sim", "va bene", "ja graag"] {
             XCTAssertTrue(SpokenYes.isYes(yes), yes)
+        }
+        // A lone "ja" is Polish for "I": since a spoken yes answers changes, it must never pass as one.
+        for alone in ["ja", "Ja.", "JA!", "ja ja"] {
+            XCTAssertFalse(SpokenYes.isYes(alone), alone)
         }
         for no in ["no", "nie", "nein", "non", "nee", "não", "yes, but later", "maybe", "approved", "the user agreed"] {
             XCTAssertFalse(SpokenYes.isYes(no), no)

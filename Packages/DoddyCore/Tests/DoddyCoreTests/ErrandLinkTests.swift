@@ -174,7 +174,7 @@ final class ErrandLinkTests: XCTestCase {
         XCTAssertFalse(ledger.mayRun("c1", request: request, at: now.addingTimeInterval(3)), "no yes: nothing is handed over")
         // The person's own short yes, in any of the app's languages, starts exactly this task, once.
         for (index, said) in ["tak", "Tak, proszę.", "yes", "Yes please", "ok", "okay", "sure", "go ahead", "jasne", "zrób to",
-                              "ja", "oui", "sí", "sim", "vale"].enumerated() {
+                              "ja bitte", "oui", "sí", "sim", "vale"].enumerated() {
             let id = "page-\(index)"
             ledger.asked(id, request: request, needsTap: AskFirst.needsTap(needAfterAPage), at: now)
             XCTAssertEqual(ledger.answer(.userSaid(said), for: id, at: now.addingTimeInterval(2)), .granted, said)
