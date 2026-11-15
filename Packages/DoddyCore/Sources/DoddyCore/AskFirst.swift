@@ -107,9 +107,11 @@ public enum AskFirst {
     /// Tools that run without asking (ADR-575): they read nothing of the user's, change nothing,
     /// and send at most the words searched for. Web search, news and places cost Doddy a little
     /// per search (ADR-489); the weather and Wikipedia ones run on ElevenLabs (`ToolCatalog.webLookups`).
+    /// `plan_evening` (decision 2026-11-14-plan-evening-tool) is one places search like `find_places`: only what to look
+    /// for and the area leave Doddy's server.
     public static let publicLookups: Set<String> = Set([
         VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency,
-        CloudToolName.webSearch, "news_search", "find_places",
+        CloudToolName.webSearch, "news_search", "find_places", CloudToolName.planEvening,
     ]).union(ToolCatalog.webLookups)
 
     /// Looks at the user's own things on this iPhone, or at what Doddy's server holds for them, that run at once

@@ -429,6 +429,8 @@ final class DataFlowSummaryTests: XCTestCase {
             XCTAssertTrue(after.what.contains(part), part)
         }
         XCTAssertFalse(after.what.contains("a search word, or the text"), "the old wording said every search word waits for a yes")
+        // plan_evening (decision 2026-11-14-plan-evening-tool): what else reaches the server, and that it stops there.
+        XCTAssertTrue(after.what.contains("for an evening out, also the day, time, number of people and budget you mention, which stay on Doddy's server and don't go on to Monid"))
         XCTAssertTrue(after.when.contains("signs in or renews its session"))
         // Paused connections keep the note they had.
         state.pauseAll = true

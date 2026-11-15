@@ -169,6 +169,8 @@ public enum ActivityText {
         "Create a Google Doc": "Utwórz Dokument Google",
         "Search the news": "Wyszukano wiadomości",
         "Find places": "Wyszukano miejsca",
+        // plan_evening (decision 2026-11-14-plan-evening-tool): a look-up only; nothing is planned or booked.
+        "Find places for an evening out": "Wyszukano miejsca na wieczór",
         // Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking).
         "Find flights": "Wyszukano loty",
         "Find flights Doddy can book": "Wyszukano loty do rezerwacji",

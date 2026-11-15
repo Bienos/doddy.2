@@ -246,6 +246,9 @@ public enum CloudToolName {
         // ADR-489: fixed Monid endpoints, no account (like web search); Doddy pays, the card says how much.
         "news_search": ("Search the news", "Web search", false),
         "find_places": ("Find places", "Web search", false),
+        // Decision 2026-11-14-plan-evening-tool: one run of find_places's search with a fuller answer (up to three places,
+        // each with what its listing gives, and one next step). It changes nothing and follows find_places's switch.
+        planEvening: ("Find places for an evening out", "Web search", false),
         // ADR-564: Claude on Doddy's server, no account; Doddy pays. Nothing outside Doddy changes,
         // so like web search these ask with a card and run on a spoken yes or a tap.
         askClaude: ("Ask Claude", claudeAccount, false),
@@ -270,6 +273,9 @@ public enum CloudToolName {
     static let claudeAccount = "Claude"
     /// Web search through Monid on Doddy's server. No account; only a switch in Settings.
     public static let webSearch = "web_search"
+    /// An evening out in one look-up (backend/src/tools/evening.ts): up to three places from one places search, each with
+    /// only what its listing gives. No switch of its own: Find places' switch is its switch. Its answer is web content.
+    public static let planEvening = "plan_evening"
 
     public static let all: Set<String> = Set<String>([checkEmail, draftEmail, readEmail, draftEmailReply, findDriveFile, searchNotion,
                                           readNotionPage, listTodoistTasks, addTodoistTask, completeTodoistTask,

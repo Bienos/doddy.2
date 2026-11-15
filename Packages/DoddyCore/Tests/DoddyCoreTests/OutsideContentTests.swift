@@ -47,7 +47,7 @@ final class OutsideContentTests: XCTestCase {
             CloudToolName.checkEmail, CloudToolName.readEmail, CloudToolName.checkOutlookEmail, CloudToolName.readOutlookEmail,
             CloudToolName.readOutlookCalendar, "read_google_calendar", CloudToolName.findDriveFile, CloudToolName.searchNotion,
             CloudToolName.readNotionPage, CloudToolName.listTodoistTasks, CloudToolName.webSearch, "news_search", "find_places",
-            CloudToolName.findFlights, CloudToolName.findBookableFlights, CloudToolName.checkFlightBooking,
+            CloudToolName.planEvening, CloudToolName.findFlights, CloudToolName.findBookableFlights, CloudToolName.checkFlightBooking,
             "wikipedia_search", "wikipedia_summary", "get_weather", "geocode_place",
             VoiceToolName.checkErrands, VoiceToolName.findDeals, PaymentToolName.payForPage,
         ]

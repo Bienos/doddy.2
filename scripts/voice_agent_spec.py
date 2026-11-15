@@ -53,7 +53,8 @@ ASK = {"yes_or_tap", "tap", "runs_now"}
 # tools.json in step with it.
 TAP_ONLY = {"pay_for_page", "book_flight", "call_places"}
 # Read nothing of the user's and change nothing (AskFirst.publicLookups in DoddyCore must match).
-PUBLIC_LOOKUPS = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
+# plan_evening (14 Nov 2026, decision 2026-11-14-plan-evening-tool): one run of find_places's search, a fuller answer.
+PUBLIC_LOOKUPS = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places", "plan_evening",
                   "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"}
 # Translator mode starts and stops at once, without asking (owner, 24 Oct 2026, ADR-619).
 RUNS_NOW_MODES = {"start_translator", "stop_translator"}

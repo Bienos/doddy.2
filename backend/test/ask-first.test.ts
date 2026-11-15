@@ -85,8 +85,9 @@ test("every tool has a card: a preview made from its arguments, with a confirm l
 test("no yes, nothing runs: every tool, read or write, is refused without an approval and no provider is called", async () => {
   rig = await start();
   await readyAll(rig);
-  for (const name of [...CLOUD_TOOLS.map((t) => t.name), "web_search", "news_search", "find_places"]) {
-    const args = name === "web_search" ? { query: "cafe hours" } : name === "news_search" ? { query: "tram" } : name === "find_places" ? { query: "cafe", near: "Warsaw" } : ARGS[name]!;
+  for (const name of [...CLOUD_TOOLS.map((t) => t.name), "web_search", "news_search", "find_places", "plan_evening"]) {
+    const args = name === "web_search" ? { query: "cafe hours" } : name === "news_search" ? { query: "tram" } : name === "find_places" ? { query: "cafe", near: "Warsaw" }
+      : name === "plan_evening" ? { what: "kolacja", area: "Warsaw" } : ARGS[name]!;
     const res = await runRaw(rig, name, args);
     assert.equal(res.status, 403, `${name}: ${res.text}`);
     assert.equal(res.body.error.code, "capability_disabled", name);
