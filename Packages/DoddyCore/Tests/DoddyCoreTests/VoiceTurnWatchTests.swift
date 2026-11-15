@@ -114,3 +114,47 @@ final class VoiceTurnWatchTests: XCTestCase {
         XCTAssertEqual(VoiceWaitActivity.forTool("plan_trip"), .lookingUp)
     }
 }
+
+/// A status ("Sprawdzam." while a tool runs) is not the answer (decision 2026-11-15-conversation-core-and-corrections).
+final class VoiceTurnWatchAnswerTests: XCTestCase {
+    func testAStatusWhileAToolRunsIsMarkedAndTheAnswerIsTimedOnItsOwn() {
+        var watch = VoiceTurnWatch()
+        watch.userFinished(at: 10)
+        watch.toolStarted(id: "a", name: "web_search", at: 10.4)
+        let status = watch.agentStartedSpeaking(at: 11)
+        XCTAssertEqual(status?.kind, .status)
+        XCTAssertEqual(status?.line, "turn 1.00 s to Doddy speaking · web_search running")
+        XCTAssertNil(watch.agentStartedSpeaking(at: 11.5), "more status while the tool runs is not the answer")
+        watch.toolAnswered(id: "a", at: 13.4)
+        let answer = watch.agentStartedSpeaking(at: 14.1)
+        XCTAssertEqual(answer?.kind, .answerAfterStatus)
+        XCTAssertEqual(answer?.secondsToSpeech ?? -1, 4.1, accuracy: 0.0001, "timed from the person's words, not from the status")
+        XCTAssertEqual(answer?.line, "turn 4.10 s to the answer after a status · web_search 3.00 s")
+        XCTAssertNil(watch.agentStartedSpeaking(at: 15), "one answer per turn")
+    }
+
+    func testAnAnswerWithNoToolRunningIsTheAnswer() {
+        var watch = VoiceTurnWatch()
+        watch.userFinished(at: 0)
+        watch.toolStarted(id: "a", name: "search_memories", at: 0.2)
+        watch.toolAnswered(id: "a", at: 0.6)
+        let timing = watch.agentStartedSpeaking(at: 1.2)
+        XCTAssertEqual(timing?.kind, .answer)
+        XCTAssertNil(watch.agentStartedSpeaking(at: 2))
+    }
+
+    func testNewWordsOrAnInterruptionDropTheOwedAnswer() {
+        var watch = VoiceTurnWatch()
+        watch.userFinished(at: 0)
+        watch.toolStarted(id: "a", name: "web_search", at: 0.1)
+        _ = watch.agentStartedSpeaking(at: 0.5)
+        watch.reset()
+        watch.toolAnswered(id: "a", at: 2)
+        XCTAssertNil(watch.agentStartedSpeaking(at: 3), "after an interruption the old turn's answer is not timed")
+        watch.userFinished(at: 4)
+        watch.toolStarted(id: "b", name: "web_search", at: 4.1)
+        _ = watch.agentStartedSpeaking(at: 4.5)
+        watch.userFinished(at: 5)
+        XCTAssertEqual(watch.agentStartedSpeaking(at: 6)?.kind, .answer, "a new turn starts clean")
+    }
+}

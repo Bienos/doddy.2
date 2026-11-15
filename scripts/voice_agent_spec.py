@@ -498,6 +498,38 @@ def compare(tools, instructions, export, where="voice-agent/"):
     return diffs
 
 
+def check_evaluation(path=SPEC / "evaluation.json"):
+    """The record of what the live main agent scores after a conversation (voice-agent/evaluation.json). It is applied
+    with ElevenLabs' agents_update_analysis and read back, never synced from here; this only keeps the record sound:
+    unique ids, prompts that fit ElevenLabs' 2,000-character limit, an analysis item id for each, and every criterion
+    listed under transcript_only saying it judges only the transcript (decision 2026-11-15-conversation-core-and-
+    corrections: a text grader must not score voice, timing or overlap, which are not in a transcript)."""
+    errors = []
+    if not path.exists():
+        return errors
+    record = json.loads(path.read_text(encoding="utf-8"))
+    criteria = record.get("evaluation_criteria", [])
+    ids = [c.get("id") for c in criteria]
+    if len(set(ids)) != len(ids):
+        errors.append("evaluation.json: an evaluation criterion id is listed twice")
+    for c in criteria:
+        where = f"evaluation.json {c.get('id')}"
+        text = c.get("conversation_goal_prompt", "")
+        if not text or len(text) > 2000:
+            errors.append(f"{where}: conversation_goal_prompt must be 1 to 2,000 characters")
+        if not str(c.get("analysis_item_id", "")).startswith("aitem_"):
+            errors.append(f"{where}: analysis_item_id must be the live item id (aitem_...)")
+        if "Unknown" not in text:
+            errors.append(f"{where}: must say when the answer is Unknown (no evidence is not a pass or a fail)")
+    for cid in record.get("transcript_only", []):
+        found = next((c for c in criteria if c.get("id") == cid), None)
+        if found is None:
+            errors.append(f"evaluation.json transcript_only: {cid} is not a criterion")
+        elif "transcript" not in found.get("conversation_goal_prompt", ""):
+            errors.append(f"evaluation.json {cid}: a transcript-only criterion must say it judges only the transcript")
+    return errors
+
+
 def main(argv):
     agent = "app"
     if "--agent" in argv:
@@ -513,6 +545,7 @@ def main(argv):
     errors = check(tools, session, instructions)
     if agent == "app":
         errors += check_app(tools)
+        errors += check_evaluation()
     if agent in ("task-call", "task-call-book", "task-call-order"):
         errors += check_task_call(tools, session, instructions, book=agent == "task-call-book", order=agent == "task-call-order")
     if agent == "translator":

@@ -1,0 +1,33 @@
+# Doddy follows corrections and interruptions, says what already ran, and the turn log tells a status from the answer
+
+- **Date:** 2026-11-15
+- **Decided by:** owner, 15 Nov 2026, the task that came with the research "DODDY — Human Conversation Intelligence" (ZIP of 15 Nov 2026): "Zmień kod, konfiguracje, prompty i odpowiednie ustawienia aktywnych agentów … Masz zgodę w ramach tego zadania na zmiany w kodzie i konfiguracjach DODDY oraz aktualizację jego potwierdzonych aktywnych agentów."
+- **Status:** applied. The live main agent and phone agent changed on 15 Nov 2026 (versions below); the app code is in this pull request (compiled in CI only, not on a device).
+- **Replaces:** nothing. Builds on `2026-11-12-voice-turn-feedback`, `2026-11-14-first-audible-sound`, `2026-11-14-voice-agent-does-the-work-live`.
+
+## Why
+The research (reports 01, 07, 08, 10–13; the scenarios are in `docs/research/2026-11-15-human-conversation/`) recommends keeping the ElevenLabs path, tuning it and measuring before any migration. Checked against `main` at `04caf24` and the live agents on 15 Nov 2026:
+- **A real gap in code:** Doddy's own changes run at once (`set_timer`, `create_reminder`, `add_to_list`, …, interruption mode `allow`). When the person speaks while one runs ("na dziesięć… nie, na pięć"), ElevenLabs abandons the call and tells the model "Tool execution was abandoned", but the app finishes it. The model then believes nothing ran and makes a second one. Nothing told the model the truth.
+- **Gaps in the live prompt** (read, 32,335 characters, `agtvrsn_3001m7f86fwhebb8fb44mg6e5pes`): no rule that a correction replaces one detail; no rule for a change that already ran when the person says "stop"; no rule for a time that could be 5:00 or 17:00; and on the first turn an English question often got a Polish answer (text test: 1 of 5).
+- **Measurement gaps** (report 07): the turn line ends at the first speaking event, so "Sprawdzam." counted as the answer; nothing measured how long Doddy's voice kept coming after an interruption.
+- **Evaluation:** four transcript checks existed; none for corrections, interruptions, memory honesty or language and length.
+
+## Decision
+1. **App (DoddyCore, tested on Linux; wired in `VoiceSessionController`, `AgentVoiceMeter`):**
+   - `VoiceInterruptedWrites`: remembers which of Doddy's own at-once changes (computed from `ToolCatalog`: a change on the iPhone or a text to the person's own number, approval `runsNow`) were running when the provider's interruption event came; when one finishes, the app sends the agent one line of background context (`updateContext`, ElevenLabs' contextual update): the tool ran, its own result, and "change or undo this one; never make a second one". It never undoes or repeats anything itself.
+   - `VoiceTurnWatch`: speech while a tool still runs is a **status**; the turn line is logged as before, and the first speech once every tool answered is logged again as `turn … to the answer after a status`, timed from the same words.
+   - `VoiceInterruptSilence`: `voice interruption to silence … s (from the provider's interruption event; the person's own start is not measured)`: from the interruption event reaching the phone to the last loud buffer of Doddy's voice handed to the output.
+2. **Live main agent ("Doddy 1"):** one new prompt section, "Corrections, interruptions and waiting", one English line and one Language line; four new evaluation criteria (transcript only, Unknown when there is no evidence). Model, voice, tools, turn settings, privacy and guardrails unchanged. Done on an ElevenLabs branch, tested against the unchanged main, then merged.
+3. **Live phone agent ("Doddy 2"):** rule 8 (answer first, corrections replace the detail, after an interruption answer the new words, one status at most). Same branch, test, merge path.
+4. **Not changed, on purpose:** turn eagerness, speculative turn, soft timeout "No…" and the Polish ignore words ("tak", "no", "dobra" …) stay as they are: their effect is audio and no audio test was run (research D03: test, don't shorten globally). The translator keeps its prompt (it already keeps meaning, tone and strength and adds nothing). The three task-call agents keep the prompts set today (#522, #523). No model, voice or provider change.
+
+## Consequences
+- A correction during an at-once change should now end with one item, or with Doddy saying that the first one exists. The app's note reaches the model only when the person spoke while a change was running; otherwise nothing new is sent.
+- The note is the app's own result text (at most 300 characters) going to the same model that already had the result; nothing new leaves the phone. Logs keep fixed words and seconds only.
+- Turn and interruption lines are measurement aids. The interruption line can only be late for a Bluetooth route (output latency on top) and misses the time before the provider decided it was an interruption.
+- Prompt rules about "mhm" or "tak, ale…" while Doddy talks only help if ElevenLabs passes those words to the model; whether it does with the current ignore list is an audio question, not answered here.
+
+## Evidence
+- `make test-core` (Linux, Swift 6.1.3): 3,883 tests, 0 failures, 2 skipped; the new `VoiceInterruptedWritesTests`, `VoiceInterruptSilenceTests` and `VoiceTurnWatchAnswerTests` among them. `python3 -I scripts/voice_agent_spec.py check` for the app agent (now also checks `evaluation.json`) and `--agent phone`: PASS.
+- ElevenLabs agent tests (text, the agent's LLM with test-mode tool results; not audio), baseline main vs candidate branch, 3 runs each unless noted: correction of a timer 3/3 vs 3/3; correction of a reminder day 3/3 vs 3/3; half a request runs nothing 3/3 vs 3/3; "stop" after a change ran says it was done and offers undo 4/6 vs 9/9 (v2–v4); a change that ran before the correction is not doubled 4/6 vs 7/9 (v2–v4, noisy); ambiguous "jutro o piątej": asks or says the time 0/3 vs 3/6; English question answered in English, briefly 1/5 vs 5/5 (5 runs each); answer the new words after an interruption 6/6 vs 6/6 (v3–v4; v2 regressed to 1/3 and was fixed); "unknown" result never called done 3/3 vs 3/3. Smoke on the merged live main: 7/9 in one run (the ambiguous-time test and one English reply ending with a banned filler failed). Phone agent: corrected note detail 2/3 vs 3/3; the unknown-caller test fails on both (0/3), a gap that was there before.
+- Not run: the iOS app on a device or a simulator (compiled only by CI's `ios-build`), any audio test, any real conversation after the change, Bluetooth, lock or route changes, a user study. No before/after latency numbers exist.

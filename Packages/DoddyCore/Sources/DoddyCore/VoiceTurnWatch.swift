@@ -59,16 +59,41 @@ public struct VoiceTurnTiming: Sendable, Equatable {
         public let name: String
         /// nil: still running when Doddy started speaking (he often says "one moment" first).
         public let seconds: Double?
+
+        public init(name: String, seconds: Double?) {
+            self.name = name
+            self.seconds = seconds
+        }
+    }
+
+    /// What the speech that ended the measurement was (decision 2026-11-15-conversation-core-and-corrections).
+    public enum Kind: Sendable, Equatable {
+        /// He spoke with no tool running: the answer itself (or a question back), from the words.
+        case answer
+        /// He spoke while a tool was still running ("Sprawdzam."): a status, not the answer. The answer is
+        /// measured on its own when it comes (`answerAfterStatus`).
+        case status
+        /// The first speech after a status once every tool had answered: the answer, from the words.
+        case answerAfterStatus
     }
 
     public let secondsToSpeech: Double
     public let tools: [Tool]
+    public let kind: Kind
 
-    /// "turn 2.31 s to Doddy speaking · web_search 1.92 s · ask_claude running"
+    public init(secondsToSpeech: Double, tools: [Tool], kind: Kind = .answer) {
+        self.secondsToSpeech = secondsToSpeech
+        self.tools = tools
+        self.kind = kind
+    }
+
+    /// "turn 2.31 s to Doddy speaking · web_search 1.92 s · ask_claude running", and, after a status,
+    /// "turn 4.10 s to the answer after a status · web_search 3.20 s".
     /// Privacy: fixed words, seconds and tool names from the agent's own tool list. Nothing said,
     /// saved or typed can appear; a name that isn't a plain identifier is written as "tool".
     public var line: String {
-        var parts = ["turn \(Self.format(secondsToSpeech)) to Doddy speaking"]
+        let head = kind == .answerAfterStatus ? "to the answer after a status" : "to Doddy speaking"
+        var parts = ["turn \(Self.format(secondsToSpeech)) \(head)"]
         for tool in tools {
             let name = Self.safeName(tool.name)
             parts.append(tool.seconds.map { "\(name) \(Self.format($0))" } ?? "\(name) running")
@@ -114,6 +139,9 @@ public struct VoiceTurnWatch: Sendable, Equatable {
 
     /// When the person's words arrived; nil once Doddy started answering them.
     public private(set) var turnStartedAt: Double?
+    /// When the person's words arrived, kept after a status ("Sprawdzam." while a tool ran) until the answer
+    /// itself starts; nil when no answer is still owed.
+    public private(set) var answerOwedSince: Double?
     private var openTools: [OpenTool] = []
     private var finishedTools: [VoiceTurnTiming.Tool] = []
     private var waitStartedAt: Double?
@@ -142,7 +170,7 @@ public struct VoiceTurnWatch: Sendable, Equatable {
     public mutating func toolAnswered(id: String, at now: Double) {
         guard let index = openTools.firstIndex(where: { $0.id == id }) else { return }
         let tool = openTools.remove(at: index)
-        if turnStartedAt != nil {
+        if turnStartedAt != nil || answerOwedSince != nil {
             finishedTools.append(VoiceTurnTiming.Tool(name: tool.name, seconds: max(0, now - tool.startedAt)))
         }
         if openTools.isEmpty {
@@ -154,14 +182,27 @@ public struct VoiceTurnWatch: Sendable, Equatable {
     /// Doddy started speaking. Returns the finished turn the first time he speaks after the
     /// person's words, nil after that (a second sentence, or speaking with no turn, as in the
     /// opening line).
+    ///
+    /// Speech while a tool is still running is a status: its timing comes back with kind `.status`, and the
+    /// answer is still owed. The first speech once every tool has answered then comes back as
+    /// `.answerAfterStatus`, timed from the same words, with the tools that finished since the status.
     public mutating func agentStartedSpeaking(at now: Double) -> VoiceTurnTiming? {
         toolAnsweredAt = nil
         if openTools.isEmpty { waitStartedAt = nil }
+        if let owed = answerOwedSince, turnStartedAt == nil {
+            guard openTools.isEmpty else { return nil }
+            answerOwedSince = nil
+            let timing = VoiceTurnTiming(secondsToSpeech: max(0, now - owed), tools: finishedTools, kind: .answerAfterStatus)
+            finishedTools = []
+            return timing
+        }
         guard let started = turnStartedAt else { return nil }
         turnStartedAt = nil
         let running = openTools.map { VoiceTurnTiming.Tool(name: $0.name, seconds: nil) }
-        let timing = VoiceTurnTiming(secondsToSpeech: max(0, now - started), tools: finishedTools + running)
+        let kind: VoiceTurnTiming.Kind = openTools.isEmpty ? .answer : .status
+        let timing = VoiceTurnTiming(secondsToSpeech: max(0, now - started), tools: finishedTools + running, kind: kind)
         finishedTools = []
+        answerOwedSince = kind == .status ? started : nil
         return timing
     }
 

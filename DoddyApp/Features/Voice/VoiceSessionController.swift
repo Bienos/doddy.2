@@ -226,7 +226,10 @@ final class VoiceSessionController {
             // The same phase again (the SDK repeats states) changes nothing; skip the work (ADR-604).
             guard phase != oldValue else { return }
             Self.conversationInProgress = isLive
-            if !isLive { turnFeedback.reset() }
+            if !isLive {
+                turnFeedback.reset()
+                interruptedWrites.reset()
+            }
             if isLive { Self.current = self } else if Self.current === self { Self.current = nil }
             // A quiet conversation hangs up by itself (decision 2026-11-15-quiet-conversations-hang-up).
             quietWatchPhaseChanged()
@@ -481,6 +484,10 @@ final class VoiceSessionController {
     /// while that start is still `startAttempt`, so a lookup that finishes after End and a new
     /// Start never reaches the new conversation.
     private var callOwners = ToolCallOwners()
+    /// Doddy's own at-once changes that were still running when the person spoke over them: the agent is told they
+    /// ran, so a correction changes the one that ran instead of making a second (decision
+    /// 2026-11-15-conversation-core-and-corrections).
+    private var interruptedWrites = VoiceInterruptedWrites()
     /// What earlier tries of a reminder or event meant when its card was shown (ADR-319).
     private var retryChecks: [String: ActionRetryDecision] = [:]
     /// The app's read-back and whether it was asked to write, for the entry logged with the reply.
@@ -2851,6 +2858,10 @@ final class VoiceSessionController {
     /// what the provider said (it may have said listening before this ran).
     private func turnInterrupted() {
         turnFeedback.reset()
+        // A change still running may have been abandoned by the provider while the app finishes it.
+        interruptedWrites.personInterrupted()
+        // How long his voice kept coming out after the event (decision 2026-11-15-conversation-core-and-corrections).
+        if meteredConversation != nil { AgentVoiceMeter.shared.beginInterruption(at: ProcessInfo.processInfo.systemUptime) }
         if isLive, phase == .thinking, providerState == .listening { phase = .listening }
     }
 
@@ -3129,6 +3140,7 @@ final class VoiceSessionController {
         guard isLive, attempt == startAttempt else { return }
         callOwners.record(call.toolCallId, attempt: attempt)
         callsAsReceived[call.toolCallId] = (call.toolName, call.parametersData)
+        interruptedWrites.started(id: call.toolCallId, name: call.toolName)
         turnFeedback.toolStarted(id: call.toolCallId, name: call.toolName)
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
         // The iPhone is locked and the Face ID lock is on: nothing of the person's is read or changed, and the agent hears
@@ -5660,6 +5672,12 @@ final class VoiceSessionController {
             return
         }
         try? await conversation?.sendToolResult(for: toolCallID, result: text, isError: isError)
+        // A change that ran although the person spoke over it: the provider may have told the model it was
+        // abandoned, so the fact goes in as background context (decision 2026-11-15-conversation-core-and-corrections).
+        if let note = interruptedWrites.answered(id: toolCallID, result: text, isError: isError) {
+            Self.toolLog.notice("a change finished after the person spoke over it; the agent was told it ran")
+            try? await conversation?.updateContext(note)
+        }
     }
 
     /// True while the conversation `toolCallID` arrived in is still the one on screen (ADR-458).
