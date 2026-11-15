@@ -27,7 +27,7 @@
   - Without outside text, everything works as before.
   - The yes must be the person's own: from their side of the conversation, after the card appeared, within its 120 s, strict (`SpokenYes`), and used once for exactly that payload. Text from an email, a page or a tool can never be a yes.
 - **The agent:** `voice-agent/instructions.md` says to ask one short question before every change after outside text, and that this line wins over a tool's "Runs at once". Six tool descriptions in `voice-agent/tools.json` (`look_at_screen`, `text_me`, `hand_over_errand`, `make_something`, `ask_claude`, `make_document`) say a yes or a tap instead of a tap.
-  - The live ElevenLabs agent is synced after the app with this rule is in a build: the owner's earlier word covers the sync, and changing the agent first would make it say "tak" to an app that still waits for a tap.
+  - **On the live agent since 15 Nov 2026** (owner: "Zmień na żywym agencie też już z głowy będzie"): three prompt passages and the descriptions of `set_timer`, `set_alarm`, `look_at_screen`, `hand_over_errand`, `ask_claude` and `make_document`; versions and rollback in `voice-agent/README.md`. This was before a build with the app half was out, so until one is, the agent says "tak" is enough while the app still waits for a tap; the owner chose that. `text_me` and `make_something` are not changed (see the README entry).
 
 ## Consequences
 - **Fewer taps:** after reading an email, "Wysłać odpowiedź?" → "tak" sends it, with no finger needed.

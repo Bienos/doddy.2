@@ -1,17 +1,17 @@
 import XCTest
 @testable import DoddyCore
 
-/// Step 2b of decision `2026-11-14-spoken-yes-and-fewer-cards`: Doddy's own changes on this iPhone that have Undo in
-/// "What Doddy did", and the drafts and hand-overs that change nothing anywhere, run when asked, with no card. Those
-/// still without Undo keep their card (a spoken yes or a tap) until they have one (step 2c); an undo keeps its card,
-/// because nothing undoes an undo.
+/// Steps 2b and 2c of decision `2026-11-14-spoken-yes-and-fewer-cards`: Doddy's own changes on this iPhone that have
+/// Undo in "What Doddy did", and the drafts and hand-overs that change nothing anywhere, run when asked, with no card.
+/// A timer and an alarm joined them in step 2c, with their own Undo. Those still without Undo keep their card (a spoken
+/// yes or a tap) until they have one; an undo keeps its card, because nothing undoes an undo.
 final class AtOnceOwnChangesTests: XCTestCase {
     private let atOnce: Set<String> = [
         "save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app", "lost_wallet",
-        "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation",
+        "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation", "set_timer", "set_alarm",
     ]
     private let waitingForUndo: Set<String> = [
-        "set_timer", "set_alarm", "create_list", "remind_me_about_note", "remind_when_to_leave", "parking_spot",
+        "create_list", "remind_me_about_note", "remind_when_to_leave", "parking_spot",
     ]
 
     private func request(_ name: String, _ json: String) -> VoiceToolRequest {
@@ -29,7 +29,10 @@ final class AtOnceOwnChangesTests: XCTestCase {
          ("draft_message", request("draft_message", #"{"to":"Marta","body":"Będę o 18"}"#)),
          ("draft_blik_transfer", request("draft_blik_transfer", #"{"to":"Marta","amount":50}"#)),
          ("draft_invoice", request("draft_invoice", #"{"start_new":true}"#)),
-         ("make_presentation", request("make_presentation", #"{"title":"Plan","slides":[{"title":"Jeden","bullets":["a"]}]}"#))]
+         ("make_presentation", request("make_presentation", #"{"title":"Plan","slides":[{"title":"Jeden","bullets":["a"]}]}"#)),
+         ("set_timer", request("set_timer", #"{"minutes":5,"label":"Makaron"}"#)),
+         ("set_alarm", .setAlarm(AlarmDraft(
+             first: ReminderDue(year: 2030, month: 1, day: 15, hour: 7, minute: 0, timeZoneID: nil), repeats: nil, label: "Siłownia")))]
     }
 
     func testTheListIsExactlyDoddysUndoableChangesAndHandOvers() {
