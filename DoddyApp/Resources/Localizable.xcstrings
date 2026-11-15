@@ -11180,6 +11180,17 @@
         }
       }
     },
+    "Call me every morning": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwoń do mnie co rano"
+          }
+        }
+      }
+    },
     "Call me now": {
       "extractionState": "manual",
       "localizations": {
@@ -11301,6 +11312,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rozmowa: %@, %@"
+          }
+        }
+      }
+    },
+    "Call you every morning?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwonić do Ciebie co rano?"
           }
         }
       }
@@ -16266,6 +16288,17 @@
         }
       }
     },
+    "Couldn't confirm the stop reached Doddy's server. Tap Stop again: stopping twice is safe.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się potwierdzić, że zatrzymanie dotarło do serwera Doddy’ego. Stuknij Zatrzymaj jeszcze raz: dwukrotne zatrzymanie jest bezpieczne."
+          }
+        }
+      }
+    },
     "Couldn't confirm whether your news was built. It may still arrive, and Doddy won't send it again on its own. Wait a few minutes before trying again.": {
       "extractionState": "manual",
       "localizations": {
@@ -16693,6 +16726,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się wczytać umówionych telefonów. %@"
+          }
+        }
+      }
+    },
+    "Couldn't load your morning call. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się wczytać porannego telefonu. %@"
           }
         }
       }
@@ -21490,6 +21534,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Doddy couldn't confirm an earlier try of these morning calls. They may already be set up: Doddy's server never sets up the same schedule twice.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł potwierdzić wcześniejszej próby ustawienia tych porannych telefonów. Mogą być już ustawione: serwer Doddy’ego nigdy nie ustawia tego samego harmonogramu dwa razy."
           }
         }
       }
@@ -28424,6 +28479,17 @@
         }
       }
     },
+    "Each day is checked again before it rings: your number, calls from Doddy on, quiet hours where your iPhone is, and the limit on calls. Twilio places the call. Say “stop the morning calls”, or tap Stop in Settings, Phone calls.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Każdego dnia przed telefonem wszystko jest sprawdzane jeszcze raz: Twój numer, włączone telefony od Doddy’ego, godziny ciszy tam, gdzie jest Twój iPhone, i limit połączeń. Połączenie wykonuje Twilio. Powiedz „przestań dzwonić rano” albo stuknij Zatrzymaj w Ustawieniach, Telefony."
+          }
+        }
+      }
+    },
     "Each day, at most": {
       "extractionState": "manual",
       "localizations": {
@@ -28442,6 +28508,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Każdy produkt osobno"
+          }
+        }
+      }
+    },
+    "Each morning Doddy says the date and only what its server holds for you that day: calls you booked, notes waiting, results of tasks you handed over, new stories on your radar and when the daily news comes. It can't see your calendar or reminders. Each day is checked again before it rings, and quiet hours apply.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Każdego ranka Doddy mówi datę i tylko to, co jego serwer ma dla Ciebie na ten dzień: umówione telefony, czekające notatki, wyniki przekazanych zadań, nowe artykuły na radarze i godzinę wiadomości dnia. Nie widzi Twojego kalendarza ani przypomnień. Każdy dzień jest sprawdzany jeszcze raz przed telefonem i obowiązują godziny ciszy."
           }
         }
       }
@@ -46009,6 +46086,39 @@
         }
       }
     },
+    "Morning call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poranny telefon"
+          }
+        }
+      }
+    },
+    "Morning calls stopped. Doddy won't call you in the morning any more.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poranne telefony zatrzymane. Doddy nie będzie już dzwonił do Ciebie rano."
+          }
+        }
+      }
+    },
+    "Morning calls stopped. Today's call was already being placed, so it may still ring this once.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poranne telefony zatrzymane. Dzisiejsze połączenie było już wykonywane, więc może jeszcze zadzwonić ten jeden raz."
+          }
+        }
+      }
+    },
     "Morning check-in": {
       "extractionState": "manual",
       "localizations": {
@@ -48042,6 +48152,17 @@
         }
       }
     },
+    "Next call: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Następny telefon: %@"
+          }
+        }
+      }
+    },
     "Next conversation": {
       "extractionState": "manual",
       "localizations": {
@@ -49796,6 +49917,17 @@
         }
       }
     },
+    "None. Ask Doddy, for example “Call me every day at 8 with the plan of the day.”": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak. Poproś Doddy’ego, na przykład „Dzwoń do mnie codziennie o 8 z planem dnia”."
+          }
+        }
+      }
+    },
     "Normal": {
       "extractionState": "manual",
       "localizations": {
@@ -50157,6 +50289,17 @@
         }
       }
     },
+    "Not called: a new morning call replaced it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez telefonu: zastąpił go nowy poranny telefon."
+          }
+        }
+      }
+    },
     "Not called: it was quiet hours in your iPhone's time zone.": {
       "extractionState": "manual",
       "localizations": {
@@ -50175,6 +50318,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bez połączenia: usługa telefoniczna je odrzuciła."
+          }
+        }
+      }
+    },
+    "Not called: you stopped the morning calls.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez telefonu: poranne telefony zostały zatrzymane."
           }
         }
       }
@@ -80690,6 +80844,17 @@
         }
       }
     },
+    "Stop the morning calls": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj poranne telefony"
+          }
+        }
+      }
+    },
     "Stop this reminder?": {
       "extractionState": "manual",
       "localizations": {
@@ -90310,6 +90475,17 @@
         }
       }
     },
+    "There was no morning call to stop.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie było porannego telefonu do zatrzymania."
+          }
+        }
+      }
+    },
     "There's more than one phone number in what you wrote. Type the one Doddy should call.": {
       "extractionState": "manual",
       "localizations": {
@@ -93935,6 +94111,17 @@
         }
       }
     },
+    "This replaces your morning call %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To zastąpi Twój poranny telefon %@."
+          }
+        }
+      }
+    },
     "This replaces your own reminder for this list.": {
       "extractionState": "manual",
       "localizations": {
@@ -94064,6 +94251,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ta godzina wypada w godzinach ciszy. Włącz przełącznik, żeby mimo to umówić telefon, albo poproś Doddy’ego o inną godzinę."
+          }
+        }
+      }
+    },
+    "This time is in quiet hours. Turn on the switch to set it up anyway, or ask Doddy for a later time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta godzina wypada w godzinach ciszy. Włącz przełącznik, żeby mimo to ustawić telefony, albo poproś Doddy’ego o późniejszą godzinę."
           }
         }
       }
@@ -94668,6 +94866,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "时间"
+          }
+        }
+      }
+    },
+    "Time in %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czas w strefie %@"
+          }
+        }
+      }
+    },
+    "Time in %@. From Doddy's number to your number ending %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czas w strefie %@. Z numeru Doddy’ego na Twój numer kończący się na %@"
           }
         }
       }
@@ -103517,6 +103737,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "When you answer, Doddy says first:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy odbierzesz, Doddy najpierw powie:"
           }
         }
       }

@@ -25,6 +25,7 @@ const deps = {
   toolSecret: config.toolSecret, doddyPhoneNumber: config.doddyPhoneNumber,
   jakdojade: config.jakdojade ? new JakdojadePartnerClient(async () => config.jakdojade ?? null) : undefined,
   fileWatches: { origin: config.documentsOrigin }, radar: { enabled: config.radarAlertsEnabled },
+  morningCalls: config.morningCalls,
   contactTexts: config.contactTextsEnabled,
   trustProxyHops: config.trustProxyHops, verifyDailyCap: config.verifyDailyCap, quietHours: config.quietHours,
 };
@@ -50,6 +51,7 @@ app.log.info({
   contactTexts: config.contactTextsEnabled && !!providers.cipher && !!providers.sms,
   fileReadyPush: !!(config.documentsOrigin && providers.cipher && providers.push),
   radarAlerts: config.radarAlertsEnabled,
+  morningCalls: config.morningCalls.enabled ? { maxPerServer: config.morningCalls.maxPerServer } : false,
   leafletCatalog: config.dealsSettings.enabled && !!config.dealsSettings.catalog?.enabled,
   dealWatches: config.dealWatchSettings.enabled && config.dealsSettings.enabled && !!config.dealsSettings.catalog?.enabled && !!providers.cipher,
   deliveries: config.uberDirect ? config.uberDirect.mode : false,
@@ -75,7 +77,7 @@ if (config.runWorkerInWeb) {
   workerDone = runWorkerLoop(db, {
     ...providers, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, fileWatches: fileWatchCtx, radar: radarCtx,
     catalog: catalogCtx, dealWatches: dealWatchCtx,
-    scheduledCalls: scheduledCallsFrom(config, providers),
+    scheduledCalls: scheduledCallsFrom(config, providers), morningCalls: config.morningCalls,
   }, () => stopping);
 }
 

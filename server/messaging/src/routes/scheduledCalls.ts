@@ -8,6 +8,7 @@ import { OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../calls.js";
 import { abuseLimits } from "../config.js";
 import { inTransaction, type Db } from "../db.js";
 import { isAllowedNumber } from "../phoneCountries.js";
+import { morningCallsBetween } from "../morningCalls.js";
 import { inQuietHours, isValidTimeZone, QUIET_HOURS_DEFAULT } from "../quietHours.js";
 import {
   CALL_REASON_MAX_LENGTH, capExceeded, SCHEDULED_CALL_MAX_DAYS, SCHEDULED_CALLS_PENDING_MAX, sealReason,
@@ -132,6 +133,13 @@ export const scheduledCallRoutes = (deps: Deps): FastifyPluginAsync => async (ap
            SELECT call_at AS t FROM scheduled_calls WHERE account_id = $1 AND state IN ('scheduled', 'placing')
              AND call_at > $2::timestamptz - interval '1 day' AND call_at < $2::timestamptz + interval '1 day'`, [accountId, at]);
         const others = times.map((r) => r.t);
+        // And the morning call's days around it (decision 2026-11-14-morning-call): each is a call too.
+        const { rows: [morning] } = await c.query<{ local_time: string; days: string; time_zone: string; next_call_at: Date }>(
+          "SELECT local_time, days, time_zone, next_call_at FROM morning_calls WHERE account_id = $1 AND state = 'active'", [accountId]);
+        if (morning) {
+          const from = new Date(Math.max(at.getTime() - 86_400_000, morning.next_call_at.getTime()));
+          others.push(...morningCallsBetween(from, new Date(at.getTime() + 86_400_000), morning.local_time, morning.days, morning.time_zone));
+        }
         if (capExceeded(others, at, 86_400_000, OUTBOUND_DAILY_LIMIT)) throw new Refused(429, "daily_limit");
         if (capExceeded(others, at, 3_600_000, OUTBOUND_HOURLY_LIMIT)) throw new Refused(429, "hourly_limit");
         const id = randomUUID();
@@ -154,6 +162,7 @@ export const scheduledCallRoutes = (deps: Deps): FastifyPluginAsync => async (ap
     }
   });
 
+  // Calls booked once; a morning call's days are listed by GET /v1/calls/morning.
   app.get("/v1/calls/scheduled", { preHandler: auth }, async (req) => {
     const { accountId } = principal(req);
     const { rows } = await db.query<{
@@ -161,7 +170,7 @@ export const scheduledCallRoutes = (deps: Deps): FastifyPluginAsync => async (ap
       reason_ciphertext: Buffer | null; created_at: Date;
     }>(
       `SELECT id, call_at_text AS at, state, error_code, allow_quiet_hours, reason_ciphertext, created_at FROM scheduled_calls
-       WHERE account_id = $1 ORDER BY call_at DESC LIMIT 20`, [accountId]);
+       WHERE account_id = $1 AND kind = 'once' ORDER BY call_at DESC LIMIT 20`, [accountId]);
     return {
       calls: rows.map((r) => {
         let reason: string | null = null;

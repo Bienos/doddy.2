@@ -33,7 +33,7 @@ final class ConfirmationTierTests: XCTestCase {
         for tool in ["create_calendar_event", "change_calendar_event", "delete_calendar_event", "delete_calendar_events",
                      "change_reminder", "delete_reminder", "move_reminders", "cancel_alarm", "remove_from_list",
                      "send_email", "reply_to_email", "forward_email", "trash_email", "send_outlook_email",
-                     "call_me_now", "call_me_later", "control_home", "run_shortcut", "propose_plan",
+                     "call_me_now", "call_me_later", "call_me_every_morning", "control_home", "run_shortcut", "propose_plan",
                      "hand_over_errand", "make_something", "add_todoist_task", "create_google_event"] {
             XCTAssertEqual(ConfirmationTiers.tier(for: tool), .spokenYes, tool)
         }

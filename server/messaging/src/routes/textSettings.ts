@@ -111,6 +111,11 @@ export const textSettingsRoutes = (deps: Deps): FastifyPluginAsync => async (app
         `SELECT id, state, delivery_status AS "deliveryStatus", error_code AS "errorCode", approved_text AS "approvedByYou",
                 created_at AS "createdAt" FROM outbound_messages
          WHERE account_id = $1 AND channel = 'sms' ORDER BY created_at DESC LIMIT $2`),
+      // Morning calls the person approved (decision 2026-11-14-morning-call): the schedule only; a day's plan is erased with the call.
+      morningCalls: await q<object>(
+        `SELECT id, local_time AS "time", days, time_zone AS "timeZone", allow_quiet_hours AS "allowQuietHours", language, state,
+                stop_code AS "stopCode", created_at AS "createdAt", stopped_at AS "stoppedAt" FROM morning_calls
+         WHERE account_id = $1 ORDER BY created_at DESC LIMIT $2`),
       textsToDoddy: await q<object>(
         `SELECT id, state, received_at AS "receivedAt" FROM inbound_texts
          WHERE account_id = $1 ORDER BY received_at DESC LIMIT $2`),
