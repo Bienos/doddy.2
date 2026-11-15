@@ -279,17 +279,8 @@ enum TalkInIsland {
             await cancelStart(startTask, controller: controller)
             throw refused("island start timed out", needsApp: TalkButton.openDoddyToTalk)
         }
-        // A deliberate press asks for the popup immediately, still labelled Connecting.
-        // Waiting for the first speaking event made an otherwise working start look inert.
-        // iOS owns whether the expansion is shown; no claim that the agent can hear yet.
-        // Only with Settings › "Expand when Doddy speaks" on, which is off unless the owner turned it
-        // on (owner, 9 Nov 2026: only the small island; 12 Nov: "it switches from big to small"). The
-        // conversation's own expansion (`IslandExpansion`) already follows the same switch.
-        let expands = LaunchPreferencesMigration.islandExpands(
-            UserDefaults.standard.object(forKey: LaunchPreferencesMigration.islandExpandsKey) as? Bool)
-        if expands, controller.backgroundStartReady, controller.isLive {
-            VoiceLiveActivity.shared.expand()
-        }
+        // The island stays the small one: nothing asks iOS to open it up (owner, 15 Nov 2026, decision
+        // `2026-11-15-small-island-only`).
         if !(run.finished || controller.phase.endedStart) {
             handedBack = true
             let handedTimeline = timeline

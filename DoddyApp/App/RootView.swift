@@ -33,7 +33,8 @@ enum PreferenceKey {
     static let backTapAction = "backTapAction"
     /// Settings → Action Button: what the "Talk to Doddy" control does (`TalkLaunchMode`, ADR-579).
     static let talkLaunchMode = TalkLaunchMode.preferenceKey
-    /// Settings → Expand when Doddy speaks (`IslandExpansion`, ADR-577, ADR-579). On unless turned off.
+    /// Was Settings → Expand when Doddy speaks (ADR-577, ADR-579). The big island is gone and nothing reads this any more
+    /// (decision 2026-11-15-small-island-only); the key stays so "Erase everything" still removes a stored value.
     static let islandExpands = LaunchPreferencesMigration.islandExpandsKey
     /// JSON `LegalAcceptanceRecord`: the Terms and Privacy Policy versions accepted, when, where (ADR-581).
     static let legalAcceptance = LegalAcceptance.preferenceKey

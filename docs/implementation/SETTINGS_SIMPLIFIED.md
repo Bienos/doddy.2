@@ -12,7 +12,7 @@ Owner, 12 Nov 2026: "ustawienia wyglądają tak średnio […] zrobić to troch�
 
 | Was | Is now |
 |---|---|
-| Voice › "Voice and personality" › (the page itself) | One page, **Voice and personality** (`settings.voice`): Auto-start voice; Speed, Expressiveness and "Starts in"; what Doddy calls you; "Opening Doddy" (Expand when Doddy speaks, Siri and Back Tap); then how he comes across (quick picks, Fine-tune, "Always the same"). The row `settings.personality` is gone; the controls keep their identifiers (`settings.voice.language`, `settings.nickname`, `settings.personality.dials`, `settings.listenOnOpen`, `settings.ways`). The row shows "Default", "Focused", "Playful" or "Custom". |
+| Voice › "Voice and personality" › (the page itself) | One page, **Voice and personality** (`settings.voice`): Auto-start voice; Speed, Expressiveness and "Starts in"; what Doddy calls you; "Opening Doddy" (Siri and Back Tap; the "Expand when Doddy speaks" switch was removed on 15 Nov 2026); then how he comes across (quick picks, Fine-tune, "Always the same"). The row `settings.personality` is gone; the controls keep their identifiers (`settings.voice.language`, `settings.nickname`, `settings.personality.dials`, `settings.listenOnOpen`, `settings.ways`). The row shows "Default", "Focused", "Playful" or "Custom". |
 | Voice › Account (voice account, Connection) | **About › Your Doddy account** as its "Voice" section (`settings.voiceAccount`, `settings.voiceConnection`), so both accounts are in one place. A build without Doddy accounts shows that section on About itself. Account stays one page down: owner, 11 Nov 2026, "schowaj bardziej […] to, że jesteś zalogowany". |
 | Notifications › Phone calls (`settings.calls`) | A row on the first page, between Connections and Notifications. Home's ••• › Phone calls opens the same screen. |
 | Header: "You choose each saved memory. See the original, edit it or remove it." | Header: "Set how Doddy sounds, what he remembers and what he can use." The old sentence is the footer of Doddy's memory. |
@@ -30,7 +30,7 @@ Owner, 24 Oct 2026: fewer places for memories, Files instead of Memories at the 
 
 | Group | Row | Opens |
 |---|---|---|
-| **Doddy** | Voice (`settings.voice`) | Voice and personality; provider picker and Auto-start; Dynamic Island style and "Expand when Doddy speaks"; Siri and Back Tap; voice account |
+| **Doddy** | Voice (`settings.voice`) | Voice and personality; provider picker and Auto-start; Siri and Back Tap; voice account |
 | | Doddy's memory (`settings.memory`) | Notes, Lists, Find something (these open the Memories screen, which no longer has a tab); My profile; What Doddy knows; Export, backup and delete (the old "Memories" page) |
 | *(no header)* | Connections (`settings.connectionsHub`) | Pause all connections; Calendar, reminders, contacts; Online accounts; Doddy on the web; Ask Doddy (typed questions); What Doddy did |
 | | Notifications (`settings.notifications`) | Notifications and texts; Check-ins and reminders; Alarms; Birthdays; Daily news; Phone calls |
@@ -52,7 +52,7 @@ Owner, 24 Oct 2026: fewer places for memories, Files instead of Memories at the 
 | **Voice and interaction** | Voice | Provider picker, Auto-start voice, voice account (sign out, delete, ask again), connection; Debug: developer voice switch |
 | | Action Button | Picker: Dynamic Island / Open App / Automatic (ADR-579); footer: what it does + where to assign it |
 | | Dynamic Island style | removed on 27 Oct (ADR-653): Whole Doddy is the only look |
-| | Expand when Doddy speaks | switch (was Back Tap's "Small island") |
+| | Expand when Doddy speaks | removed on 15 Nov 2026 (decision `2026-11-15-small-island-only`); was a switch, was Back Tap's "Small island" |
 | | Siri and Back Tap (Siri on iPad) | Back Tap status, Ways to open Doddy guide, weekly reminder, "When Siri or Back Tap opens Doddy", Siri can read my notes |
 | **Memory and privacy** | Memories | Count, export JSON/text/Markdown, restore, Delete all, encrypted backup, import |
 | | What Doddy knows | Remember conversations, remembered list, forget, suggest notes, What I've learned |

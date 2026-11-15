@@ -40,7 +40,7 @@ Found in the code, not guessed. Two code defects and one setup trap.
 
 **The island** (`DoddyWidgets/DoddyVoiceLiveActivity.swift`, unchanged layouts from ADR-239/264/577): compact = Doddy + a live sign; expanded = label, elapsed time, status, Mute/Unmute, Open, Stop; Lock Screen = Doddy, status and time, Mute and End, with no words from the conversation. The states come only from SDK events: Connecting, Listening, Working on it, Speaking, Muted, Confirm in Doddy, then Ended. **New: Failed.** When a start fails after the island showed, or the connection drops, the Lock Screen shows "Conversation stopped · Doddy isn't listening · open Doddy to try again" with Open Doddy for a minute, never a live status. The Dynamic Island drops ended activities at once (iOS). "Ready" is no activity at all: Doddy isn't running a conversation.
 
-**Expansion** stays ADR-577's request (an alert update when Doddy starts speaking, at most every 20 s). iOS decides the size and priority, so it is not a guarantee. Its switch is now **Settings › Expand when Doddy speaks**. Back Tap's old "Small island" moves there once at launch (`LaunchPreferencesMigration`), and Back Tap goes back to "Start a conversation", so the user keeps what they had.
+**Expansion** was ADR-577's request (an alert update when Doddy starts speaking, at most every 20 s) behind **Settings › Expand when Doddy speaks**. **It is gone** (owner, 15 Nov 2026, decision `2026-11-15-small-island-only`): nothing asks iOS to open the island up, and the switch was removed; the small island is the only one. Back Tap's old "Small island" still moves to the (now unread) `islandExpands` key once at launch (`LaunchPreferencesMigration`), and Back Tap goes back to "Start a conversation", so the user keeps what they had.
 
 **Siri, Back Tap, the Shortcuts app** keep the App Shortcut "Talk to Doddy" (`TalkToDoddyIntent`), which opens the app. It has to stay an iOS 17 type, and the App Shortcuts list can't hold the iOS 18 intent (ADR-577). Its choice is Settings › Siri and Back Tap › "When Siri or Back Tap opens Doddy".
 
@@ -72,7 +72,7 @@ Automated coverage: `TalkLaunchTests` (12, DoddyCore, Linux: modes, repeat press
 | 9 | Pressed rapidly several times | One conversation; presses within 2 s ignored; a later press ends it | Logic tested on Linux; device NOT VERIFIED |
 | 10 | After force-quit | As 1; any island left from the killed run is cleared at launch | NOT VERIFIED |
 | 11 | Changing the choice in Settings | The next press follows it; no relaunch needed (read at each press) | NOT VERIFIED |
-| 12 | Back to the island after another app | Island still there; expands at Doddy's next answer if on | NOT VERIFIED |
+| 12 | Back to the island after another app | Island still there, small (it no longer expands) | NOT VERIFIED |
 | 13 | Stop on the island | Conversation ends, microphone released, "Conversation ended" on the Lock Screen | NOT VERIFIED |
 | 14 | Stop after a connection failure | The failed card shows Open Doddy only; Dismiss/End clears it | NOT VERIFIED |
 | 15 | Reboot, then press | As 1 (first unlock needed for Data Protection) | NOT VERIFIED |

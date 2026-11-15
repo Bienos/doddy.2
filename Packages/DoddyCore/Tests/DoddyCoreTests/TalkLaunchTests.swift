@@ -65,7 +65,7 @@ final class TalkLaunchTests: XCTestCase {
     func testSmallIslandBecomesTheIslandSwitchAndBackTapKeepsTalking() {
         let moved = LaunchPreferencesMigration.migrate(.init(backTapAction: "smallIsland", islandExpands: nil))
         XCTAssertEqual(moved, .init(backTapAction: "conversation", islandExpands: false))
-        XCTAssertFalse(IslandExpansion(isOn: LaunchPreferencesMigration.islandExpands(moved.islandExpands)).isOn)
+        XCTAssertFalse(LaunchPreferencesMigration.islandExpands(moved.islandExpands))
     }
 
     func testOtherChoicesAreLeftExactlyAsTheyWere() {

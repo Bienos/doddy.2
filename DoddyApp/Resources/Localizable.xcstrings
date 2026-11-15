@@ -30280,17 +30280,6 @@
         }
       }
     },
-    "Expand when Doddy speaks": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rozwijaj, gdy Doddy mówi"
-          }
-        }
-      }
-    },
     "Expired": {
       "extractionState": "manual",
       "localizations": {

@@ -1,0 +1,2 @@
+The big island is gone: nothing asks iOS to open Doddy's island up any more (a press, his first words, a card), and Settings › Voice and personality › "Expand when Doddy speaks" is removed. The small island is the only one. Owner, 15 Nov 2026. Decision `2026-11-15-small-island-only`.
+Ran: `make test-core`, `swiftc -parse` on the changed app files, `scripts/ci.sh --only checks`, `tools/build_strings_catalog.py`. Not run: the app build and the app unit tests (no Xcode), anything on a device.
