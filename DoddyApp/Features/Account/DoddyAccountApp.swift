@@ -69,6 +69,24 @@ enum DoddyAccountServers {
     /// audit 2026-11-09, finding 1). Written down before the token leaves the Keychain slot the app uses.
     static let revocations = PendingDeviceRevocations(store: ServerPendingRevocationStore(), transport: URLSessionTransport.shared)
 
+    /// Renews this iPhone's messaging token by rotation shortly before it ends (decision 2026-11-12-account-and-device-tokens,
+    /// step 5). The rules are `MessagingTokenRenewal` in DoddyCore, tested on Linux; this only says where the token, the record
+    /// of its end and the account are, and hands a token that must not be kept to the revocations above.
+    static let messagingRenewal = MessagingTokenRenewal(
+        server: { ServerConfig.baseURL() },
+        inUse: { ServerConfig.baseURL().map { DoddyAccountServers.use(.messaging, $0) == .account } ?? false },
+        tokens: ServerKeychainStore(), records: MessagingTokenRecordDefaults(), account: DoddyAccountModel.shared,
+        transport: URLSessionTransport.shared,
+        discard: { token in
+            guard let server = ServerConfig.baseURL() else { return }
+            await DoddyAccountServers.revocations.revoke(token, server: server)
+        })
+
+    /// At launch and whenever Doddy comes to the front (`MessagingRenewalTrigger`): at most once a day, one at a time.
+    static func renewMessagingToken() async {
+        await messagingRenewal.renewIfDue()
+    }
+
     /// The voice server's own session for the signed-in Doddy account, and the sign-outs still owed to that server
     /// (decision 2026-11-12-one-token-per-server). The rules are `VoiceAccountSessions` in DoddyCore, tested on Linux; the
     /// Keychain slots are `VoiceAccountSessionKeychain` and `ServerPendingRevocationStore.voiceSessions`.
@@ -126,6 +144,8 @@ enum DoddyAccountServers {
         await retryRevocations()
         guard let session = DoddyAccountModel.shared.session else { return }
         await bringEarlierData(session)
+        MessagingRenewalTrigger.start()
+        await renewMessagingToken()
     }
 
     private static func linkBackend(_ session: DoddyAccountSession, epoch: Int) async {
@@ -156,12 +176,12 @@ enum DoddyAccountServers {
         guard let server = ServerConfig.baseURL(), use(.messaging, server) != .account else { return }
         let store = ServerKeychainStore()
         let earlier = try? store.load()
-        var outcome = await DoddyAccountLink.signInMessaging(
-            server: server, account: session, earlierDeviceToken: earlier, transport: URLSessionTransport.shared)
+        var outcome = await messagingRenewal.signIn(
+            server: server, account: session, earlierDeviceToken: earlier)
         if outcome == .accountRefused, (try? await DoddyAccountModel.shared.refreshAfterRefusal()) != nil,
            let fresh = DoddyAccountModel.shared.session {
-            outcome = await DoddyAccountLink.signInMessaging(
-                server: server, account: fresh, earlierDeviceToken: earlier, transport: URLSessionTransport.shared)
+            outcome = await messagingRenewal.signIn(
+                server: server, account: fresh, earlierDeviceToken: earlier)
         }
         switch outcome {
         case .signedIn(_, let deviceToken):
@@ -234,7 +254,7 @@ enum DoddyAccountServers {
         guard model.isConfigured, let server = ServerConfig.baseURL(), use(.messaging, server) == .account else { return nil }
         guard let session = model.session else { throw ServerError.accountMissing }
         let epoch = model.identityEpoch
-        switch await DoddyAccountLink.signInMessaging(server: server, account: session, earlierDeviceToken: nil, transport: URLSessionTransport.shared) {
+        switch await messagingRenewal.signIn(server: server, account: session, earlierDeviceToken: nil) {
         case .signedIn(_, let token):
             // The caller stores what it is given: not for an account that signed out while the server answered.
             guard stillSignedIn(since: epoch) else {
@@ -448,6 +468,8 @@ enum DoddyAccountServers {
         // it. Nothing says it ended until it did (DOD-08). Deleting the account comes through here too: the backend has then
         // erased the row, which answers 401, and nothing is left owed.
         backendSessions.signedOut()
+        // What was known about the messaging token's end goes with it.
+        messagingRenewal.forget()
         if let server = DeviceSession.serverURL(), use(.backend, server) == .account { KeychainSessionStore.delete() }
         guard let server = ServerConfig.baseURL(), use(.messaging, server) == .account else { return }
         let store = ServerKeychainStore()
@@ -507,4 +529,20 @@ enum DoddyAccountWords {
         "This iPhone couldn't keep your sign-in, so you aren't signed in. Try again.":
             NSLocalizedString("This iPhone couldn't keep your sign-in, so you aren't signed in. Try again.", comment: ""),
     ]
+}
+
+/// Where `MessagingTokenRenewal` keeps when the messaging token ends and when renewal was last tried. UserDefaults: it holds
+/// no token (the record names the token it describes by a hash), and a missing or unreadable record only means "renew at the
+/// next chance". The `doddyAccount.` prefix is kept on purpose (`DevicePreferences`).
+struct MessagingTokenRecordDefaults: MessagingTokenRecordStore {
+    private static let key = "doddyAccount.messagingTokenRecord"
+
+    func load() -> MessagingTokenRecord {
+        UserDefaults.standard.data(forKey: Self.key).flatMap { try? JSONDecoder().decode(MessagingTokenRecord.self, from: $0) } ?? MessagingTokenRecord()
+    }
+
+    func save(_ record: MessagingTokenRecord) {
+        guard let data = try? JSONEncoder().encode(record) else { return }
+        UserDefaults.standard.set(data, forKey: Self.key)
+    }
 }

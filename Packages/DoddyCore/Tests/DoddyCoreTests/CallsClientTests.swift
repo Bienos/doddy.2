@@ -35,8 +35,9 @@ final class CallsClientTests: XCTestCase {
     /// The bytes that go to the server for the snapshot carry no trace of a private note.
     func testSnapshotRequestHasNoPrivateNote() async throws {
         let date = Date(timeIntervalSince1970: 1_790_000_000)
-        let pin = try MemoryRecord(id: UUID(), rawText: "Bank PIN 4417", source: .explicitText, capturedAt: date)
-        let keys = try MemoryRecord(id: UUID(), rawText: "Keys in the blue tin", source: .explicitText, capturedAt: date)
+        // Fixed ids, not `UUID()`: a random id's hex digits can spell "4417" and fail the check below for no real reason.
+        let pin = try MemoryRecord(id: UUID(uuidString: "00000000-0000-4000-8000-000000000001")!, rawText: "Bank PIN 4417", source: .explicitText, capturedAt: date)
+        let keys = try MemoryRecord(id: UUID(uuidString: "00000000-0000-4000-8000-000000000002")!, rawText: "Keys in the blue tin", source: .explicitText, capturedAt: date)
         let transport = StepTransport([.success(ServerResponse(status: 200, body: Data(#"{"count":1}"#.utf8)))])
         let client = DoddyServerClient(transport: transport, credentials: FixedCredentials(token: "t"))
         let count = try await client.replaceMemoryCopy(MemoryCopyItem.from([pin, keys], excluding: PrivateNotes(ids: [pin.id])))
