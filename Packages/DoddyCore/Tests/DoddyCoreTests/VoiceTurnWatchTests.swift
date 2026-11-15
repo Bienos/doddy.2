@@ -100,6 +100,8 @@ final class VoiceTurnWatchTests: XCTestCase {
         let names = ["web_search", "news_search", "look_at_screen", "search_memories", "ask_claude", "check_email",
                      "find_places", "make_document", "get_weather", "wikipedia_search", "read_calendar"]
         XCTAssertEqual(Set(names.compactMap(VoiceWaitActivity.forTool)), Set(VoiceWaitActivity.allCases))
+        // plan_evening is one places search (decision 2026-11-14-plan-evening-tool).
+        XCTAssertEqual(VoiceWaitActivity.forTool(CloudToolName.planEvening), .findingPlaces)
     }
 
     func testResearchSaysItIsSearchingTheWeb() {

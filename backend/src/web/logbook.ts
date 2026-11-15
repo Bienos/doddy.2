@@ -20,7 +20,7 @@ export const LOGBOOK_MAX_BODY_BYTES = 32 * 1024;
 export const LOGBOOK_SCHEMA = "doddy.logbook.day.v1";
 
 /**
- * The voice agent's tool ids (voice-agent/tools.json, 126 with research_now, plan_trip, where_am_i, call_me_every_morning and stop_morning_calls). A test reads that file and fails
+ * The voice agent's tool ids (voice-agent/tools.json, 127 with research_now, plan_trip, where_am_i, plan_evening, call_me_every_morning and stop_morning_calls). A test reads that file and fails
  * if this list and the file disagree, so a new tool can't be counted before it is listed here. The iPhone counts
  * every tool its catalog has, and a day naming a tool missing here is refused whole, so a tool joins both together.
  */
@@ -41,7 +41,7 @@ export const LOGBOOK_TOOL_IDS = [
   "delete_outlook_event", "accept_outlook_invite", "decline_outlook_invite", "send_outlook_email",
   "reply_outlook_email", "forward_outlook_email", "move_outlook_email", "mark_outlook_email", "list_todoist_tasks",
   "add_todoist_task", "complete_todoist_task", "move_todoist_task", "rename_todoist_task", "web_search",
-  "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary", "news_search", "find_places",
+  "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary", "news_search", "find_places", "plan_evening",
   "find_flights", "find_bookable_flights", "book_flight", "check_flight_booking",
   "start_translator", "stop_translator", "add_to_list", "add_ingredients", "read_list", "check_off",
   "remove_from_list", "create_list", "hand_over_errand", "check_errands", "make_something", "find_deals", "pay_for_page", "note_capability_gap", "ask_claude",
