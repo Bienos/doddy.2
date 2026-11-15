@@ -16,6 +16,9 @@ public enum VoiceSessionEnd: Equatable, Sendable {
     /// "Stop listening" (OP-024, ADR-361): from Siri or the listening indicator, which also stop
     /// a voice memo.
     case stoppedListening
+    /// Nobody spoke for `VoiceQuietWatch`'s limit, so the app ended it (decision
+    /// `2026-11-15-quiet-conversations-hang-up`). Not a drop: nothing was cut off.
+    case quiet
     /// The iPhone locked while the Face ID lock was on (`ProtectedDataGuard`): the conversation was ended, not dropped,
     /// so nothing is kept as a draft and nothing restarts by itself on the unlock.
     case iPhoneLocked
@@ -63,6 +66,8 @@ public enum VoiceSessionEnd: Equatable, Sendable {
         case .userEnded: "user"
         case .doddyEnded: "doddy"
         case .stoppedListening: "stopped"
+        // Logbook's "Went quiet" (`LogbookBuilder.ending`, the server's `ENDINGS`).
+        case .quiet: "quiet"
         case .iPhoneLocked: "locked"
         case .dropped(.offline): "dropped-offline"
         case .dropped(.connectionLost): "dropped-connection"
@@ -126,6 +131,8 @@ public enum SessionRecovery {
             return ("Conversation ended", nil)
         case .stoppedListening, .iPhoneLocked:
             return ("Stopped listening", "Doddy's microphone is off.")
+        case .quiet:
+            return ("Conversation ended", "Nobody spoke for a while, so Doddy hung up. His microphone is off.")
         case .dropped(.offline):
             return ("You're offline", "Doddy's voice needs the internet.")
         case .dropped(.audioInterrupted):
