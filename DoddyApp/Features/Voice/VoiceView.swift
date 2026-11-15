@@ -1125,6 +1125,13 @@ struct VoiceView: View {
     private func planContent(steps: [PlanStep], blocked: [Int: PlanBlock], controller: VoiceSessionController) -> some View {
         Text("Here's what I'd do")
             .font(.headline)
+        // A card that ran out is shown again with what is true now; nothing ran on the first tap (PlanApprovalGate).
+        if controller.planCardShownAgain {
+            Text("This card ran out, so here it is again with what's true now. Nothing was done. Check it, then tap once more.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+                .accessibilityIdentifier("voice.planShownAgain")
+        }
         PlanStepList(
             steps: steps, blocked: blocked, ticked: controller.planTicked, idPrefix: "voice.plan",
             cloud: controller.planCloud, onToggle: { controller.togglePlanStep($0) }, onChange: { editingPlanStep = $0 })
