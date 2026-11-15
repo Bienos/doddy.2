@@ -495,6 +495,9 @@ final class VoiceSessionController {
     @ObservationIgnored private var interruptionObserver: NSObjectProtocol?
     /// Media services reset and Doddy coming back to the front: both can settle an interruption.
     @ObservationIgnored private var interruptionFollowUps: [NSObjectProtocol] = []
+    /// What iOS last said about the iPhone's lock, and what to do about it (decision
+    /// 2026-11-14-voice-mute-when-protected-data-unavailable). Read at each start, kept current by two notices.
+    @ObservationIgnored private var protectedData = ProtectedDataGuard()
     /// When iOS took the audio, while it still has it (ADR-696).
     @ObservationIgnored private var audioPausedSince: Date?
     /// Ends the conversation if iOS keeps the audio past the grace time and no `.ended` comes.
@@ -619,6 +622,12 @@ final class VoiceSessionController {
     /// Test seam only: iOS restarted its media services (ADR-696).
     func mediaServicesResetForTesting() {
         audioServicesWereReset()
+    }
+
+    /// Test seam only: iOS's notice about the iPhone's lock, as the observer hands it on. The returned task is the end,
+    /// when the Face ID lock is on and the iPhone is locking.
+    func protectedDataForTesting(_ signal: ProtectedDataGuard.Signal) -> Task<Void, Never>? {
+        protectedDataChanged(signal)
     }
 
     /// Test seam only: a tool call from the provider. The start it arrived in is taken now, as the
@@ -1265,7 +1274,16 @@ final class VoiceSessionController {
             center.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
                 Task { @MainActor in ref.value?.checkPausedAudio() }
             },
+            // The iPhone locking: iOS announces that protected data is going away, and that it is back.
+            center.addObserver(forName: UIApplication.protectedDataWillBecomeUnavailableNotification, object: nil, queue: .main) { _ in
+                Task { @MainActor in ref.value?.protectedDataChanged(.becameUnavailable) }
+            },
+            center.addObserver(forName: UIApplication.protectedDataDidBecomeAvailableNotification, object: nil, queue: .main) { _ in
+                Task { @MainActor in ref.value?.protectedDataChanged(.becameAvailable) }
+            },
         ]
+        // iOS says nothing about a lock that was already there, so a start reads its answer once.
+        syncProtectedData()
     }
 
     private func stopWatchingAudioInterruptions() {
@@ -1348,6 +1366,39 @@ final class VoiceSessionController {
         Self.audioLog.notice("conversation ended: iOS kept the audio past the grace time or refused to give it back")
         if sessionEnd == nil { sessionEnd = .dropped(.audioInterrupted) }
         fail(SessionRecovery.status(.dropped(.audioInterrupted), connected: connectedOnce, language: .current).detail ?? "")
+    }
+
+    // MARK: The iPhone locks (decision 2026-11-14-voice-mute-when-protected-data-unavailable)
+
+    /// A notice from iOS. `ProtectedDataGuard` decides; with the Face ID lock on and the iPhone locking, the
+    /// conversation ends and nothing starts it again on the unlock.
+    @discardableResult
+    private func protectedDataChanged(_ signal: ProtectedDataGuard.Signal) -> Task<Void, Never>? {
+        endForLockedIPhone(protectedData.receive(signal, conversation: protectedDataConversation, appLockOn: AppLock.shared.lockOn))
+    }
+
+    /// The start of a conversation: iOS's own answer now, in case the iPhone was locked already.
+    private func syncProtectedData() {
+        endForLockedIPhone(protectedData.sync(
+            protectedDataAvailable: ProtectedData.isAvailable, conversation: protectedDataConversation, appLockOn: AppLock.shared.lockOn))
+    }
+
+    private var protectedDataConversation: ProtectedDataGuard.Conversation {
+        switch phase {
+        case .connecting: .connecting
+        case .listening, .thinking, .speaking: .running
+        case .idle, .ended, .microphoneDenied, .failed: .notRunning
+        }
+    }
+
+    /// The one way out: `stop` closes the microphone and the agent's connection, drops every card and yes, and keeps
+    /// nothing as a draft. A card still waiting goes now, not when `stop` gets its turn, so nothing on it can run.
+    @discardableResult
+    private func endForLockedIPhone(_ outcome: ProtectedDataGuard.Outcome) -> Task<Void, Never>? {
+        guard case .end(let reason) = outcome else { return nil }
+        Self.audioLog.notice("conversation ended: the iPhone locked with Doddy's Face ID lock on")
+        pendingAction = nil
+        return Task { await stop(reason) }
     }
 
     private static func describeAudioSession() -> String {
@@ -2981,6 +3032,12 @@ final class VoiceSessionController {
         callsAsReceived[call.toolCallId] = (call.toolName, call.parametersData)
         turnFeedback.toolStarted(id: call.toolCallId, name: call.toolName)
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
+        // The iPhone is locked and the Face ID lock is on: nothing of the person's is read or changed, and the agent hears
+        // that in words, never an empty result. Before anything is looked up or logged (`ProtectedDataGuard`).
+        if case .refuse(let words) = protectedData.decide(tool: call.toolName, appLockOn: AppLock.shared.lockOn) {
+            await reply(call.toolCallId, words, isError: true)
+            return
+        }
         // The release scope (decision 2026-11-07-release-scope), translator (ADR-215), plan, Pause all, then the tool's switch,
         // in that order (ToolGate).
         let gate = ToolGate.decide(

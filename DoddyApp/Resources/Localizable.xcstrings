@@ -25264,6 +25264,17 @@
         }
       }
     },
+    "Doddy stopped listening because the iPhone locked. Unlock it and start a new conversation when you're ready.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy przestał słuchać, bo iPhone się zablokował. Odblokuj go i zacznij nową rozmowę, kiedy zechcesz."
+          }
+        }
+      }
+    },
     "Doddy stops reading your calendar right away and asks Google to remove its access. Memories you saved yourself stay.": {
       "extractionState": "manual",
       "localizations": {
