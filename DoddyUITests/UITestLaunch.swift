@@ -61,14 +61,18 @@ enum UITestLaunch {
 /// only about a second after they start, even when the answer is already yes: on the hosted Mac on
 /// 15 Nov 2026 (run 43715540139) the UI suite's 484 waits took 581 of its 1,995 seconds, and 467 of them
 /// ended within 1.5 s (decision 2026-11-15-faster-mac-ci). The answer is the same; the second isn't spent.
+/// It answers no only after a look that started at or after the deadline: one look can take longer than the
+/// whole timeout while the app is busy (PR #524's smoke run on 15 Nov: the first look at Home's Talk button,
+/// right after launch, took 12 s of a 5 s timeout and came back no, and without this that was the answer).
 @MainActor
 func pollUntil(timeout: TimeInterval, _ condition: () -> Bool) -> Bool {
     let deadline = Date().addingTimeInterval(timeout)
     while true {
+        let lookStarted = Date()
         if condition() { return true }
+        if lookStarted >= deadline { return false }
         let now = Date()
-        if now >= deadline { return false }
-        RunLoop.current.run(until: min(deadline, now.addingTimeInterval(0.1)))
+        if now < deadline { RunLoop.current.run(until: min(deadline, now.addingTimeInterval(0.1))) }
     }
 }
 
