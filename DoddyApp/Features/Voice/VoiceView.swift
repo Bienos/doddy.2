@@ -215,7 +215,7 @@ struct VoiceView: View {
                         if !asCard && controller.isPrivate {
                             Label {
                                 // Names the voice that runs this conversation (engineering audit, 7 Nov 2026).
-                                Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
+                                Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. A note is saved only when you ask for one, with Undo in What Doddy did.")
                                     .font(.footnote)
                             } icon: {
                                 Image(systemName: "eye.slash.fill")

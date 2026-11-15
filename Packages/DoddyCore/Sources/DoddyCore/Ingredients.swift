@@ -58,18 +58,43 @@ extension VoiceToolRequest {
     }
 }
 
+/// Why ingredients were left out, each named as it really was: already open on the list, on the At home list, or
+/// unticked by the person on the card. Since step 2b of decision `2026-11-14-spoken-yes-and-fewer-cards` they are
+/// added with no card, so only the first two happen then, and the agent is never told the person unticked one.
+public struct IngredientsLeftOut: Equatable, Sendable {
+    public var onTheList: [String]
+    public var atHome: [String]
+    public var unticked: [String]
+
+    public init(onTheList: [String] = [], atHome: [String] = [], unticked: [String] = []) {
+        self.onTheList = onTheList
+        self.atHome = atHome
+        self.unticked = unticked
+    }
+
+    /// The names came from the model, so they go back as data (review C4).
+    var text: String {
+        func part(_ title: String, _ items: [String]) -> String {
+            items.isEmpty ? "" : "\n\(title):\n" + ToolData.block(items.map { "- \(ToolData.clean($0))" })
+        }
+        return part("Left out, already on the list", onTheList)
+            + part("Left out, on the user's At home list", atHome)
+            + part("Left out, the user unticked them on the card", unticked)
+    }
+}
+
 extension VoiceToolReply {
     public static let ingredientsDeclined = "declined: the user chose not to add the ingredients. Nothing was added."
-    public static let ingredientsNoneTicked = "not added: the user unticked every ingredient. Nothing was added."
+    /// Nothing was added: every ingredient was left out, for the reasons that follow.
+    public static func ingredientsNoneAdded(_ leftOut: IngredientsLeftOut) -> String {
+        "not added: none of the ingredients were added. Nothing was added." + leftOut.text
+    }
 
-    /// After the tap: what was added (read back by the list store) and how many the user left out.
-    public static func ingredientsAdded(_ result: ListAddResult, list: String, dish: String, leftOut: [String]) -> String {
-        // The dish and the unticked items came from the model, so they go back as data (review C4).
-        var text = listAdded(result, list: list)
-        if !leftOut.isEmpty {
-            text += "\nThe user unticked these (has them already):\n" + ToolData.block(leftOut.map { "- \(ToolData.clean($0))" })
-        }
-        return text + "\nThese were Doddy's suggestions for this dish; say so if the user asks where they came from:\n"
+    /// What was added (read back by the list store) and what was left out, and why.
+    public static func ingredientsAdded(_ result: ListAddResult, list: String, dish: String, leftOut: IngredientsLeftOut) -> String {
+        // The dish came from the model, so it goes back as data (review C4).
+        listAdded(result, list: list) + leftOut.text
+            + "\nThese were Doddy's suggestions for this dish; say so if the user asks where they came from:\n"
             + ToolData.block(["Dish: \"\(ToolData.clean(dish))\""])
     }
 }
