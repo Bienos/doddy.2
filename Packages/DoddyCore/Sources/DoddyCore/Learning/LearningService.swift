@@ -241,8 +241,21 @@ public struct LearningService: Sendable {
             kept.append(confirmed)
             known.insert(validated.evidenceDigest)
             room -= 1
+            // Step 3: a fact that changes one already in use takes the old one out of use, kept and visible as retired.
+            if let replaced = try await retireFactChanged(by: confirmed) { kept.removeAll { $0.id == replaced.id } }
         }
         return kept
+    }
+
+    /// The one confirmed fact `new` changes (decision 2026-11-14-changed-facts-update-the-note: where the person lives
+    /// or works, or the same words with a different number) is retired and returned, read back. Two that both fit, or
+    /// none, change nothing: nobody knows which one changed.
+    private func retireFactChanged(by new: LearnedFact) async throws -> LearnedFact? {
+        let changed = try await facts.list(status: .confirmed).filter {
+            $0.id != new.id && NoteUpdateMatch.isSameThing(new.value, $0.value)
+        }
+        guard changed.count == 1, let old = changed.first else { return nil }
+        return try await facts.retire(id: old.id)
     }
 
     // MARK: Answers on a card, and "That's wrong"

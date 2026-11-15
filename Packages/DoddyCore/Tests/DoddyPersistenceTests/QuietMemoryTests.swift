@@ -130,8 +130,13 @@ final class QuietMemoryTests: XCTestCase {
     func testAFewPerConversationAndPerDay() async throws {
         let clock = Clock(noon)
         let service = try make(clock)
+        // Distinct words, no numbers: sentences that differ only by a number are one changed fact (step 3), not five.
+        func word(_ index: Int) -> String {
+            let letters = Array("abcdefghijklmnopqrstuvwxyz")
+            return String([letters[index / 26 % 26], letters[index % 26], "x"])
+        }
         func batch(_ start: Int) -> [SaveSuggestion] {
-            said((start..<(start + 5)).map { ("I like dish number \($0) best", .preference) })
+            said((start..<(start + 5)).map { ("I like the \(word($0)) flavour best", .preference) })
         }
         let first = try await service.keepQuietlyAfterConversation(suggestions: batch(0), moment: moment())
         XCTAssertEqual(first.count, LearningLimits.standard.quietPerConversation)
