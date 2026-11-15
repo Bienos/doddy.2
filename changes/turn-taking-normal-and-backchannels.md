@@ -1,0 +1,2 @@
+Live main agent: turn eagerness `normal` instead of `eager`, and only mhm, aha, yhm, ok, okej are ignored while Doddy speaks (a lone "tak", "no" or "dobra" now interrupts him); `agtvrsn_2901m7g3ye4kexv8w9zgcwgwbx7j`, rollback `agtvrsn_7601m7fx5d33f4qad5efz97k4hkj`. Owner's word, shipped without an audio trial. `session.json` matches the live values.
+Ran: `voice_agent_spec.py check`, `scripts/ci.sh --only checks`. Not run: any audio test.
