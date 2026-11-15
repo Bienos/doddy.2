@@ -1485,7 +1485,7 @@
         },
         "required": ["question"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_0501m7f2neztfy5t52vbga601wd5"}
     },
     {
       "type": "function",
@@ -1507,7 +1507,7 @@
           "words"
         ]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_3401m7f2pa8sf5tawvpz5pfv5rzb"}
     },
     {
       "type": "function",
