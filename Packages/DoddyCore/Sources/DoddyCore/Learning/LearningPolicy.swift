@@ -9,11 +9,17 @@ public struct LearningLimits: Equatable, Sendable {
     /// A confirmed procedure unused this long is retired (shown, one tap to revive).
     public let procedureRetirementDays: Int
     public let outcomeRetentionDays: Int
+    /// Quiet memory (decision 2026-11-14-quiet-memory): how many facts may be kept without a card from one conversation,
+    /// and in one day. A few at a time, so a long talk doesn't fill the Memory screen.
+    public let quietPerConversation: Int
+    public let quietPerDay: Int
 
     public init(
         proposalsPerDay: Int = 3, proposalsPerConversation: Int = 1, proposalExpiryDays: Int = 7,
-        procedureRetirementDays: Int = 90, outcomeRetentionDays: Int = 90
+        procedureRetirementDays: Int = 90, outcomeRetentionDays: Int = 90, quietPerConversation: Int = 3, quietPerDay: Int = 10
     ) {
+        self.quietPerConversation = quietPerConversation
+        self.quietPerDay = quietPerDay
         self.proposalsPerDay = proposalsPerDay
         self.proposalsPerConversation = proposalsPerConversation
         self.proposalExpiryDays = proposalExpiryDays

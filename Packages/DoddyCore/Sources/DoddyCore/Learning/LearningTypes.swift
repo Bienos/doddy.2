@@ -81,8 +81,13 @@ public struct LearningProvenance: Equatable, Codable, Sendable {
     public let proposer: LearningProposer
     public let reason: String
     public let episodeDates: [Date]
+    /// Kept without a card, because the person turned on quiet memory (decision 2026-11-14-quiet-memory). The Memory
+    /// screen says so; it is never set on anything a card confirmed.
+    public let keptQuietly: Bool
 
-    public init(proposer: LearningProposer, reason: String, episodeDates: [Date]) throws(LearningValidationError) {
+    public init(
+        proposer: LearningProposer, reason: String, episodeDates: [Date], keptQuietly: Bool = false
+    ) throws(LearningValidationError) {
         let reason = reason.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !reason.isEmpty else { throw .emptyText("reason") }
         guard reason.unicodeScalars.count <= Self.maxReasonLength else {
@@ -94,6 +99,27 @@ public struct LearningProvenance: Equatable, Codable, Sendable {
         self.proposer = proposer
         self.reason = reason
         self.episodeDates = episodeDates.map(LearningJSON.truncatedToMilliseconds)
+        self.keptQuietly = keptQuietly
+    }
+
+    private enum CodingKeys: String, CodingKey { case proposer, reason, episodeDates, keptQuietly }
+
+    /// A row written before quiet memory has no `keptQuietly`: it was confirmed on a card.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        proposer = try container.decode(LearningProposer.self, forKey: .proposer)
+        reason = try container.decode(String.self, forKey: .reason)
+        episodeDates = try container.decode([Date].self, forKey: .episodeDates)
+        keptQuietly = try container.decodeIfPresent(Bool.self, forKey: .keptQuietly) ?? false
+    }
+
+    /// `keptQuietly` is written only when true, so every row confirmed on a card stays byte for byte as it was.
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(proposer, forKey: .proposer)
+        try container.encode(reason, forKey: .reason)
+        try container.encode(episodeDates, forKey: .episodeDates)
+        if keptQuietly { try container.encode(true, forKey: .keptQuietly) }
     }
 }
 
