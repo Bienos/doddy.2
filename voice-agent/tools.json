@@ -301,7 +301,7 @@
     {
       "type": "function",
       "name": "set_timer",
-      "description": "Propose a countdown timer on the user's iPhone for the time the user asked for. Give minutes, seconds, or both, and an optional short label. The app shows the timer on screen and the user says yes or taps Start. The result starts with 'added' (the timer is running and rings at the time in the result), 'declined', 'failed' or 'unknown'. Before this tool runs, say in one short line exactly what will happen, as the question, for example 'A timer for 10 minutes?' (Polish: 'Minutnik na 10 minut?'); the user's own short yes, or a tap on the card, runs it, so don't ask a second time. Never say the timer is running until the result starts with 'added'.",
+      "description": "Start a countdown timer on the user's iPhone for the time the user asked for. Give minutes, seconds, or both, and an optional short label. It starts at once, with no card and no question, and the user can stop it in What Doddy did: don't ask first. The result starts with 'added' (the timer is running and rings at the time in the result), 'failed' or 'unknown'. Never say the timer is running until the result starts with 'added'.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -316,7 +316,7 @@
     {
       "type": "function",
       "name": "set_alarm",
-      "description": "Propose an alarm on the user's iPhone: it rings at a time of day even in Silent mode or a Focus. Use it when the user asks for an alarm or to be woken up; for a countdown use set_timer, and for a to-do use create_reminder. Give time as the first day and time it should ring; turn relative words ('tomorrow at seven') into a date using the current date and time you were given. If the time is unclear (7 in the morning or evening?), ask one short question first. For an alarm that repeats, also give repeat. Alarms need iOS 26: if the result says so, offer a timer or a reminder instead. The app shows the alarm and the user says yes or taps Set alarm; the result starts with 'added', 'declined', 'failed' or 'unknown'. Before this tool runs, say in one short line exactly what will happen, as the question, for example 'An alarm for 7:00 tomorrow?' (Polish: 'Budzik na jutro na 7:00?'); the user's own short yes, or a tap on the card, runs it, so don't ask a second time. Never say the alarm is set unless the result starts with added.",
+      "description": "Set an alarm on the user's iPhone: it rings at a time of day even in Silent mode or a Focus. Use it when the user asks for an alarm or to be woken up; for a countdown use set_timer, and for a to-do use create_reminder. Give time as the first day and time it should ring; turn relative words ('tomorrow at seven') into a date using the current date and time you were given. If the time is unclear (7 in the morning or evening?), ask one short question first. For an alarm that repeats, also give repeat. Alarms need iOS 26: if the result says so, offer a timer or a reminder instead. It is set at once, with no card and no question, and the user can turn it off in What Doddy did: don't ask first. The result starts with 'added', 'failed' or 'unknown'. Never say the alarm is set unless the result starts with added.",
       "parameters": {
         "type": "object",
         "properties": {
