@@ -114,6 +114,7 @@
     ],
     "built_in_tools_note": "language_detection only switches the listening and speaking language to the one being spoken, which the other person's language needs; end_call and skip_turn are off, so nothing ends or skips a conversation but the user's End.",
     "soft_timeout": "off (the filler 'No…' was spoken before translations)",
+    "silence_end_call_timeout": "45 s since anyone last spoke (15 Nov 2026, owner: \"give 45s translator\"; decision 2026-11-15-quiet-conversations-hang-up)",
     "tts": {
       "model_id": "eleven_v4_turbo",
       "voice_id": "jGk1sjruA9wQTyWDbhL9",
