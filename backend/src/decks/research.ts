@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ProviderError } from "../errors.js";
-import { decodeEntities, type WebSearchProvider } from "../tools/websearch.js";
+import { decodeEntities, type WebSearchProvider, type WebSearchSource, webSearchResults } from "../tools/websearch.js";
 import { DECK_LANGUAGES, type DeckLanguage } from "./spec.js";
 
 /**
@@ -152,27 +152,33 @@ async function webResults(plan: ResearchPlan, deps: ResearchDeps, signal: AbortS
   const out: { title: string; url: string; site: string; text: string }[] = [];
   for (const query of plan.web) {
     if (!(await deps.allowWebSearch().catch(() => false))) break;
-    let output: unknown;
+    let run: { output: unknown; source: WebSearchSource };
     try {
-      output = (await provider.search({ query, signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]) })).output;
+      run = await provider.search({ query, signal: AbortSignal.any([signal, AbortSignal.timeout(15_000)]) });
     } catch {
       continue;
     }
-    out.push(...webSources(output).slice(0, MAX_WEB_SOURCES_PER_QUERY));
+    out.push(...webSources(run.output, run.source).slice(0, MAX_WEB_SOURCES_PER_QUERY));
   }
   return out;
 }
 
-/** Monid's `{ results: [{ title, link, snippet }] }`, kept only with an https or http link. Wikipedia results are left out (read in full above). */
-export function webSources(output: unknown): { title: string; url: string; site: string; text: string }[] {
-  const results = (output as { results?: unknown } | null)?.results;
-  if (!Array.isArray(results)) return [];
-  return results.flatMap((item: unknown) => {
-    if (typeof item !== "object" || item === null) return [];
-    const r = item as Record<string, unknown>;
+/**
+ * A web search's results, read by the endpoint that answered (Exa's highlights or Search1API's snippet,
+ * `webSearchResults`), kept only with an https or http link and some text. A malformed answer is no
+ * sources. Wikipedia results are left out (read in full above).
+ */
+export function webSources(output: unknown, source: WebSearchSource): { title: string; url: string; site: string; text: string }[] {
+  let results: ReturnType<typeof webSearchResults>;
+  try {
+    results = webSearchResults(output, source, SNIPPET_CHARS);
+  } catch {
+    return [];
+  }
+  return results.flatMap((r) => {
     const url = httpUrl(r.link);
-    const title = typeof r.title === "string" ? dataText(String(decodeEntities(r.title)), 140) : "";
-    const snippet = typeof r.snippet === "string" ? dataText(String(decodeEntities(r.snippet)), SNIPPET_CHARS) : "";
+    const title = dataText(r.title, 140);
+    const snippet = r.text ? dataText(r.text, SNIPPET_CHARS) : "";
     if (!url || !title || !snippet) return [];
     const site = new URL(url).hostname.replace(/^www\./, "");
     if (/(^|\.)wikipedia\.org$/.test(site)) return [];

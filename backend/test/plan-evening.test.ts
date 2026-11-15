@@ -29,6 +29,7 @@ async function ask(r: Rig, args: Record<string, unknown>, token?: string) {
 /** Google listings in Litescrape's documented shape, and a record of exactly what the search was given. */
 class Listings implements WebSearchProvider {
   readonly mode = "mock" as const;
+  readonly searchSource = "exa" as const;
   readonly calls: { tool: string; args: Record<string, unknown> }[] = [];
   constructor(private readonly output: unknown) {}
   isConfigured(): boolean {
@@ -39,7 +40,7 @@ class Listings implements WebSearchProvider {
   }
   async call({ tool, args }: { tool: string; args: Record<string, unknown>; signal: AbortSignal }): Promise<WebSearchRun> {
     this.calls.push({ tool, args });
-    return { output: this.output, runId: "run_evening" };
+    return { output: this.output, runId: "run_evening", source: "exa" };
   }
 }
 
@@ -251,6 +252,7 @@ test("a provider that is down, busy or unreadable is an honest failure with a fa
 /** A places search that fails the way Monid can: busy, or out of time. */
 class Failing implements WebSearchProvider {
   readonly mode = "mock" as const;
+  readonly searchSource = "exa" as const;
   calls = 0;
   constructor(private readonly code: "rate_limited" | "provider_timeout") {}
   isConfigured(): boolean {

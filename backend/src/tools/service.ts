@@ -89,6 +89,7 @@ import {
 } from "../flights/planTrip.js";
 import type { ToolsProvider } from "./provider.js";
 import {
+  MONID_SEARCH,
   normalizeWebSearch,
   WEB_SEARCH_COPY,
   WEB_SEARCH_TIMEOUT_MS,
@@ -1342,14 +1343,16 @@ export class CloudToolsService {
     const blocked = async (code: "capability_disabled" | "live_not_configured", message: string): Promise<never> => {
       throw new AppError(code, { message, receipt: await this.receipt(userId, WEB_SECTION_ID, "read", tool, "blocked", `Not done: ${message}`, code, null) });
     };
-    if (!this.webSearch || !this.webSearch.isConfigured()) return await blocked("live_not_configured", "Web search isn't set up on this server.");
+    const provider = this.webSearch;
+    if (!provider || !provider.isConfigured()) return await blocked("live_not_configured", "Web search isn't set up on this server.");
     if (!(await this.webToolOn(userId, switchOf(tool)))) return await blocked("capability_disabled", `${webTitle(switchOf(tool))} is turned off in Settings.`);
     const { approvalId, expiresAt } = await this.ask.issue({ userId, tool, accountId: WEB_ACCOUNT, argsDigest: argumentDigest(args) });
+    // The price is the endpoint the server asks first (decision 2026-11-14-web-search-exa); a fallback costs less.
     const preview =
       tool === WEB_SEARCH_TOOL
         ? {
             title: "Search the web?",
-            lines: [`Search words: ${(args as { query: string }).query}`, "They go to Doddy's server and a search provider (Monid). Doddy pays about $0.001 per search; there is a daily limit."],
+            lines: [`Search words: ${(args as { query: string }).query}`, `They go to Doddy's server and a search provider (Monid). Doddy pays ${MONID_SEARCH[provider.searchSource].price}; there is a daily limit.`],
             confirmLabel: "Yes, search",
           }
         : tool === PLAN_EVENING_TOOL
@@ -1360,7 +1363,8 @@ export class CloudToolsService {
 
   /**
    * Same order as account tools, minus the account: known tool -> valid arguments -> switch on ->
-   * set up -> limits (incl. the web search caps) -> one Monid call (never retried: each run is billed)
+   * set up -> limits (incl. the web search caps) -> one Monid call (never retried: each run is billed;
+   * web search's one fallback, Exa to Search1API after a refusal Monid doesn't bill, is in websearch.ts)
    * -> normalized result -> receipt. Search words are not stored anywhere, receipts included.
    * plan_evening is one run too: find_places's endpoint with only its words and area, its switch, one web search of the cap.
    */
@@ -1392,21 +1396,24 @@ export class CloudToolsService {
       return await this.limiter.withSlot(userId, async () => {
         if (!(await this.ask.allows(binding, request.approvalId, "use"))) throw await unasked();
         const signal = AbortSignal.timeout(WEB_SEARCH_TIMEOUT_MS);
-        let result: WebSearchRun;
         let outcome: ToolOutcome;
+        let runId: string | null;
         if (tool === WEB_SEARCH_TOOL) {
-          result = await provider.search({ query: args.query as string, signal });
-          outcome = normalizeWebSearch(result.output, args.query as string);
+          const result = await provider.search({ query: args.query as string, signal });
+          outcome = normalizeWebSearch(result.output, args.query as string, result.source);
+          runId = result.runId;
         } else if (tool === PLAN_EVENING_TOOL) {
           // One places search with only the words and the area; the day, time, party and budget shape the answer here.
           const evening = args as PlanEveningArgs;
-          result = await provider.call({ tool: EVENING_SEARCH_TOOL, args: eveningSearch(evening), signal });
+          const result = await provider.call({ tool: EVENING_SEARCH_TOOL, args: eveningSearch(evening), signal });
           outcome = normalizeEvening(result.output, evening, eveningDay(now, request.timeZone, evening.day));
+          runId = result.runId;
         } else {
-          result = await provider.call({ tool, args, signal });
+          const result = await provider.call({ tool, args, signal });
           outcome = normalizeMonidTool(tool, result.output, args);
+          runId = result.runId;
         }
-        const receipt = await this.receipt(userId, WEB_SECTION_ID, "read", tool, "succeeded", outcome.summary, null, result.runId);
+        const receipt = await this.receipt(userId, WEB_SECTION_ID, "read", tool, "succeeded", outcome.summary, null, runId);
         return { mode: this.mode, tool, text: outcome.text, count: outcome.count, truncated: outcome.truncated, receipt };
       });
     } catch (error) {
