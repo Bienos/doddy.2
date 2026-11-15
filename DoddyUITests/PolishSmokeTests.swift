@@ -12,14 +12,14 @@ final class PolishSmokeTests: XCTestCase {
         app.launchArguments = UITestLaunch.arguments(store: .inMemory, language: .polish)
         app.launch()
 
-        XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["home.save"].appears(timeout: 8))
         XCTAssertEqual(app.staticTexts["home.greeting"].label, "Jestem tu.")
         // Save is the + in Home's bottom bar (ADR-545).
         XCTAssertTrue(app.reveal(app.buttons["home.save"]))
 
         app.openNewNote()
         let save = app.buttons["capture.save"]
-        XCTAssertTrue(save.waitForExistence(timeout: 5))
+        XCTAssertTrue(save.appears(timeout: 5))
         for _ in 0..<4 where !save.isHittable { app.swipeUp() }
         XCTAssertTrue(save.isHittable, "Save must be reachable with Polish text")
         attachScreenshot(app, "Polish capture")
@@ -28,7 +28,7 @@ final class PolishSmokeTests: XCTestCase {
 
         XCTAssertTrue(app.waitForTab("memories", timeout: 5))
         app.goToTab("memories")
-        XCTAssertTrue(app.text("Brak wspomnień").waitForExistence(timeout: 5))
+        XCTAssertTrue(app.text("Brak wspomnień").appears(timeout: 5))
 
         app.goToTab("settings")
         // "What leaves this iPhone" is on Settings › Privacy (ADR-580).
@@ -36,7 +36,7 @@ final class PolishSmokeTests: XCTestCase {
         let link = app.button(labelled: "Co opuszcza tego iPhone’a")
         XCTAssertTrue(app.reveal(link))
         link.tap()
-        XCTAssertTrue(app.navigationBars["Co opuszcza tego iPhone’a"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["Co opuszcza tego iPhone’a"].appears(timeout: 5))
         attachScreenshot(app, "Polish What leaves this iPhone")
     }
 

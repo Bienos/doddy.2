@@ -37,14 +37,14 @@ final class MotionEvidenceTests: XCTestCase {
     @MainActor
     func testWithReduceMotionHeFadesAndNeverFlies() {
         let app = launch(extra: ["-doddyReduceMotion", "YES"])
-        XCTAssertTrue(app.staticTexts["doddy.debug"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["doddy.debug"].appears(timeout: 5))
         for tab in ["settings", "memories", "home", "settings", "home"] {
             app.openTab(tab)
             RunLoop.current.run(until: Date().addingTimeInterval(1))
         }
         let stage = app.marker("doddy.surface.stage")
         let him = app.marker("doddy.motion.idle")
-        XCTAssertTrue(him.waitForExistence(timeout: 5))
+        XCTAssertTrue(him.appears(timeout: 5))
         XCTAssertEqual(him.frame.maxY, stage.frame.minY, accuracy: 2)
         XCTAssertEqual(debugValue("flights", in: app), 0, motionDebugReport(in: app))
         XCTAssertEqual(debugValue("checks", in: app), 0, motionDebugReport(in: app))
@@ -55,19 +55,19 @@ final class MotionEvidenceTests: XCTestCase {
     func testHiddenPicturesLeaveNoGap() {
         // Without the annotated mode: its texts are named `doddy.debug…` too.
         let app = launch(debug: false, hideArt: true)
-        XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["home.save"].appears(timeout: 5))
         XCTAssertEqual(everythingOfHim(in: app).count, 0)
         // Settings: the header line starts at the row's edge, not after a 73 pt box. The line is the header's
         // "Set how Doddy sounds…" since 12 Nov 2026 (#356 moved "You choose each saved memory…" to Doddy's memory
         // page; this test still looked for the old one and failed on every push to main from then on).
         app.goToTab("settings")
         let header = app.staticTexts["Set how Doddy sounds, what he remembers and what he can use."]
-        XCTAssertTrue(header.waitForExistence(timeout: 5))
+        XCTAssertTrue(header.appears(timeout: 5))
         XCTAssertLessThan(header.frame.minX, 60)
         // Memories: the empty notebook's heading follows the picker, not a 150 pt box.
         app.goToTab("memories")
         let heading = app.staticTexts["No memories yet"]
-        XCTAssertTrue(heading.waitForExistence(timeout: 5))
+        XCTAssertTrue(heading.appears(timeout: 5))
         let picker = app.segmentedControls["memories.notesOrLists"]
         XCTAssertLessThan(heading.frame.minY - picker.frame.maxY, 90)
         XCTAssertEqual(everythingOfHim(in: app).count, 0)
@@ -78,7 +78,7 @@ final class MotionEvidenceTests: XCTestCase {
     @MainActor
     func testVoiceOverReadsNothingOfHim() {
         let app = launch(markers: false)
-        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["home.talk"].appears(timeout: 5))
         RunLoop.current.run(until: Date().addingTimeInterval(1.5))
         XCTAssertEqual(everythingOfHim(in: app).count, 0)
         for tab in ["memories", "settings", "home"] {
@@ -93,7 +93,7 @@ final class MotionEvidenceTests: XCTestCase {
     func testAtAccessibilityTextSizesHeIsOneTimesOnHome() {
         let app = launch(extra: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
         let him = app.marker("doddy.motion.idle")
-        XCTAssertTrue(him.waitForExistence(timeout: 8))
+        XCTAssertTrue(him.appears(timeout: 8))
         let stage = app.marker("doddy.surface.stage")
         XCTAssertEqual(him.frame.maxY, stage.frame.minY, accuracy: 2)
         XCTAssertEqual(him.frame.height, 96 / 0.72 * 0.94, accuracy: 3, "1.0×, not 1.4×")

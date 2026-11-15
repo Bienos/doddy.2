@@ -360,7 +360,7 @@ async function limitReached(ctx: TaskCallContext, c: Q, caller: Buffer, account:
 }
 
 /**
- * The code a refusal shows the user. The per-number limits count other users' calls too (3 a day in all, 15 minutes
+ * The code a refusal shows the user. The per-number limits count other users' calls too (6 a day in all, 5 minutes
  * apart), so naming which one was reached would tell a user that someone else called that number lately: all three
  * are `limit_destination`, "this number has been called enough for now". The others are the user's own or the server's.
  */

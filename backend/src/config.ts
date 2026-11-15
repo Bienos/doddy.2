@@ -3,7 +3,7 @@ import type { InviteLimits } from "./deviceSession.js";
 import { CdpKeyError, type CdpSettings, loadCdpKeys } from "./payments/coinbase.js";
 import { NETWORK_IDS, NETWORKS, type NetworkId, parseUsdc } from "./payments/x402.js";
 import { TOOLKIT_IDS, type ToolkitId } from "./tools/catalog.js";
-import { MONID_DEFAULT_BASE_URL } from "./tools/websearch.js";
+import { DEFAULT_WEB_SEARCH_PROVIDER, MONID_DEFAULT_BASE_URL, WEB_SEARCH_PROVIDERS, type WebSearchSource } from "./tools/websearch.js";
 import { DUFFEL_DEFAULT_URL } from "./flights/duffel.js";
 import { KIWI_DEFAULT_URL } from "./flights/kiwi.js";
 import { SigningKeys } from "./signingKeys.js";
@@ -39,6 +39,11 @@ export interface Limits {
    * document can take up to nine Anthropic calls, so counting it as one understated the cost.
    */
   documentClaudeUnits: number;
+  /**
+   * research_now runs (Claude searching the web and reading pages in the conversation; Doddy pays) per user per UTC
+   * day: a count of its own, not the Claude runs above. Each also counts against `serviceDailyClaude`, the server's brake.
+   */
+  userDailyResearch: number;
   /** Documents being made in the background at the same moment: per user, and for the whole server (ADR-710). */
   userDocumentJobs: number;
   serviceDocumentJobs: number;
@@ -81,6 +86,8 @@ export interface ToolkitSettings {
 export interface MonidSettings {
   apiKey: string;
   baseUrl: string;
+  /** Which fixed endpoint web search asks (DODDY_WEB_SEARCH_PROVIDER, decision 2026-11-14-web-search-exa). */
+  webSearchProvider: WebSearchSource;
 }
 
 /**
@@ -112,6 +119,8 @@ export interface PaymentsSettings {
 export interface ClaudeSettings {
   apiKey: string;
   model: string;
+  /** research_now's model (DODDY_RESEARCH_MODEL). Absent: `model`. */
+  researchModel?: string;
 }
 
 export interface Config {
@@ -352,6 +361,9 @@ const EnvSchema = z.object({
   DODDY_LIMIT_SERVICE_DAILY_CLAUDE: intSetting(100, 1, 100_000),
   /** A document counts as this many Claude runs against both daily caps, and at most this many are made at once (ADR-710). */
   DODDY_DOCUMENT_CLAUDE_UNITS: intSetting(5, 1, 50),
+  /** research_now: Claude searching the web and reading pages in the conversation, its own model and daily limit per person. */
+  DODDY_RESEARCH_MODEL: z.string().default("claude-sonnet-5-5"),
+  DODDY_LIMIT_USER_DAILY_RESEARCH: intSetting(40, 1, 10_000),
   DODDY_LIMIT_USER_DOCUMENT_JOBS: intSetting(1, 1, 10),
   DODDY_LIMIT_SERVICE_DOCUMENT_JOBS: intSetting(3, 1, 50),
   /** Ask Doddy (ADR-587): typed questions answered by Claude. */
@@ -378,6 +390,8 @@ const EnvSchema = z.object({
   COMPOSIO_OUTLOOK_TOOLKIT_VERSION: z.string().optional(),
   MONID_API_KEY: z.string().optional(),
   MONID_BASE_URL: z.string().default(MONID_DEFAULT_BASE_URL),
+  /** exa (default) or search1api: a switch back without a code change (decision 2026-11-14-web-search-exa). */
+  DODDY_WEB_SEARCH_PROVIDER: z.enum(WEB_SEARCH_PROVIDERS).default(DEFAULT_WEB_SEARCH_PROVIDER),
   /** Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking). Each is off until the owner sets it. */
   FLIGHT_SEARCH_ENABLED: z.enum(["0", "1"]).default("0"),
   KIWI_MCP_URL: z.string().default(KIWI_DEFAULT_URL),
@@ -650,7 +664,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     if (base && (base.protocol !== "https:" || base.pathname !== "/" || base.search || base.hash)) {
       problems.push("MONID_BASE_URL must be an https origin without a path");
     }
-    if (base) monid = { apiKey: monidKey, baseUrl: base.origin };
+    if (base) monid = { apiKey: monidKey, baseUrl: base.origin, webSearchProvider: e.DODDY_WEB_SEARCH_PROVIDER };
   }
 
   // Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking). Live mode only; each part off by default.
@@ -678,6 +692,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
   if (claudeKey !== "" && !/^sk-ant-[A-Za-z0-9_-]{8,}$/.test(claudeKey)) problems.push("ANTHROPIC_API_KEY must look like sk-ant-…");
   if (!/^claude-[a-z0-9-]{3,60}$/.test(e.DODDY_CLAUDE_MODEL)) problems.push("DODDY_CLAUDE_MODEL must be a Claude model ID such as claude-sonnet-5-5");
   if (!/^claude-[a-z0-9-]{3,60}$/.test(e.DODDY_CHAT_MODEL)) problems.push("DODDY_CHAT_MODEL must be a Claude model ID such as claude-haiku-5-5");
+  if (!/^claude-[a-z0-9-]{3,60}$/.test(e.DODDY_RESEARCH_MODEL)) problems.push("DODDY_RESEARCH_MODEL must be a Claude model ID such as claude-sonnet-5-5");
   // The key for kept notes and conversations. A fixed throwaway demo key (published in this repository,
   // so never a secret) is used only for a mock-mode demo with no hosted database and outside production;
   // anywhere else there is no key until the owner sets one, and the feature then says "not set up".
@@ -768,7 +783,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       sessionsPerCodePerDay: e.DODDY_INVITE_SESSIONS_PER_CODE_PER_DAY,
       devicesPerCode: e.DODDY_INVITE_DEVICES_PER_CODE,
     },
-    claude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CLAUDE_MODEL } : null,
+    claude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CLAUDE_MODEL, researchModel: e.DODDY_RESEARCH_MODEL } : null,
     chatClaude: claudeKey !== "" ? { apiKey: claudeKey, model: e.DODDY_CHAT_MODEL } : null,
     supabaseUrl,
     supabaseProjectUrl: supabaseOrigin,
@@ -789,6 +804,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
       userDailyClaude: e.DODDY_LIMIT_USER_DAILY_CLAUDE,
       serviceDailyClaude: e.DODDY_LIMIT_SERVICE_DAILY_CLAUDE,
       documentClaudeUnits: e.DODDY_DOCUMENT_CLAUDE_UNITS,
+      userDailyResearch: e.DODDY_LIMIT_USER_DAILY_RESEARCH,
       userDocumentJobs: e.DODDY_LIMIT_USER_DOCUMENT_JOBS,
       serviceDocumentJobs: e.DODDY_LIMIT_SERVICE_DOCUMENT_JOBS,
       userDailyAsk: e.DODDY_LIMIT_USER_DAILY_ASK,
@@ -892,6 +908,7 @@ export function testLimits(overrides: Partial<Limits> = {}): Limits {
     userDailyClaude: 40,
     serviceDailyClaude: 100,
     documentClaudeUnits: 5,
+    userDailyResearch: 40,
     userDocumentJobs: 1,
     serviceDocumentJobs: 3,
     userDailyAsk: 50,

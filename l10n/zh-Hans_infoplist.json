@@ -16,8 +16,8 @@
     "zh-Hans": "开启锁定后，Doddy 会使用面容 ID 来打开应用或私密笔记。由 iOS 检查你的面容；Doddy 只会得知是否匹配。"
   },
   "NSLocationWhenInUseUsageDescription": {
-    "en": "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, and to work out with Apple Maps when to leave for somewhere. Doddy doesn't keep it or track where you go.",
-    "zh-Hans": "Doddy 只在你提出请求时使用你的位置：用于你在某个地点设置的提醒（在你轻点“使用我现在的位置”时确定你的位置，并让 iOS 在你到达或离开时提醒你），用于保存你的停车位置，以及通过 Apple 地图计算何时该出发去某个地方。Doddy 不会保留你的位置，也不会追踪你去了哪里。"
+    "en": "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, to work out with Apple Maps when to leave for somewhere, and to find roughly which town and district you're in (to about a kilometre) when you ask Doddy where you are or for something near you; that area goes to ElevenLabs as part of the conversation. Doddy doesn't keep it or track where you go.",
+    "zh-Hans": "Doddy 只在你提出请求时使用你的位置：用于你在某个地点设置的提醒（在你轻点“使用我现在的位置”时确定你的位置，并让 iOS 在你到达或离开时提醒你），用于保存你的停车位置，用于通过 Apple 地图计算何时该出发去某个地方，以及在你问 Doddy 你在哪里或附近有什么时，大致确定你所在的城市和城区（精确到约一公里）；这一大致区域会作为对话的一部分发送给 ElevenLabs。Doddy 不会保留你的位置，也不会追踪你去了哪里。"
   },
   "NSMicrophoneUsageDescription": {
     "en": "To hear you, Doddy needs the microphone. Doddy listens while you are talking to him: after you tap Talk to Doddy, or as soon as you open Doddy if you turned that on in Settings. Your voice in a conversation goes to ElevenLabs, which runs Doddy's voice and keeps a recording and transcript of each conversation; in translator mode, so does the other person's voice. A voice memo you record on a note stays on this iPhone. A recording you start with Record stays on this iPhone too, and Doddy shows it the whole time it records.",

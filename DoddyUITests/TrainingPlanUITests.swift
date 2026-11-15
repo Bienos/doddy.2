@@ -20,7 +20,7 @@ final class TrainingPlanUITests: XCTestCase {
         app.openSettingsPage("connections.trainingPlan", under: "settings.connectionsHub")
 
         let make = app.buttons["plan.make"]
-        XCTAssertTrue(make.waitForExistence(timeout: 5))
+        XCTAssertTrue(make.appears(timeout: 5))
         XCTAssertTrue(app.reveal(make))
         make.tap()
 
@@ -31,14 +31,14 @@ final class TrainingPlanUITests: XCTestCase {
         age.tapAndType("30")
         // The number pad covers the bottom of the sheet and has no return key; its Done closes it.
         let done = app.buttons["plan.age.done"]
-        XCTAssertTrue(done.waitForExistence(timeout: 5), "the number pad's Done")
+        XCTAssertTrue(done.appears(timeout: 5), "the number pad's Done")
         done.tap()
         let makePlan = app.buttons["plan.questions.make"]
         XCTAssertTrue(show(makePlan, in: app))
         XCTAssertTrue(makePlan.isEnabled, "every question answered")
         makePlan.tap()
         let refusal = app.staticTexts["plan.refusal"]
-        XCTAssertTrue(refusal.waitForExistence(timeout: 5))
+        XCTAssertTrue(refusal.appears(timeout: 5))
         XCTAssertEqual(refusal.label, "Talk to a doctor first")
         XCTAssertFalse(app.buttons["plan.keep"].exists, "no plan to keep after a yes")
 
@@ -50,21 +50,21 @@ final class TrainingPlanUITests: XCTestCase {
         XCTAssertTrue(show(makePlan, in: app))
         makePlan.tap()
         let keep = app.buttons["plan.keep"]
-        XCTAssertTrue(keep.waitForExistence(timeout: 5))
+        XCTAssertTrue(keep.appears(timeout: 5))
         keep.tap()
 
         // Kept, read back, and shown on the plan screen.
         let position = app.staticTexts["plan.position"]
-        XCTAssertTrue(position.waitForExistence(timeout: 5), app.debugDescription)
+        XCTAssertTrue(position.appears(timeout: 5), app.debugDescription)
         XCTAssertTrue(position.label.hasPrefix("Week 1 of 12") || position.label.hasPrefix("Starts on Monday"), position.label)
 
         let delete = app.buttons["plan.delete"]
         XCTAssertTrue(app.reveal(delete))
         delete.tap()
         let confirm = app.buttons["Delete"]
-        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        XCTAssertTrue(confirm.appears(timeout: 5))
         confirm.tap()
-        XCTAssertTrue(app.buttons["plan.make"].waitForExistence(timeout: 5), "nothing kept after delete")
+        XCTAssertTrue(app.buttons["plan.make"].appears(timeout: 5), "nothing kept after delete")
         XCTAssertFalse(app.staticTexts["plan.position"].exists)
     }
 

@@ -3,8 +3,9 @@ import Foundation
 
 /// Writes the screens' language where iOS reads it (ADR-459). iOS picks the language when the app
 /// starts, from the app's own `AppleLanguages` setting (the one iOS Settings › Doddy › Language
-/// writes too), so a change shows the next time Doddy is opened. The rules are
-/// `AppLanguage.launchAction` in DoddyCore; this only reads and writes the values.
+/// writes too). A choice made in Doddy also shows at once (`ScreenLanguage`, decision
+/// `2026-11-14-language-switch-at-once`). The rules are `AppLanguage.launchAction` and
+/// `AppLanguage.screenLanguage` in DoddyCore; this only reads and writes the values.
 ///
 /// Not covered: widgets, Siri phrases and the system's permission prompts follow the iPhone's
 /// language unless the person also sets iOS Settings › Doddy › Language.
@@ -28,7 +29,8 @@ enum AppLanguageStore {
     /// Before the first screen. Test runs leave the simulator's setting alone: UI tests (an
     /// in-memory or per-test store) and the unit tests' host app. Writing the Polish default there
     /// (ADR-573) made every later test run in Polish. iOS has already picked this launch's
-    /// language, so a language written here shows from the next launch.
+    /// language, so the Polish default written here shows from the next launch; a choice made in
+    /// Doddy shows on this one too, in case iOS Settings › Doddy › Language changed it since.
     static func applyAtLaunch(defaults: UserDefaults = .standard) {
         let process = ProcessInfo.processInfo
         let isTestRun = process.arguments.contains("-inMemoryStore") || process.arguments.contains("-memoryTestID")
@@ -38,10 +40,15 @@ enum AppLanguageStore {
             stored: defaults.string(forKey: PreferenceKey.appLanguage), appLanguages: appLanguages(defaults),
             polishDefaultApplied: defaults.bool(forKey: polishDefaultAppliedKey)), to: defaults)
         defaults.set(true, forKey: polishDefaultAppliedKey)
+        if let stored = defaults.string(forKey: PreferenceKey.appLanguage) {
+            ScreenLanguage.show(AppLanguage(stored: stored))
+        }
     }
 
-    /// The person picked a language in Settings.
+    /// The person picked a language in Settings. It shows at once: the table first, then the saved
+    /// choice, whose change makes `RootView` draw the screens again with that table.
     static func choose(_ language: AppLanguage, defaults: UserDefaults = .standard) {
+        ScreenLanguage.show(language)
         defaults.set(language.rawValue, forKey: PreferenceKey.appLanguage)
         write(AppLanguage.launchAction(stored: language.rawValue, appLanguages: appLanguages(defaults)), to: defaults)
     }

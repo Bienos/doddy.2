@@ -52,13 +52,46 @@ extension VoiceToolReply {
     static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:", "sent:", "changed:", "trashed:", "deleted:", "answered:", "started:",
                                          // book_flight (decision 2026-11-11-flights-kiwi-search-duffel-booking): "booked:" only with
                                          // Duffel's order id and booking reference; "failed:" when Duffel said nothing was booked; else "unknown:".
-                                         "booked:", "failed:", "unknown:"]
+                                         "booked:", "failed:", "unknown:",
+                                         // plan_trip (backend/src/flights/planTrip.ts): the trip planner's one question for what is
+                                         // still missing, in code's words; nothing was searched.
+                                         "ask:"]
 
     /// What the agent hears when `make_document` was asked with too little to go on. Starts with the fixed word
     /// `need_details`, then the server's one-line list of what is missing, then what to do.
     public static func needDetails(message: String) -> String {
         let list = ToolData.clean(message).trimmingCharacters(in: .whitespacesAndNewlines)
         return "need_details: \(list) Nothing was made and nothing was used up. Ask the user at most two short questions about exactly what is missing (skip any they already answered), then call make_document again with their answers in the request. If they say to just do it, call it again with sensible defaults and say which you assumed."
+    }
+
+    /// research_now ran out of time on the server (40 s), or the app's 45 s wait ended or the server couldn't be reached.
+    /// Nothing half-done is passed on, so the agent never has a partial answer to make up the rest of.
+    static func researchNotFound(inTimeOrReached: Bool) -> String {
+        let what = inTimeOrReached
+            ? "Doddy's research didn't come back in time, or Doddy's server couldn't be reached"
+            : "Doddy's research didn't finish in time"
+        return "failed: \(what), so nothing was found. Don't make up an answer. Offer a quick web_search instead, "
+            + "or hand_over_errand to research it properly in the background (the result arrives in Messages)."
+    }
+
+    /// plan_trip didn't come back: the app's 40 s wait ended or the server couldn't be reached. Nothing half-done is passed
+    /// on, so the agent never has half a plan to fill in.
+    static let planTripNotReached =
+        "failed: Doddy's trip planning didn't come back in time, or Doddy's server couldn't be reached, so no flights were found. "
+        + "Don't make up flights, prices or times. Offer to try once more, or find_flights for one route and date."
+
+    /// The server's codes for a plan_trip step that failed or hit a daily limit (backend `planTripFailed`, `runPlanTrip`).
+    static let planTripFailureCodes: Set<String> = ["provider_timeout", "provider_unavailable", "malformed_provider_result", "rate_limited", "quota_exceeded"]
+
+    /// plan_trip failed on the server: its own words (code-written: the planner or Kiwi.com, out of time, unreachable or
+    /// at today's limit), flattened to one line, and what the agent may offer. Nothing was booked.
+    static func planTripFailed(_ serverMessage: String, dailyLimit: Bool) -> String {
+        let said = ToolData.clean(serverMessage).trimmingCharacters(in: .whitespacesAndNewlines)
+        let what = said.isEmpty ? (dailyLimit ? "Today's trip planning limit was reached." : "Doddy's trip planning didn't work just now.") : said
+        let offer = dailyLimit
+            ? "Tell the user it works again tomorrow."
+            : "Offer to try again in a moment, or find_flights for one route and date."
+        return "failed: \(what) Nothing was booked. Don't make up flights, prices or times. \(offer)"
     }
 
     public static func cloudDeclined(_ tool: String) -> String {
@@ -78,6 +111,10 @@ extension VoiceToolReply {
             // ADR-563: the app signs in again by itself after this.
             return "failed: Doddy had to sign in to his server again. Nothing was done. Try once more."
         case .transport:
+            // research_now waits up to 45 s; a request that runs out of time ends here too, so the reply covers both.
+            if tool == CloudToolName.researchNow { return researchNotFound(inTimeOrReached: true) }
+            // plan_trip waits up to 40 s, so the same: out of time or not reached, and nothing to fill in.
+            if tool == CloudToolName.planTrip { return planTripNotReached }
             return isWrite ? maybeDone : "failed: Doddy's server couldn't be reached. Nothing was changed."
         case .unreadableResponse:
             return isWrite ? maybeDone : "failed: Doddy's server sent an answer the app couldn't read, so nothing is shown."
@@ -88,6 +125,10 @@ extension VoiceToolReply {
             // means the server proved nothing went to Duffel's booking (or Duffel said nothing was booked).
             if tool == CloudToolName.bookFlight, let status = receipt?.status, status == .blocked || status == .failed {
                 return "failed: \(ToolData.clean(error.userMessage)) Nothing was booked."
+            }
+            // plan_trip: the server's own words say which step failed (the planner or Kiwi.com) and why; never "no flights".
+            if tool == CloudToolName.planTrip, Self.planTripFailureCodes.contains(code) {
+                return planTripFailed(error.userMessage, dailyLimit: code == "quota_exceeded")
             }
             switch code {
             case "capability_disabled":
@@ -104,6 +145,14 @@ extension VoiceToolReply {
                 }
                 // A repeat of a confirmation whose first run may have gone through (ADR-322).
                 if receipt?.errorCode == "earlier_outcome_unknown" || receipt?.status == .outcomeUnknown { return maybeDone }
+                // research_now follows the person's own "Search the web" switch (backend `researchSwitchedOff`).
+                if tool == CloudToolName.researchNow {
+                    return "failed: Search the web is switched off in Settings, so Doddy didn't research it. Tell the user they can switch it on in Settings, Online accounts, Web search. Nothing was looked up."
+                }
+                // plan_evening has no switch of its own: it follows Find places (backend `switchOf`), so the reply names that one.
+                if tool == CloudToolName.planEvening {
+                    return "failed: \"Find places\" is switched off, so Doddy didn't look for places. Tell the user they can switch it on in Settings, Online accounts, Web search. Nothing was looked up."
+                }
                 return "failed: \"\(CloudToolName.title(tool))\" is switched off. Tell the user they can switch it on in Settings, Online accounts. Nothing was done."
             case OnlineAccountsError.needDetailsCode:
                 // Decision 2026-11-10-files-ask-for-details: the server turned a too-thin file request away before any
@@ -114,6 +163,14 @@ extension VoiceToolReply {
                 return "not_connected: \(account) isn't connected yet, or needs reconnecting. A \"Connect \(account)\" button is on the user's screen now. Ask in one short sentence whether they'd like to connect it; it takes a few seconds. When it's connected the app tells you, and then you do what they asked. Nothing was done yet."
             case "live_not_configured":
                 return "failed: \(account) isn't set up on Doddy's server. Nothing was done."
+            case "quota_exceeded" where tool == CloudToolName.researchNow:
+                // Its own daily count on the server, apart from Claude's writing (and the server's own Claude cap).
+                return "failed: today's research limit was reached. Tell the user it works again tomorrow; a quick web_search still works, and you can still help in your own words. Nothing was sent to Claude."
+            case "provider_timeout" where tool == CloudToolName.researchNow:
+                return researchNotFound(inTimeOrReached: false)
+            case "refused" where account == CloudToolName.claudeAccount:
+                // Claude declined (its `refusal` stop reason, backend `claudeFailure`).
+                return "failed: Claude declined that request. Say so in one short sentence and don't guess an answer. Nothing was done."
             case "quota_exceeded" where account == CloudToolName.claudeAccount:
                 return "failed: today's Claude limit was reached. Tell the user it works again tomorrow; you can still help in your own words. Nothing was sent to Claude."
             case "quota_exceeded" where !CloudToolName.needsAccount(tool):

@@ -96,7 +96,7 @@ swallows network failures; it cannot establish that a connection was prepared or
 
 Merged database migrations are frozen by tests: `DoddyDatabaseFrozenMigrationsTests` (the phone's 22 in
 `DoddyDatabase.swift`, in the `swift` group) and `server/messaging/test/migrationsFrozen.test.ts` (the server's
-SQL files, 001 to 039 on 14 Nov 2026, with no 011, 031 or 035 on `main`, in the `messaging` group). Renaming, reordering or removing a merged migration,
+SQL files, 001 to 040 on 15 Nov 2026, 38 of them, with no 011, 031 or 035 on `main`, in the `messaging` group). Renaming, reordering or removing a merged migration,
 or adding a server file that sorts before an applied one, fails CI; a new migration appends its name to the list in
 the same commit.
 
@@ -166,8 +166,11 @@ tests primary success, download/install failures, fallback failure and cleanup.
   (gateway, web, site, voice token, secrets tool) and `messaging` (with Postgres). npm downloads are cached.
 - `core`: one result for all the Linux groups, green when every group that ran passed (a skipped group is fine).
 - `ios-build` (macOS; named `ci` until ADR-811; runner image `macos-26` and Xcode 26.6 pinned):
-  `scripts/ci.sh --app-only`: the Swift package tests, then the Xcode part (build
-  once with `xcodebuild build-for-testing`, unit tests, restart the simulator, UI tests: ADR-561; then the
+  `scripts/ci.sh --app-only`: the Swift package tests (pushes to `main` and runs by hand only; on pull
+  requests `DODDY_SKIP_PACKAGE_TESTS=1` leaves them to the Linux `swift` job), then the Xcode part (build
+  once with `xcodebuild build-for-testing`, unit tests, restart the simulator, UI tests: ADR-561; booting the
+  simulator in the background during the build stalled `xcodebuild` and was taken out, decision
+  `2026-11-15-faster-mac-ci`; then the
   simulator restarted again and the native island test alone, under an 8-minute watchdog, because the hosted
   simulator sometimes freezes during it: ADR-764). A UI test that failed only because the app would not start
   ("Failed to launch", "Failed to get launch progress") is run once more on a restarted simulator; any other
@@ -175,8 +178,14 @@ tests primary success, download/install failures, fallback failure and cleanup.
   It no longer
   waits for `core`, and no longer repeats the Node suites. Run the workflow by hand (Actions → iOS build and
   tests → Run workflow) and it always runs.
-- Pushes to `main` (ADR-811) run every job, each commit in its own run that nothing cancels; pull requests
-  keep the path selection above, and a newer push to a pull request cancels its older run.
+- Pushes to `main` (ADR-811) run every Linux group, each commit in its own run that nothing cancels; the Mac
+  jobs run when the push changed a file that can reach the app (`scripts/ci_push_changed_files.sh` lists the
+  push's files for `scripts/ci_needs_mac.sh`; decision `2026-11-15-faster-mac-ci`), so a skipped `ios-build`
+  on `main` means "not needed", never "passed". Pull requests keep the path selection above, and a newer push
+  to a pull request cancels its older run.
+- UI tests wait with `appears(timeout:)` and `pollUntil` (`DoddyUITests/UITestLaunch.swift`), never XCTest's
+  `waitForExistence(timeout:)`, whose first look comes only after about a second even when the element is there
+  (`scripts/check_ui_test_waits.sh`, in `checks`; decision `2026-11-15-faster-mac-ci`).
 - UI tests on pull requests are the smoke classes only (`DODDY_UI_TESTS=smoke`: `LaunchSmokeTests`,
   `WelcomeUITests`, `LegalAcceptanceUITests`, `PolishSmokeTests`, about 8 of the suite's 27 minutes on
   7 Nov 2026); pushes to `main`, runs by hand and pull requests labelled `full-ui-tests` run every UI
@@ -195,8 +204,11 @@ tests primary success, download/install failures, fallback failure and cleanup.
   download fails, such as the `badResponseStatusCode(504)` that github.com release downloads of the LiveKit
   binary frameworks gave on 8 Nov 2026 (`xcodebuild` exit 74). Any other error is not retried, and the step
   still fails after the last attempt. `CI_FETCH_TRIES` and `CI_FETCH_WAIT` change the numbers.
-- Pushes to `main` also compile Release for a generic iOS device, unsigned (`DODDY_RELEASE_BUILD=1`), so a
-  Release-only error shows up before Xcode Cloud archives.
+- Pushes to `main` also compile Release for a generic iOS device, unsigned, so a Release-only error shows up
+  before Xcode Cloud archives. Since 15 Nov 2026 that is its own job, `ios-release`
+  (`DODDY_RELEASE_BUILD=only scripts/ci.sh --app-only`: no simulator, no tests), beside `ios-build` instead of
+  its last 18 minutes; it is not a required check. `DODDY_RELEASE_BUILD=1` still adds the Release build after
+  the tests in a local run (decision `2026-11-15-faster-mac-ci`).
 - `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): fails when a pull request changes how Doddy
   is signed, configured, deployed or governed (`scripts/check_sensitive_paths.sh` lists the paths: also
   dependency manifests and lockfiles, CI scripts and the `Makefile`, agent settings, skills and prompts,
@@ -217,6 +229,12 @@ Locally: `scripts/ci.sh --only swift,backend` runs just those groups; `--app-onl
 minutes at the median, 59 at the 90th percentile. The Mac job takes about 34 minutes, 28 of them UI tests (the
 motion, art and memory-journey classes about 20, the smoke classes about 8). The Linux groups finish well
 before it. Older measurements (1 Nov, before the Linux groups split, ADR-684) are in the git history of this file.
+
+**Timings measured 15 Nov 2026** (job logs, before decision `2026-11-15-faster-mac-ci`): a pull request's `ios-build`
+waited 9.5 minutes for a Mac, then ran 28.7 (package tests 3, build 5, unit tests 5 of which 3.5 were the simulator's
+first boot, UI smoke tests 14.5; run 43716467848). A push to `main` ran 70.5 (UI tests 35, Release build 18.5;
+run 43715540139). The slowest UI tests: `MemoryJourneyTests.testApprovedJourneyCorrectionRetainsOriginalAfterRestart`
+269 s and `MotionRideTests.testHeRidesTheMemoriesListAndAPageCoversHimInPlace` 171 s.
 
 **Cost:** the repository is public, so standard hosted Actions runners are free (ADR-543). If it goes private
 again, a Mac run costs about $2 to $3 (about $0.062 a minute in October 2026).
@@ -294,8 +312,11 @@ team, use `make project-iphone`: it sets `DODDY_APP_ENTITLEMENTS`, `DODDY_WIDGET
 
 `backend/` is the server the app calls `doddy` (Render). It signs the phone in, runs the online-account tools through
 Composio (Gmail, Outlook, Google Calendar, Drive, Notion, Todoist: anything that changes something waits for the
-person's tap on the exact card), web search, Claude's answers and the documents Doddy makes, account deletion, and
-Doddy Web (`docs/platforms/web.md`). On your own computer it starts in **mock mode**: demo data, no keys, a "Demo
+person's tap on the exact card), web search, Claude's answers, quick web research (`research_now`: Claude with
+Anthropic's own web search and web fetch; tested offline against a fake Anthropic API in `backend/test/research-now.test.ts`),
+the trip planner by voice (`plan_trip`: the Trips planner's model step and Kiwi.com search in one call; tested offline with
+stand-ins for both in `backend/test/plan-trip.test.ts`; like `find_flights` it answers "not set up" without
+`FLIGHT_SEARCH_ENABLED=1`, so it doesn't run in mock mode) and the documents Doddy makes, account deletion, and Doddy Web (`docs/platforms/web.md`). On your own computer it starts in **mock mode**: demo data, no keys, a "Demo
 server" banner. Live mode refuses to start while a setting it needs is missing, and never falls back to demo data.
 
 It began on 9 Oct as a read-only Google Calendar view, which a Debug build still has (below). Background:

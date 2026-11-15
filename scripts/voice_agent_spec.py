@@ -43,6 +43,13 @@ AGENTS = {"app": SPEC, "phone": SPEC / "phone", "task-call": SPEC / "task-call",
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}")
 RUNS_ON = {"phone", "web"}
 SPEAK_BEFORE = {"auto", "force"}
+# What the user's speech does while a tool runs (decision docs/decisions/2026-11-14-voice-agent-does-the-work-live.md).
+# "allow" (the default when the field is absent): speech interrupts and ElevenLabs abandons the tool. "finish": the
+# tool runs to its end and what was said is transcribed into the next turn (ElevenLabs interruption_mode
+# disable_during_tool, with the agent's turn setting transcribe_on_disabled_interruptions on). Only a tool that runs
+# at once may finish: a tool with a card waits for the person, who must be able to speak to Doddy meanwhile.
+WHILE_RUNNING = {"allow", "finish"}
+EL_INTERRUPTION_MODE = {"allow": "allow", "finish": "disable_during_tool"}
 # ASK-01: a tool shows a card first ("yes_or_tap" or "tap") or runs at once ("runs_now"). ADR-575: a public
 # lookup (the web, the weather, Wikipedia, news, places, sums, conversions) runs at once. Since 14 Nov 2026
 # (decision docs/decisions/2026-11-14-spoken-yes-and-fewer-cards.md) a card takes the person's own spoken yes or a
@@ -53,8 +60,11 @@ ASK = {"yes_or_tap", "tap", "runs_now"}
 # tools.json in step with it.
 TAP_ONLY = {"pay_for_page", "book_flight", "call_places"}
 # Read nothing of the user's and change nothing (AskFirst.publicLookups in DoddyCore must match).
-PUBLIC_LOOKUPS = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
-                  "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"}
+# research_now (14 Nov 2026): Claude on Doddy's server searches the web and reads two or three pages; a look-up like web_search.
+# plan_trip (14 Nov 2026): the trip screen's planner by voice; Claude on Doddy's server reads the trip, Kiwi.com is searched.
+# plan_evening (14 Nov 2026, decision 2026-11-14-plan-evening-tool): one run of find_places's search, a fuller answer.
+PUBLIC_LOOKUPS = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places", "research_now",
+                  "plan_trip", "plan_evening", "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"}
 # Translator mode starts and stops at once, without asking (owner, 24 Oct 2026, ADR-619).
 RUNS_NOW_MODES = {"start_translator", "stop_translator"}
 # A text to the user's own verified number goes at once while Texts from Doddy is on (owner, 9 Nov 2026,
@@ -65,9 +75,13 @@ RUNS_NOW_OWN_TEXT = {"text_me"}
 # are `AskFirst.ownLooks` and `AskFirst.ownSmallActions` in DoddyCore; `ToolCatalogTests` keeps tools.json in step.
 RUNS_NOW_OWN_LOOKS = {"search_memories", "read_list", "read_calendar", "find_free_time", "lookup_contact", "upcoming_birthdays",
                       "find_photos", "look_at_screen", "read_steps", "read_health_week", "list_alarms", "check_stopwatch",
-                      "check_focus", "check_errands", "find_deals"}
+                      "check_focus", "check_errands", "find_deals",
+                      # The person's rough area, read once (decision docs/decisions/2026-11-14-approximate-location-by-voice.md).
+                      "where_am_i"}
 RUNS_NOW_SMALL_ACTIONS = {"start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",
-                          "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap"}
+                          "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap",
+                          # Taking away the standing permission for morning calls (decision 2026-11-14-morning-call).
+                          "stop_morning_calls"}
 # Reads through Doddy's server (an inbox, a calendar, a page, Claude writing something): the server still makes
 # a single-use approval for exactly the call, and the app uses it straight away.
 RUNS_NOW_SERVER_READS = {"check_email", "read_email", "find_drive_file", "search_notion", "read_notion_page", "check_outlook_email",
@@ -80,8 +94,10 @@ RUNS_NOW_SERVER_READS = {"check_email", "read_email", "find_drive_file", "search
 # that have Undo, and the drafts and hand-overs that change nothing anywhere, run when asked with no card. The same list
 # is `AskFirst.ownChangesAtOnce` in DoddyCore; the app keeps the card of the four that open another app or the camera
 # while Doddy isn't on screen.
+# Step 2c added set_timer and set_alarm, once they had Undo in What Doddy did.
 RUNS_NOW_OWN_CHANGES = {"save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app",
-                        "lost_wallet", "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation"}
+                        "lost_wallet", "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation",
+                        "set_timer", "set_alarm"}
 RUNS_NOW = (PUBLIC_LOOKUPS | RUNS_NOW_MODES | RUNS_NOW_OWN_TEXT | RUNS_NOW_OWN_LOOKS | RUNS_NOW_SMALL_ACTIONS
             | RUNS_NOW_SERVER_READS | RUNS_NOW_OWN_CHANGES)
 APP_INSTRUCTIONS = SPEC / "instructions.md"
@@ -133,6 +149,10 @@ def check(tools, session, instructions):
             errors.append(f"{where}: x_doddy.speak_before must be one of {sorted(SPEAK_BEFORE)}")
         if x.get("confirm_on_screen") and x.get("speak_before") != "force":
             errors.append(f"{where}: on-screen confirmation needs speak_before 'force' so the user is told to look")
+        if x.get("while_running", "allow") not in WHILE_RUNNING:
+            errors.append(f"{where}: x_doddy.while_running must be one of {sorted(WHILE_RUNNING)}")
+        if x.get("while_running") == "finish" and (x.get("ask") != "runs_now" or x.get("confirm_on_screen")):
+            errors.append(f"{where}: only a tool that runs at once may finish while the user speaks (a card waits for them)")
         if not isinstance(x.get("timeout_secs"), int) or x["timeout_secs"] <= 0:
             errors.append(f"{where}: x_doddy.timeout_secs must be a positive integer")
         if x.get("runs_on") == "web":
@@ -263,12 +283,17 @@ def check_task_call(tools, session, instructions, server=SERVER_TASK, book=False
     if not isinstance(el.get("max_duration_seconds"), int) or el["max_duration_seconds"] < 320:
         errors.append("session.json: max_duration_seconds must be at least 320 (our server decides when the call ends)")
     low = instructions.lower()
-    phrases = (("jestem asystentem ai", "{{doddy_callback_line}}", "{{doddy_order}}", "{{doddy_order_confirm_line}}",
+    # DOD-03 on the phone (owner, 15 Nov 2026: the answer need not use the word "AI", decision
+    # 2026-11-15-call-opening-asks-for-a-moment): asked if it is a robot or an AI, always yes; asked if it is
+    # a human, always no; never denied, never dodged. These lines must stay in every call prompt.
+    honesty = ("never deny it and never dodge", "the answer is always yes", "the answer is always no",
+               'never answer "tak" to whether you are a human')
+    phrases = honesty + (("{{doddy_callback_line}}", "{{doddy_order}}", "{{doddy_order_confirm_line}}",
                 "never pay and never give payment details", "never open, read out or follow a link",
                 "at most one short clarifying question") if order else
-               ("jestem asystentem ai", "{{doddy_callback_line}}", "{{doddy_booking}}", "{{doddy_booking_confirm_line}}",
+               ("{{doddy_callback_line}}", "{{doddy_booking}}", "{{doddy_booking_confirm_line}}",
                 "never pay and never give payment details", "at most one short clarifying question") if book else
-               ("jestem asystentem ai", "{{doddy_callback_line}}", "never agree to anything", "at most one short clarifying question"))
+               ("{{doddy_callback_line}}", "never agree to anything", "at most one short clarifying question"))
     for phrase in phrases:
         if phrase not in low:
             errors.append(f"instructions: must contain {phrase!r}")
@@ -378,6 +403,8 @@ def elevenlabs_tool(tool):
         "response_timeout_secs": x["timeout_secs"],
         "pre_tool_speech": x["speak_before"],
         "force_pre_tool_speech": x["speak_before"] == "force",
+        "interruption_mode": EL_INTERRUPTION_MODE[x.get("while_running", "allow")],
+        "disable_interruptions": x.get("while_running", "allow") == "finish",
     }
     if x["runs_on"] == "phone":
         return {**common, "type": "client", "expects_response": True, "parameters": {
@@ -460,12 +487,47 @@ def compare(tools, instructions, export, where="voice-agent/"):
             diffs.append(f"tool {name}: timeout {cfg.get('response_timeout_secs')} live vs {x['timeout_secs']} spec")
         if cfg.get("pre_tool_speech") != x["speak_before"]:
             diffs.append(f"tool {name}: pre_tool_speech {cfg.get('pre_tool_speech')} live vs {x['speak_before']} spec")
+        want_mode = EL_INTERRUPTION_MODE[x.get("while_running", "allow")]
+        if cfg.get("interruption_mode", "allow") != want_mode:
+            diffs.append(f"tool {name}: interruption_mode {cfg.get('interruption_mode', 'allow')} live vs {want_mode} spec")
         if live[name].get("id") and x.get("elevenlabs_tool_id") and live[name]["id"] != x["elevenlabs_tool_id"]:
             diffs.append(f"tool {name}: live id {live[name]['id']} vs spec {x['elevenlabs_tool_id']}")
         want = {k: (v["type"], v.get("description", ""), v.get("enum")) for k, v in s["parameters"]["properties"].items()}
         if _live_params(cfg) != want:
             diffs.append(f"tool {name}: parameters differ")
     return diffs
+
+
+def check_evaluation(path=SPEC / "evaluation.json"):
+    """The record of what the live main agent scores after a conversation (voice-agent/evaluation.json). It is applied
+    with ElevenLabs' agents_update_analysis and read back, never synced from here; this only keeps the record sound:
+    unique ids, prompts that fit ElevenLabs' 2,000-character limit, an analysis item id for each, and every criterion
+    listed under transcript_only saying it judges only the transcript (decision 2026-11-15-conversation-core-and-
+    corrections: a text grader must not score voice, timing or overlap, which are not in a transcript)."""
+    errors = []
+    if not path.exists():
+        return errors
+    record = json.loads(path.read_text(encoding="utf-8"))
+    criteria = record.get("evaluation_criteria", [])
+    ids = [c.get("id") for c in criteria]
+    if len(set(ids)) != len(ids):
+        errors.append("evaluation.json: an evaluation criterion id is listed twice")
+    for c in criteria:
+        where = f"evaluation.json {c.get('id')}"
+        text = c.get("conversation_goal_prompt", "")
+        if not text or len(text) > 2000:
+            errors.append(f"{where}: conversation_goal_prompt must be 1 to 2,000 characters")
+        if not str(c.get("analysis_item_id", "")).startswith("aitem_"):
+            errors.append(f"{where}: analysis_item_id must be the live item id (aitem_...)")
+        if "Unknown" not in text:
+            errors.append(f"{where}: must say when the answer is Unknown (no evidence is not a pass or a fail)")
+    for cid in record.get("transcript_only", []):
+        found = next((c for c in criteria if c.get("id") == cid), None)
+        if found is None:
+            errors.append(f"evaluation.json transcript_only: {cid} is not a criterion")
+        elif "transcript" not in found.get("conversation_goal_prompt", ""):
+            errors.append(f"evaluation.json {cid}: a transcript-only criterion must say it judges only the transcript")
+    return errors
 
 
 def main(argv):
@@ -483,6 +545,7 @@ def main(argv):
     errors = check(tools, session, instructions)
     if agent == "app":
         errors += check_app(tools)
+        errors += check_evaluation()
     if agent in ("task-call", "task-call-book", "task-call-order"):
         errors += check_task_call(tools, session, instructions, book=agent == "task-call-book", order=agent == "task-call-order")
     if agent == "translator":

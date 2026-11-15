@@ -261,6 +261,12 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .messages, title: "Call you later from Doddy's number", detail: time, logDetail: time, isLookup: false)
         case .callMeNow:
             return ActivityRequest(app: .messages, title: "Call you now from Doddy's number", detail: nil, isLookup: false)
+        case .callMeEveryMorning(let draft):
+            // The schedule only (decision 2026-11-14-morning-call); a day's plan is never on the iPhone.
+            let schedule = draft.scheduleText(.english)
+            return ActivityRequest(app: .messages, title: "Call you every morning from Doddy's number", detail: schedule, logDetail: schedule, isLookup: false)
+        case .stopMorningCalls:
+            return ActivityRequest(app: .messages, title: "Stop the morning calls from Doddy's number", detail: nil, isLookup: false)
         case .callPlaces(let draft):
             // The places' names, never their numbers or the question (decision 2026-11-09-restaurant-calls-one-tap).
             let names = draft.places.map(\.name).joined(separator: ", ")
@@ -395,6 +401,9 @@ public struct ActivityRequest: Equatable, Sendable {
         case .lostWallet:
             // A checklist on screen (ADR-692): nothing changes, and what was lost isn't kept in the log.
             return nil
+        case .whereAmI:
+            // Decision 2026-11-14-approximate-location-by-voice: that Doddy looked, never where. No place, no coordinates.
+            return ActivityRequest(app: .maps, title: "Checked where you are", detail: nil, isLookup: true)
         case .handOverErrand(let draft):
             // ADR-570: the 30-day log keeps that a task was handed over, not its title or words.
             return ActivityRequest(app: .web, title: "Hand over a task", detail: "“\(draft.title)”", logDetail: nil, isLookup: false)
@@ -427,8 +436,9 @@ public struct ActivityRequest: Equatable, Sendable {
             case "Todoist": .todoist
             case "Notion": .notion
             case "Google Drive": .drive
-            // ADR-564: Claude is listed with the web lookups (no account, Doddy's server).
-            case "Web search", "Claude": .web
+            // ADR-564: Claude is listed with the web lookups (no account, Doddy's server). So are flights and plan_trip
+            // (Kiwi.com, Duffel), which had fallen through to Calendar.
+            case "Web search", "Claude", "Flights": .web
             default: .calendar
             }
             return ActivityRequest(app: app, title: more.title, detail: nil, isLookup: !more.write)
@@ -535,7 +545,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         self.reminderKey = reminderKey
         self.checkedAt = checkedAt
         self.plan = plan
-        self.undo = outcome == .done ? undo : nil
+        self.undo = Self.keepsUndo(outcome, undo) ? undo : nil
         self.undoState = undoState
         self.operationKey = operationKey ?? reminderKey
         self.receipt = outcome.status == .confirmed ? receipt : nil

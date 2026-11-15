@@ -129,9 +129,9 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .steps: [VoiceToolName.readSteps]
         case .onlineAccounts: CloudToolName.all.subtracting(Feature.webSearch.tools).subtracting(Feature.claudeDocuments.tools)
             .subtracting(Feature.flights.tools)
-        case .webSearch: [CloudToolName.webSearch, "news_search", "find_places"]
+        case .webSearch: [CloudToolName.webSearch, "news_search", "find_places", CloudToolName.planEvening]
         case .flights: CloudToolName.flightTools
-        case .claudeDocuments: [CloudToolName.askClaude, CloudToolName.makeDocument]
+        case .claudeDocuments: [CloudToolName.askClaude, CloudToolName.makeDocument, CloudToolName.researchNow]
         case .deals: [VoiceToolName.findDeals]
         case .errands: [VoiceToolName.handOverErrand, VoiceToolName.checkErrands]
         case .following: [VoiceToolName.followNews]
@@ -144,7 +144,7 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         // Doddy's own phone number (ADR-750 to 755): a text to the person's own number goes with the
         // texts, a call now or booked for later with the calls.
         case .updates: [VoiceToolName.textMe]
-        case .phoneCalls: [VoiceToolName.callMeLater, VoiceToolName.callMeNow]
+        case .phoneCalls: [VoiceToolName.callMeLater, VoiceToolName.callMeNow, VoiceToolName.callMeEveryMorning, VoiceToolName.stopMorningCalls]
         case .invoices: [VoiceToolName.draftInvoice]
         case .studio: [VoiceToolName.makeSomething]
         case .payments: [PaymentToolName.payForPage]
@@ -284,6 +284,8 @@ public struct ReleaseScope: Equatable, Sendable {
         VoiceToolName.lookupContact, VoiceToolName.draftMessage,
         VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency,
         VoiceToolName.openMap, VoiceToolName.runShortcut,
+        // The rough area for places, searches and the weather near the person (decision 2026-11-14-approximate-location-by-voice).
+        VoiceToolName.whereAmI,
         // Home's Food button is in every scope, so opening a food app by voice is too (decision 2026-11-12-food-by-voice).
         VoiceToolName.openFoodApp,
         VoiceToolName.noteCapabilityGap,

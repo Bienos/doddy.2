@@ -41,6 +41,7 @@ public enum DeviceKeychain {
         Service(name: "com.bienos.doddy2.backend-account-session-owed", role: .serverTie, holds: "Backend sessions this iPhone signed out of that the backend hasn't yet confirmed it ended; used for nothing but that one request."),
         Service(name: "com.bienos.doddy2.connected-apps", role: .serverTie, holds: "The session token for Doddy's backend (a device session, or the account's token or the backend's own session for it): whichever token the backend clients send."),
         Service(name: "com.bienos.doddy2.server", role: .serverTie, holds: "The device token for Doddy's messaging server."),
+        Service(name: "com.bienos.doddy2.server.pending-revocation", role: .serverTie, holds: "Device tokens of messaging-server sessions this iPhone signed out of that the server hasn't yet confirmed it ended; used for nothing but that one request."),
         Service(name: "com.bienos.doddy2.device", role: .serverTie, holds: "This iPhone's random device id, which mints backend sessions."),
     ]
 

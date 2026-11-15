@@ -1,0 +1,994 @@
+{
+ "_note": "Coverage of the research's 120 test specifications (docs/research/2026-11-15-human-conversation/evaluation_scenarios.jsonl) on 15 Nov 2026. 'executed' means a text-level ElevenLabs agent test or a Swift unit test exists and ran (results in voice-agent/README.md, entry of 15 Nov 2026 'Conversation core'); none of these is an audio test, a device test or a user study. Reference answers were never given to the agent as input.",
+ "coverage": [
+  {
+   "test_id": "PL01-A",
+   "scenario_id": "PL01",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL01-B",
+   "scenario_id": "PL01",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "PL02-A",
+   "scenario_id": "PL02",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL02-B",
+   "scenario_id": "PL02",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL03-A",
+   "scenario_id": "PL03",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL03-B",
+   "scenario_id": "PL03",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "PL04-A",
+   "scenario_id": "PL04",
+   "language": "pl",
+   "variant": "base",
+   "executed_as_elevenlabs_text_test": [
+    "test_1601m7fwjazsfw1s69y52ednh3ep"
+   ],
+   "covered_by_unit_test": "VoiceInterruptSilenceTests (interruption to silence, from buffers; not a device measurement)",
+   "status": "partly_executed_text_or_unit_only",
+   "why": "the logic is tested on text or in code; the audio part of the scenario (speech, timing, playback) is not"
+  },
+  {
+   "test_id": "PL04-B",
+   "scenario_id": "PL04",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "PL05-A",
+   "scenario_id": "PL05",
+   "language": "pl",
+   "variant": "base",
+   "executed_as_elevenlabs_text_test": [
+    "test_5401m7fwj878exyszsk4tr7e4jsw",
+    "test_7601m7fwq67cf04thkdeszkss788"
+   ],
+   "status": "partly_executed_text_or_unit_only",
+   "why": "the logic is tested on text or in code; the audio part of the scenario (speech, timing, playback) is not"
+  },
+  {
+   "test_id": "PL05-B",
+   "scenario_id": "PL05",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "PL06-A",
+   "scenario_id": "PL06",
+   "language": "pl",
+   "variant": "base",
+   "executed_as_elevenlabs_text_test": [
+    "test_4301m7fwgztaerdvakzkms5xv5z9"
+   ],
+   "status": "partly_executed_text_or_unit_only",
+   "why": "the logic is tested on text or in code; the audio part of the scenario (speech, timing, playback) is not"
+  },
+  {
+   "test_id": "PL06-B",
+   "scenario_id": "PL06",
+   "language": "pl",
+   "variant": "challenge",
+   "executed_as_elevenlabs_text_test": [
+    "test_9801m7fwj9d3faeb52fhd51722g4"
+   ],
+   "covered_by_unit_test": "VoiceInterruptedWritesTests.testATimerSetWhileThePersonCorrectedItIsToldToTheAgent",
+   "status": "partly_executed_text_or_unit_only",
+   "why": "the logic is tested on text or in code; the audio part of the scenario (speech, timing, playback) is not"
+  },
+  {
+   "test_id": "PL07-A",
+   "scenario_id": "PL07",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "PL07-B",
+   "scenario_id": "PL07",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "PL08-A",
+   "scenario_id": "PL08",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL08-B",
+   "scenario_id": "PL08",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL09-A",
+   "scenario_id": "PL09",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL09-B",
+   "scenario_id": "PL09",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL10-A",
+   "scenario_id": "PL10",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL10-B",
+   "scenario_id": "PL10",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL11-A",
+   "scenario_id": "PL11",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "PL11-B",
+   "scenario_id": "PL11",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "PL12-A",
+   "scenario_id": "PL12",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL12-B",
+   "scenario_id": "PL12",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL13-A",
+   "scenario_id": "PL13",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL13-B",
+   "scenario_id": "PL13",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL14-A",
+   "scenario_id": "PL14",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL14-B",
+   "scenario_id": "PL14",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL15-A",
+   "scenario_id": "PL15",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL15-B",
+   "scenario_id": "PL15",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL16-A",
+   "scenario_id": "PL16",
+   "language": "pl",
+   "variant": "base",
+   "executed_as_elevenlabs_text_test": [
+    "test_4901m7fwj7nff42v6je2409nhmf2"
+   ],
+   "status": "partly_executed_text_or_unit_only",
+   "why": "the logic is tested on text or in code; the audio part of the scenario (speech, timing, playback) is not"
+  },
+  {
+   "test_id": "PL16-B",
+   "scenario_id": "PL16",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL17-A",
+   "scenario_id": "PL17",
+   "language": "pl",
+   "variant": "base",
+   "covered_by_unit_test": "VoiceTurnWatchAnswerTests (a status is not the answer)",
+   "status": "partly_executed_text_or_unit_only",
+   "why": "the logic is tested on text or in code; the audio part of the scenario (speech, timing, playback) is not"
+  },
+  {
+   "test_id": "PL17-B",
+   "scenario_id": "PL17",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL18-A",
+   "scenario_id": "PL18",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL18-B",
+   "scenario_id": "PL18",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL19-A",
+   "scenario_id": "PL19",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL19-B",
+   "scenario_id": "PL19",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL20-A",
+   "scenario_id": "PL20",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "PL20-B",
+   "scenario_id": "PL20",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "PL21-A",
+   "scenario_id": "PL21",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL21-B",
+   "scenario_id": "PL21",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "PL22-A",
+   "scenario_id": "PL22",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL22-B",
+   "scenario_id": "PL22",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL23-A",
+   "scenario_id": "PL23",
+   "language": "pl",
+   "variant": "base",
+   "executed_as_elevenlabs_text_test": [
+    "test_4101m7fwjc2eej5sq3024jjca079"
+   ],
+   "status": "partly_executed_text_or_unit_only",
+   "why": "the logic is tested on text or in code; the audio part of the scenario (speech, timing, playback) is not"
+  },
+  {
+   "test_id": "PL23-B",
+   "scenario_id": "PL23",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL24-A",
+   "scenario_id": "PL24",
+   "language": "pl",
+   "variant": "base",
+   "executed_as_elevenlabs_text_test": [
+    "test_5601m7fwjae8fv79p8rwgmtm91ty"
+   ],
+   "status": "partly_executed_text_or_unit_only",
+   "why": "the logic is tested on text or in code; the audio part of the scenario (speech, timing, playback) is not"
+  },
+  {
+   "test_id": "PL24-B",
+   "scenario_id": "PL24",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL25-A",
+   "scenario_id": "PL25",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "PL25-B",
+   "scenario_id": "PL25",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "PL26-A",
+   "scenario_id": "PL26",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL26-B",
+   "scenario_id": "PL26",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL27-A",
+   "scenario_id": "PL27",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL27-B",
+   "scenario_id": "PL27",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL28-A",
+   "scenario_id": "PL28",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL28-B",
+   "scenario_id": "PL28",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL29-A",
+   "scenario_id": "PL29",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL29-B",
+   "scenario_id": "PL29",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "PL30-A",
+   "scenario_id": "PL30",
+   "language": "pl",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "PL30-B",
+   "scenario_id": "PL30",
+   "language": "pl",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN01-A",
+   "scenario_id": "EN01",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN01-B",
+   "scenario_id": "EN01",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN02-A",
+   "scenario_id": "EN02",
+   "language": "en",
+   "variant": "base",
+   "executed_as_elevenlabs_text_test": [
+    "test_7701m7fwjbjee4etyknmv94ysd0f"
+   ],
+   "status": "partly_executed_text_or_unit_only",
+   "why": "the logic is tested on text or in code; the audio part of the scenario (speech, timing, playback) is not"
+  },
+  {
+   "test_id": "EN02-B",
+   "scenario_id": "EN02",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN03-A",
+   "scenario_id": "EN03",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN03-B",
+   "scenario_id": "EN03",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN04-A",
+   "scenario_id": "EN04",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN04-B",
+   "scenario_id": "EN04",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN05-A",
+   "scenario_id": "EN05",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN05-B",
+   "scenario_id": "EN05",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN06-A",
+   "scenario_id": "EN06",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN06-B",
+   "scenario_id": "EN06",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN07-A",
+   "scenario_id": "EN07",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN07-B",
+   "scenario_id": "EN07",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN08-A",
+   "scenario_id": "EN08",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN08-B",
+   "scenario_id": "EN08",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN09-A",
+   "scenario_id": "EN09",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN09-B",
+   "scenario_id": "EN09",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN10-A",
+   "scenario_id": "EN10",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN10-B",
+   "scenario_id": "EN10",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN11-A",
+   "scenario_id": "EN11",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN11-B",
+   "scenario_id": "EN11",
+   "language": "en",
+   "variant": "challenge",
+   "covered_by_unit_test": "VoiceInterruptedWritesTests (a change finished after the stop is told to the agent as done)",
+   "status": "partly_executed_text_or_unit_only",
+   "why": "the logic is tested on text or in code; the audio part of the scenario (speech, timing, playback) is not"
+  },
+  {
+   "test_id": "EN12-A",
+   "scenario_id": "EN12",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN12-B",
+   "scenario_id": "EN12",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN13-A",
+   "scenario_id": "EN13",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN13-B",
+   "scenario_id": "EN13",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN14-A",
+   "scenario_id": "EN14",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN14-B",
+   "scenario_id": "EN14",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN15-A",
+   "scenario_id": "EN15",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN15-B",
+   "scenario_id": "EN15",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN16-A",
+   "scenario_id": "EN16",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN16-B",
+   "scenario_id": "EN16",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN17-A",
+   "scenario_id": "EN17",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN17-B",
+   "scenario_id": "EN17",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN18-A",
+   "scenario_id": "EN18",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN18-B",
+   "scenario_id": "EN18",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN19-A",
+   "scenario_id": "EN19",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN19-B",
+   "scenario_id": "EN19",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN20-A",
+   "scenario_id": "EN20",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN20-B",
+   "scenario_id": "EN20",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN21-A",
+   "scenario_id": "EN21",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN21-B",
+   "scenario_id": "EN21",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN22-A",
+   "scenario_id": "EN22",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN22-B",
+   "scenario_id": "EN22",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN23-A",
+   "scenario_id": "EN23",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN23-B",
+   "scenario_id": "EN23",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN24-A",
+   "scenario_id": "EN24",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN24-B",
+   "scenario_id": "EN24",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN25-A",
+   "scenario_id": "EN25",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN25-B",
+   "scenario_id": "EN25",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN26-A",
+   "scenario_id": "EN26",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN26-B",
+   "scenario_id": "EN26",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN27-A",
+   "scenario_id": "EN27",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN27-B",
+   "scenario_id": "EN27",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN28-A",
+   "scenario_id": "EN28",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN28-B",
+   "scenario_id": "EN28",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN29-A",
+   "scenario_id": "EN29",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN29-B",
+   "scenario_id": "EN29",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "needs real audio, timing, overlap or a device (a transcript test does not pass it)"
+  },
+  {
+   "test_id": "EN30-A",
+   "scenario_id": "EN30",
+   "language": "en",
+   "variant": "base",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  },
+  {
+   "test_id": "EN30-B",
+   "scenario_id": "EN30",
+   "language": "en",
+   "variant": "challenge",
+   "status": "specified_not_executed",
+   "why": "logic could become an ElevenLabs text test with the scenario's fixture; not written in this round"
+  }
+ ]
+}

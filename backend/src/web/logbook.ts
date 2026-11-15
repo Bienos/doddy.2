@@ -20,8 +20,9 @@ export const LOGBOOK_MAX_BODY_BYTES = 32 * 1024;
 export const LOGBOOK_SCHEMA = "doddy.logbook.day.v1";
 
 /**
- * The voice agent's tool ids (voice-agent/tools.json, 121 today). A test reads that file and fails
- * if this list and the file disagree, so a new tool can't be counted before it is listed here.
+ * The voice agent's tool ids (voice-agent/tools.json, 127 with research_now, plan_trip, where_am_i, plan_evening, call_me_every_morning and stop_morning_calls). A test reads that file and fails
+ * if this list and the file disagree, so a new tool can't be counted before it is listed here. The iPhone counts
+ * every tool its catalog has, and a day naming a tool missing here is refused whole, so a tool joins both together.
  */
 export const LOGBOOK_TOOL_IDS = [
   "search_memories", "save_memory", "read_calendar", "find_free_time", "create_calendar_event", "create_reminder",
@@ -30,8 +31,8 @@ export const LOGBOOK_TOOL_IDS = [
   "calculate", "convert_units", "convert_currency", "set_timer", "set_alarm", "start_stopwatch", "stop_stopwatch",
   "check_stopwatch", "start_focus", "stop_focus", "check_focus", "start_wind_down", "stop_wind_down",
   "follow_news", "list_alarms", "cancel_alarm",
-  "propose_plan", "open_map", "open_food_app", "parking_spot", "remind_when_to_leave", "run_shortcut", "draft_message",
-  "draft_blik_transfer", "draft_invoice", "text_me", "call_me_later", "call_me_now", "call_places", "make_presentation", "read_steps", "read_health_week", "open_training_plan", "find_photos", "look_at_screen", "control_home", "open_camera", "lost_wallet", "check_email",
+  "propose_plan", "open_map", "open_food_app", "parking_spot", "remind_when_to_leave", "where_am_i", "run_shortcut", "draft_message",
+  "draft_blik_transfer", "draft_invoice", "text_me", "call_me_later", "call_me_now", "call_me_every_morning", "stop_morning_calls", "call_places", "make_presentation", "read_steps", "read_health_week", "open_training_plan", "find_photos", "look_at_screen", "control_home", "open_camera", "lost_wallet", "check_email",
   "read_email", "draft_email", "draft_email_reply", "send_email", "reply_to_email", "forward_email", "change_email",
   "trash_email", "find_drive_file", "create_drive_doc", "search_notion", "read_notion_page", "create_notion_page",
   "append_notion_page", "trash_notion_page", "check_outlook_email", "read_outlook_email", "draft_outlook_email",
@@ -40,11 +41,11 @@ export const LOGBOOK_TOOL_IDS = [
   "delete_outlook_event", "accept_outlook_invite", "decline_outlook_invite", "send_outlook_email",
   "reply_outlook_email", "forward_outlook_email", "move_outlook_email", "mark_outlook_email", "list_todoist_tasks",
   "add_todoist_task", "complete_todoist_task", "move_todoist_task", "rename_todoist_task", "web_search",
-  "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary", "news_search", "find_places",
+  "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary", "news_search", "find_places", "plan_evening",
   "find_flights", "find_bookable_flights", "book_flight", "check_flight_booking",
   "start_translator", "stop_translator", "add_to_list", "add_ingredients", "read_list", "check_off",
   "remove_from_list", "create_list", "hand_over_errand", "check_errands", "make_something", "find_deals", "pay_for_page", "note_capability_gap", "ask_claude",
-  "make_document",
+  "make_document", "research_now", "plan_trip",
 ] as const;
 
 const LENGTHS = ["under_1", "1_3", "3_5", "5_10"] as const;

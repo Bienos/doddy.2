@@ -33,7 +33,7 @@ final class ConfirmationTierTests: XCTestCase {
         for tool in ["create_calendar_event", "change_calendar_event", "delete_calendar_event", "delete_calendar_events",
                      "change_reminder", "delete_reminder", "move_reminders", "cancel_alarm", "remove_from_list",
                      "send_email", "reply_to_email", "forward_email", "trash_email", "send_outlook_email",
-                     "call_me_now", "call_me_later", "control_home", "run_shortcut", "propose_plan",
+                     "call_me_now", "call_me_later", "call_me_every_morning", "control_home", "run_shortcut", "propose_plan",
                      "hand_over_errand", "make_something", "add_todoist_task", "create_google_event"] {
             XCTAssertEqual(ConfirmationTiers.tier(for: tool), .spokenYes, tool)
         }
@@ -57,13 +57,26 @@ final class ConfirmationTierTests: XCTestCase {
         XCTAssertEqual(ConfirmationTiers.tier(forParking: .clear), .spokenYes, "nothing brings a forgotten spot back")
     }
 
-    func testOnceOutsideTextIsInTheConversationASpokenYesIsNoLongerEnough() {
-        // An email, a page or a document can put words in the conversation; a yes after them needs a finger.
-        XCTAssertEqual(ConfirmationTiers.tier(for: "send_email", outsideContentSeen: true), .tapOnly)
-        XCTAssertEqual(ConfirmationTiers.tier(for: "call_me_now", outsideContentSeen: true), .tapOnly)
-        XCTAssertEqual(ConfirmationTiers.tier(forParking: .clear, outsideContentSeen: true), .tapOnly)
-        XCTAssertEqual(ConfirmationTiers.tier(for: "set_timer", outsideContentSeen: true), .atOnce, "Doddy's own undoable things stay at once")
-        XCTAssertEqual(ConfirmationTiers.tier(for: "pay_for_page", outsideContentSeen: true), .tapOnly)
+    func testOnceOutsideTextIsInTheConversationEveryChangeAsksOneSpokenQuestion() {
+        // Owner, 15 Nov 2026, option 2: after an email, a page or a document Doddy asks once and "tak" is enough.
+        // A change that asks keeps taking a spoken yes (it needed a tap until then).
+        XCTAssertEqual(ConfirmationTiers.tier(for: "send_email", outsideContentSeen: true), .spokenYes)
+        XCTAssertEqual(ConfirmationTiers.tier(for: "call_me_now", outsideContentSeen: true), .spokenYes)
+        XCTAssertEqual(ConfirmationTiers.tier(forParking: .clear, outsideContentSeen: true), .spokenYes)
+        // Doddy's own things stop running at once: words from outside never change anything without the person's yes.
+        for own in ConfirmationTiers.ownUndoableAtOnce {
+            XCTAssertEqual(ConfirmationTiers.tier(for: own, outsideContentSeen: true), .spokenYes, own)
+            XCTAssertEqual(ConfirmationTiers.tier(for: own, outsideContentSeen: false), .atOnce, own)
+        }
+        XCTAssertEqual(ConfirmationTiers.tier(forParking: .save(note: nil), outsideContentSeen: true), .spokenYes)
+        // Looks and reads still run at once; money and bookings stay a tap.
+        XCTAssertEqual(ConfirmationTiers.tier(forParking: .find, outsideContentSeen: true), .atOnce, "finding the car is a look")
+        XCTAssertEqual(ConfirmationTiers.tier(for: "web_search", outsideContentSeen: true), .atOnce)
+        XCTAssertEqual(ConfirmationTiers.tier(for: "read_email", outsideContentSeen: true), .atOnce)
+        for money in ConfirmationTiers.tapOnly {
+            XCTAssertEqual(ConfirmationTiers.tier(for: money, outsideContentSeen: true), .tapOnly, money)
+        }
+        XCTAssertEqual(ConfirmationTiers.tier(for: "wire_money_somewhere", outsideContentSeen: true), .tapOnly)
         XCTAssertEqual(ConfirmationTiers.tier(for: "send_email", outsideContentSeen: false), .spokenYes)
     }
 

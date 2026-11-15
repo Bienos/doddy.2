@@ -14,6 +14,9 @@ import { parseClock, QUIET_HOURS_DEFAULT, type QuietHours } from "./quietHours.j
 import type { StudioSettings } from "./studio/context.js";
 import { PLAN_TIER_NAMES, stepModelsFrom, type PlanTier } from "./studio/models.js";
 
+/** Active morning calls on the whole server by default (decision 2026-11-14-morning-call): half the server's daily calls. */
+export const MORNING_CALLS_MAX_PER_SERVER_DEFAULT = 10;
+
 const MODEL_ID = /^[a-z0-9][a-z0-9.\-]{1,63}$/;
 
 // Every provider block is optional: a missing block switches that feature off and the API
@@ -164,11 +167,12 @@ const schema = z.object({
   // Spoken after the AI disclosure. "off" until the owner confirms the legal basis (calls.md).
   CALL_RECORDING_NOTICE: z.enum(["off", "nagrywana", "zapisywana"]).default("off"),
   // Limits: these can only be lowered; the maximums are the code's ceilings.
-  TASK_CALL_LIMIT_USER_HOUR: z.coerce.number().int().min(0).max(3).default(3),
+  // Raised on 15 Nov 2026 (owner: "zwiększ limity"; decision docs/decisions/2026-11-15-higher-task-call-limits.md).
+  TASK_CALL_LIMIT_USER_HOUR: z.coerce.number().int().min(0).max(6).default(6),
   TASK_CALL_LIMIT_USER_DAY: z.coerce.number().int().min(0).max(10).default(10),
-  TASK_CALL_LIMIT_DEST_USER_DAY: z.coerce.number().int().min(0).max(2).default(2),
-  TASK_CALL_LIMIT_DEST_DAY: z.coerce.number().int().min(0).max(3).default(3),
-  TASK_CALL_DEST_GAP_MINUTES: z.coerce.number().int().min(15).max(1440).default(15),
+  TASK_CALL_LIMIT_DEST_USER_DAY: z.coerce.number().int().min(0).max(5).default(5),
+  TASK_CALL_LIMIT_DEST_DAY: z.coerce.number().int().min(0).max(6).default(6),
+  TASK_CALL_DEST_GAP_MINUTES: z.coerce.number().int().min(5).max(1440).default(5),
   TASK_CALL_LIMIT_GLOBAL_DAY: z.coerce.number().int().min(0).max(200).default(50),
   TASK_CALL_MAX_SECS: z.coerce.number().int().min(60).max(300).default(300),
   // Numbers Doddy must never call for a user (ADR-705): E.164, comma-separated. An operator's stop list for a callee
@@ -259,6 +263,13 @@ const schema = z.object({
   // checked, and runs the worker that records new matching stories and queues their pushes. "0" (the default)
   // answers 503 radar_disabled to a new alert, still accepts turning them off, and runs no checks.
   RADAR_ALERTS_ENABLED: z.enum(["0", "1"]).default("0"),
+  // Morning calls (decision 2026-11-14-morning-call): "1" lets a person approve a call from Doddy's number on chosen days
+  // at one local time with a short plan of the day, and runs the worker that makes each day's call. "0" (the default)
+  // answers 503 morning_calls_off to a new one, stores nothing, makes no calls, and still accepts stopping one.
+  // MORNING_CALLS_MAX_PER_SERVER: active morning calls on the whole server, each a call a day that counts toward
+  // OUTBOUND_CALLS_DAILY_PER_SERVER, so it may not be above that cap.
+  MORNING_CALLS_ENABLED: z.enum(["0", "1"]).default("0"),
+  MORNING_CALLS_MAX_PER_SERVER: z.coerce.number().int().min(0).max(1000).default(MORNING_CALLS_MAX_PER_SERVER_DEFAULT),
   // Deliveries through Uber Direct (decision 2026-11-12-uber-direct-deliveries). Off unless UBER_DIRECT_ENABLED=1 and
   // all three credentials are set. Uber bills the account these credentials belong to, so the caps below hold for every
   // account and for the whole server. UBER_DIRECT_MODE=test (the default) asks Uber's sandbox for a simulated courier.
@@ -544,6 +555,8 @@ export interface Config {
   dealWatchSettings: DealWatchSettings;
   /** On my radar alerts (RADAR_ALERTS_ENABLED, off by default): routes store alerts and the worker checks them. */
   radarAlertsEnabled: boolean;
+  /** Morning calls (MORNING_CALLS_ENABLED, off by default; decision 2026-11-14-morning-call). */
+  morningCalls: { enabled: boolean; maxPerServer: number };
   /** Uber Direct (decision 2026-11-12-uber-direct-deliveries): only when enabled and all three credentials are set. */
   uberDirect?: {
     clientId: string; clientSecret: string; customerId: string; mode: "test" | "live";
@@ -572,6 +585,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   // An idle limit longer than the absolute one could never be reached: a mistake, so the start-up says so (names only).
   if (e.DEVICE_TOKEN_IDLE_DAYS > e.DEVICE_TOKEN_MAX_AGE_DAYS) {
     throw new Error("DEVICE_TOKEN_IDLE_DAYS must not be longer than DEVICE_TOKEN_MAX_AGE_DAYS");
+  }
+  // Each morning call is a call a day out of the server's daily calls; more of them than that would leave no call for
+  // anything else, and the last ones over the cap would be refused every day. Set on purpose above it: a mistake, so the
+  // start-up says so; left at its default, it is lowered to the server's daily calls.
+  const morningSet = env.MORNING_CALLS_MAX_PER_SERVER !== undefined && env.MORNING_CALLS_MAX_PER_SERVER !== "";
+  if (morningSet && e.MORNING_CALLS_MAX_PER_SERVER > e.OUTBOUND_CALLS_DAILY_PER_SERVER) {
+    throw new Error("MORNING_CALLS_MAX_PER_SERVER must not be above OUTBOUND_CALLS_DAILY_PER_SERVER");
   }
   if (e.MEMORY_ENCRYPTION_KEY_PREVIOUS) {
     if (!e.MEMORY_ENCRYPTION_KEY) throw new Error("MEMORY_ENCRYPTION_KEY_PREVIOUS is set without MEMORY_ENCRYPTION_KEY");
@@ -721,6 +741,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
       ? { licenseKey: e.JAKDOJADE_LICENSE_KEY, secret: e.JAKDOJADE_SECRET } : undefined,
     watchSettings: { enabled: e.WATCHES_ENABLED === "1", maxOpen: e.WATCHES_MAX_OPEN, checkHours: e.WATCHES_CHECK_HOURS },
     radarAlertsEnabled: e.RADAR_ALERTS_ENABLED === "1",
+    morningCalls: {
+      enabled: e.MORNING_CALLS_ENABLED === "1", maxPerServer: Math.min(e.MORNING_CALLS_MAX_PER_SERVER, e.OUTBOUND_CALLS_DAILY_PER_SERVER),
+    },
     uberDirect: e.UBER_DIRECT_ENABLED === "1" && e.UBER_DIRECT_CLIENT_ID && e.UBER_DIRECT_CLIENT_SECRET && e.UBER_DIRECT_CUSTOMER_ID
       ? {
         clientId: e.UBER_DIRECT_CLIENT_ID, clientSecret: e.UBER_DIRECT_CLIENT_SECRET, customerId: e.UBER_DIRECT_CUSTOMER_ID,
@@ -768,8 +791,8 @@ export const DEFAULT_TASK_CALL_SETTINGS: TaskCallSettings = {
   killSwitch: false,
   notice: "off",
   limits: {
-    userPerHour: 3, userPerDay: 10, destinationPerUserDay: 2, destinationPerDay: 3,
-    destinationGapMinutes: 15, globalPerDay: 50, maxDurationSecs: 300,
+    userPerHour: 6, userPerDay: 10, destinationPerUserDay: 5, destinationPerDay: 6,
+    destinationGapMinutes: 5, globalPerDay: 50, maxDurationSecs: 300,
   },
   prices: {},
   sayVoice: "Polly.Ewa",

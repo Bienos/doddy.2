@@ -25,6 +25,9 @@ public enum CarProfile {
         case .noteCapabilityGap:
             // Bookkeeping on the iPhone (ADR-440): one category, none of the user's data, nothing to undo.
             return .run
+        case .whereAmI:
+            // The rough area, answered aloud (decision 2026-11-14-approximate-location-by-voice): a read, nothing on screen.
+            return .run
         case .lostWallet:
             // A guide (ADR-692): spoken aloud and shown on a card; nothing changes and nothing leaves
             // the iPhone. Its buttons open a page or dial a number only on the person's own tap.
@@ -65,6 +68,12 @@ public enum CarProfile {
         case .callMeNow:
             // The card is the approval, and the phone would ring while the user drives.
             return .refuse(reason: "A call from Doddy needs a tap on the iPhone, so it waits until the user isn't driving.")
+        case .callMeEveryMorning:
+            // A standing permission set up on a card with the exact schedule (decision 2026-11-14-morning-call).
+            return .refuse(reason: "Setting up morning calls from Doddy needs the card on the iPhone, so it waits until the user isn't driving.")
+        case .stopMorningCalls:
+            // Taking the permission away is never held back: it only stops calls.
+            return .run
         case .draftInvoice:
             // An invoice is checked line by line on the screen (ADR-677), so not while driving.
             return .refuse(reason: "An invoice draft is checked on the iPhone's screen, so it waits until the user isn't driving.")

@@ -232,6 +232,17 @@ public enum DataFlow {
                 what: "The words you type to find a place, and roughly where you are if Doddy already knows. For a leave reminder: where your iPhone is and the place you're going. For My shops: the shops' chain names and roughly where you are. For Food: the dish and the delivery address you type.",
                 when: "Only when you search for a place for a reminder, ask when to leave, look for your shops in Cheapest this week, or search for food in Food.", isActive: true,
                 note: "Doddy keeps only the place you pick, and only on this iPhone. iOS watches a reminder's place itself; Doddy doesn't follow where you go."),
+            // Decision 2026-11-14-approximate-location-by-voice: `where_am_i`, read once when asked; Pause all stops it.
+            DataFlowRow(
+                id: "whereAmI", destination: "Apple, ElevenLabs and your searches (roughly where you are, by voice)",
+                what: "When you ask Doddy where you are, or for something near you without naming a town: your iPhone's position rounded to about a kilometre goes to Apple's geocoder, which names the district and town. That area and the rounded position go to ElevenLabs as part of the conversation, and on to a search when Doddy puts the town or district in one (places or the web, through your Doddy server, or the weather, through Open-Meteo).",
+                when: "Only when you ask, and only while location is allowed for Doddy (While Using the App; iPhone asks you the first time).",
+                isActive: !state.pauseAll,
+                note: state.pauseAll
+                    ? "Connections are paused, so Doddy doesn't look up where you are."
+                    : "The app keeps no reading, coordinates or place of its own: no note, and no place in What Doddy did."
+                        + (state.rememberConversations ? " What Doddy says about it is part of the conversation, which this iPhone keeps while Remember what we talked about is on." : "")
+                        + " ElevenLabs keeps each conversation's recording and transcript, which can include the area."),
             DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
                 what: "A short-lived Doddy session credential and the selected voice provider/model. Apple sign-in is verified here to create your account; the session authorizes voice access. No voice, transcript, notes or profile details are sent to this server for token requests.",
@@ -253,7 +264,7 @@ public enum DataFlow {
             // ADR-575: web, news and places searches run at once, without asking, and go on to Monid.
             DataFlowRow(
                 id: "doddyServer", destination: "Your Doddy server (web search; Google, Microsoft Outlook, Notion, Todoist via Composio)",
-                what: "A random device ID that Doddy made and keeps in this iPhone's Keychain; it signs this iPhone in. Then what you ask for: the words of a web, news or places search, which go at once without asking and on to Monid, the search service Doddy's server uses; a date or a search word for a look-up in one of your accounts, when you ask for it; and the text of a draft, email, reply or task, only after you tap its card to confirm. An email you send or forward goes on to its recipient. Never your saved notes, except the copy you choose to keep on Doddy's server (see the rows below). With Read an email or Read a Notion page on, that one email or page comes back. If you start a payment, the web address of the page you pay for goes there too: the server reads the price from that site, and pays only after you confirm with Face ID. If you tap Find my trips in Gmail (Trips, with Read an email on), the server reads up to 25 booking emails from Gmail, removes links, PINs and card numbers, and sends the rest of each email to Anthropic to read the booking; it keeps none of it, and the trips are saved on this iPhone only. If you use Plan a trip (Trips), the words you type go to Doddy's server and to Anthropic to be turned into a brief, and then only the places, dates, number of people and bags go to Kiwi.com to search flights; nothing is saved, and Doddy books and pays nothing.",
+                what: "A random device ID that Doddy made and keeps in this iPhone's Keychain; it signs this iPhone in. Then what you ask for: the words of a web, news or places search, which go at once without asking and on to Monid, the search service Doddy's server uses; for an evening out, also the day, time, number of people and budget you mention, which stay on Doddy's server and don't go on to Monid; a date or a search word for a look-up in one of your accounts, when you ask for it; and the text of a draft, email, reply or task, only after you tap its card to confirm. An email you send or forward goes on to its recipient. Never your saved notes, except the copy you choose to keep on Doddy's server (see the rows below). With Read an email or Read a Notion page on, that one email or page comes back. If you start a payment, the web address of the page you pay for goes there too: the server reads the price from that site, and pays only after you confirm with Face ID. If you tap Find my trips in Gmail (Trips, with Read an email on), the server reads up to 25 booking emails from Gmail, removes links, PINs and card numbers, and sends the rest of each email to Anthropic to read the booking; it keeps none of it, and the trips are saved on this iPhone only. If you use Plan a trip (Trips), or ask Doddy to plan a trip in a conversation, the words you type or say about the trip go to Doddy's server and to Anthropic to be turned into a brief (in a conversation at once, without asking), and then only the places, dates, number of people and bags go to Kiwi.com to search flights; nothing is saved, and Doddy books and pays nothing. When you ask Doddy to research something in a conversation, your question goes at once, without asking, to Doddy's server and to Anthropic, whose Claude searches the web and reads a few pages for it, so search words made from your question go to Anthropic's search provider and the sites it opens see Anthropic's visit; Doddy's server keeps none of the words.",
                 when: "When this iPhone signs in or renews its session (about every 30 days), when Doddy looks something up on the web or uses an online-account tool you switched on, when you use Online accounts or Connected Apps, when you search Gmail for your trips or plan a trip, and when you start a payment.",
                 isActive: state.doddyServerSet,
                 note: !state.doddyServerSet
@@ -477,6 +488,12 @@ public enum DataFlow {
         if active.contains("phoneRecaps") { parts.append("Anthropic (recaps of calls to Doddy's phone line)") }
         // ADR-603: Claude reads the best matches of what you keep on Doddy's server, when you ask on the web.
         if active.contains("webMemory") { parts.append("Anthropic (questions you ask on the web about what you keep on Doddy's server)") }
+        // research_now (14 Nov 2026): the question goes to Claude on Doddy's server, which searches and reads pages; plan_trip: the
+        // words about a trip go to Claude there to become a brief. Not while connections are paused, when Doddy doesn't use the
+        // server in conversations.
+        if active.contains("doddyServer") && !state.pauseAll {
+            parts.append("Anthropic (research and trip plans you ask for in a conversation, through your Doddy server)")
+        }
         if active.contains("messagingServer") {
             parts.append("ElevenLabs (phone calls) and \(newsWriter(state)) (daily news) on your messaging server")
         }
@@ -517,6 +534,7 @@ public enum DataFlow {
         "ceidg": "CEIDG through your messaging server (buyers' NIPs the VAT register doesn't know)",
         "inFakt": "inFakt (invoices you confirm, with your own key)",
         "placeSearch": "Apple Maps (place searches)",
+        "whereAmI": "Apple's geocoder (roughly where you are, when you ask Doddy)",
         "tokenServer": "your voice token server",
         "doddyAccount": "Supabase (your Doddy account's sign-in)",
         "doddyServer": "your Doddy server (web search, online accounts and the web)",

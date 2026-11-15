@@ -71,6 +71,8 @@ final class AskFirstTests: XCTestCase {
             .cloudTool(CloudToolCall(name: CloudToolName.readEmail, arguments: ["query": .string("from:anna")])),
             .cloudTool(CloudToolCall(name: CloudToolName.askClaude, arguments: [:])),
             .cloudTool(CloudToolCall(name: CloudToolName.makeDocument, arguments: [:])),
+            .cloudTool(CloudToolCall(name: CloudToolName.researchNow, arguments: ["question": .string("Weekend near Warsaw")])),
+            .cloudTool(CloudToolCall(name: CloudToolName.planTrip, arguments: ["words": .string("Rzym w grudniu na 7 dni, we dwoje")])),
             addMilk,
             .checkOff(list),
             .noteCapabilityGap(.music),
@@ -131,6 +133,7 @@ final class AskFirstTests: XCTestCase {
             .cloudTool(CloudToolCall(name: CloudToolName.webSearch, arguments: ["query": .string("weather Warsaw tomorrow")])),
             .cloudTool(CloudToolCall(name: "news_search", arguments: ["query": .string("Warsaw")])),
             .cloudTool(CloudToolCall(name: "find_places", arguments: ["query": .string("pharmacy"), "near": .string("Mokotów")])),
+            .cloudTool(CloudToolCall(name: CloudToolName.planEvening, arguments: ["what": .string("kolacja włoska"), "area": .string("Mokotów")])),
         ]
         for request in now { XCTAssertEqual(AskFirst.need(for: request), .runsNow, "\(request)") }
         // Since 11 Nov 2026 the user's own data is read at once too: asking for it is the yes.
@@ -157,10 +160,12 @@ final class AskFirstTests: XCTestCase {
             "search_memories", "read_list", "read_calendar", "find_free_time", "lookup_contact", "upcoming_birthdays",
             "find_photos", "look_at_screen", "read_steps", "read_health_week", "list_alarms", "check_stopwatch",
             "check_focus", "check_errands", "find_deals",
+            // Decision 2026-11-14-approximate-location-by-voice: iOS's own location question is its consent.
+            "where_am_i",
         ])
         XCTAssertEqual(AskFirst.ownSmallActions, [
             "start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",
-            "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap",
+            "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap", "stop_morning_calls",
         ])
         // `parking_spot` is in neither set: only its "find" runs at once, saving and clearing keep their cards.
         XCTAssertFalse(AskFirst.ownLooks.contains(VoiceToolName.parkingSpot))
@@ -217,12 +222,11 @@ final class AskFirstTests: XCTestCase {
     }
 
     func testPhoneActionsWaitForATapOnTheirOwnCard() {
-        // Step 2.5: calls (no tool: Doddy can't call), shortcuts, alarms and timers show their own card (a tap or,
-        // since 14 Nov 2026, a spoken yes). A message draft, a BLIK draft and Maps hand over to another app and run
-        // when asked since step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards, while Doddy is on screen.
+        // Step 2.5: calls (no tool: Doddy can't call), shortcuts and turning an alarm off show their own card (a tap
+        // or, since 14 Nov 2026, a spoken yes). A message draft, a BLIK draft and Maps hand over to another app and run
+        // when asked since step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards, while Doddy is on screen; a
+        // timer and an alarm run when asked since step 2c, with Undo in What Doddy did.
         let calls: [(String, String)] = [
-            ("set_timer", #"{"minutes":5,"label":"Eggs"}"#),
-            ("set_alarm", #"{"time":"2099-01-05T07:30"}"#),
             ("cancel_alarm", #"{"time":"07:30"}"#),
             ("run_shortcut", #"{"name":"Home"}"#),
         ]
@@ -235,7 +239,9 @@ final class AskFirstTests: XCTestCase {
         for (name, json) in [("draft_message", #"{"to":"Anna","body":"On my way"}"#),
                              // BLIK (ADR-510): the details are shown; nothing is sent from Doddy.
                              ("draft_blik_transfer", #"{"to":"Ania","amount":50}"#),
-                             ("open_map", #"{"place":"Demo Café"}"#)] {
+                             ("open_map", #"{"place":"Demo Café"}"#),
+                             ("set_timer", #"{"minutes":5,"label":"Eggs"}"#),
+                             ("set_alarm", #"{"time":"2099-01-05T07:30"}"#)] {
             XCTAssertEqual(AskFirst.need(for: VoiceToolRequest.parse(name: name, parametersJSON: Data(json.utf8))), .runsNow, name)
         }
         XCTAssertNil(ToolCatalog.descriptor("make_call"), "there is no call tool")
@@ -296,8 +302,8 @@ final class AskFirstTests: XCTestCase {
     }
 
     func testASpokenYesNeverApprovesAnAskThatNeedsATap() {
-        // The ledger's own contract: an ask made with needsTap (a tap-only tool, or any change once text from outside
-        // is in the conversation) is never answered by words.
+        // The ledger's own contract: an ask made with needsTap (a tap-only tool: money, bookings, a tool nobody
+        // classified) is never answered by words. Text from outside no longer makes an ask tap only (15 Nov 2026).
         var ledger = AskLedger()
         ledger.asked("c1", request: removeMilk, needsTap: true, at: t0)
         XCTAssertEqual(ledger.answer(.userSaid("yes"), for: "c1", at: t0.addingTimeInterval(1)), .stillWaiting)
@@ -365,8 +371,12 @@ final class AskFirstTests: XCTestCase {
     }
 
     func testSpokenYesInTheAppLanguages() {
-        for yes in ["Yes", "yes please", "OK, go ahead", "tak", "Jasne!", "ja", "oui", "sí", "sim", "va bene", "ja graag"] {
+        for yes in ["Yes", "yes please", "OK, go ahead", "tak", "Jasne!", "Ja bitte.", "klar", "oui", "sí", "sim", "va bene", "ja graag"] {
             XCTAssertTrue(SpokenYes.isYes(yes), yes)
+        }
+        // A lone "ja" is Polish for "I": since a spoken yes answers changes, it must never pass as one.
+        for alone in ["ja", "Ja.", "JA!", "ja ja"] {
+            XCTAssertFalse(SpokenYes.isYes(alone), alone)
         }
         for no in ["no", "nie", "nein", "non", "nee", "não", "yes, but later", "maybe", "approved", "the user agreed"] {
             XCTAssertFalse(SpokenYes.isYes(no), no)

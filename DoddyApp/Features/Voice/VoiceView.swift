@@ -215,7 +215,7 @@ struct VoiceView: View {
                         if !asCard && controller.isPrivate {
                             Label {
                                 // Names the voice that runs this conversation (engineering audit, 7 Nov 2026).
-                                Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.")
+                                Text("Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. A note is saved only when you ask for one, with Undo in What Doddy did.")
                                     .font(.footnote)
                             } icon: {
                                 Image(systemName: "eye.slash.fill")
@@ -550,6 +550,14 @@ struct VoiceView: View {
                 }
             }
         case .ended:
+            // The iPhone locked with the Face ID lock on and the conversation ended by itself, so the screen says why
+            // (`ProtectedDataGuard`). The header above stays the same as for any end.
+            if controller.sessionEnd == .iPhoneLocked {
+                Text("Doddy stopped listening because the iPhone locked. Unlock it and start a new conversation when you're ready.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityIdentifier("voice.endedLocked")
+            }
             // After Stop listening (ADR-361): the note Doddy was asking about, as a draft.
             if controller.recovery != nil || controller.recoverySaved != nil {
                 RecoveryDraftCard(controller: controller)
@@ -836,6 +844,8 @@ struct VoiceView: View {
             blikDetails(draft, contactName: contactName, numbers: numbers, controller: controller)
         case .callLater(_, let draft, let to, let quietHours):
             callLaterContent(draft, to: to, quietHours: quietHours, controller: controller)
+        case .morningCall(_, let draft, let to, let quietHours, let replaces):
+            MorningCallCard(draft: draft, to: to, quietHours: quietHours, replaces: replaces, controller: controller)
         case .callNow(_, let to):
             // Decision 2026-11-10-call-me-now-by-voice: the same call as Settings, Phone calls, Call me now.
             Text("Call you now?")
@@ -1125,6 +1135,13 @@ struct VoiceView: View {
     private func planContent(steps: [PlanStep], blocked: [Int: PlanBlock], controller: VoiceSessionController) -> some View {
         Text("Here's what I'd do")
             .font(.headline)
+        // A card that ran out is shown again with what is true now; nothing ran on the first tap (PlanApprovalGate).
+        if controller.planCardShownAgain {
+            Text("This card ran out, so here it is again with what's true now. Nothing was done. Check it, then tap once more.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+                .accessibilityIdentifier("voice.planShownAgain")
+        }
         PlanStepList(
             steps: steps, blocked: blocked, ticked: controller.planTicked, idPrefix: "voice.plan",
             cloud: controller.planCloud, onToggle: { controller.togglePlanStep($0) }, onChange: { editingPlanStep = $0 })
@@ -1273,6 +1290,7 @@ struct VoiceView: View {
         if case .ingredients(_, _, _, _, let items, _) = pending { return controller.ingredientsUnticked.count >= items.count }
         // A call inside quiet hours (ADR-754) can be booked only with the switch on.
         if case .callLater(_, let draft, _, let quietHours) = pending { return draft.inQuietHours(quietHours) && !controller.callLaterAllowQuiet }
+        if case .morningCall(_, let draft, _, let quietHours, _) = pending { return draft.inQuietHours(quietHours) && !controller.callLaterAllowQuiet }
         return false
     }
 
@@ -1293,6 +1311,7 @@ struct VoiceView: View {
         case .cloud(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("Don't do this", comment: ""))
         case .callLater: (NSLocalizedString("Book call", comment: ""), NSLocalizedString("Don't book", comment: ""))
         case .callNow: (NSLocalizedString("Call me", comment: ""), NSLocalizedString("Don't call", comment: ""))
+        case .morningCall: (NSLocalizedString("Call me every morning", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .callTask(_, let preview):
             preview.isOrder ? (NSLocalizedString("Call and order", comment: ""), NSLocalizedString("Don't order", comment: ""))
                             : (NSLocalizedString("Call them", comment: ""), NSLocalizedString("Don't call", comment: ""))

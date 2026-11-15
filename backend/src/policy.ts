@@ -162,6 +162,22 @@ export class UsageLimiter {
     if (!ok) throw new AppError("quota_exceeded");
   }
 
+  /**
+   * One research_now run (Claude searching the web and reading pages, Doddy's Anthropic key): its own per-user daily
+   * count, so quick look-ups and Claude's writing don't use up each other's, and one unit of the server-wide Claude
+   * cap, which stays the brake on what the whole server spends. Counted before the call, so a refusal costs nothing.
+   */
+  async reserveResearch(userId: string, now: number): Promise<void> {
+    const ok = await this.store.reserveUsage(
+      [
+        { counter: `user:${userId}:research`, period: `day:${day(now)}`, limit: this.limits.userDailyResearch },
+        { counter: "service:claude", period: `day:${day(now)}`, limit: this.limits.serviceDailyClaude },
+      ],
+      1,
+    );
+    if (!ok) throw new AppError("quota_exceeded");
+  }
+
   /** One user-visible read request (counted separately from the provider calls it causes). */
   async reserveRead(userId: string, now: number): Promise<void> {
     const ok = await this.store.reserveUsage(

@@ -47,6 +47,8 @@ final class ActivityTextTests: XCTestCase {
             // ADR-754.
             .callMeLater(CallLaterDraft(at: now.addingTimeInterval(3_600), reason: "Cake", timeZoneID: "Europe/Warsaw")),
             .callMeNow,
+            .callMeEveryMorning(MorningCallDraft(time: "08:00", days: .everyDay, timeZoneID: "Europe/Warsaw")),
+            .stopMorningCalls,
             // Decision 2026-11-09-restaurant-calls-one-tap.
             .callPlaces(CallTaskDraft(places: [CallTaskPlace(name: "Trattoria Uno", phone: "22 123 45 67")],
                                       question: "Czy mają Państwo wolny stolik", goal: "Stolik na dziś.", textResult: true)),
@@ -75,6 +77,8 @@ final class ActivityTextTests: XCTestCase {
             .findDeals(DealsRequest(items: ["masło"], chains: [.biedronka])),
             .followNews(.words(name: "CPK", keywords: ["CPK"])),
             .lookAtScreen(question: "Co to jest?"),
+            // Decision 2026-11-14-approximate-location-by-voice.
+            .whereAmI,
         ]
         requests += CloudToolName.all.sorted().map { .cloudTool(CloudToolCall(name: $0, arguments: [:])) }
         return requests
@@ -90,7 +94,8 @@ final class ActivityTextTests: XCTestCase {
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
              .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .makeSomething, .findDeals,
              .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews, .textMe, .callMeLater, .callMeNow, .callPlaces,
-             .startFocus, .stopFocus, .checkFocus, .startWindDown, .stopWindDown:
+             .callMeEveryMorning, .stopMorningCalls,
+             .startFocus, .stopFocus, .checkFocus, .startWindDown, .stopWindDown, .whereAmI:
             true
         case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid,
              .noteCapabilityGap, .lostWallet, .draftInvoice:
@@ -104,7 +109,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 59, "open_food_app (decision 2026-11-12-food-by-voice); the focus timer and the wind-down, five tools (decision 2026-11-10-timers-by-voice); look_at_screen (decision 2026-11-09-doddy-looks-at-the-screen); follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); plus the BLIK draft (ADR-510, restored 7 Nov 2026), make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754), call_places (decision 2026-11-09-restaurant-calls-one-tap), call_me_now (decision 2026-11-10-call-me-now-by-voice)")
+        XCTAssertEqual(kinds.count, 62, "call_me_every_morning and stop_morning_calls (decision 2026-11-14-morning-call); where_am_i (decision 2026-11-14-approximate-location-by-voice); open_food_app (decision 2026-11-12-food-by-voice); the focus timer and the wind-down, five tools (decision 2026-11-10-timers-by-voice); look_at_screen (decision 2026-11-09-doddy-looks-at-the-screen); follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); plus the BLIK draft (ADR-510, restored 7 Nov 2026), make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754), call_places (decision 2026-11-09-restaurant-calls-one-tap), call_me_now (decision 2026-11-10-call-me-now-by-voice)")
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }

@@ -1,0 +1,115 @@
+{
+  "_note": "What the live main agent (agent_0501m4et27vyeawrwqfdxxfszfa6) scores after every conversation. Applied 14 Nov 2026 with agents_update_analysis (versions agtvrsn_1201m7dyz6xdeharp66kmmazayce and agtvrsn_2201m7dyzktqfcc9k4djgfjgf5mc); four more criteria on 15 Nov 2026 (decision docs/decisions/2026-11-15-conversation-core-and-corrections.md), on branch agtbrch_6201m7fwf52pfshrmkyn15qsbwxg (agtvrsn_1901m7fwsxxke578gpdfc4csjw08), merged to main as agtvrsn_7601m7fx5d33f4qad5efz97k4hkj and read back. A record, applied with agents_update_analysis; scripts/voice_agent_spec.py check validates its shape (unique ids, prompts under 2,000 characters, transcript-only criteria that say so) but does not sync it. Change it on the live agent only on the owner's word and log it in voice-agent/README.md.",
+  "analysis_llm": "gemini-2.5-flash",
+  "evaluation_criteria": [
+    {
+      "id": "doddy_did_the_task",
+      "name": "Did what was asked",
+      "analysis_item_id": "aitem_9701m7dyz6xeed79yzft02khv43k",
+      "conversation_goal_prompt": "You judge a voice conversation between a user and Doddy, an AI assistant on the user's iPhone with tools for web search, reading pages, places, flights, calendar, weather, reminders, messages, phone calls and documents. Success: every clear request the user made was done (a tool ran and Doddy reported its real result), or answered from general knowledge when that was enough, or honestly declined because it is truly unsupported or unsafe. Failure: a clear request was left undone: Doddy gave up, gave no answer, changed the subject, only promised to do it later without starting it, or the conversation ended before the result came. Unknown: the user made no clear request (a greeting, small talk, a test).",
+      "type": "prompt",
+      "scoring_mode": "binary",
+      "scope": "conversation"
+    },
+    {
+      "id": "doddy_no_false_cant",
+      "name": "No wrong \"I can't\"",
+      "analysis_item_id": "aitem_6701m7dyz6xte3vbh2x326r8majh",
+      "conversation_goal_prompt": "Failure if Doddy said he can't, isn't able, has no access or has no tool for something his tools could do (look things up on the web, read pages, find places or events, search flights, plan a day, a weekend or a trip, check the calendar or the weather, set reminders, draft messages, make documents), or if he asked permission before a simple look-up the user had already asked for (for example 'Mam poszukać?', 'Want me to look it up?', 'Mam się tym zająć w tle?') instead of doing it. Success if he never did either. Unknown if no request in the conversation needed a tool.",
+      "type": "prompt",
+      "scoring_mode": "binary",
+      "scope": "conversation"
+    },
+    {
+      "id": "doddy_tools_worked",
+      "name": "Tools worked",
+      "analysis_item_id": "aitem_9901m7dyz6y0f4g8wpc1c4t40syn",
+      "conversation_goal_prompt": "Look at every tool call and its result in the transcript. Failure if any tool returned an error, failed, timed out, was abandoned ('Tool execution was abandoned due to user input'), returned something Doddy couldn't use, or Doddy told the user that something didn't go through or that the server couldn't be reached. Success if every tool call returned a usable result. Unknown if no tool was called.",
+      "type": "prompt",
+      "scoring_mode": "binary",
+      "scope": "conversation"
+    },
+    {
+      "id": "doddy_true_to_results",
+      "name": "Said only what tools returned",
+      "analysis_item_id": "aitem_8801m7dyz6y5fx0b8z4w5zgqyv9r",
+      "conversation_goal_prompt": "Failure if Doddy stated a specific fact that has to come from a tool (a price, a date, an opening hour, a flight time, an address, an event, a calendar entry) that appears in no tool result in the transcript, or said something was booked, sent, saved, set or done when no tool result confirmed it. Success if every such fact and every 'done' matches a tool result. Unknown if Doddy stated no such fact and claimed nothing was done.",
+      "type": "prompt",
+      "scoring_mode": "binary",
+      "scope": "conversation"
+    },
+    {
+      "id": "doddy_correction_applied",
+      "name": "Correction applied once",
+      "analysis_item_id": "aitem_6101m7fwsxxxfrgsx6r944pb9zyc",
+      "conversation_goal_prompt": "Judge only the words and tool calls in the transcript; never judge voice, timing, pauses or overlapping speech, which are not in it. Look for a correction by the user of a detail they had given (a date, a time, a name, an amount, a list item: 'jutro... nie, w piątek', 'na dziesięć, nie, na pięć', 'sorry, six thirty'). Failure if Doddy then acted on the old value, or made two actions out of one corrected request (two reminders, two timers, two items) without telling the user both exist, or said the old one was gone with no tool result or '(app)' note saying so. Success if the corrected value was the one used, once, or Doddy said the earlier one already existed and changed or undid it. Unknown if the user corrected nothing.",
+      "type": "prompt",
+      "scoring_mode": "binary",
+      "scope": "conversation"
+    },
+    {
+      "id": "doddy_followed_new_words",
+      "name": "Followed the new words after an interruption",
+      "analysis_item_id": "aitem_1201m7fwsxy8eans4dc5sb7jqzhj",
+      "conversation_goal_prompt": "Judge only the words in the transcript; never judge voice, timing, pauses or overlapping speech, which are not in it. Look for places where the user interrupted Doddy or changed their mind ('stop', 'czekaj', 'nie, jednak...', 'tak, ale...', 'actually, don't'). Failure if Doddy ignored the new words and carried on with what he was saying or doing, went back to the old explanation without being asked, or said a change that had already run was cancelled just because he stopped talking. Success if Doddy answered the new words, and said truthfully what had already been done. Unknown if there was no interruption or change of mind.",
+      "type": "prompt",
+      "scoring_mode": "binary",
+      "scope": "conversation"
+    },
+    {
+      "id": "doddy_memory_honest",
+      "name": "Memory honest",
+      "analysis_item_id": "aitem_5501m7fwsxyee4mbd46c1r6csvfb",
+      "conversation_goal_prompt": "Judge only the transcript. Failure if Doddy stated a personal fact about the user (a preference, an address, a person in their life, something from an earlier conversation) that the user did not say in this conversation and that no tool result (search_memories, read_list and the like) contains, or said something was remembered, saved or forgotten with no tool result confirming it, or claimed human memories or a human life of his own. Success if every personal fact came from the user's own words in this conversation or a tool result, and a missing memory was said plainly. Unknown if no personal fact or memory came up.",
+      "type": "prompt",
+      "scoring_mode": "binary",
+      "scope": "conversation"
+    },
+    {
+      "id": "doddy_language_and_brevity",
+      "name": "Language and brevity",
+      "analysis_item_id": "aitem_3601m7fwsxyme4wt619cc8syhekw",
+      "conversation_goal_prompt": "Judge only the words in the transcript; never judge voice, accent, timing or pauses, which are not in it. Failure if Doddy replied in a different language from the one the user was speaking (outside translator mode), or answered a simple question (a quick fact, a yes or no, a time) with a preamble, a repeat of the question, filler such as 'Great question' or 'Is there anything else I can help with?', or several sentences before the answer. Success if replies were in the user's language and simple questions got the answer first, in one or two sentences. Longer answers to requests for an explanation, a comparison or a plan are fine. Unknown if the conversation had no reply from Doddy.",
+      "type": "prompt",
+      "scoring_mode": "binary",
+      "scope": "conversation"
+    }
+  ],
+  "system_evaluation_criteria": [
+    "__system_eval_criteria_frustration"
+  ],
+  "data_collection": {
+    "failure_kind": {
+      "analysis_item_id": "aitem_2001m7dyz6yaex4t2gdvhq8b84fj",
+      "type": "string",
+      "enum": [
+        "none",
+        "said_cant",
+        "asked_instead_of_doing",
+        "tool_failed",
+        "tool_abandoned",
+        "wrong_tool",
+        "slow",
+        "made_up_detail",
+        "other"
+      ],
+      "description": "The main thing that went wrong for the user in this conversation, as one value: none (nothing went wrong), said_cant (Doddy wrongly said he can't), asked_instead_of_doing (asked before a look-up the user had asked for), tool_failed (a tool error, timeout or unreachable server), tool_abandoned (a tool was abandoned because the user spoke), wrong_tool (Doddy used a tool that didn't fit, or none when one was needed), slow (the user complained about waiting), made_up_detail (a fact or a 'done' no tool result supports), other."
+    },
+    "failed_request": {
+      "analysis_item_id": "aitem_7301m7dyz6yffsbak1907498300y",
+      "type": "string",
+      "description": "In at most 12 English words, what the user asked for that didn't work, for example 'plan a weekend near Warsaw' or 'cheapest flight to Rome in December'. Empty if nothing failed. Never include names, phone numbers, email or street addresses, or any other personal detail."
+    }
+  },
+  "already_on": {
+    "sentiment_analysis": true,
+    "topic_discovery": true
+  },
+  "rollback": "Before 15 Nov 2026: agents_update_analysis with analysis_items listing only the first four evaluation_criteria items, __system_eval_criteria_frustration and the two data_collection items (or restore main to agtvrsn_3001m7f86fwhebb8fb44mg6e5pes, which also restores the prompt). There were none before 14 Nov 2026.",
+  "transcript_only": [
+    "doddy_correction_applied",
+    "doddy_followed_new_words",
+    "doddy_memory_honest",
+    "doddy_language_and_brevity"
+  ]
+}

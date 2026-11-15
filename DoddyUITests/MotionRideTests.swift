@@ -55,14 +55,14 @@ final class MotionRideTests: XCTestCase {
     private func saveNote(_ text: String, in app: XCUIApplication) {
         // Home has no tab bar (ADR-545): from Home there is nothing to tap.
         if app.buttons["tab.home"].exists { app.buttons["tab.home"].tap() }
-        XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["home.save"].appears(timeout: 5))
         app.openNewNote()
         let editor = app.textViews.firstMatch
-        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        XCTAssertTrue(editor.appears(timeout: 5))
         editor.tapAndType(text)
         if app.buttons["capture.keyboardDone"].exists { app.buttons["capture.keyboardDone"].tap() }
         tapInSheet(app.buttons["capture.save"], app: app)
-        XCTAssertTrue(app.staticTexts["capture.saved"].waitForExistence(timeout: 6))
+        XCTAssertTrue(app.staticTexts["capture.saved"].appears(timeout: 6))
         tapInSheet(app.buttons["capture.done"], app: app)
     }
 
@@ -70,7 +70,7 @@ final class MotionRideTests: XCTestCase {
     /// the hierarchy): scroll the sheet until the button can be tapped.
     @MainActor
     private func tapInSheet(_ button: XCUIElement, app: XCUIApplication) {
-        XCTAssertTrue(button.waitForExistence(timeout: 5))
+        XCTAssertTrue(button.appears(timeout: 5))
         for _ in 0..<6 where !button.isHittable { app.scrollStep() }
         button.tap()
     }
@@ -83,7 +83,7 @@ final class MotionRideTests: XCTestCase {
         XCTAssertEqual(surfaceUnderHim(in: app), "stage")
         app.buttons["home.ask"].tap()
         let input = app.textFields["ask.input"]
-        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        XCTAssertTrue(input.appears(timeout: 5))
         XCTAssertEqual(surfaceUnderHim(in: app), "composer")
         let him = app.marker("doddy.motion.idle")
         // His 48 pt clear zone ends at least 24 pt before Send (brief rule 8).
@@ -94,7 +94,7 @@ final class MotionRideTests: XCTestCase {
         input.typeText("Synthetic question")
         XCTAssertEqual(surfaceUnderHim(in: app), "composer")
         app.navigationBars.buttons["Close"].tap()
-        XCTAssertTrue(app.buttons["home.ask"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["home.ask"].appears(timeout: 5))
         XCTAssertEqual(surfaceUnderHim(in: app), "stage")
         XCTAssertEqual(drawings(in: app).count, 1)
         XCTAssertEqual(checksCount(in: app), "0", motionDebugReport(in: app))
@@ -113,11 +113,11 @@ final class MotionRideTests: XCTestCase {
         // A note's page covers him in place.
         let card = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'memory.open.'")).firstMatch
         card.tap()
-        XCTAssertTrue(app.staticTexts["detail.currentText"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["detail.currentText"].appears(timeout: 5))
         RunLoop.current.run(until: Date().addingTimeInterval(0.6))
         XCTAssertEqual(drawings(in: app).count, 0, "covered by the page, not hopping onto it")
         app.navigationBars.buttons.element(boundBy: 0).tap()
-        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        XCTAssertTrue(card.appears(timeout: 5))
         XCTAssertEqual(surfaceUnderHim(in: app), spot, "revealed where he stood")
         // Scroll down and back up.
         app.swipeUp(velocity: .slow)

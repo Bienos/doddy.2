@@ -273,6 +273,11 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// A call from Doddy's number to the user's verified number now (decision 2026-11-10-call-me-now-by-voice).
     /// Shown on a card with the number's last digits; placed only on the user's tap.
     case callMeNow
+    /// A call from Doddy's number to the user's verified number on chosen days at one morning time, with a plan of the
+    /// day (decision 2026-11-14-morning-call). Shown on a card with the exact schedule; set up only on a yes or a tap.
+    case callMeEveryMorning(MorningCallDraft)
+    /// Stops the morning calls at once, with no card (decision 2026-11-14-morning-call).
+    case stopMorningCalls
     /// Up to three places, one card, one tap; called one after another until one says yes
     /// (decision 2026-11-09-restaurant-calls-one-tap). Placed by Doddy's messaging server.
     case callPlaces(CallTaskDraft)
@@ -344,6 +349,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// "I lost my wallet" (ADR-692): a checklist of official steps on a card. Doddy does none of them;
     /// a step's page opens or its number is dialled only on the person's tap.
     case lostWallet(LostWalletSituation)
+    /// The person's approximate area, read once now (decision 2026-11-14-approximate-location-by-voice, WhereAmI.swift).
+    case whereAmI
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -460,6 +467,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseCallMeLater(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.callMeNow:
             return .callMeNow
+        case VoiceToolName.callMeEveryMorning:
+            return parseCallMeEveryMorning(args, name: name, calendar: calendar)
+        case VoiceToolName.stopMorningCalls:
+            return .stopMorningCalls
         case VoiceToolName.callPlaces:
             return parseCallPlaces(args, name: name)
         case VoiceToolName.makePresentation:
@@ -506,6 +517,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseDraftInvoice(args, name: name)
         case VoiceToolName.lostWallet:
             return parseLostWallet(args, name: name)
+        case VoiceToolName.whereAmI:
+            return .whereAmI
         default:
             return parseCloud(name: name, parametersJSON: parametersJSON) ?? .unsupported(name: name)
         }

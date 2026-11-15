@@ -75,7 +75,7 @@ final class ActionStatusTextTests: XCTestCase {
     }
 
     func testEveryWayAConversationEndsHasPolish() {
-        let ends: [VoiceSessionEnd] = [.userEnded, .doddyEnded, .stoppedListening, .dropped(.offline), .dropped(.connectionLost), .dropped(.error(""))]
+        let ends: [VoiceSessionEnd] = [.userEnded, .doddyEnded, .stoppedListening, .quiet, .dropped(.offline), .dropped(.connectionLost), .dropped(.error(""))]
         for end in ends {
             for connected in [true, false] {
                 let english = SessionRecovery.status(end, connected: connected)
@@ -104,7 +104,7 @@ final class ActionStatusTextTests: XCTestCase {
 
     func testHomeStaysQuietForEveryOtherEnd() {
         for language in [NotificationLanguage.english, .polish] {
-            for end in [VoiceSessionEnd.userEnded, .doddyEnded, .stoppedListening] {
+            for end in [VoiceSessionEnd.userEnded, .doddyEnded, .stoppedListening, .quiet] {
                 XCTAssertNil(SessionRecovery.homeNotice(end, connected: true, language: language), "\(end)")
             }
             XCTAssertNil(SessionRecovery.homeNotice(.dropped(.offline), connected: true, language: language), "offline has its own note card")

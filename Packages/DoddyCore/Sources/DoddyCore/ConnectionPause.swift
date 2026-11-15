@@ -26,6 +26,9 @@ public enum ConnectionPause {
         case .lostWallet:
             // Doddy's own checklist (ADR-692); a page or a call opens only on the person's tap, like any link.
             false
+        case .stopMorningCalls:
+            // Stopping Doddy's own morning calls (decision 2026-11-14-morning-call) is never held back: it only stops calls.
+            false
         case .handOverErrand, .makeSomething:
             // Doddy's server searches and reads the web for it (ADR-570, ADR-740).
             true
@@ -39,11 +42,14 @@ public enum ConnectionPause {
         case .draftInvoice:
             // A draft on this iPhone's screen (ADR-677); no other app or account is used.
             false
+        case .whereAmI:
+            // The rounded position goes to Apple's geocoder for the area's name (decision 2026-11-14-approximate-location-by-voice).
+            true
         case .readCalendar, .findFreeTime, .leaveBy, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,
              .openMap, .openFoodApp, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .controlHome, .cloudTool, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,
              .deleteCalendarEvents, .moveReminders, .listAlarms, .cancelAlarm,
-             .convertCurrency, .textMe, .callMeLater, .callMeNow, .callPlaces:
+             .convertCurrency, .textMe, .callMeLater, .callMeNow, .callMeEveryMorning, .callPlaces:
             // Currency rates come from the ECB's public file, another service (ADR-300). A text,
             // or a call booked for later, goes through Doddy's server and Twilio (ADR-750).
             true

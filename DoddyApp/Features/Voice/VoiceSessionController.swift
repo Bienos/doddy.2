@@ -82,6 +82,9 @@ final class VoiceSessionController {
         /// at `draft.at`, saying `draft.reason` first. The tap approves that with the card's
         /// quiet-hours switch (`callLaterAllowQuiet`).
         case callLater(toolCallID: String, draft: CallLaterDraft, to: String, quietHours: CallQuietHours)
+        /// "Call you every morning?" (decision 2026-11-14-morning-call): the exact schedule, the number's last digits, what
+        /// the call says and the quiet-hours switch (`callLaterAllowQuiet`); `replaces` is the active one it stops.
+        case morningCall(toolCallID: String, draft: MorningCallDraft, to: String, quietHours: CallQuietHours, replaces: MorningCall?)
         /// "Call you now?" (decision 2026-11-10-call-me-now-by-voice): from Doddy's number to the user's own
         /// verified number `to`, at once. The tap approves exactly that; nothing is placed before it.
         case callNow(toolCallID: String, to: String)
@@ -112,7 +115,8 @@ final class VoiceSessionController {
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
                  .ingredients(let id, _, _, _, _, _), .ask(let id, _, _, _, _), .cloudRead(let id, _, _, _, _),
-                 .presentation(let id, _), .camera(let id), .home(let id, _), .callLater(let id, _, _, _), .callNow(let id, _), .callTask(let id, _):
+                 .presentation(let id, _), .camera(let id), .home(let id, _), .callLater(let id, _, _, _), .callNow(let id, _), .callTask(let id, _),
+                 .morningCall(let id, _, _, _, _):
                 id
             }
         }
@@ -222,8 +226,13 @@ final class VoiceSessionController {
             // The same phase again (the SDK repeats states) changes nothing; skip the work (ADR-604).
             guard phase != oldValue else { return }
             Self.conversationInProgress = isLive
-            if !isLive { turnFeedback.reset() }
+            if !isLive {
+                turnFeedback.reset()
+                interruptedWrites.reset()
+            }
             if isLive { Self.current = self } else if Self.current === self { Self.current = nil }
+            // A quiet conversation hangs up by itself (decision 2026-11-15-quiet-conversations-hang-up).
+            quietWatchPhaseChanged()
             ListeningIndicatorModel.shared.refresh()
             switch phase {
             case .listening, .thinking, .speaking: connectedOnce = true
@@ -283,6 +292,9 @@ final class VoiceSessionController {
     private var pendingShownAt: Date?
     /// ASK-01 (ADR-483): which calls the user said yes to. Checked right before a tool runs.
     private var askLedger = AskLedger()
+    /// DOD-07: a tap on the plan card runs it only while the card is fresh and for the payload it showed; a card that ran
+    /// out is shown again and never runs (`PlanApprovalGate`, decision 2026-11-14-plan-card-ran-out).
+    private var planApproval = PlanApprovalGate()
     /// The payment card the voice agent asked for (ADR-736). Only a page address came from the agent; the card
     /// shows Doddy's server's own terms. Kept after the outcome until the person closes the card.
     private(set) var paymentApproval: PaymentApprovalModel?
@@ -472,6 +484,10 @@ final class VoiceSessionController {
     /// while that start is still `startAttempt`, so a lookup that finishes after End and a new
     /// Start never reaches the new conversation.
     private var callOwners = ToolCallOwners()
+    /// Doddy's own at-once changes that were still running when the person spoke over them: the agent is told they
+    /// ran, so a correction changes the one that ran instead of making a second (decision
+    /// 2026-11-15-conversation-core-and-corrections).
+    private var interruptedWrites = VoiceInterruptedWrites()
     /// What earlier tries of a reminder or event meant when its card was shown (ADR-319).
     private var retryChecks: [String: ActionRetryDecision] = [:]
     /// The app's read-back and whether it was asked to write, for the entry logged with the reply.
@@ -492,6 +508,9 @@ final class VoiceSessionController {
     @ObservationIgnored private var interruptionObserver: NSObjectProtocol?
     /// Media services reset and Doddy coming back to the front: both can settle an interruption.
     @ObservationIgnored private var interruptionFollowUps: [NSObjectProtocol] = []
+    /// What iOS last said about the iPhone's lock, and what to do about it (decision
+    /// 2026-11-14-voice-mute-when-protected-data-unavailable). Read at each start, kept current by two notices.
+    @ObservationIgnored private var protectedData = ProtectedDataGuard()
     /// When iOS took the audio, while it still has it (ADR-696).
     @ObservationIgnored private var audioPausedSince: Date?
     /// Ends the conversation if iOS keeps the audio past the grace time and no `.ended` comes.
@@ -616,6 +635,12 @@ final class VoiceSessionController {
     /// Test seam only: iOS restarted its media services (ADR-696).
     func mediaServicesResetForTesting() {
         audioServicesWereReset()
+    }
+
+    /// Test seam only: iOS's notice about the iPhone's lock, as the observer hands it on. The returned task is the end,
+    /// when the Face ID lock is on and the iPhone is locking.
+    func protectedDataForTesting(_ signal: ProtectedDataGuard.Signal) -> Task<Void, Never>? {
+        protectedDataChanged(signal)
     }
 
     /// Test seam only: a tool call from the provider. The start it arrived in is taken now, as the
@@ -1262,7 +1287,16 @@ final class VoiceSessionController {
             center.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { _ in
                 Task { @MainActor in ref.value?.checkPausedAudio() }
             },
+            // The iPhone locking: iOS announces that protected data is going away, and that it is back.
+            center.addObserver(forName: UIApplication.protectedDataWillBecomeUnavailableNotification, object: nil, queue: .main) { _ in
+                Task { @MainActor in ref.value?.protectedDataChanged(.becameUnavailable) }
+            },
+            center.addObserver(forName: UIApplication.protectedDataDidBecomeAvailableNotification, object: nil, queue: .main) { _ in
+                Task { @MainActor in ref.value?.protectedDataChanged(.becameAvailable) }
+            },
         ]
+        // iOS says nothing about a lock that was already there, so a start reads its answer once.
+        syncProtectedData()
     }
 
     private func stopWatchingAudioInterruptions() {
@@ -1347,10 +1381,107 @@ final class VoiceSessionController {
         fail(SessionRecovery.status(.dropped(.audioInterrupted), connected: connectedOnce, language: .current).detail ?? "")
     }
 
+    // MARK: The iPhone locks (decision 2026-11-14-voice-mute-when-protected-data-unavailable)
+
+    /// A notice from iOS. `ProtectedDataGuard` decides; with the Face ID lock on and the iPhone locking, the
+    /// conversation ends and nothing starts it again on the unlock.
+    @discardableResult
+    private func protectedDataChanged(_ signal: ProtectedDataGuard.Signal) -> Task<Void, Never>? {
+        endForLockedIPhone(protectedData.receive(signal, conversation: protectedDataConversation, appLockOn: AppLock.shared.lockOn))
+    }
+
+    /// The start of a conversation: iOS's own answer now, in case the iPhone was locked already.
+    private func syncProtectedData() {
+        endForLockedIPhone(protectedData.sync(
+            protectedDataAvailable: ProtectedData.isAvailable, conversation: protectedDataConversation, appLockOn: AppLock.shared.lockOn))
+    }
+
+    private var protectedDataConversation: ProtectedDataGuard.Conversation {
+        switch phase {
+        case .connecting: .connecting
+        case .listening, .thinking, .speaking: .running
+        case .idle, .ended, .microphoneDenied, .failed: .notRunning
+        }
+    }
+
+    /// The one way out: `stop` closes the microphone and the agent's connection, drops every card and yes, and keeps
+    /// nothing as a draft. A card still waiting goes now, not when `stop` gets its turn, so nothing on it can run.
+    @discardableResult
+    private func endForLockedIPhone(_ outcome: ProtectedDataGuard.Outcome) -> Task<Void, Never>? {
+        guard case .end(let reason) = outcome else { return nil }
+        Self.audioLog.notice("conversation ended: the iPhone locked with Doddy's Face ID lock on")
+        pendingAction = nil
+        return Task { await stop(reason) }
+    }
+
     private static func describeAudioSession() -> String {
         let session = AVAudioSession.sharedInstance()
         let mixing = session.categoryOptions.contains(.mixWithOthers) ? "mixing with other apps ON" : "mixing with other apps OFF"
         return "\(session.category.rawValue), mode \(session.mode.rawValue), \(mixing), other app audio playing: \(session.isOtherAudioPlaying)"
+    }
+
+    // MARK: Quiet conversations hang up (decision 2026-11-15-quiet-conversations-hang-up)
+
+    /// The quiet clock (`VoiceQuietWatch`, DoddyCore): set once Doddy is ready, nil while connecting and after
+    /// the conversation. ElevenLabs bills every minute a conversation is open, and the live agents never hang
+    /// up on silence, so without it a conversation left open (Doddy opened Maps, the phone was put down) kept
+    /// the microphone on until ElevenLabs' 10-minute cap.
+    @ObservationIgnored private var quietWatch: VoiceQuietWatch?
+    @ObservationIgnored private var quietLook: Task<Void, Never>?
+
+    /// From `phase`'s didSet: the clock starts when Doddy is first ready, every change of state after that is
+    /// something happening, and it stops with the conversation. Connecting starts a new conversation (also the
+    /// translator's, which replaces the one before it), so the clock waits for that one to be ready.
+    private func quietWatchPhaseChanged() {
+        guard isLive, phase != .connecting else {
+            quietLook?.cancel()
+            quietLook = nil
+            quietWatch = nil
+            return
+        }
+        guard quietWatch != nil else {
+            quietWatch = VoiceQuietWatch(startedAt: ProcessInfo.processInfo.systemUptime)
+            scheduleQuietLook(after: VoiceQuietWatch.lookEvery)
+            return
+        }
+        noteQuietActivity()
+    }
+
+    /// A line from either side, or a change of state: the quiet clock starts again.
+    private func noteQuietActivity() {
+        quietWatch?.activity(at: ProcessInfo.processInfo.systemUptime)
+    }
+
+    private func scheduleQuietLook(after seconds: TimeInterval) {
+        quietLook?.cancel()
+        let attempt = startAttempt
+        quietLook = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(seconds))
+            guard !Task.isCancelled, let self, attempt == self.startAttempt else { return }
+            self.lookForQuiet()
+        }
+    }
+
+    private func lookForQuiet() {
+        guard isLive, phase != .connecting, var watch = quietWatch else { return }
+        let longTurnDraft: Bool = if case .draft = longTurn { true } else { false }
+        let situation = VoiceQuietWatch.Situation(
+            busy: phase == .speaking || phase == .thinking || turnFeedback.label != nil
+                || longTurn.isListening || longTurn == .writingOut,
+            onScreen: UIApplication.shared.applicationState == .active,
+            translating: translator != nil,
+            cardWaiting: pendingAction != nil || paymentApproval != nil || permissionRequest != nil || longTurnDraft)
+        let decision = watch.look(at: ProcessInfo.processInfo.systemUptime, situation: situation)
+        quietWatch = watch
+        switch decision {
+        case .lookAgain(let after):
+            scheduleQuietLook(after: after)
+        case .end(let quietFor):
+            // Fixed words and seconds only; nothing said is logged.
+            let note = "conversation ended: quiet for \(Int(quietFor.rounded())) s (on screen \(situation.onScreen), translating \(situation.translating), card waiting \(situation.cardWaiting), busy \(situation.busy))"
+            Self.audioLog.notice("\(note, privacy: .public)")
+            Task { await stop(.quiet) }
+        }
     }
 
     /// `reason`: why it ends. Anything already known (a drop or failure) is kept.
@@ -1369,6 +1500,7 @@ final class VoiceSessionController {
         conversation = nil
         pendingAction = nil
         askLedger.clear()
+        planApproval.clear()
         contactCard = nil
         parkingCard = nil
         outsideContent = OutsideContentSession()
@@ -1601,9 +1733,19 @@ final class VoiceSessionController {
         if (try? await conversation.setMuted(false)) != nil { isMuted = false }
     }
 
-    /// The user tapped the card's confirm button: Save, Add, Start, Open or Run.
-    func confirmPendingAction() async {
+    /// The user tapped the card's confirm button: Save, Add, Start, Open or Run. A plan card runs only through
+    /// `PlanApprovalGate`: one that ran out runs nothing and is shown again for a new tap.
+    func confirmPendingAction(answeredBy answer: PlanApprovalGate.Answer = .tapped) async {
         guard let action = pendingAction else { return }
+        if case .plan(let id, let steps, _) = action {
+            switch planApproval.answer(answer, for: id, payload: planPayload(steps, planCloud), at: Date()) {
+            case .run: break
+            case .refresh:
+                await showPlanAgain(action)
+                return
+            case .ignore: return
+            }
+        }
         pendingAction = nil
         // The conversation the card belongs to. The change runs to the end even if the user taps
         // End meanwhile; what it shows on screen after an await is shown only if this one is
@@ -1731,8 +1873,13 @@ final class VoiceSessionController {
             writeResults[id] = WriteResult(reply: text, attempted: true)
             await reply(id, text, isError: outcome != .confirmed)
         case .camera(let id):
-            // ADR-569: the camera opens on this screen; a kept photo goes into a new note.
-            if onScreen(attempt) { cameraRequest = UUID() }
+            // ADR-569: the camera opens on this screen; a kept photo goes into a new note. Only while Doddy is on
+            // screen: a yes said with Doddy in the background opens nothing there, so it is never told "opened".
+            guard onScreen(attempt), UIApplication.shared.applicationState == .active else {
+                await reply(id, VoiceToolReply.cameraNeedsTheScreen)
+                return
+            }
+            cameraRequest = UUID()
             await reply(id, VoiceToolReply.cameraOpened)
         case .ask(let id, _, _, let toolName, _):
             guard askLedger.answer(.tapped, for: id, at: Date()) == .granted else {
@@ -1771,6 +1918,13 @@ final class VoiceSessionController {
             callLaterAllowQuiet = false
             writeResults[id] = WriteResult(reply: result.reply, attempted: result.attempted)
             await reply(id, result.reply)
+        case .morningCall(let id, let draft, let to, let quietHours, let replaces):
+            callBooking = true
+            let result = await bookMorningCall(draft, to: to, quietHours: quietHours, allowQuietHours: callLaterAllowQuiet, replaces: replaces)
+            callBooking = false
+            callLaterAllowQuiet = false
+            writeResults[id] = WriteResult(reply: result.reply, attempted: result.attempted)
+            await reply(id, result.reply)
         case .noteReminder(let id, let memoryID, let noteText, _, let target):
             guard let confirmed = confirmedNoteReminder(memoryID: memoryID, noteText: noteText, target: target) else {
                 await reply(id, VoiceToolReply.noteReminderFailed("That place can't be used."))
@@ -1792,14 +1946,19 @@ final class VoiceSessionController {
             await reply(id, changeEvent(plan), undo: .changedEvent(plan))
         case .undo(let id, let entry):
             await reply(id, await undoFromVoice(entry, attempt: attempt))
-        case .ingredients(let id, let listID, let listName, let dish, let items, _):
+        case .ingredients(let id, let listID, let listName, let dish, let items, let alreadyOpen):
             // Only the ticked ones, through the same add as add_to_list (ADR-305).
             let ticked = items.indices.filter { !ingredientsUnticked.contains($0) }.map { items[$0] }
-            let leftOut = items.indices.filter { ingredientsUnticked.contains($0) }.map { items[$0] }
+            // Each left-out one by its real reason: with no card (step 2b) nobody unticked anything.
+            let left = items.indices.filter { ingredientsUnticked.contains($0) }
+            let leftOut = IngredientsLeftOut(
+                onTheList: left.filter { alreadyOpen.contains($0) }.map { items[$0] },
+                atHome: left.filter { !alreadyOpen.contains($0) && ingredientsAtHome.contains($0) }.map { items[$0] },
+                unticked: left.filter { !alreadyOpen.contains($0) && !ingredientsAtHome.contains($0) }.map { items[$0] })
             ingredientsUnticked = []
             ingredientsAtHome = []
             guard !ticked.isEmpty else {
-                await reply(id, VoiceToolReply.ingredientsNoneTicked)
+                await reply(id, VoiceToolReply.ingredientsNoneAdded(leftOut))
                 return
             }
             do {
@@ -2001,6 +2160,9 @@ final class VoiceSessionController {
         case .callLater(let id, _, _, _):
             if !replaced { callLaterAllowQuiet = false }
             await answer(id, VoiceToolReply.callDeclined)
+        case .morningCall(let id, _, _, _, _):
+            if !replaced { callLaterAllowQuiet = false }
+            await answer(id, VoiceToolReply.morningCallDeclined)
         case .callNow(let id, _):
             await answer(id, VoiceToolReply.callNowDeclined)
         case .presentation(let id, _): await answer(id, VoiceToolReply.presentationDeclined)
@@ -2031,6 +2193,7 @@ final class VoiceSessionController {
             await answer(id, VoiceToolReply.bulkDeclined)
         case .plan(let id, let steps, _):
             askedPlans[id] = nil
+            planApproval.forget(id)
             let planID = UUID()
             for step in steps {
                 logPlanStep(step, reply: PlanReply.declined, plan: ActivityPlanRef(id: planID, step: step.number, count: steps.count))
@@ -2057,33 +2220,40 @@ final class VoiceSessionController {
     }
 
     /// DOD-07, on top of `AskFirst.need(for:)`: once text from outside has reached this conversation, the few tools that
-    /// could carry it out of the phone (a text, a file or a question to Claude with material, a look at the screen,
-    /// items on a shared list) ask for a tap too, and `make_document` and the first look always do; so do the cards a
-    /// spoken yes answers otherwise (`AskFirst.need(for:in:listIsShared:)`). `.cardShown` when it showed that card and
-    /// the call stops here; `.tapped` when the user tapped it for exactly this call; `.notHeld` when the session rule
-    /// adds nothing and the baseline check follows.
+    /// could carry it out of the phone (a text, a file or a question to Claude with material, a look at the screen) and
+    /// items for a list the user didn't say themselves ask first, and the first look and a shared list always do
+    /// (`AskFirst.need(for:in:listIsShared:)`). Since 15 Nov 2026 (option 2) those cards take the person's own spoken yes
+    /// as well as a tap. `.cardShown` when it showed that card and the call stops here; `.answered` when the user said
+    /// yes to it or tapped it for exactly this call; `.notHeld` when the session rule adds nothing and the baseline
+    /// check follows.
     private func asksBecauseOfOutsideContent(_ call: ClientToolCallEvent, request: VoiceToolRequest) async -> SessionAsk {
         let onSharedList = await targetsSharedList(request)
         let need = AskFirst.need(for: request, in: outsideContent, listIsShared: onSharedList, polish: Self.cardsInPolish)
-        guard need != AskFirst.need(for: request, polish: Self.cardsInPolish), case .tapFirst(let card) = need else { return .notHeld }
+        guard need != AskFirst.need(for: request, polish: Self.cardsInPolish) else { return .notHeld }
+        let card: AskCard
+        switch need {
+        case .yesFirst(let asked), .tapFirst(let asked): card = asked
+        default: return .notHeld
+        }
         guard askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
-            askLedger.asked(call.toolCallId, request: request, needsTap: true, at: Date())
-            propose(.ask(toolCallID: call.toolCallId, card: card, needsTap: true, toolName: call.toolName, parameters: call.parametersData),
+            let needsTap = AskFirst.needsTap(need)
+            askLedger.asked(call.toolCallId, request: request, needsTap: needsTap, at: Date())
+            propose(.ask(toolCallID: call.toolCallId, card: card, needsTap: needsTap, toolName: call.toolName, parameters: call.parametersData),
                     toolCallID: call.toolCallId)
             return .cardShown
         }
-        return .tapped
+        return .answered
     }
 
     /// What the outside-content rule did with a call.
     private enum SessionAsk {
         /// It holds nothing back: the call asks, or runs, as `AskFirst.need(for:)` says.
         case notHeld
-        /// It showed its tap-only card; the call stops here until the tap.
+        /// It showed its card; the call stops here until the person's yes or tap.
         case cardShown
-        /// The person tapped that card for exactly this call (the ledger's yes is used up), so the call asks nothing
-        /// more: a card a spoken yes could have answered (`.yesFirst`) is not shown a second time.
-        case tapped
+        /// The person said yes to that card or tapped it for exactly this call (the ledger's yes is used up), so the
+        /// call asks nothing more: the baseline's own card (`.yesFirst`) is not shown a second time.
+        case answered
     }
 
     /// True when `request` adds to or ticks items on a list that other people are on. Their changes sync to everyone
@@ -2615,7 +2785,7 @@ final class VoiceSessionController {
         case .ask(_, _, let needsTap, _, _): return needsTap ? .other : .askFirst
         case .cloudRead: return .askFirst
         // A call booked for later (ADR-754): the island says only that something waits for a tap.
-        case .memory, .plan, .bulk, .undo, .parking, .home, .callLater, .callNow, .callTask: return .other
+        case .memory, .plan, .bulk, .undo, .parking, .home, .callLater, .callNow, .callTask, .morningCall: return .other
         }
     }
 
@@ -2688,6 +2858,10 @@ final class VoiceSessionController {
     /// what the provider said (it may have said listening before this ran).
     private func turnInterrupted() {
         turnFeedback.reset()
+        // A change still running may have been abandoned by the provider while the app finishes it.
+        interruptedWrites.personInterrupted()
+        // How long his voice kept coming out after the event (decision 2026-11-15-conversation-core-and-corrections).
+        if meteredConversation != nil { AgentVoiceMeter.shared.beginInterruption(at: ProcessInfo.processInfo.systemUptime) }
         if isLive, phase == .thinking, providerState == .listening { phase = .listening }
     }
 
@@ -2714,6 +2888,8 @@ final class VoiceSessionController {
 
     private func append(_ text: String, fromUser: Bool) {
         guard !text.allSatisfy(\.isWhitespace) else { return }
+        // Someone said something, translating too: the quiet clock starts again.
+        noteQuietActivity()
         // Translating: the lines belong to the translator screen, never to the conversation log.
         if translator != nil {
             if fromUser {
@@ -2964,8 +3140,15 @@ final class VoiceSessionController {
         guard isLive, attempt == startAttempt else { return }
         callOwners.record(call.toolCallId, attempt: attempt)
         callsAsReceived[call.toolCallId] = (call.toolName, call.parametersData)
+        interruptedWrites.started(id: call.toolCallId, name: call.toolName)
         turnFeedback.toolStarted(id: call.toolCallId, name: call.toolName)
         let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parametersData)
+        // The iPhone is locked and the Face ID lock is on: nothing of the person's is read or changed, and the agent hears
+        // that in words, never an empty result. Before anything is looked up or logged (`ProtectedDataGuard`).
+        if case .refuse(let words) = protectedData.decide(tool: call.toolName, appLockOn: AppLock.shared.lockOn) {
+            await reply(call.toolCallId, words, isError: true)
+            return
+        }
         // The release scope (decision 2026-11-07-release-scope), translator (ADR-215), plan, Pause all, then the tool's switch,
         // in that order (ToolGate).
         let gate = ToolGate.decide(
@@ -3011,14 +3194,14 @@ final class VoiceSessionController {
             }
         }
         // ASK-01 (ADR-483) as it stands since 14 Nov 2026: a change with no card of its own waits here for the
-        // user's tap, or their own spoken yes (`spokenAnswer`), for exactly this call; after outside text, a tap only.
+        // user's tap, or their own spoken yes (`spokenAnswer`), for exactly this call; after outside text too (option 2).
         // Tools with a payload card of their own (and the server's writes) ask through that card. What the user asked
         // to see or start of their own runs at once (`.runsNow`). Decision 2026-11-14-spoken-yes-and-fewer-cards.
         let sessionAsk = await asksBecauseOfOutsideContent(call, request: request)
         if sessionAsk == .cardShown { return }
         switch AskFirst.need(for: request, polish: Self.cardsInPolish) {
         case .yesFirst(let card), .tapFirst(let card):
-            guard sessionAsk == .tapped || askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
+            guard sessionAsk == .answered || askLedger.mayRun(call.toolCallId, request: request, at: Date()) else {
                 let needsTap = AskFirst.needsTap(AskFirst.need(for: request))
                 askLedger.asked(call.toolCallId, request: request, needsTap: needsTap, at: Date())
                 propose(.ask(toolCallID: call.toolCallId, card: card, needsTap: needsTap, toolName: call.toolName, parameters: call.parametersData),
@@ -3137,6 +3320,8 @@ final class VoiceSessionController {
             await handleParking(action, toolCallID: call.toolCallId)
         case .leaveBy(let request):
             await handleLeaveBy(request, toolCallID: call.toolCallId)
+        case .whereAmI:
+            await handleWhereAmI(toolCallID: call.toolCallId)
         case .addIngredients(let proposal):
             guard let list = await resolveList(proposal.list, toolCallID: call.toolCallId) else { return }
             guard isCurrent(call.toolCallId) else { return dropStale(call.toolCallId) }
@@ -3168,6 +3353,12 @@ final class VoiceSessionController {
         case .setTimer(let draft):
             // AlarmKit on iOS 26 needs no notification permission (ADR-650).
             guard await devices.timerAccess() == .granted else {
+                await notConnected(call.toolCallId, .timers)
+                return
+            }
+            // It runs with no card (step 2c), so iOS's first question about alarms can't wait for a tap: in the
+            // background iOS can't show it, and Doddy's own permission card asks instead.
+            if alarmPermissionNeedsTheScreen {
                 await notConnected(call.toolCallId, .timers)
                 return
             }
@@ -3277,6 +3468,10 @@ final class VoiceSessionController {
             case .needsNewerIOS: await reply(call.toolCallId, VoiceToolReply.alarmNeedsNewerIOS)
             case .notAllowed: await reply(call.toolCallId, VoiceToolReply.alarmNotAllowed)
             case .available:
+                if alarmPermissionNeedsTheScreen {
+                    await notConnected(call.toolCallId, .timers)
+                    return
+                }
                 guard await mayTryAgain(call.toolCallId, app: .timers) else { return }
                 propose(.alarm(toolCallID: call.toolCallId, draft: draft), toolCallID: call.toolCallId)
             }
@@ -3507,6 +3702,10 @@ final class VoiceSessionController {
             await proposeCallLater(draft, toolCallID: call.toolCallId)
         case .callMeNow:
             await proposeCallNow(toolCallID: call.toolCallId)
+        case .callMeEveryMorning(let draft):
+            await proposeMorningCall(draft, toolCallID: call.toolCallId)
+        case .stopMorningCalls:
+            await reply(call.toolCallId, await stopMorningCalls())
         case .callPlaces(let draft):
             await proposeCallTask(draft, toolCallID: call.toolCallId)
         case .startTranslator(let proposal):
@@ -3617,27 +3816,7 @@ final class VoiceSessionController {
         proposedNoteTexts += steps.compactMap { step in
             if case .saveMemory(let text) = step.request { text } else { nil }
         }
-        var blocked: [Int: PlanBlock] = [:]
-        // This plan's own approvals (review H7): kept apart until its card is shown, so an
-        // overlapping propose_plan can't mix its approvals into this card or this one's into it.
-        var approvals: [Int: PlanCloudApproval] = [:]
-        for step in steps {
-            if let block = await planBlock(for: step) {
-                blocked[step.number] = block
-                if connectionNeeded == nil, isCurrent(call.toolCallId), case .notConnected(let connection) = block { connectionNeeded = connection }
-            } else if let request = step.activity(calendar: .current),
-                      case .stop(let count) = ActionRetry.decide(for: request, in: activity.entries, now: Date()) {
-                // Tried too often without a confirmed result (ADR-319): shown on the card, not run.
-                blocked[step.number] = .tooManyTries(app: request.app, count: count)
-            } else if let call = step.cloudCall {
-                // As a single card: the server checks the switch, the connection and the arguments,
-                // and returns the preview the card shows with an approval for exactly these.
-                switch await prepareCloud(call) {
-                case .ready(let approval): approvals[step.number] = approval
-                case .blocked(let block): blocked[step.number] = block
-                }
-            }
-        }
+        let (blocked, approvals) = await checkPlanSteps(steps, toolCallID: call.toolCallId)
         // Ended, or ended and started again, while the steps were checked: no card, no reply and
         // no plan state in the next conversation (review H9, ADR-458).
         guard isLive, isCurrent(call.toolCallId) else {
@@ -3661,7 +3840,69 @@ final class VoiceSessionController {
         planChanged = []
         planCloud = approvals
         askedPlans[call.toolCallId] = steps
+        planApproval.show(call.toolCallId, payload: planPayload(steps, approvals), preparedAt: planPreparedAt(approvals), at: Date())
         propose(.plan(toolCallID: call.toolCallId, steps: steps, blocked: blocked), toolCallID: call.toolCallId)
+    }
+
+    /// Every step checked as if asked on its own (the part of `handlePlan` the card needs again when it is shown again):
+    /// what the app can't run is blocked with its reason, and a Gmail or Todoist step is sent to Doddy's server for the
+    /// preview the card shows and a one-time approval for exactly those arguments. This plan's own approvals are returned,
+    /// not stored (review H7): an overlapping propose_plan can't mix its approvals into this card or this one's into it.
+    private func checkPlanSteps(_ steps: [PlanStep], toolCallID: String) async -> (blocked: [Int: PlanBlock], approvals: [Int: PlanCloudApproval]) {
+        var blocked: [Int: PlanBlock] = [:]
+        var approvals: [Int: PlanCloudApproval] = [:]
+        for step in steps {
+            if let block = await planBlock(for: step) {
+                blocked[step.number] = block
+                if connectionNeeded == nil, isCurrent(toolCallID), case .notConnected(let connection) = block { connectionNeeded = connection }
+            } else if let request = step.activity(calendar: .current),
+                      case .stop(let count) = ActionRetry.decide(for: request, in: activity.entries, now: Date()) {
+                // Tried too often without a confirmed result (ADR-319): shown on the card, not run.
+                blocked[step.number] = .tooManyTries(app: request.app, count: count)
+            } else if let call = step.cloudCall {
+                // As a single card: the server checks the switch, the connection and the arguments,
+                // and returns the preview the card shows with an approval for exactly these.
+                switch await prepareCloud(call) {
+                case .ready(let approval): approvals[step.number] = approval
+                case .blocked(let block): blocked[step.number] = block
+                }
+            }
+        }
+        return (blocked, approvals)
+    }
+
+    /// What the plan card's approval is bound to (`PlanCardPayload`).
+    private func planPayload(_ steps: [PlanStep], _ approvals: [Int: PlanCloudApproval]) -> PlanCardPayload {
+        PlanCardPayload(steps: steps, prepared: approvals.mapValues { PlanCardPayload.Prepared(preview: $0.preview, approvalID: $0.approvalID) })
+    }
+
+    /// The card's window counts from the oldest server approval it holds, or from now when the plan has none.
+    private func planPreparedAt(_ approvals: [Int: PlanCloudApproval]) -> Date {
+        approvals.values.map(\.preparedAt).min() ?? Date()
+    }
+
+    /// A tap on a plan card that ran out, or whose payload is not the one its approvals were made for: nothing runs.
+    /// The steps are checked and prepared again, and the card is shown again with what is true now and a new window.
+    /// A step whose preview changed comes back unticked. Only a new tap on that card runs the plan (a spoken yes
+    /// never does). The agent's call stays open: it hears what that tap does, or the decline (DOD-07, DOD-08).
+    private func showPlanAgain(_ card: PendingAction) async {
+        guard case .plan(let id, let steps, _) = card else { return }
+        let before = planPayload(steps, planCloud)
+        let checked = await checkPlanSteps(steps, toolCallID: id)
+        // Declined, replaced by a newer card or ended while the steps were checked: no card, and no approval is kept.
+        // An edit the person made to a step meanwhile is kept: the card comes back with the steps as they are now.
+        guard isLive, isCurrent(id), case .plan(let current, let liveSteps, _) = pendingAction, current == id else { return }
+        let after = planPayload(liveSteps, checked.approvals)
+        planTicked = PlanApprovalGate.tickedAfterRefresh(planTicked, old: before, new: after, blocked: Set(checked.blocked.keys))
+        planCloud = checked.approvals
+        planApproval.show(id, payload: after, preparedAt: planPreparedAt(checked.approvals), at: Date())
+        pendingAction = .plan(toolCallID: id, steps: liveSteps, blocked: checked.blocked)
+    }
+
+    /// True while the plan card on screen is one that ran out and was shown again, for its explanation line.
+    var planCardShownAgain: Bool {
+        guard case .plan(let id, _, _) = pendingAction else { return false }
+        return planApproval.wasShownAgain(id)
     }
 
     /// Ticked steps run one after another, each through the same path as its single card, and each
@@ -3791,8 +4032,9 @@ final class VoiceSessionController {
         }
     }
 
-    /// The server's approval works once and lasts two minutes. If the card waited longer, a fresh
-    /// one is asked for the same arguments the user saw; the server checks them again.
+    /// The server's approval works once and lasts two minutes. The step runs with the approval the server made for the
+    /// preview on the card, never one made later: the tap approved what the card showed, and `PlanApprovalGate` keeps
+    /// the tap inside the card's window. The server refuses an approval that has run out, and that step says so.
     private func runPlanCloud(_ call: CloudToolCall, approval: PlanCloudApproval?, app: ActivityApp) async -> WriteResult {
         func written(_ record: CloudWriteRecord) -> WriteResult {
             WriteResult(reply: record.reply, receipt: record.receipt, attempted: record.attempted)
@@ -3800,25 +4042,8 @@ final class VoiceSessionController {
         guard let client = await OnlineAccountsClientFactory.ready() else {
             return written(CloudWriteRecord(.failure(.notConfigured), tool: call.name, app: app, readAt: Date()))
         }
-        var approvalID = approval?.approvalID
-        if approval == nil || Date().timeIntervalSince(approval?.preparedAt ?? .distantPast) > 90 {
-            do {
-                let prepared = try await client.prepare(call)
-                if prepared.earlier?.status == .found {
-                    return WriteResult(reply: VoiceToolReply.cloudAlreadyThere(call.name), attempted: false)
-                }
-                approvalID = prepared.approvalId
-            } catch {
-                return written(CloudWriteRecord(.failure(error), tool: call.name, app: app, readAt: Date()))
-            }
-        }
-        guard let approvalID else {
-            // A read in a plan runs without a confirmation.
-            do {
-                return WriteResult(reply: VoiceToolReply.cloudResult(try await client.run(call, timeZone: TimeZone.current.identifier, approvalId: nil)))
-            } catch {
-                return WriteResult(reply: VoiceToolReply.cloudFailed(error, tool: call.name))
-            }
+        guard let approvalID = approval?.approvalID else {
+            return WriteResult(reply: PlanReply.stepNotApproved, attempted: false)
         }
         let outcome = await CloudRun.confirmed(call, approvalId: approvalID, timeZone: TimeZone.current.identifier, client: client)
         return written(CloudWriteRecord(outcome, tool: call.name, app: app, readAt: Date()))
@@ -3952,9 +4177,12 @@ final class VoiceSessionController {
         }
     }
 
-    /// find_flights: the flights' Kiwi.com pages become buttons; a new search replaces the old ones.
+    /// find_flights and plan_trip: the flights' Kiwi.com pages become buttons; a new search replaces the old ones.
+    /// plan_trip's question ("ask:") searched nothing, so it leaves them. Its Booking.com, Airbnb and wakacje.pl links
+    /// stay in its result: the flights card says "Flights on Kiwi.com", so they would be mislabelled there.
     private func keepFlightLinks(_ result: RunResult) {
-        guard result.tool == CloudToolName.findFlights else { return }
+        guard result.tool == CloudToolName.findFlights || result.tool == CloudToolName.planTrip else { return }
+        if result.tool == CloudToolName.planTrip && result.text.hasPrefix("ask:") { return }
         flightLinks = (result.links ?? []).filter(\.isKiwi)
     }
 
@@ -4070,7 +4298,7 @@ final class VoiceSessionController {
         switch action {
         case .ask(let id, _, let needsTap, _, _):
             // AskFirst's own card keeps the ledger's contract: one yes, for exactly this request, used once. An ask
-            // made with needsTap (the session rule's cards after outside text) is never answered by words.
+            // made with needsTap (a tool whose tier is tap only) is never answered by words.
             guard !needsTap, askLedger.answer(.userSaid(text), for: id, at: now) == .granted, pendingAction == action else { return }
             pendingAction = nil
             await runAsked(action, attempt: startAttempt)
@@ -4080,9 +4308,10 @@ final class VoiceSessionController {
             await runAsked(action, attempt: startAttempt)
         default:
             // The tool's own payload card, or the server's write card with its single-use approval for exactly these
-            // arguments: the same path as the card's button, for the card as it is on screen now.
+            // arguments: the same path as the card's button, for the card as it is on screen now. A plan card takes the
+            // yes only while it is a fresh first card (`PlanApprovalGate`); a card that ran out waits for a tap.
             guard pendingAction == action else { return }
-            await confirmPendingAction()
+            await confirmPendingAction(answeredBy: .userSaid)
         }
     }
 
@@ -4098,6 +4327,8 @@ final class VoiceSessionController {
     var pendingTakesSpokenYes: Bool {
         guard let action = pendingAction, let tier = confirmationTier(of: action), tier.acceptsSpokenYes, !action.waitsForAChoice else { return false }
         if case .ask(_, _, true, _, _) = action { return false }
+        // A plan card that ran out, or was shown again, takes a tap only (`PlanApprovalGate`).
+        if case .plan(let id, _, _) = action, !planApproval.acceptsSpokenYes(for: id, at: Date()) { return false }
         return true
     }
 
@@ -4248,6 +4479,43 @@ final class VoiceSessionController {
             WidgetSync.shared.refresh()
             await reply(toolCallID, ParkingStore.current() == nil ? VoiceToolReply.parkingCleared : VoiceToolReply.failed("The parking spot couldn't be removed."))
         }
+    }
+
+    /// "Gdzie jestem?" (decision 2026-11-14-approximate-location-by-voice): the person's rough area, so a look-up near them
+    /// needs no city. iOS's own question (While Using the App) is asked the first time and only while Doddy is on screen;
+    /// one reading about a kilometre sure, then Apple's geocoder for that position rounded (`WhereAmI`). Nothing is kept:
+    /// What Doddy did gets a row without a place, and the area goes only to the agent, as this tool's result.
+    private func handleWhereAmI(toolCallID: String) async {
+        let location = PlaceLocation.shared
+        var readiness = await location.readiness()
+        if readiness == .notDetermined {
+            // From the background iOS shows no question, and the wait for its answer would never end.
+            guard UIApplication.shared.applicationState == .active else {
+                await reply(toolCallID, VoiceToolReply.whereAmINotAskedOffScreen)
+                return
+            }
+            readiness = await location.requestWhenInUse()
+        }
+        switch WhereAmI.step(for: readiness) {
+        case .read: break
+        case .askIOS:
+            await reply(toolCallID, VoiceToolReply.whereAmINotAnswered)
+            return
+        case .notAllowed:
+            await reply(toolCallID, VoiceToolReply.whereAmINotAllowed)
+            return
+        case .servicesOff:
+            await reply(toolCallID, VoiceToolReply.whereAmIServicesOff)
+            return
+        }
+        let fresh = await location.approximateFix(timeout: WhereAmI.fixTimeout)
+        guard let fix = WhereAmI.best(fresh: fresh, lastKnown: location.lastKnownFix(), now: Date()) else {
+            await reply(toolCallID, VoiceToolReply.whereAmIUnknown(onScreen: UIApplication.shared.applicationState == .active))
+            return
+        }
+        let area = WhereAmI.area(of: fix)
+        let names = await location.areaNames(latitude: area.latitude, longitude: area.longitude, timeout: WhereAmI.geocodeTimeout)
+        await reply(toolCallID, VoiceToolReply.whereAmI(area, names: names, now: Date()))
     }
 
     // MARK: Texts from Doddy's number (ADR-750 U2)
@@ -4530,6 +4798,90 @@ final class VoiceSessionController {
         defaults.set(draft.timeZoneID, forKey: CallZoneSync.lastSentKey)
     }
 
+    // MARK: Morning calls from Doddy's number (decision 2026-11-14-morning-call)
+
+    /// The same checks as `call_me_later` before the card, plus whether the server makes morning calls and which one
+    /// the new card would replace. Nothing is set up here.
+    private func proposeMorningCall(_ draft: MorningCallDraft, toolCallID: String) async {
+        guard let client = Self.messagingClient() else {
+            await reply(toolCallID, VoiceToolReply.callNoServer, isError: true)
+            return
+        }
+        guard await client.hasAccount() else {
+            await reply(toolCallID, VoiceToolReply.callNotReady(.noPhone))
+            return
+        }
+        let readiness: CallReadiness
+        let status: MorningCallStatus
+        do {
+            async let settings = client.callSettings()
+            async let phone = client.phoneStatus()
+            async let morning = client.morningCall()
+            readiness = CallReadiness(settings: try await settings, phone: try await phone)
+            status = try await morning
+        } catch {
+            await reply(toolCallID, VoiceToolReply.callCheckFailed(error as? ServerError), isError: true)
+            return
+        }
+        guard case .ready(let to, let quietHours) = readiness else {
+            await reply(toolCallID, VoiceToolReply.callNotReady(readiness))
+            return
+        }
+        guard status.enabled else {
+            await reply(toolCallID, VoiceToolReply.morningCallsOff)
+            return
+        }
+        callLaterAllowQuiet = false
+        propose(.morningCall(toolCallID: toolCallID, draft: draft, to: to, quietHours: quietHours, replaces: status.call), toolCallID: toolCallID)
+    }
+
+    /// After the yes or the tap: the schedule, the switch and the language go to the server with the approval hash of
+    /// exactly what the card showed. Each day's call is checked again by the server when it is due.
+    private func bookMorningCall(
+        _ draft: MorningCallDraft, to: String, quietHours: CallQuietHours, allowQuietHours: Bool, replaces: MorningCall?
+    ) async -> (reply: String, attempted: Bool) {
+        let language = NotificationLanguage.current
+        let identity = draft.identity(to: to, language: language)
+        let mayBeBooked = Self.unconfirmedCalls.contains(identity)
+        if draft.inQuietHours(quietHours) && !allowQuietHours {
+            return (VoiceToolReply.morningCallRefused("quiet_hours", quietHours: quietHours, mayBeBooked: mayBeBooked), false)
+        }
+        guard let client = Self.messagingClient() else { return (VoiceToolReply.callNoServer, false) }
+        do {
+            switch try await client.bookMorningCall(draft, to: to, allowQuietHours: allowQuietHours, language: language, replaces: replaces?.id) {
+            case .booked:
+                Self.unconfirmedCalls.remove(identity)
+                let next = try? await client.morningCall().call?.nextDate
+                return (VoiceToolReply.morningCallBooked(draft, next: next, calendar: .current), true)
+            case .refused(let code):
+                return (VoiceToolReply.morningCallRefused(code, quietHours: quietHours, mayBeBooked: mayBeBooked), false)
+            case .unknown:
+                Self.unconfirmedCalls.insert(identity)
+                return (VoiceToolReply.morningCallUnknown, true)
+            }
+        } catch {
+            let reply = VoiceToolReply.callNotBooked(error as? ServerError)
+            return (mayBeBooked ? reply + " An earlier try may already have set it up: tell the user to check Settings, Phone calls." : reply, false)
+        }
+    }
+
+    /// "Przestań dzwonić rano": at once, with no card (it only takes the permission away). The server answers whether
+    /// one was stopped and whether that day's call was already being placed.
+    private func stopMorningCalls() async -> String {
+        guard let client = Self.messagingClient() else { return VoiceToolReply.morningStopNoServer }
+        // No account means nothing was ever set up; asking would create one.
+        guard await client.hasAccount() else { return VoiceToolReply.noMorningCalls }
+        do {
+            switch try await client.stopMorningCalls() {
+            case .stopped(let calling): return VoiceToolReply.morningCallsStopped(calling: calling)
+            case .noneActive: return VoiceToolReply.noMorningCalls
+            case .unknown: return VoiceToolReply.morningStopUnknown
+            }
+        } catch {
+            return VoiceToolReply.morningStopFailed(error as? ServerError)
+        }
+    }
+
     private func propose(_ action: PendingAction, toolCallID: String) {
         // A proposal that finished its lookups after End shows no card (review H9), and one that
         // finished after End and a new Start shows none in the new conversation (ADR-458).
@@ -4538,6 +4890,10 @@ final class VoiceSessionController {
         // as the card's button would, says what it did, and doesn't close a card that is waiting for something else.
         if runsWithoutItsCard(action) {
             let attempt = startAttempt
+            // Its row goes on disk now, before the Task starts: an End in between keeps it as "in progress" and the
+            // result then finishes it, with its Undo, instead of End logging "not answered" for a change that still
+            // runs (review of step 2b).
+            if action.changesSomething { markStarted(action.toolCallID) }
             Task { await perform(action, attempt: attempt) }
             return
         }
@@ -4550,12 +4906,22 @@ final class VoiceSessionController {
         pendingAction = action
     }
 
+    /// iOS has never been asked about alarms and Doddy isn't on screen, where iOS could ask. A timer or an alarm then
+    /// waits for Doddy's permission card rather than starting from the background without the question.
+    private var alarmPermissionNeedsTheScreen: Bool {
+        !AlarmScheduler.permissionAsked && UIApplication.shared.applicationState != .active
+    }
+
     /// Doddy's own changes with Undo and the drafts and hand-overs that change nothing run as asked, with no card
     /// (`AskFirst.ownChangesAtOnce`, decision 2026-11-14-spoken-yes-and-fewer-cards, step 2b), by the tool the agent
     /// called. The ones that open another app or the camera do so only while Doddy is on screen: iOS opens nothing from
     /// the background, and "opened" is never said of what didn't open, so otherwise their card stays for a tap or a yes.
+    /// After text from outside (an email, a page, a document, the screen) none of them runs at once: the card shows
+    /// what will happen, Doddy asks once, and the person's own "tak" or a tap runs it (owner, 15 Nov 2026, option 2;
+    /// decision 2026-11-15-after-outside-text-one-question; `ConfirmationTiers.afterOutsideContent`).
     private func runsWithoutItsCard(_ action: PendingAction) -> Bool {
         guard let tool = callsAsReceived[action.toolCallID]?.toolName, AskFirst.ownChangesAtOnce.contains(tool) else { return false }
+        if outsideContent.outsideContentSeen { return false }
         if AskFirst.opensSomethingElse.contains(tool) { return UIApplication.shared.applicationState == .active }
         return true
     }
@@ -5014,9 +5380,13 @@ final class VoiceSessionController {
         switch outcome {
         case .started(let timer):
             result.receipt = ActivityReceipt(timer: timer, draft: draft, calendar: .current, readAt: Date())
+            // Undo in What Doddy did stops it while the iPhone has it (step 2c), so it needs no card.
+            result.undo = ActivityUndo.startedTimer(outcome, draft: draft)
             if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .timers) }
         case .alreadyRunning(let timer):
             result.receipt = ActivityReceipt(timer: timer, draft: draft, calendar: .current, readAt: Date())
+            // The unconfirmed try's row has no Undo, so this one carries it.
+            result.undo = ActivityUndo.startedTimer(outcome, draft: draft)
         default:
             break
         }
@@ -5035,7 +5405,15 @@ final class VoiceSessionController {
         switch outcome {
         case .set(let alarm), .alreadySet(let alarm):
             result.receipt = ActivityReceipt(alarm: alarm, readAt: Date())
-            if case .checkFirst = retry { result.reply = VoiceToolReply.checkedFirst(result.reply, app: .timers) }
+            // Undo turns it off while the iPhone has it (step 2c): one set just now, or after an unconfirmed try the
+            // one that try set after all (that try's row has no Undo).
+            var afterUnconfirmedTry = false
+            if case .checkFirst = retry {
+                afterUnconfirmedTry = true
+                result.reply = VoiceToolReply.checkedFirst(result.reply, app: .timers)
+            }
+            result.undo = ActivityUndo.setAlarm(
+                outcome, draft: draft, calendar: .current, afterUnconfirmedTry: afterUnconfirmedTry)
         default:
             break
         }
@@ -5294,6 +5672,12 @@ final class VoiceSessionController {
             return
         }
         try? await conversation?.sendToolResult(for: toolCallID, result: text, isError: isError)
+        // A change that ran although the person spoke over it: the provider may have told the model it was
+        // abandoned, so the fact goes in as background context (decision 2026-11-15-conversation-core-and-corrections).
+        if let note = interruptedWrites.answered(id: toolCallID, result: text, isError: isError) {
+            Self.toolLog.notice("a change finished after the person spoke over it; the agent was told it ran")
+            try? await conversation?.updateContext(note)
+        }
     }
 
     /// True while the conversation `toolCallID` arrived in is still the one on screen (ADR-458).
@@ -5440,7 +5824,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation, .home, .callLater, .callNow, .callTask: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation, .home, .callLater, .callNow, .callTask, .morningCall: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         // ASK-01 asks: the change itself (a list item) is logged by the flow it runs. A BLIK card only

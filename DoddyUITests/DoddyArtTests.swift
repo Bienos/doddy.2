@@ -35,15 +35,15 @@ final class DoddyArtTests: XCTestCase {
             let app = launch(hideArt: hide)
             app.openFind()
             let query = app.textFields["memories.query"]
-            XCTAssertTrue(query.waitForExistence(timeout: 5))
+            XCTAssertTrue(query.appears(timeout: 5))
             query.tap(); query.typeText("zzqx nothing like this\n")
-            XCTAssertTrue(app.staticTexts["memories.noMatch"].waitForExistence(timeout: 6))
+            XCTAssertTrue(app.staticTexts["memories.noMatch"].appears(timeout: 6))
             // Motion v2 (MV3, Q4): the one Doddy comes out from behind the page and shrugs on
             // Find's spot, so the shrug arrives after his hop.
             if hide {
                 XCTAssertFalse(marker("doddy.pose.shrug", in: app).exists, "hide artwork: \(hide)")
             } else {
-                XCTAssertTrue(marker("doddy.pose.shrug", in: app).waitForExistence(timeout: 5), "hide artwork: \(hide)")
+                XCTAssertTrue(marker("doddy.pose.shrug", in: app).appears(timeout: 5), "hide artwork: \(hide)")
             }
             app.terminate()
         }
@@ -54,10 +54,10 @@ final class DoddyArtTests: XCTestCase {
     func testAFailedSaveNeverPops() {
         let app = launch()
         app.openNewNote()
-        XCTAssertTrue(app.buttons["capture.save"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["capture.save"].appears(timeout: 5))
         scrollTo(app.buttons["capture.save"], app: app)
         app.buttons["capture.save"].tap()
-        XCTAssertTrue(app.descendants(matching: .any)["capture.error"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["capture.error"].appears(timeout: 5))
         XCTAssertFalse(marker("doddy.motion.pop", in: app).exists)
         XCTAssertFalse(app.staticTexts["capture.saved"].exists)
     }
@@ -68,11 +68,11 @@ final class DoddyArtTests: XCTestCase {
         let app = launch()
         app.goToTab("memories")
         let picker = app.segmentedControls["memories.notesOrLists"]
-        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertTrue(picker.appears(timeout: 5))
         picker.buttons["Lists"].tap()
-        XCTAssertTrue(app.descendants(matching: .any)["lists.empty"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["lists.empty"].appears(timeout: 5))
         // Motion v2 (MV3): the one Doddy hops to the Lists spot and sits there.
-        XCTAssertTrue(marker("doddy.pose.crosslegged", in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(marker("doddy.pose.crosslegged", in: app).appears(timeout: 5))
     }
 
     /// Pause all connections: Doddy lies low beside the explanation, only while paused (ADR-323).
@@ -103,7 +103,7 @@ final class DoddyArtTests: XCTestCase {
         app.goToTab("settings")
         // Settings › Connections › What Doddy did (ADR-633).
         app.openSettingsPage("settings.activity", under: "settings.connectionsHub")
-        XCTAssertTrue(app.navigationBars["What Doddy did"].waitForExistence(timeout: 5))
-        XCTAssertTrue(marker("doddy.pose.crosslegged", in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(app.navigationBars["What Doddy did"].appears(timeout: 5))
+        XCTAssertTrue(marker("doddy.pose.crosslegged", in: app).appears(timeout: 5))
     }
 }

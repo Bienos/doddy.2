@@ -76,22 +76,23 @@ final class ToolCatalogTests: XCTestCase {
         // which can reach only the user's own verified number, while Texts from Doddy is on (owner,
         // 9 Nov 2026, decision 2026-11-09-restaurant-calls-one-tap).
         // Since 14 Nov 2026 (step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards) also Doddy's own changes with
-        // Undo and the drafts and hand-overs that change nothing (`AskFirst.ownChangesAtOnce`).
+        // Undo and the drafts and hand-overs that change nothing (`AskFirst.ownChangesAtOnce`), and since step 2c a timer
+        // and an alarm, which have Undo too.
         let withoutCard = Set(ToolCatalog.all.filter { $0.effect != .lookup && $0.approval != .card && $0.approval != .serverApproval }.map(\.name))
         XCTAssertEqual(withoutCard, [
             "start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",
-            "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap",
+            "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap", "stop_morning_calls",
             VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe,
             "save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app", "lost_wallet",
-            "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation",
+            "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation", "set_timer", "set_alarm",
         ])
         XCTAssertEqual(withoutCard, AskFirst.ownSmallActions.union(AskFirst.ownChangesAtOnce)
             .union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe]))
         for name in withoutCard { XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .runsNow, name) }
         // What takes something away, reaches past Doddy's own lists and timers, or starts paid
-        // background work keeps its card.
+        // background work keeps its card, and so does what has no Undo yet.
         for name in [VoiceToolName.removeFromList, VoiceToolName.parkingSpot, VoiceToolName.undoLast, VoiceToolName.createList,
-                     VoiceToolName.createCalendarEvent, VoiceToolName.deleteCalendarEvent, VoiceToolName.setTimer, VoiceToolName.setAlarm,
+                     VoiceToolName.createCalendarEvent, VoiceToolName.deleteCalendarEvent, VoiceToolName.cancelAlarm,
                      VoiceToolName.remindWhenToLeave, VoiceToolName.handOverErrand, VoiceToolName.makeSomething, VoiceToolName.callPlaces] {
             XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .card, name)
         }
@@ -113,11 +114,13 @@ final class ToolCatalogTests: XCTestCase {
                            .union(CloudToolName.all.subtracting(CloudToolName.writes)),
                        "public lookups, looks at the user's own things, Doddy's own small actions and own changes with Undo or that change nothing (step 2b), every read through Doddy's server, translator start and stop (ADR-619), and text_me to the user's own number (decision 2026-11-09-restaurant-calls-one-tap)")
         XCTAssertEqual(AskFirst.publicLookups, ["calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
-                                                "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"])
+                                                "research_now", "plan_trip", "plan_evening", "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"])
         for name in AskFirst.publicLookups { XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .lookup, name) }
         XCTAssertEqual(AskFirst.ownLooks, ["search_memories", "read_list", "read_calendar", "find_free_time", "lookup_contact", "upcoming_birthdays",
                                            "find_photos", "look_at_screen", "read_steps", "read_health_week", "list_alarms", "check_stopwatch",
-                                           "check_focus", "check_errands", "find_deals"])
+                                           "check_focus", "check_errands", "find_deals",
+                                           // Decision 2026-11-14-approximate-location-by-voice.
+                                           "where_am_i"])
         for name in AskFirst.ownLooks {
             XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .lookup, name)
             XCTAssertEqual(ToolCatalog.descriptor(name)?.isCloud, false, "\(name) is the app's own look")
@@ -196,11 +199,17 @@ final class ToolCatalogTests: XCTestCase {
         XCTAssertFalse(server.isEmpty, "couldn't read CLOUD_TOOLS from catalog.ts")
         // websearch.ts also holds the fixed Monid tools (ADR-489); claude.ts the Claude tools (ADR-564).
         XCTAssertEqual(
-            Set(server.keys).union([CloudToolName.webSearch, "news_search", "find_places", CloudToolName.askClaude, CloudToolName.makeDocument])
+            Set(server.keys).union([CloudToolName.webSearch, "news_search", "find_places", CloudToolName.planEvening,
+                                    CloudToolName.askClaude, CloudToolName.makeDocument, CloudToolName.researchNow])
                 .union(CloudToolName.flightTools),
             CloudToolName.all)
+        // plan_evening lives in backend/src/tools/evening.ts (decision 2026-11-14-plan-evening-tool): a read with no account.
+        let evening = try String(contentsOf: repoRoot.appendingPathComponent("backend/src/tools/evening.ts"), encoding: .utf8)
+        XCTAssertTrue(evening.contains("\"\(CloudToolName.planEvening)\""), "plan_evening not in evening.ts")
+        XCTAssertFalse(CloudToolName.isWrite(CloudToolName.planEvening))
+        XCTAssertFalse(CloudToolName.needsAccount(CloudToolName.planEvening))
         let claude = try String(contentsOf: repoRoot.appendingPathComponent("backend/src/tools/claude.ts"), encoding: .utf8)
-        for name in [CloudToolName.askClaude, CloudToolName.makeDocument] {
+        for name in [CloudToolName.askClaude, CloudToolName.makeDocument, CloudToolName.researchNow] {
             XCTAssertTrue(claude.contains("\"\(name)\""), "\(name) not in claude.ts")
             XCTAssertFalse(CloudToolName.isWrite(name), "\(name) changes nothing outside Doddy")
             XCTAssertFalse(CloudToolName.needsAccount(name), name)
@@ -208,7 +217,8 @@ final class ToolCatalogTests: XCTestCase {
         // Flights live in backend/src/flights (decision 2026-11-11-flights-kiwi-search-duffel-booking); booking is their one write.
         XCTAssertEqual(Set(server.filter { $0.value == "write" }.keys), CloudToolName.writes.subtracting([CloudToolName.bookFlight]))
         XCTAssertTrue(CloudToolName.isWrite(CloudToolName.bookFlight))
-        let flights = try ["kiwi.ts", "duffel.ts", "service.ts"].map {
+        // plan_trip's name, input and words are in planTrip.ts; backend/src/tools/service.ts routes it (it needs Claude).
+        let flights = try ["kiwi.ts", "duffel.ts", "service.ts", "planTrip.ts"].map {
             try String(contentsOf: repoRoot.appendingPathComponent("backend/src/flights/\($0)"), encoding: .utf8)
         }.joined()
         for name in CloudToolName.flightTools {

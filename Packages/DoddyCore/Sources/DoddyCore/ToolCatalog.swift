@@ -127,8 +127,10 @@ public enum ToolCatalog {
         // Counts and times from the photo library; the pictures stay on screen (ADR-569).
         .init(VoiceToolName.findPhotos, .lookup, .runsNow),
         .init(VoiceToolName.lookAtScreen, .lookup, .runsNow),
-        .init(VoiceToolName.setTimer, .localChange, .card),
-        .init(VoiceToolName.setAlarm, .localChange, .card),
+        // Run when asked since step 2c (decision 2026-11-14-spoken-yes-and-fewer-cards): Undo in What Doddy did
+        // stops the timer while it counts down and turns the alarm off while the iPhone has it.
+        .init(VoiceToolName.setTimer, .localChange, .runsNow),
+        .init(VoiceToolName.setAlarm, .localChange, .runsNow),
         .init(VoiceToolName.listAlarms, .lookup, .runsNow),
         .init(VoiceToolName.cancelAlarm, .localChange, .card),
         // Follow something in Following (ADR-657): Doddy's own feature on this iPhone.
@@ -147,13 +149,16 @@ public enum ToolCatalog {
         // the strictest of its three actions.
         .init(VoiceToolName.parkingSpot, .localChange, .card),
         .init(VoiceToolName.remindWhenToLeave, .localChange, .card),
+        // The person's rough area for a look-up near them, read once and never kept (decision 2026-11-14-approximate-location-by-voice).
+        .init(VoiceToolName.whereAmI, .lookup, .runsNow),
         // Worked out on the iPhone, or the ECB's public rates file (ADR-270, ADR-300). Run at once (ADR-575).
         .init(VoiceToolName.calculate, .lookup, .runsNow),
         .init(VoiceToolName.convertUnits, .lookup, .runsNow),
         .init(VoiceToolName.convertCurrency, .lookup, .runsNow),
         // Another app opens with it filled in; nothing is sent by Doddy.
         .init(VoiceToolName.openMap, .handoff, .runsNow),
-        // A food delivery app opens on the card's tap; the person orders there (decision 2026-11-12-food-by-voice).
+        // A food delivery app opens when asked while Doddy is on screen, otherwise its card waits for a yes or a tap
+        // (step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards); the person orders there (decision 2026-11-12-food-by-voice).
         .init(VoiceToolName.openFoodApp, .handoff, .runsNow),
         .init(VoiceToolName.runShortcut, .handoff, .card),
         .init(VoiceToolName.draftMessage, .handoff, .runsNow),
@@ -169,22 +174,30 @@ public enum ToolCatalog {
         .init(VoiceToolName.callMeLater, .placeCall, .card),
         // The same call as Settings, Phone calls, Call me now; the card shows the number's last digits.
         .init(VoiceToolName.callMeNow, .placeCall, .card),
+        // A standing permission: the card shows the exact schedule, the number and the switch; the server checks the
+        // same approval hash when it sets it up and again before each day's call (decision 2026-11-14-morning-call).
+        .init(VoiceToolName.callMeEveryMorning, .placeCall, .card),
+        // Stops them at once: it only takes the permission away.
+        .init(VoiceToolName.stopMorningCalls, .placeCall, .runsNow),
         .init(VoiceToolName.callPlaces, .placeCall, .card),
-        // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-567).
+        // A file made on the iPhone when asked (step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards), then the share sheet to Keynote or Files (ADR-567).
         .init(VoiceToolName.makePresentation, .handoff, .runsNow),
-        // Doddy's camera opens on the tap; a kept photo becomes a note the user saves (ADR-569).
+        // Doddy's camera opens when asked while Doddy is on screen, otherwise its card waits (step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards);
+        // a yes said in the background opens nothing and is told so. A kept photo becomes a note the user saves (ADR-569).
         .init(VoiceToolName.openCamera, .handoff, .runsNow),
         // "I lost my wallet" (ADR-692): the official steps on a card; each page or number opens only on a tap.
         .init(VoiceToolName.lostWallet, .handoff, .runsNow),
         // A light, outlet, fan or scene in HomeKit, after a card naming the exact accessory.
         .init(VoiceToolName.controlHome, .localChange, .card),
         // A task handed over (ADR-570): web research on Doddy's server that changes nothing on the
-        // iPhone; one tap covers every look-up of that task. A tap and not a spoken yes (ADR-716):
-        // its text goes to a server that opens what it names. Checking what it found is a read.
+        // iPhone; one yes covers every look-up of that task. A spoken yes or a tap since step 2a of decision
+        // 2026-11-14-spoken-yes-and-fewer-cards (was a tap only, ADR-716), and a tap only once outside text is in the
+        // conversation: its text goes to a server that opens what it names. Checking what it found is a read.
         .init(VoiceToolName.handOverErrand, .handoff, .card),
         .init(VoiceToolName.checkErrands, .lookup, .runsNow),
         // A Studio job (ADR-740): web research and files made on Doddy's server, paid from Doddy's account.
-        // A tap and not a spoken yes (ADR-742), like a handed-over task: it spends money.
+        // A spoken yes or a tap since step 2a (was a tap only, ADR-742), like a handed-over task; a tap only after
+        // outside text. It spends money from Doddy's account, not the person's.
         .init(VoiceToolName.makeSomething, .handoff, .card),
         // This week's leaflets, read on Doddy's server (SHOPPING.md): public data, nothing changes. At once since 11 Nov 2026.
         .init(VoiceToolName.findDeals, .lookup, .runsNow),

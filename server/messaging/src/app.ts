@@ -23,6 +23,7 @@ import { textSettingsRoutes } from "./routes/textSettings.js";
 import { twilioWebhookRoutes } from "./routes/twilioWebhooks.js";
 import { twilioVoiceRoutes } from "./routes/twilioVoice.js";
 import { scheduledCallRoutes } from "./routes/scheduledCalls.js";
+import { morningCallRoutes } from "./routes/morningCalls.js";
 import { callCaseRoutes } from "./routes/callCases.js";
 import { taskCallWebhookRoutes } from "./routes/taskCallWebhooks.js";
 import { taskCallContext, type TaskCallContext, type TaskCallDeps } from "./taskCalls/context.js";
@@ -92,6 +93,8 @@ export interface Deps {
   doddyPhoneNumber?: string;
   /** No scheduled call rings inside these hours unless its card allowed it (ADR-754). Default 21:00–08:00. */
   quietHours?: QuietHours;
+  /** Morning calls (decision 2026-11-14-morning-call): MORNING_CALLS_ENABLED and MORNING_CALLS_MAX_PER_SERVER. Off: nothing new is stored. */
+  morningCalls?: { enabled: boolean; maxPerServer?: number };
   /** News digests: feeds always; keyword search and AI writer when configured. */
   news?: NewsDeps;
   /** On my radar alerts (decision 2026-11-10-radar-alerts): RADAR_ALERTS_ENABLED. Off: nothing new is stored. */
@@ -276,6 +279,7 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
   await app.register(twilioVoiceRoutes(deps));
   await app.register(callRoutes(deps));
   await app.register(scheduledCallRoutes(deps));
+  await app.register(morningCallRoutes(deps));
   await app.register(elevenLabsRoutes(deps));
   await app.register(newsRoutes(deps));
   await app.register(radarRoutes(deps));

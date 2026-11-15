@@ -51,13 +51,18 @@ import Foundation
 // A fifth change, 14 Nov 2026 (owner: "co chwilę trzeba coś potwierdzać … karty potwierdzenia lepiej nie cb to mówi a
 // nie potrzebuje kliknięcia zawsze", then "„Tak” głosem na wszystko"; decision 2026-11-14-spoken-yes-and-fewer-cards):
 // a card is still shown before every change, with the exact payload, but the person's own short spoken yes runs it as
-// a tap would, except for money and bookings (`ConfirmationTiers.tapOnly`), a tool nobody classified, and every change
-// once text from outside is in the conversation. That replaces "a spoken yes is not enough there" above, ADR-716's tap
+// a tap would, except for money and bookings (`ConfirmationTiers.tapOnly`) and a tool nobody classified (until 15 Nov
+// 2026 also every change once text from outside was in the conversation; see the sixth change). That replaces "a spoken yes is not enough there" above, ADR-716's tap
 // for a handed-over task and ADR-742's tap for a Studio job. The cards made here (removing from a list, forgetting the
-// parking spot, a task handed over, a Studio job, opening a food app) are `.yesFirst`, and `need(for:in:)` turns them
-// back into `.tapFirst` once text from outside has been seen. The payload cards of the tools' own flows and the
+// parking spot, a task handed over, a Studio job, opening a food app) are `.yesFirst`. The payload cards of the tools' own flows and the
 // server's write cards take the same yes in the voice controller (`SpokenConfirmation`). DOD-07 holds: the yes is
 // bound to exactly the payload on the card, used once, and only the person's own transcribed words count.
+//
+// A sixth change, 15 Nov 2026 (owner: "2"; decision 2026-11-15-after-outside-text-one-question): once text from outside
+// is in the conversation, Doddy asks one spoken question before a change and the person's own short yes is enough. The
+// cards above and the session rule's cards stay `.yesFirst` (`need(for:in:)`); Doddy's own at-once things ask through
+// their own cards (`ConfirmationTiers.afterOutsideContent`). Only a card whose tier is tap only, or one nobody named,
+// becomes `.tapFirst` there.
 //
 // This file is the rule as code, so it is tested on Linux: which ask each tool needs (`AskFirst`),
 // what counts as a spoken yes (`SpokenYes`), and the one check the app makes before running a
@@ -87,8 +92,9 @@ public enum AskFirst {
         /// job, opening a food app): this card shows exactly what will happen, and a tap or the user's own spoken yes
         /// said after the card appeared runs it (decision 2026-11-14-spoken-yes-and-fewer-cards).
         case yesFirst(AskCard)
-        /// The same card where only a tap runs it: one of the cards above once text from outside is in the
-        /// conversation, and the session rule's cards (`need(for:in:)`, OutsideContent.swift).
+        /// The same card where only a tap runs it: one whose tier is tap only, or one `need(for:in:)` can't name, once
+        /// text from outside is in the conversation (OutsideContent.swift). Since 15 Nov 2026 the session rule's own
+        /// cards are `.yesFirst`.
         case tapFirst(AskCard)
         /// The tool's own flow shows the exact payload on a card and changes something only on a
         /// tap or, unless the tool is tap only, a spoken yes (notes, calendar, reminders, alarms, timers, messages,
@@ -107,9 +113,15 @@ public enum AskFirst {
     /// Tools that run without asking (ADR-575): they read nothing of the user's, change nothing,
     /// and send at most the words searched for. Web search, news and places cost Doddy a little
     /// per search (ADR-489); the weather and Wikipedia ones run on ElevenLabs (`ToolCatalog.webLookups`).
+    /// `research_now` (14 Nov 2026) is the same kind of look-up, a few pages deeper: its question goes to Doddy's server and
+    /// to Anthropic, whose Claude searches the web and reads two or three pages, within the server's daily limit.
+    /// `plan_evening` (decision 2026-11-14-plan-evening-tool) is one places search like `find_places`: only what to look
+    /// for and the area leave Doddy's server.
+    /// `plan_trip` (14 Nov 2026) is the trip screen's planner by voice: the words go to Doddy's server and Anthropic to
+    /// become a trip, then only places, dates, people and bags go to Kiwi.com. It books and pays nothing.
     public static let publicLookups: Set<String> = Set([
         VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency,
-        CloudToolName.webSearch, "news_search", "find_places",
+        CloudToolName.webSearch, "news_search", "find_places", CloudToolName.researchNow, CloudToolName.planTrip, CloudToolName.planEvening,
     ]).union(ToolCatalog.webLookups)
 
     /// Looks at the user's own things on this iPhone, or at what Doddy's server holds for them, that run at once
@@ -121,10 +133,12 @@ public enum AskFirst {
         VoiceToolName.lookupContact, VoiceToolName.upcomingBirthdays, VoiceToolName.findPhotos, VoiceToolName.lookAtScreen,
         VoiceToolName.readSteps, VoiceToolName.readHealthWeek, VoiceToolName.listAlarms, VoiceToolName.checkStopwatch,
         VoiceToolName.checkFocus, VoiceToolName.checkErrands, VoiceToolName.findDeals,
+        // The person's rough area (decision 2026-11-14-approximate-location-by-voice): iOS's own location question is its consent.
+        VoiceToolName.whereAmI,
     ]
 
-    /// Doddy's own changes on this iPhone that have Undo in "What Doddy did" (a note, a reminder, ingredients on a list),
-    /// and the drafts and hand-overs that change nothing anywhere (a message or BLIK transfer the person sends
+    /// Doddy's own changes on this iPhone that have Undo in "What Doddy did" (a note, a reminder, ingredients on a list,
+    /// and since step 2c a timer and an alarm), and the drafts and hand-overs that change nothing anywhere (a message or BLIK transfer the person sends
     /// themselves, an invoice draft, a presentation file, the lost-wallet checklist, Maps, the camera, a food app). They
     /// run when asked, with no card, since 14 Nov 2026 (decision 2026-11-14-spoken-yes-and-fewer-cards, step 2b), and
     /// Doddy says what it did. `ConfirmationTiers.ownUndoableAtOnce` names the rest of the at-once tier, which keeps its
@@ -133,6 +147,8 @@ public enum AskFirst {
         VoiceToolName.saveMemory, VoiceToolName.createReminder, VoiceToolName.addIngredients, VoiceToolName.openMap,
         VoiceToolName.openCamera, VoiceToolName.openFoodApp, VoiceToolName.lostWallet, VoiceToolName.draftMessage,
         VoiceToolName.draftBlikTransfer, VoiceToolName.draftInvoice, VoiceToolName.makePresentation,
+        // Step 2c: Undo stops the timer while it counts down, and turns the alarm off while the iPhone has it.
+        VoiceToolName.setTimer, VoiceToolName.setAlarm,
     ]
 
     /// Of those, the ones that open another app or the camera. The voice controller runs them at once only while Doddy
@@ -148,6 +164,8 @@ public enum AskFirst {
         VoiceToolName.startStopwatch, VoiceToolName.stopStopwatch, VoiceToolName.startFocus, VoiceToolName.stopFocus,
         VoiceToolName.startWindDown, VoiceToolName.stopWindDown, VoiceToolName.addToList, VoiceToolName.checkOff,
         VoiceToolName.followNews, VoiceToolName.openTrainingPlan, VoiceToolName.noteCapabilityGap,
+        // Taking away the standing permission for morning calls (decision 2026-11-14-morning-call): it only stops calls.
+        VoiceToolName.stopMorningCalls,
     ]
 
     /// True for a tool that never shows a card and never waits: the public lookups, the looks and the small actions
@@ -182,11 +200,18 @@ public enum AskFirst {
             // replacing "each look asks first" in 2026-11-09-doddy-looks-at-the-screen). With sharing off nothing is
             // looked at: the app opens iOS's sheet instead.
             return .runsNow
+        case .whereAmI:
+            // The person's rough area, read once when asked (decision 2026-11-14-approximate-location-by-voice). The consent is
+            // iOS's own location question (While Using the App), asked the first time, as Calendar's is for read_calendar.
+            return .runsNow
         case .calculate, .convertUnits, .convertCurrency:
             return .runsNow
         // Doddy's own timers, lists and follows: started, ticked or added at once; each is undone in one step.
         case .startStopwatch, .stopStopwatch, .startFocus, .stopFocus, .startWindDown, .stopWindDown,
              .addToList, .checkOff, .followNews, .openTrainingPlan, .noteCapabilityGap:
+            return .runsNow
+        // Stopping the morning calls only takes a permission away (decision 2026-11-14-morning-call): at once.
+        case .stopMorningCalls:
             return .runsNow
         // ADR-619 (owner, 24 Oct 2026: "nie pytaj, od razu działaj, przełącz się i pytaj, co
         // tłumaczyć"), replacing ADR-542: translator mode starts and stops the moment the user asks.
@@ -227,15 +252,19 @@ public enum AskFirst {
             return .ownPayloadCard
         // Doddy's own changes with Undo, and the drafts and hand-overs that change nothing (`ownChangesAtOnce`, step 2b):
         // no card. The tool's own flow still makes its payload; the controller runs it as the card's button would.
-        case .saveMemory, .createReminder, .addIngredients, .openMap, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera:
+        case .saveMemory, .createReminder, .addIngredients, .openMap, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera,
+             .setTimer, .setAlarm:
             return .runsNow
-        case .createCalendarEvent, .remindAboutNote, .undoLast, .setTimer, .setAlarm, .cancelAlarm,
+        case .createCalendarEvent, .remindAboutNote, .undoLast, .cancelAlarm,
              .runShortcut, .controlHome, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .parkingSpot(.save),
              // The card shows the time and the exact reason; the tap approves exactly that (ADR-754).
              // call_places: the card shows every place, its number and where it came from, the exact
              // opening line and question; the one tap approves exactly that task's digest.
-             .callMeLater, .callMeNow, .callPlaces:
+             .callMeLater, .callMeNow, .callPlaces,
+             // The card shows the exact schedule, number and switch; a yes or a tap approves exactly that
+             // (decision 2026-11-14-morning-call).
+             .callMeEveryMorning:
             return .ownPayloadCard
         case .textMe:
             // A text to the user's own verified number goes at once while Texts from Doddy is on (owner, 9 Nov 2026,
@@ -284,10 +313,10 @@ public enum SpokenYes {
         "yes go ahead", "yes do it", "ok go ahead", "okay go ahead", "sure go ahead",
         // Polish
         "tak", "tak proszę", "tak prosze", "dobrze", "jasne", "śmiało", "smialo", "zrób to", "zrob to", "tak zrób to", "tak zrob to", "okej", "pewnie",
-        // German. "ja" is also Polish for "I", so a stray one could pass as a yes. It stays: it is the
-        // German yes, a spoken yes answers reads only (a hand-over needs a tap since ADR-716), and a list
-        // per language is the owner's call.
-        "ja", "ja bitte", "klar", "mach das", "ja mach das", "in ordnung",
+        // German. A lone "ja" is not here: it is also Polish for "I" (and the Dutch yes), and since step 2a of
+        // decision `2026-11-14-spoken-yes-and-fewer-cards` a spoken yes answers changes too, so "Ja…" said
+        // before a sentence must never delete an event. "ja bitte", "klar" and the rest still count.
+        "ja bitte", "klar", "mach das", "ja mach das", "in ordnung",
         // French
         "oui", "oui vas-y", "oui vas y", "vas-y", "vas y", "d'accord", "oui s'il te plaît", "oui s'il te plait",
         // Spanish

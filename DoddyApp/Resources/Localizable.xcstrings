@@ -4704,13 +4704,13 @@
         }
       }
     },
-    "Add a reminder, after you tap Add": {
+    "Add a reminder when you ask, with Undo in What Doddy did": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dodać przypomnienie, gdy stukniesz Dodaj"
+            "value": "Dodać przypomnienie, gdy o to poprosisz, z możliwością cofnięcia w „Co zrobił Doddy”"
           }
         }
       }
@@ -4726,13 +4726,13 @@
         }
       }
     },
-    "Add an event, after you tap Add": {
+    "Add an event, after you say yes or tap Add": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dodać wydarzenie, gdy stukniesz Dodaj"
+            "value": "Dodać wydarzenie, gdy powiesz „tak” albo stukniesz Dodaj"
           }
         }
       }
@@ -6477,6 +6477,65 @@
         }
       }
     },
+    "All languages": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alle Sprachen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todos los idiomas"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toutes les langues"
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Svi jezici"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutte le lingue"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "すべての言語"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystkie języki"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Todos os idiomas"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "所有语言"
+          }
+        }
+      }
+    },
     "All of this goes to Doddy's server; the words, the note and what matters most also go to Anthropic, whose Claude does the research. Search phrases Claude writes from them go to Google Shopping through Serper, and Doddy's server opens shops' pages. The server deletes its copy once this iPhone has saved the result.": {
       "extractionState": "manual",
       "localizations": {
@@ -7255,13 +7314,13 @@
         }
       }
     },
-    "An event's place is read only to show it on the card when you ask to change it, and notes are only added to. Neither is sent to Doddy's voice. Doddy changes or deletes events only after you tap.": {
+    "An event's place is read only to show it on the card when you ask to change it, and notes are only added to. Neither is sent to Doddy's voice. Doddy changes or deletes events only after you say yes or tap.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Miejsce wydarzenia jest odczytywane tylko po to, by pokazać je na karcie, gdy prosisz o zmianę, a do notatek Doddy tylko dopisuje. Ani jedno, ani drugie nie trafia do głosu Doddy'ego. Doddy zmienia lub usuwa wydarzenia dopiero po twoim stuknięciu."
+            "value": "Miejsce wydarzenia jest odczytywane tylko po to, by pokazać je na karcie, gdy prosisz o zmianę, a do notatek Doddy tylko dopisuje. Ani jedno, ani drugie nie trafia do głosu Doddy'ego. Doddy zmienia lub usuwa wydarzenia dopiero, gdy powiesz „tak” albo stukniesz."
           }
         }
       }
@@ -7712,6 +7771,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Inny rodzaj produktu: nie liczę go jako tej rzeczy."
+          }
+        }
+      }
+    },
+    "Another morning call was set up in the meantime; it's shown here. Change its time or days to replace it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W międzyczasie ustawiono inny poranny telefon; widać go tutaj. Zmień jego godzinę lub dni, żeby go zastąpić."
           }
         }
       }
@@ -10194,6 +10264,47 @@
         }
       }
     },
+    "Between 05:00 and 11:59 on this iPhone's clock (%@).": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Between 05:00 and 11:59 on this iPad's clock (%@)."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Between 05:00 and 11:59 on this iPhone's clock (%@)."
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Między 05:00 a 11:59 według zegara tego iPada (%@)."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Między 05:00 a 11:59 według zegara tego iPhone’a (%@)."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Birthdays": {
       "extractionState": "manual",
       "localizations": {
@@ -11121,6 +11232,17 @@
         }
       }
     },
+    "Call me every morning": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwoń do mnie co rano"
+          }
+        }
+      }
+    },
     "Call me now": {
       "extractionState": "manual",
       "localizations": {
@@ -11242,6 +11364,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Rozmowa: %@, %@"
+          }
+        }
+      }
+    },
+    "Call you every morning?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwonić do Ciebie co rano?"
           }
         }
       }
@@ -12465,6 +12598,17 @@
         }
       }
     },
+    "Change time or days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zmień godzinę lub dni"
+          }
+        }
+      }
+    },
     "Change timer": {
       "extractionState": "manual",
       "localizations": {
@@ -13503,6 +13647,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Wybierz, co Doddy może robić z tym kontem. Możesz to zmienić w każdej chwili w Ustawieniach."
+          }
+        }
+      }
+    },
+    "Chosen days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybrane dni"
           }
         }
       }
@@ -16174,6 +16329,28 @@
         }
       }
     },
+    "Couldn't check with Doddy's server before showing the card. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się sprawdzić ustawień na serwerze Doddy’ego przed pokazaniem karty. %@"
+          }
+        }
+      }
+    },
+    "Couldn't confirm Doddy's server set up the morning call. The switch shows what the server says now. If it's off, setting up the same time and days again is safe: the server sets it up at most once.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się potwierdzić, że serwer Doddy’ego ustawił poranny telefon. Przełącznik pokazuje to, co serwer mówi teraz. Jeśli jest wyłączony, ponowne ustawienie tej samej godziny i dni jest bezpieczne: serwer ustawi go najwyżej raz."
+          }
+        }
+      }
+    },
     "Couldn't confirm that what Doddy's server keeps for you was deleted, so your voice account was kept. Check your connection and try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -16203,6 +16380,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Nie udało się potwierdzić, że połączenie zostało wykonane. Doddy nie zadzwoni ponownie sam. Odczekaj minutę, zanim spróbujesz jeszcze raz."
+          }
+        }
+      }
+    },
+    "Couldn't confirm the stop reached Doddy's server. Tap Stop again: stopping twice is safe.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się potwierdzić, że zatrzymanie dotarło do serwera Doddy’ego. Stuknij Zatrzymaj jeszcze raz: dwukrotne zatrzymanie jest bezpieczne."
           }
         }
       }
@@ -16638,6 +16826,17 @@
         }
       }
     },
+    "Couldn't load your morning call. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się wczytać porannego telefonu. %@"
+          }
+        }
+      }
+    },
     "Couldn't load your notes. %@": {
       "extractionState": "manual",
       "localizations": {
@@ -16925,6 +17124,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法设置提醒。没有安排任何提醒，你的笔记也没有改变。"
+          }
+        }
+      }
+    },
+    "Couldn't stop the morning calls. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się zatrzymać porannych telefonów. %@"
           }
         }
       }
@@ -17540,6 +17750,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "日"
+          }
+        }
+      }
+    },
+    "Days": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dni"
           }
         }
       }
@@ -20756,13 +20977,13 @@
         }
       }
     },
-    "Doddy can also send, add or change things, but only after you tap a card that shows exactly what will happen.": {
+    "Doddy can also send, add or change things, but only after you say yes to, or tap, a card that shows exactly what will happen. After Doddy has read an email or a page, only a tap.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy może też wysyłać, dodawać lub zmieniać rzeczy, ale dopiero po stuknięciu karty, która pokazuje dokładnie, co się stanie."
+            "value": "Doddy może też wysyłać, dodawać lub zmieniać rzeczy, ale dopiero gdy powiesz „tak” albo stukniesz kartę, która pokazuje dokładnie, co się stanie. Po przeczytaniu maila lub strony tylko stuknięcie."
           }
         }
       }
@@ -20844,61 +21065,13 @@
         }
       }
     },
-    "Doddy can use these only when you say so. Each one starts off. Nothing is added, started, sent or opened until you tap.": {
+    "Doddy can use these only when you say so. Each one starts off. What Doddy can undo happens when you ask; anything else waits for your spoken yes or a tap on its card, and paying or booking always for a tap.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy darf diese nur nutzen, wenn du es sagst. Jede ist anfangs aus. Nichts wird hinzugefügt, gestartet, gesendet oder geöffnet, bis du tippst."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy solo puede usar esto cuando tú lo digas. Todo empieza desactivado. No se añade, inicia, envía ni abre nada hasta que tocas."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy ne peut les utiliser que si tu le dis. Chacun commence désactivé. Rien n’est ajouté, lancé, envoyé ni ouvert tant que tu ne touches pas."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy ih može koristiti samo kad ti to kažeš. Svaka je na početku isključena. Ništa se ne dodaje, pokreće, šalje ni otvara dok ne dodirneš."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy può usarli solo quando lo dici tu. Ognuno parte disattivato. Niente viene aggiunto, avviato, inviato o aperto finché non tocchi."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyがこれらを使うのは、あなたが許可したときだけです。最初はすべてオフです。タップするまで、何かが追加されたり、始まったり、送られたり、開かれたりすることはありません。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy może z nich korzystać tylko, gdy mu pozwolisz. Każde jest na początku wyłączone. Nic nie zostanie dodane, uruchomione, wysłane ani otwarte, dopóki nie stukniesz."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Doddy só pode usar estes quando você disser. Cada um começa desligado. Nada é adicionado, iniciado, enviado ou aberto até você tocar."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "只有在你允许时，Doddy 才能使用这些。每一项初始都是关闭的。在你轻点之前，不会添加、启动、发送或打开任何内容。"
+            "value": "Doddy może z nich korzystać tylko, gdy mu pozwolisz. Każde jest na początku wyłączone. To, co Doddy może cofnąć, dzieje się, gdy poprosisz; reszta czeka na Twoje „tak” albo stuknięcie karty, a płatność i rezerwacja zawsze na stuknięcie."
           }
         }
       }
@@ -21479,6 +21652,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Doddy couldn't confirm an earlier try of these morning calls. They may already be set up: Doddy's server never sets up the same schedule twice.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie mógł potwierdzić wcześniejszej próby ustawienia tych porannych telefonów. Mogą być już ustawione: serwer Doddy’ego nigdy nie ustawia tego samego harmonogramu dwa razy."
           }
         }
       }
@@ -25205,61 +25389,13 @@
         }
       }
     },
-    "Doddy starts in English until you pick another language. A change shows the next time you open Doddy: close it first, then open it again.": {
+    "Doddy stopped listening because the iPhone locked. Unlock it and start a new conversation when you're ready.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy startet auf Englisch, bis du eine andere Sprache wählst. Eine Änderung siehst du beim nächsten Öffnen von Doddy: Schließe Doddy zuerst und öffne ihn dann erneut."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy empieza en inglés hasta que elijas otro idioma. El cambio se ve la próxima vez que abras Doddy: ciérralo primero y vuelve a abrirlo."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy démarre en anglais tant que tu n’as pas choisi une autre langue. Un changement apparaît à la prochaine ouverture de Doddy : ferme-le d’abord, puis rouvre-le."
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy se pokreće na engleskom dok ne odabereš drugi jezik. Promjena će se vidjeti pri sljedećem otvaranju Doddyja: prvo ga zatvori, pa ga ponovno otvori."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy parte in inglese finché non scegli un’altra lingua. Una modifica si vede alla prossima apertura di Doddy: chiudilo prima, poi riaprilo."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "別の言語を選ぶまで、Doddyは英語で始まります。変更は次にDoddyを開いたときに反映されます。先にDoddyを閉じてから、もう一度開いてください。"
-          }
-        },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy startuje po angielsku, dopóki nie wybierzesz innego języka. Zmiana pojawi się przy następnym otwarciu Doddy'ego: zamknij go, a potem otwórz ponownie."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Doddy começa em inglês até você escolher outro idioma. A mudança aparece na próxima vez que você abrir o Doddy: feche-o primeiro e abra de novo."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在你选择其他语言之前，Doddy 会以英语启动。更改会在你下次打开 Doddy 时生效：请先关闭 Doddy，再重新打开。"
+            "value": "Doddy przestał słuchać, bo iPhone się zablokował. Odblokuj go i zacznij nową rozmowę, kiedy zechcesz."
           }
         }
       }
@@ -25978,6 +26114,17 @@
         }
       }
     },
+    "Doddy's server already makes as many morning calls as it may. Try again later, or ask Doddy to call you once at a set time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego wykonuje już tyle porannych telefonów, ile może. Spróbuj później albo poproś Doddy’ego o jeden telefon o wybranej godzinie."
+          }
+        }
+      }
+    },
     "Doddy's server can't be reached. Nothing was sent or saved.": {
       "extractionState": "manual",
       "localizations": {
@@ -26103,6 +26250,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "Doddy's server didn't accept that time or those days. Turn the switch on again and choose them again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego nie przyjął tej godziny lub tych dni. Włącz przełącznik jeszcze raz i wybierz je ponownie."
           }
         }
       }
@@ -26515,6 +26673,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serwer Doddy’ego wysłał coś, czego aplikacja nie mogła odczytać. Nic tu nie zmieniono."
+          }
+        }
+      }
+    },
+    "Doddy's server turned it down. Try again in a few minutes.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer Doddy’ego odmówił. Spróbuj ponownie za kilka minut."
           }
         }
       }
@@ -28461,6 +28630,17 @@
         }
       }
     },
+    "Each day is checked again before it rings: your number, calls from Doddy on, quiet hours where your iPhone is, and the limit on calls. Twilio places the call. Say “stop the morning calls”, or tap Stop in Settings, Phone calls.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Każdego dnia przed telefonem wszystko jest sprawdzane jeszcze raz: Twój numer, włączone telefony od Doddy’ego, godziny ciszy tam, gdzie jest Twój iPhone, i limit połączeń. Połączenie wykonuje Twilio. Powiedz „przestań dzwonić rano” albo stuknij Zatrzymaj w Ustawieniach, Telefony."
+          }
+        }
+      }
+    },
     "Each day, at most": {
       "extractionState": "manual",
       "localizations": {
@@ -28479,6 +28659,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Każdy produkt osobno"
+          }
+        }
+      }
+    },
+    "Each morning Doddy says the date and only what its server holds for you that day: calls you booked, notes waiting, results of tasks you handed over, new stories on your radar and when the daily news comes. It can't see your calendar or reminders. Each day is checked again before it rings, and quiet hours apply.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Każdego ranka Doddy mówi datę i tylko to, co jego serwer ma dla Ciebie na ten dzień: umówione telefony, czekające notatki, wyniki przekazanych zadań, nowe artykuły na radarze i godzinę wiadomości dnia. Nie widzi Twojego kalendarza ani przypomnień. Każdy dzień jest sprawdzany jeszcze raz przed telefonem i obowiązują godziny ciszy."
           }
         }
       }
@@ -32898,6 +33089,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Świeże artykuły znanych wydawców o tym, co śledzisz. Dotknij „Streszczenie AI”, żeby dostać sedno w kilku zdaniach."
+          }
+        }
+      }
+    },
+    "Friday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Piątek"
           }
         }
       }
@@ -44565,13 +44767,13 @@
         }
       }
     },
-    "Make the presentation after you tap Make presentation, as a PowerPoint file that Keynote opens": {
+    "Make the presentation when you ask, as a PowerPoint file that Keynote opens": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Przygotować prezentację, gdy stukniesz Przygotuj prezentację, jako plik PowerPoint, który otworzy Keynote"
+            "value": "Przygotować prezentację, gdy poprosisz, jako plik PowerPoint, który otworzy Keynote"
           }
         }
       }
@@ -45563,6 +45765,17 @@
         }
       }
     },
+    "Monday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poniedziałek"
+          }
+        }
+      }
+    },
     "Monday morning": {
       "extractionState": "manual",
       "localizations": {
@@ -46046,6 +46259,61 @@
         }
       }
     },
+    "Morning call": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poranny telefon"
+          }
+        }
+      }
+    },
+    "Morning call set up: %@. Each day is checked again before it rings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poranny telefon ustawiony: %@. Każdy dzień jest sprawdzany jeszcze raz przed telefonem."
+          }
+        }
+      }
+    },
+    "Morning calls are off on Doddy's server right now.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poranne telefony są teraz wyłączone na serwerze Doddy’ego."
+          }
+        }
+      }
+    },
+    "Morning calls stopped. Doddy won't call you in the morning any more.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poranne telefony zatrzymane. Doddy nie będzie już dzwonił do Ciebie rano."
+          }
+        }
+      }
+    },
+    "Morning calls stopped. Today's call was already being placed, so it may still ring this once.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poranne telefony zatrzymane. Dzisiejsze połączenie było już wykonywane, więc może jeszcze zadzwonić ten jeden raz."
+          }
+        }
+      }
+    },
     "Morning check-in": {
       "extractionState": "manual",
       "localizations": {
@@ -46337,24 +46605,24 @@
         }
       }
     },
-    "Move, complete or delete one open reminder, after you tap": {
+    "Move, complete or delete one open reminder, after you say yes or tap": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Przenieść, odhaczyć lub usunąć jedno otwarte przypomnienie, gdy stukniesz"
+            "value": "Przenieść, odhaczyć lub usunąć jedno otwarte przypomnienie, gdy powiesz „tak” albo stukniesz"
           }
         }
       }
     },
-    "Move, rename or delete one event, change its place or add a note to it, after you tap Change or Delete": {
+    "Move, rename or delete one event, change its place or add a note to it, after you say yes or tap Change or Delete": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Przenieść, przemianować lub usunąć jedno wydarzenie, zmienić jego miejsce albo dopisać do niego notatkę, gdy stukniesz Zmień lub Usuń"
+            "value": "Przenieść, przemianować lub usunąć jedno wydarzenie, zmienić jego miejsce albo dopisać do niego notatkę, gdy powiesz „tak” albo stukniesz Zmień lub Usuń"
           }
         }
       }
@@ -48079,6 +48347,17 @@
         }
       }
     },
+    "Next call: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Następny telefon: %@"
+          }
+        }
+      }
+    },
     "Next conversation": {
       "extractionState": "manual",
       "localizations": {
@@ -48134,6 +48413,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "下一次对话"
+          }
+        }
+      }
+    },
+    "Next shows a card with exactly what Doddy will do. Nothing is set up until you tap its button.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„Dalej” pokaże kartę z dokładnie tym, co zrobi Doddy. Nic nie zostanie ustawione, dopóki nie stukniesz jej przycisku."
           }
         }
       }
@@ -50194,6 +50484,17 @@
         }
       }
     },
+    "Not called: a new morning call replaced it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez telefonu: zastąpił go nowy poranny telefon."
+          }
+        }
+      }
+    },
     "Not called: it was quiet hours in your iPhone's time zone.": {
       "extractionState": "manual",
       "localizations": {
@@ -50212,6 +50513,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Bez połączenia: usługa telefoniczna je odrzuciła."
+          }
+        }
+      }
+    },
+    "Not called: you stopped the morning calls.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bez telefonu: poranne telefony zostały zatrzymane."
           }
         }
       }
@@ -55186,6 +55498,17 @@
         }
       }
     },
+    "Off. Turn it on to choose the time and days, or ask Doddy, for example “Call me every day at 8 with the plan of the day.”": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyłączony. Włącz go, żeby wybrać godzinę i dni, albo poproś Doddy’ego, na przykład „Dzwoń do mnie codziennie o 8 z planem dnia”."
+          }
+        }
+      }
+    },
     "Offline baseline": {
       "extractionState": "manual",
       "localizations": {
@@ -56855,6 +57178,17 @@
         }
       }
     },
+    "Only this button sets it up, with exactly what the card shows. Afterwards the switch shows what Doddy's server says.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tylko ten przycisk ustawia telefony, dokładnie tak, jak pokazuje karta. Potem przełącznik pokazuje to, co mówi serwer Doddy’ego."
+          }
+        }
+      }
+    },
     "Only this detail is saved on this iPhone. You can edit or delete it later.": {
       "extractionState": "manual",
       "localizations": {
@@ -57951,13 +58285,13 @@
         }
       }
     },
-    "Open Doddy's camera, after you tap Open camera": {
+    "Open Doddy's camera when you ask, while Doddy is on screen": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Otworzyć aparat Doddy'ego, gdy stukniesz Otwórz aparat"
+            "value": "Otworzyć aparat Doddy'ego, gdy poprosisz, jeśli Doddy jest na ekranie"
           }
         }
       }
@@ -58190,13 +58524,13 @@
         }
       }
     },
-    "Open a place or address in Apple Maps, after you tap Open in Maps": {
+    "Open a place or address in Apple Maps when you ask, while Doddy is on screen; otherwise after you say yes or tap Open in Maps": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Otworzyć miejsce lub adres w Mapach Apple, gdy stukniesz Otwórz w Mapach"
+            "value": "Otworzyć miejsce lub adres w Mapach Apple, gdy poprosisz, jeśli Doddy jest na ekranie; inaczej gdy powiesz „tak” albo stukniesz Otwórz w Mapach"
           }
         }
       }
@@ -63331,130 +63665,22 @@
         }
       }
     },
-    "Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save.": {
+    "Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. A note is saved only when you ask for one, with Undo in What Doddy did.": {
       "extractionState": "manual",
       "localizations": {
-        "de": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Privates Gespräch. Es wird nicht auf diesem iPad behalten und im nächsten Gespräch nicht aufgegriffen. ElevenLabs führt es trotzdem aus und kann eine eigene Aufnahme behalten, wie unter Einstellungen › Datenschutz. Notizen werden nur gespeichert, wenn du auf Speichern tippst."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Privates Gespräch. Es wird nicht auf diesem iPhone behalten und im nächsten Gespräch nicht aufgegriffen. ElevenLabs führt es trotzdem aus und kann eine eigene Aufnahme behalten, wie unter Einstellungen › Datenschutz. Notizen werden nur gespeichert, wenn du auf Speichern tippst."
-                }
-              }
-            }
-          }
-        },
         "en": {
           "variations": {
             "device": {
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Private conversation. It won't be kept on this iPad or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save."
+                  "value": "Private conversation. It won't be kept on this iPad or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. A note is saved only when you ask for one, with Undo in What Doddy did."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. Notes are only saved if you tap Save."
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Conversación privada. No se guardará en este iPad ni saldrá en tu próxima conversación. ElevenLabs la ejecuta igualmente y puede conservar su propia grabación, como se indica en Ajustes › Privacidad. Las notas solo se guardan si tocas Guardar."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Conversación privada. No se guardará en este iPhone ni saldrá en tu próxima conversación. ElevenLabs la ejecuta igualmente y puede conservar su propia grabación, como se indica en Ajustes › Privacidad. Las notas solo se guardan si tocas Guardar."
-                }
-              }
-            }
-          }
-        },
-        "fr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Conversation privée. Elle ne sera ni conservée sur cet iPad ni évoquée dans ta prochaine conversation. ElevenLabs l’exécute quand même et peut garder son propre enregistrement, comme dans Réglages › Confidentialité. Les notes ne sont enregistrées que si tu touches Enregistrer."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Conversation privée. Elle ne sera ni conservée sur cet iPhone ni évoquée dans ta prochaine conversation. ElevenLabs l’exécute quand même et peut garder son propre enregistrement, comme dans Réglages › Confidentialité. Les notes ne sont enregistrées que si tu touches Enregistrer."
-                }
-              }
-            }
-          }
-        },
-        "hr": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Privatni razgovor. Neće se čuvati na ovom iPadu niti spominjati u tvojem sljedećem razgovoru. ElevenLabs i dalje ga vodi i može zadržati vlastitu snimku, kako je u Postavke › Privatnost. Bilješke se spremaju samo ako dodirneš Spremi."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Privatni razgovor. Neće se čuvati na ovom iPhoneu niti spominjati u tvojem sljedećem razgovoru. ElevenLabs i dalje ga vodi i može zadržati vlastitu snimku, kako je u Postavke › Privatnost. Bilješke se spremaju samo ako dodirneš Spremi."
-                }
-              }
-            }
-          }
-        },
-        "it": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Conversazione privata. Non verrà conservata su questo iPad né ripresa nella tua prossima conversazione. ElevenLabs la esegue comunque e può conservare una propria registrazione, come in Impostazioni › Privacy. Le note vengono salvate solo se tocchi Salva."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Conversazione privata. Non verrà conservata su questo iPhone né ripresa nella tua prossima conversazione. ElevenLabs la esegue comunque e può conservare una propria registrazione, come in Impostazioni › Privacy. Le note vengono salvate solo se tocchi Salva."
-                }
-              }
-            }
-          }
-        },
-        "ja": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "プライベートな会話です。このiPadには保存されず、次の会話で持ち出されることもありません。ElevenLabsが会話を処理するため、設定 › プライバシーにあるとおり、独自の録音を保持することがあります。メモは「保存」をタップした場合にだけ保存されます。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "プライベートな会話です。このiPhoneには保存されず、次の会話で持ち出されることもありません。ElevenLabsが会話を処理するため、設定 › プライバシーにあるとおり、独自の録音を保持することがあります。メモは「保存」をタップした場合にだけ保存されます。"
+                  "value": "Private conversation. It won't be kept on this iPhone or brought up in your next conversation. ElevenLabs still runs it and may keep its own recording, as in Settings › Privacy. A note is saved only when you ask for one, with Undo in What Doddy did."
                 }
               }
             }
@@ -63466,49 +63692,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Prywatna rozmowa. Nie zostanie zachowana na tym iPadzie ani przywołana w następnej rozmowie. ElevenLabs nadal ją prowadzi i może zachować własne nagranie, jak w Ustawieniach › Prywatność. Notatki są zapisywane tylko, gdy stukniesz Zapisz."
+                  "value": "Prywatna rozmowa. Nie zostanie zachowana na tym iPadzie ani przywołana w następnej rozmowie. ElevenLabs nadal ją prowadzi i może zachować własne nagranie, jak w Ustawieniach › Prywatność. Notatka zapisuje się tylko, gdy o nią poprosisz, z Cofnij w „Co zrobił Doddy”."
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "Prywatna rozmowa. Nie zostanie zachowana na tym iPhonie ani przywołana w następnej rozmowie. ElevenLabs nadal ją prowadzi i może zachować własne nagranie, jak w Ustawieniach › Prywatność. Notatki są zapisywane tylko, gdy stukniesz Zapisz."
-                }
-              }
-            }
-          }
-        },
-        "pt-BR": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Conversa privada. Não fica neste iPad nem é trazida à tona na sua próxima conversa. A ElevenLabs ainda executa a conversa e pode manter a própria gravação, como em Ajustes › Privacidade. As notas só são salvas se você tocar em Salvar."
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "Conversa privada. Não fica neste iPhone nem é trazida à tona na sua próxima conversa. A ElevenLabs ainda executa a conversa e pode manter a própria gravação, como em Ajustes › Privacidade. As notas só são salvas se você tocar em Salvar."
-                }
-              }
-            }
-          }
-        },
-        "zh-Hans": {
-          "variations": {
-            "device": {
-              "ipad": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "私密对话。它不会保留在这台 iPad 上，也不会在你的下一次对话中被提起。ElevenLabs 仍会运行这段对话，并可能保留自己的录音，详见设置 › 隐私。只有你轻点“保存”，笔记才会保存。"
-                }
-              },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "私密对话。它不会保留在这台 iPhone 上，也不会在你的下一次对话中被提起。ElevenLabs 仍会运行这段对话，并可能保留自己的录音，详见设置 › 隐私。只有你轻点“保存”，笔记才会保存。"
+                  "value": "Prywatna rozmowa. Nie zostanie zachowana na tym iPhonie ani przywołana w następnej rozmowie. ElevenLabs nadal ją prowadzi i może zachować własne nagranie, jak w Ustawieniach › Prywatność. Notatka zapisuje się tylko, gdy o nią poprosisz, z Cofnij w „Co zrobił Doddy”."
                 }
               }
             }
@@ -69435,13 +69625,13 @@
         }
       }
     },
-    "Run one of your Shortcuts, after you tap Run": {
+    "Run one of your Shortcuts, after you say yes or tap Run": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uruchomić jeden z twoich Skrótów, gdy stukniesz Uruchom"
+            "value": "Uruchomić jeden z twoich Skrótów, gdy powiesz „tak” albo stukniesz Uruchom"
           }
         }
       }
@@ -69811,6 +70001,191 @@
         }
       }
     },
+    "Same as this iPhone shows the next time you open Doddy. Widgets, Siri phrases and the iPhone's permission questions follow the iPhone's language.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "„Wie dieses iPad“ gilt ab dem nächsten Öffnen von Doddy. Widgets, Siri-Sätze und die Berechtigungsfragen des iPad folgen der Sprache des iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "„Wie dieses iPhone“ gilt ab dem nächsten Öffnen von Doddy. Widgets, Siri-Sätze und die Berechtigungsfragen des iPhone folgen der Sprache des iPhone."
+                }
+              }
+            }
+          }
+        },
+        "en": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Same as this iPad shows the next time you open Doddy. Widgets, Siri phrases and the iPad's permission questions follow the iPad's language."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "Same as this iPhone shows the next time you open Doddy. Widgets, Siri phrases and the iPhone's permission questions follow the iPhone's language."
+                }
+              }
+            }
+          }
+        },
+        "es": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«Igual que este iPad» se aplica la próxima vez que abras Doddy. Los widgets, las frases de Siri y las preguntas de permisos del iPad siguen el idioma del iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«Igual que este iPhone» se aplica la próxima vez que abras Doddy. Los widgets, las frases de Siri y las preguntas de permisos del iPhone siguen el idioma del iPhone."
+                }
+              }
+            }
+          }
+        },
+        "fr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "« Comme cet iPad » s’applique à la prochaine ouverture de Doddy. Les widgets, les phrases Siri et les demandes d’autorisation de l’iPad suivent la langue de l’iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "« Comme cet iPhone » s’applique à la prochaine ouverture de Doddy. Les widgets, les phrases Siri et les demandes d’autorisation de l’iPhone suivent la langue de l’iPhone."
+                }
+              }
+            }
+          }
+        },
+        "hr": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "„Isto kao na ovom iPadu” vrijedi od sljedećeg otvaranja Doddyja. Widgeti, Siri fraze i iPadova pitanja o dopuštenjima prate jezik iPada."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "„Isto kao na ovom iPhoneu” vrijedi od sljedećeg otvaranja Doddyja. Widgeti, Siri fraze i iPhoneova pitanja o dopuštenjima prate jezik iPhonea."
+                }
+              }
+            }
+          }
+        },
+        "it": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«Come questo iPad» vale dalla prossima apertura di Doddy. Widget, frasi di Siri e richieste di autorizzazione dell’iPad seguono la lingua dell’iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "«Come questo iPhone» vale dalla prossima apertura di Doddy. Widget, frasi di Siri e richieste di autorizzazione dell’iPhone seguono la lingua dell’iPhone."
+                }
+              }
+            }
+          }
+        },
+        "ja": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "「このiPadと同じ」は次にDoddyを開いたときに反映されます。ウィジェット、Siriのフレーズ、iPadの許可の確認はiPadの言語になります。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "「このiPhoneと同じ」は次にDoddyを開いたときに反映されます。ウィジェット、Siriのフレーズ、iPhoneの許可の確認はiPhoneの言語になります。"
+                }
+              }
+            }
+          }
+        },
+        "pl": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "„Taki jak na tym iPadzie” zadziała przy następnym otwarciu Doddy’ego. Widżety, frazy Siri i pytania iPada o pozwolenia są w języku iPada."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "„Taki jak na tym iPhonie” zadziała przy następnym otwarciu Doddy’ego. Widżety, frazy Siri i pytania iPhone’a o pozwolenia są w języku iPhone’a."
+                }
+              }
+            }
+          }
+        },
+        "pt-BR": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "“Igual a este iPad” vale a partir da próxima vez que você abrir o Doddy. Widgets, frases da Siri e os pedidos de permissão do iPad seguem o idioma do iPad."
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "“Igual a este iPhone” vale a partir da próxima vez que você abrir o Doddy. Widgets, frases da Siri e os pedidos de permissão do iPhone seguem o idioma do iPhone."
+                }
+              }
+            }
+          }
+        },
+        "zh-Hans": {
+          "variations": {
+            "device": {
+              "ipad": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "“与这台 iPad 相同”会在下次打开 Doddy 时生效。小组件、Siri 短语和 iPad 的权限请求跟随 iPad 的语言。"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "“与这台 iPhone 相同”会在下次打开 Doddy 时生效。小组件、Siri 短语和 iPhone 的权限请求跟随 iPhone 的语言。"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Sample": {
       "extractionState": "manual",
       "localizations": {
@@ -69866,6 +70241,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "试听"
+          }
+        }
+      }
+    },
+    "Saturday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sobota"
           }
         }
       }
@@ -74409,13 +74795,13 @@
         }
       }
     },
-    "Set an alarm that rings even in Silent mode, after you tap Set alarm (iOS 26 and later)": {
+    "Set an alarm that rings even in Silent mode when you ask, with Undo in What Doddy did (iOS 26 and later)": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ustawić budzik, który dzwoni nawet w trybie cichym, gdy stukniesz Ustaw budzik (iOS 26 i nowszy)"
+            "value": "Ustawić budzik, który dzwoni nawet w trybie cichym, gdy o to poprosisz, z możliwością cofnięcia w „Co zrobił Doddy” (iOS 26 i nowszy)"
           }
         }
       }
@@ -78814,13 +79200,13 @@
         }
       }
     },
-    "Start a countdown, after you tap Start": {
+    "Start a countdown when you ask, with Undo in What Doddy did": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zacząć odliczanie, gdy stukniesz Zacznij"
+            "value": "Zacząć odliczanie, gdy o to poprosisz, z możliwością cofnięcia w „Co zrobił Doddy”"
           }
         }
       }
@@ -80686,6 +81072,17 @@
         }
       }
     },
+    "Stop the morning calls": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj poranne telefony"
+          }
+        }
+      }
+    },
     "Stop this reminder?": {
       "extractionState": "manual",
       "localizations": {
@@ -81267,6 +81664,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Podsumowanie napisane przez Claude na podstawie zapisu."
+          }
+        }
+      }
+    },
+    "Sunday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niedziela"
           }
         }
       }
@@ -84123,6 +84531,17 @@
         }
       }
     },
+    "That morning call is already set up, so nothing changed.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten poranny telefon jest już ustawiony, więc nic się nie zmieniło."
+          }
+        }
+      }
+    },
     "That number can't receive codes. Check it and try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -84694,6 +85113,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "该时间已经过去。请选择至少一分钟之后的时间。"
+          }
+        }
+      }
+    },
+    "That time is inside quiet hours. Pick a later time, or turn on “Call even in quiet hours” on the card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta godzina wypada w godzinach ciszy. Wybierz późniejszą albo włącz na karcie „Dzwoń nawet w godzinach ciszy”."
           }
         }
       }
@@ -87240,6 +87670,17 @@
         }
       }
     },
+    "The morning call wasn't set up. %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poranny telefon nie został ustawiony. %@"
+          }
+        }
+      }
+    },
     "The names can differ a little between iOS versions. Doddy can't see this setting.": {
       "extractionState": "manual",
       "localizations": {
@@ -89076,6 +89517,65 @@
         }
       }
     },
+    "The screens change at once. The language Doddy speaks in is under Voice and personality.": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Bildschirme wechseln sofort. Die Sprache, in der Doddy spricht, findest du unter Stimme und Persönlichkeit."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las pantallas cambian al instante. El idioma en que habla Doddy está en Voz y personalidad."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les écrans changent tout de suite. La langue dans laquelle Doddy parle se règle dans Voix et personnalité."
+          }
+        },
+        "hr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zasloni se mijenjaju odmah. Jezik kojim Doddy govori nalazi se pod Glas i osobnost."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le schermate cambiano subito. La lingua in cui parla Doddy è in Voce e personalità."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "画面はすぐに切り替わります。Doddyが話す言語は「声と性格」で設定します。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekrany zmieniają język od razu. Język, którym mówi Doddy, ustawisz w „Głos i osobowość”."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As telas mudam na hora. O idioma em que o Doddy fala fica em Voz e personalidade."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "界面会立即切换。Doddy 说话的语言在“语音与个性”中设置。"
+          }
+        }
+      }
+    },
     "The searches open on Booking.com and Airbnb with your days filled in; their prices are theirs. Doddy books nothing and reads nothing from those pages.": {
       "extractionState": "manual",
       "localizations": {
@@ -90247,6 +90747,17 @@
         }
       }
     },
+    "There was no morning call to stop.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie było porannego telefonu do zatrzymania."
+          }
+        }
+      }
+    },
     "There's more than one phone number in what you wrote. Type the one Doddy should call.": {
       "extractionState": "manual",
       "localizations": {
@@ -91159,6 +91670,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ta karta wygasła. Przygotuj nową na podstawie tych samych danych."
+          }
+        }
+      }
+    },
+    "This card ran out, so here it is again with what's true now. Nothing was done. Check it, then tap once more.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta karta wygasła, więc pokazuję ją jeszcze raz z aktualnymi danymi. Nic nie zostało zrobione. Sprawdź ją i stuknij jeszcze raz."
           }
         }
       }
@@ -92545,6 +93067,17 @@
         }
       }
     },
+    "This morning call was stopped after an earlier try. Turn the switch on again to set it up.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten poranny telefon został zatrzymany po wcześniejszej próbie. Włącz przełącznik jeszcze raz, żeby go ustawić."
+          }
+        }
+      }
+    },
     "This note can't be read any more, so it can't be saved.": {
       "extractionState": "manual",
       "localizations": {
@@ -93861,6 +94394,17 @@
         }
       }
     },
+    "This replaces your morning call %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To zastąpi Twój poranny telefon %@."
+          }
+        }
+      }
+    },
     "This replaces your own reminder for this list.": {
       "extractionState": "manual",
       "localizations": {
@@ -93990,6 +94534,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ta godzina wypada w godzinach ciszy. Włącz przełącznik, żeby mimo to umówić telefon, albo poproś Doddy’ego o inną godzinę."
+          }
+        }
+      }
+    },
+    "This time is in quiet hours. Turn on the switch to set it up anyway, or ask Doddy for a later time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ta godzina wypada w godzinach ciszy. Włącz przełącznik, żeby mimo to ustawić telefony, albo poproś Doddy’ego o późniejszą godzinę."
           }
         }
       }
@@ -94174,6 +94729,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Trzy rzeczy, jedno stuknięcie. Odznacz, aby pominąć."
+          }
+        }
+      }
+    },
+    "Thursday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czwartek"
           }
         }
       }
@@ -94373,6 +94939,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "勾选 Doddy 清单上的项目"
+          }
+        }
+      }
+    },
+    "Tick at least one day.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaznacz co najmniej jeden dzień."
           }
         }
       }
@@ -94594,6 +95171,28 @@
           "stringUnit": {
             "state": "translated",
             "value": "时间"
+          }
+        }
+      }
+    },
+    "Time in %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czas w strefie %@"
+          }
+        }
+      }
+    },
+    "Time in %@. From Doddy's number to your number ending %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czas w strefie %@. Z numeru Doddy’ego na Twój numer kończący się na %@"
           }
         }
       }
@@ -96659,13 +97258,24 @@
         }
       }
     },
-    "Turn a light, outlet or fan on or off, or run a scene, after you tap Yes on a card naming it": {
+    "Tuesday": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Włączyć lub wyłączyć światło, gniazdko albo wentylator lub uruchomić scenę, gdy stukniesz Tak na karcie, która je nazywa"
+            "value": "Wtorek"
+          }
+        }
+      }
+    },
+    "Turn a light, outlet or fan on or off, or run a scene, after you say yes to a card naming it or tap Yes on it": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włączyć lub wyłączyć światło, gniazdko albo wentylator lub uruchomić scenę, gdy powiesz „tak” na karcie, która je nazywa, albo stukniesz na niej Tak"
           }
         }
       }
@@ -100948,6 +101558,17 @@
         }
       }
     },
+    "Wednesday": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Środa"
+          }
+        }
+      }
+    },
     "Week %lld of %lld": {
       "extractionState": "manual",
       "localizations": {
@@ -101084,6 +101705,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "仅工作日"
+          }
+        }
+      }
+    },
+    "Weekend": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weekend"
           }
         }
       }
@@ -103059,6 +103691,17 @@
         }
       }
     },
+    "When Doddy calls": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiedy Doddy dzwoni"
+          }
+        }
+      }
+    },
     "When I arrive": {
       "extractionState": "manual",
       "localizations": {
@@ -103443,6 +104086,17 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "When you answer, Doddy says first:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gdy odbierzesz, Doddy najpierw powie:"
           }
         }
       }
@@ -108850,6 +109504,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "你的号码"
+          }
+        }
+      }
+    },
+    "Your number changed after the card was shown. Turn the switch on again for a new card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twój numer zmienił się po pokazaniu karty. Włącz przełącznik jeszcze raz, żeby zobaczyć nową kartę."
           }
         }
       }
