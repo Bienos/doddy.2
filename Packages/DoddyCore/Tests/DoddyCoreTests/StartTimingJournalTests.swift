@@ -34,7 +34,7 @@ final class StartTimingJournalTests: XCTestCase {
 
     // MARK: What is refused
 
-    func testOnlyTheThreeFixedOpeningsAreKept() {
+    func testOnlyTheFixedOpeningsAreKept() {
         var journal = StartTimingJournal()
         XCTAssertFalse(journal.record("hello 0.03 s", at: noon))
         XCTAssertFalse(journal.record("talk start: island shown 0.03 s", at: noon))
@@ -44,7 +44,7 @@ final class StartTimingJournalTests: XCTestCase {
         for opening in StartTimingJournal.openings {
             XCTAssertTrue(journal.record(opening + "total 0.40 s", at: noon), opening)
         }
-        XCTAssertEqual(journal.entries.count, 3)
+        XCTAssertEqual(journal.entries.count, StartTimingJournal.openings.count)
     }
 
     func testNothingThatCouldBeAPersonsIsKept() {
@@ -84,12 +84,38 @@ final class StartTimingJournalTests: XCTestCase {
         for token in [VoiceTokenSource.shelf, .warming, .fetched] {
             written.append("talk start timing: " + timeline.line(at: 2.5, token: token))
         }
+        // What a press and a start say about themselves (`TalkInIsland.note`): the step the press decided, the check
+        // that refused a start, and the island steps.
+        for step in ["startInIsland", "showInApp", "openApp", "endRunning", "ignore"] {
+            for mode in TalkLaunchMode.allCases {
+                written.append("talk button: \(step), mode \(mode.rawValue)")
+            }
+        }
+        for check in ["terms not accepted", "voice input unavailable", "app lock", "live activities off",
+                      "microphone not allowed", "voice not set up", "island start timed out", "refused in the background",
+                      "conversation failed", "microphone denied"] {
+            written.append("talk in the island not started: \(check)")
+        }
+        for word in ["shown", "refused by iOS"] {
+            written.append("talk in the island: island \(word) before the set-up")
+        }
+        written += [
+            "talk in the island: a conversation started meanwhile",
+            "talk in the island: the connection failed after the intent returned",
+            "talk in the island: the press island was ended, no conversation took it over",
+        ]
         var journal = StartTimingJournal()
         for text in written {
             XCTAssertTrue(StartTimingJournal.accepts(text), text)
             XCTAssertTrue(journal.record(text, at: noon), text)
         }
-        XCTAssertEqual(journal.entries.count, written.count)
+        XCTAssertEqual(journal.entries.count, min(written.count, StartTimingJournal.capacity))
+    }
+
+    func testTheOldLineWithAnApostropheWouldHaveBeenRefused() {
+        // The island line used to say "the press's island": the apostrophe is not an allowed character, so the
+        // wording has none now. A line like that is refused, never half kept.
+        XCTAssertFalse(StartTimingJournal.accepts("talk in the island: the press's island was ended"))
     }
 
     // MARK: Text to paste

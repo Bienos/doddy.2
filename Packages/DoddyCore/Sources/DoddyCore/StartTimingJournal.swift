@@ -1,12 +1,13 @@
 import Foundation
 
-/// The last few timing lines of an Action Button press, kept on the iPhone so they can be read without a Mac
-/// (decision `2026-11-14-start-timing-on-the-phone`). The log lines (`talk start launch`, `talk start timing`,
-/// `voice first audible sound after start`) are only readable in Console.app with the phone connected to a
-/// Mac; this keeps the same lines, and Settings › About › Advanced › Start timing shows them and copies them.
+/// The last few lines of an Action Button press, kept on the iPhone so they can be read without a Mac
+/// (decision `2026-11-14-start-timing-on-the-phone`). The log lines (the timing lines `talk start launch`, `talk
+/// start timing` and `voice first audible sound after start`, and the steps of a press: what it decided and why a
+/// start was refused) are only readable in Console.app with the phone connected to a Mac; this keeps the same
+/// lines, and Settings › About › Advanced › Start timing shows them and copies them.
 ///
-/// Privacy, enforced here and not only by the callers: a line is kept only if it starts with one of the three
-/// fixed openings and holds nothing but letters, digits, spaces and a few marks (`. : · ( ) - ,`), so no
+/// Privacy, enforced here and not only by the callers: a line is kept only if it starts with one of the fixed
+/// openings and holds nothing but letters, digits, spaces and a few marks (`. : · ( ) - ,`), so no
 /// address, name, number from a person, text or quote can be written into it, and it is at most
 /// `maxLineLength` characters. Only seconds and the fixed words of the stages. It never leaves the iPhone: no
 /// code sends it anywhere, and "Erase everything on this iPhone" removes it (`DevicePreferences`).
@@ -23,14 +24,19 @@ public struct StartTimingJournal: Codable, Sendable, Equatable {
         }
     }
 
-    /// The fixed openings a line must have. Each is what one of the three log lines starts with.
+    /// The fixed openings a line must have. Each is what one of the log lines starts with: the three timing lines,
+    /// what a press decided (`talk button: startInIsland, mode dynamicIsland`) and the steps of a start
+    /// (`talk in the island: …`, and `talk in the island not started: <the check that refused>`).
     public static let openings = [
         "talk start launch: ",
         "talk start timing: ",
         "voice first audible sound after start: ",
+        "talk button: ",
+        "talk in the island: ",
+        "talk in the island not started: ",
     ]
-    /// About six presses of three lines each.
-    public static let capacity = 18
+    /// About five presses.
+    public static let capacity = 40
     public static let maxLineLength = 300
 
     /// Oldest first.
