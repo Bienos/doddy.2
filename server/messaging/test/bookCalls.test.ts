@@ -185,12 +185,19 @@ test("until the live agents are synced, the drift check also accepts the earlier
   const nov15Ask = fixture("task-call-2026-11-15.md");
   const nov15Book = fixture("task-call-book-2026-11-15.md");
   const nov15Order = fixture("task-call-order-2026-11-15.md");
-  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_AGENT_SPEC.promptSha256], [sha256Hex(oldAsk), sha256Hex(nov12Ask), sha256Hex(nov14Ask), sha256Hex(nov15Ask)]);
-  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_BOOK_AGENT_SPEC.promptSha256], [sha256Hex(oldBook), sha256Hex(nov12Book), sha256Hex(nov14Book), sha256Hex(nov15Book)]);
+  // And those live from about 15:00 UTC the same day, before "no time" got one quick try.
+  const momentAsk = fixture("task-call-2026-11-15-moment.md");
+  const momentBook = fixture("task-call-book-2026-11-15-moment.md");
+  const momentOrder = fixture("task-call-order-2026-11-15-moment.md");
+  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_AGENT_SPEC.promptSha256], [sha256Hex(oldAsk), sha256Hex(nov12Ask), sha256Hex(nov14Ask), sha256Hex(nov15Ask), sha256Hex(momentAsk)]);
+  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_BOOK_AGENT_SPEC.promptSha256], [sha256Hex(oldBook), sha256Hex(nov12Book), sha256Hex(nov14Book), sha256Hex(nov15Book), sha256Hex(momentBook)]);
   // The order agent's first prompt (13 to 14 Nov 2026), before it sounded like the person's assistant.
   const firstOrder = fixture("task-call-order-2026-11-13.md");
-  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_ORDER_AGENT_SPEC.promptSha256], [sha256Hex(firstOrder), sha256Hex(nov14Order), sha256Hex(nov15Order)]);
+  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_ORDER_AGENT_SPEC.promptSha256], [sha256Hex(firstOrder), sha256Hex(nov14Order), sha256Hex(nov15Order), sha256Hex(momentOrder)]);
   assert.deepEqual(checkAgentSafety(compliantAgent(nov15Ask)), [], "the ask agent live from 15 Nov, 14:07 UTC");
+  assert.deepEqual(checkAgentSafety(compliantAgent(momentAsk)), [], "the ask agent live from 15 Nov, 15:00 UTC");
+  assert.deepEqual(checkAgentSafety(compliantAgent(momentBook, TASK_BOOK_AGENT_ID), TASK_BOOK_AGENT_SPEC), []);
+  assert.deepEqual(checkAgentSafety(compliantAgent(momentOrder, TASK_ORDER_AGENT_ID), TASK_ORDER_AGENT_SPEC), []);
   assert.deepEqual(checkAgentSafety(compliantAgent(nov15Book, TASK_BOOK_AGENT_ID), TASK_BOOK_AGENT_SPEC), []);
   assert.deepEqual(checkAgentSafety(compliantAgent(nov15Order, TASK_ORDER_AGENT_ID), TASK_ORDER_AGENT_SPEC), []);
   assert.deepEqual(checkAgentSafety(compliantAgent(nov14Ask)), [], "the ask agent live until the 15 Nov sync");
@@ -228,6 +235,9 @@ test("the ask, booking and order prompts keep the plain answer when asked what D
     assert.match(prompt, /"Tak, ale bardzo kulturalnym\./);
     assert.match(prompt, /a human or a real person, the answer is always no: "Nie, jestem wirtualnym asystentem/);
     assert.match(prompt, /Never answer "tak" to whether you are a human/);
+    // "No time": one quick try, then a polite goodbye, never a second try (15 Nov 2026).
+    assert.match(prompt, /try once, kindly and in one breath/);
+    assert.match(prompt, /Never try a second time\./);
     assert.equal(/jestem (człowiekiem|osobą|prawdziwą osobą)/i.test(prompt), false);
   }
 });
