@@ -61,7 +61,7 @@ adding one adapter, not rewriting the app or the agent.
 
 ## Tools at a glance (`tools.json`)
 
-Every tool asks first (ASK-01, `x_doddy.ask`). `runs_now`: looks, reads, public lookups, the translator and Doddy's own small actions run at once (ADR-575, ADR-619, decision `2026-11-11-asked-for-runs-at-once`). `yes_or_tap` (53 tools since 14 Nov 2026, decision `2026-11-14-spoken-yes-and-fewer-cards`; 64 before its step 2b moved 11 to `runs_now`): a card with the exact payload that the person's own spoken yes or a tap answers; the app asks for a tap instead once outside text is in the conversation. `tap` (3 tools): money and bookings, `pay_for_page`, `book_flight`, `call_places`.
+Every tool asks first (ASK-01, `x_doddy.ask`). `runs_now`: looks, reads, public lookups, the translator and Doddy's own small actions run at once (ADR-575, ADR-619, decision `2026-11-11-asked-for-runs-at-once`). `yes_or_tap` (51 tools since 14 Nov 2026, decision `2026-11-14-spoken-yes-and-fewer-cards`; 64 before its step 2b moved 11 to `runs_now`, and step 2c moved `set_timer` and `set_alarm`): a card with the exact payload that the person's own spoken yes or a tap answers; the app asks for a tap instead once outside text is in the conversation. `tap` (3 tools): money and bookings, `pay_for_page`, `book_flight`, `call_places`.
 
 **Applied to the live main agent on 14 Nov 2026, about 19:05 to 19:45 UTC** (owner: "Zsynchronizuj też. Agenta też zmień"; decision `2026-11-14-spoken-yes-and-fewer-cards`, step 3; `docs/OWNER_QUEUE.md` 111 and 114). The repository's `instructions.md` and `tools.json` say the same in their own words.
 - **The prompt:** 11 passages, written in the live prompt's own wording, because the live prompt is the owner's shorter rewrite, not `instructions.md`.
