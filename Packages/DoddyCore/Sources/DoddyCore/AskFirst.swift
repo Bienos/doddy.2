@@ -152,6 +152,8 @@ public enum AskFirst {
         VoiceToolName.startStopwatch, VoiceToolName.stopStopwatch, VoiceToolName.startFocus, VoiceToolName.stopFocus,
         VoiceToolName.startWindDown, VoiceToolName.stopWindDown, VoiceToolName.addToList, VoiceToolName.checkOff,
         VoiceToolName.followNews, VoiceToolName.openTrainingPlan, VoiceToolName.noteCapabilityGap,
+        // Taking away the standing permission for morning calls (decision 2026-11-14-morning-call): it only stops calls.
+        VoiceToolName.stopMorningCalls,
     ]
 
     /// True for a tool that never shows a card and never waits: the public lookups, the looks and the small actions
@@ -191,6 +193,9 @@ public enum AskFirst {
         // Doddy's own timers, lists and follows: started, ticked or added at once; each is undone in one step.
         case .startStopwatch, .stopStopwatch, .startFocus, .stopFocus, .startWindDown, .stopWindDown,
              .addToList, .checkOff, .followNews, .openTrainingPlan, .noteCapabilityGap:
+            return .runsNow
+        // Stopping the morning calls only takes a permission away (decision 2026-11-14-morning-call): at once.
+        case .stopMorningCalls:
             return .runsNow
         // ADR-619 (owner, 24 Oct 2026: "nie pytaj, od razu działaj, przełącz się i pytaj, co
         // tłumaczyć"), replacing ADR-542: translator mode starts and stops the moment the user asks.
@@ -239,7 +244,10 @@ public enum AskFirst {
              // The card shows the time and the exact reason; the tap approves exactly that (ADR-754).
              // call_places: the card shows every place, its number and where it came from, the exact
              // opening line and question; the one tap approves exactly that task's digest.
-             .callMeLater, .callMeNow, .callPlaces:
+             .callMeLater, .callMeNow, .callPlaces,
+             // The card shows the exact schedule, number and switch; a yes or a tap approves exactly that
+             // (decision 2026-11-14-morning-call).
+             .callMeEveryMorning:
             return .ownPayloadCard
         case .textMe:
             // A text to the user's own verified number goes at once while Texts from Doddy is on (owner, 9 Nov 2026,

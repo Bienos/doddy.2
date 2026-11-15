@@ -162,7 +162,7 @@ final class AskFirstTests: XCTestCase {
         ])
         XCTAssertEqual(AskFirst.ownSmallActions, [
             "start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",
-            "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap",
+            "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap", "stop_morning_calls",
         ])
         // `parking_spot` is in neither set: only its "find" runs at once, saving and clearing keep their cards.
         XCTAssertFalse(AskFirst.ownLooks.contains(VoiceToolName.parkingSpot))

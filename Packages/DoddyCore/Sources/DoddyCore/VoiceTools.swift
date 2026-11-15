@@ -273,6 +273,11 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// A call from Doddy's number to the user's verified number now (decision 2026-11-10-call-me-now-by-voice).
     /// Shown on a card with the number's last digits; placed only on the user's tap.
     case callMeNow
+    /// A call from Doddy's number to the user's verified number on chosen days at one morning time, with a plan of the
+    /// day (decision 2026-11-14-morning-call). Shown on a card with the exact schedule; set up only on a yes or a tap.
+    case callMeEveryMorning(MorningCallDraft)
+    /// Stops the morning calls at once, with no card (decision 2026-11-14-morning-call).
+    case stopMorningCalls
     /// Up to three places, one card, one tap; called one after another until one says yes
     /// (decision 2026-11-09-restaurant-calls-one-tap). Placed by Doddy's messaging server.
     case callPlaces(CallTaskDraft)
@@ -460,6 +465,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseCallMeLater(args, name: name, now: now, calendar: calendar)
         case VoiceToolName.callMeNow:
             return .callMeNow
+        case VoiceToolName.callMeEveryMorning:
+            return parseCallMeEveryMorning(args, name: name, calendar: calendar)
+        case VoiceToolName.stopMorningCalls:
+            return .stopMorningCalls
         case VoiceToolName.callPlaces:
             return parseCallPlaces(args, name: name)
         case VoiceToolName.makePresentation:

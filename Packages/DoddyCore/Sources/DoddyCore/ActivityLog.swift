@@ -261,6 +261,12 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .messages, title: "Call you later from Doddy's number", detail: time, logDetail: time, isLookup: false)
         case .callMeNow:
             return ActivityRequest(app: .messages, title: "Call you now from Doddy's number", detail: nil, isLookup: false)
+        case .callMeEveryMorning(let draft):
+            // The schedule only (decision 2026-11-14-morning-call); a day's plan is never on the iPhone.
+            let schedule = draft.scheduleText(.english)
+            return ActivityRequest(app: .messages, title: "Call you every morning from Doddy's number", detail: schedule, logDetail: schedule, isLookup: false)
+        case .stopMorningCalls:
+            return ActivityRequest(app: .messages, title: "Stop the morning calls from Doddy's number", detail: nil, isLookup: false)
         case .callPlaces(let draft):
             // The places' names, never their numbers or the question (decision 2026-11-09-restaurant-calls-one-tap).
             let names = draft.places.map(\.name).joined(separator: ", ")

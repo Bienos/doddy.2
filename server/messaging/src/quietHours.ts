@@ -40,8 +40,12 @@ export function localMinutes(at: Date, zone: string): number {
 }
 
 export function inQuietHours(at: Date, zone: string, quiet: QuietHours = QUIET_HOURS_DEFAULT): boolean {
+  return minutesInQuietHours(localMinutes(at, zone), quiet);
+}
+
+/** Whether a wall-clock time (minutes after midnight) is inside quiet hours, whatever the day. */
+export function minutesInQuietHours(m: number, quiet: QuietHours = QUIET_HOURS_DEFAULT): boolean {
   if (quiet.start === quiet.end) return false;
-  const m = localMinutes(at, zone);
   return quiet.start < quiet.end ? m >= quiet.start && m < quiet.end : m >= quiet.start || m < quiet.end;
 }
 

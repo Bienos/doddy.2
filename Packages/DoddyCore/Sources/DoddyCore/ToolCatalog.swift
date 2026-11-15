@@ -169,6 +169,11 @@ public enum ToolCatalog {
         .init(VoiceToolName.callMeLater, .placeCall, .card),
         // The same call as Settings, Phone calls, Call me now; the card shows the number's last digits.
         .init(VoiceToolName.callMeNow, .placeCall, .card),
+        // A standing permission: the card shows the exact schedule, the number and the switch; the server checks the
+        // same approval hash when it sets it up and again before each day's call (decision 2026-11-14-morning-call).
+        .init(VoiceToolName.callMeEveryMorning, .placeCall, .card),
+        // Stops them at once: it only takes the permission away.
+        .init(VoiceToolName.stopMorningCalls, .placeCall, .runsNow),
         .init(VoiceToolName.callPlaces, .placeCall, .card),
         // A file made on the iPhone on a tap, then the share sheet to Keynote or Files (ADR-567).
         .init(VoiceToolName.makePresentation, .handoff, .runsNow),

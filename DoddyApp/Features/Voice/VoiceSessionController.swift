@@ -82,6 +82,9 @@ final class VoiceSessionController {
         /// at `draft.at`, saying `draft.reason` first. The tap approves that with the card's
         /// quiet-hours switch (`callLaterAllowQuiet`).
         case callLater(toolCallID: String, draft: CallLaterDraft, to: String, quietHours: CallQuietHours)
+        /// "Call you every morning?" (decision 2026-11-14-morning-call): the exact schedule, the number's last digits, what
+        /// the call says and the quiet-hours switch (`callLaterAllowQuiet`); `replaces` is the active one it stops.
+        case morningCall(toolCallID: String, draft: MorningCallDraft, to: String, quietHours: CallQuietHours, replaces: MorningCall?)
         /// "Call you now?" (decision 2026-11-10-call-me-now-by-voice): from Doddy's number to the user's own
         /// verified number `to`, at once. The tap approves exactly that; nothing is placed before it.
         case callNow(toolCallID: String, to: String)
@@ -112,7 +115,8 @@ final class VoiceSessionController {
                  .changeEvent(let id, _), .changeReminder(let id, _, _), .deleteEvent(let id, _), .deleteReminder(let id, _),
                  .undo(let id, _), .bulk(let id, _, _, _), .parking(let id, _), .leaveBy(let id, _),
                  .ingredients(let id, _, _, _, _, _), .ask(let id, _, _, _, _), .cloudRead(let id, _, _, _, _),
-                 .presentation(let id, _), .camera(let id), .home(let id, _), .callLater(let id, _, _, _), .callNow(let id, _), .callTask(let id, _):
+                 .presentation(let id, _), .camera(let id), .home(let id, _), .callLater(let id, _, _, _), .callNow(let id, _), .callTask(let id, _),
+                 .morningCall(let id, _, _, _, _):
                 id
             }
         }
@@ -1836,6 +1840,13 @@ final class VoiceSessionController {
             callLaterAllowQuiet = false
             writeResults[id] = WriteResult(reply: result.reply, attempted: result.attempted)
             await reply(id, result.reply)
+        case .morningCall(let id, let draft, let to, let quietHours, let replaces):
+            callBooking = true
+            let result = await bookMorningCall(draft, to: to, quietHours: quietHours, allowQuietHours: callLaterAllowQuiet, replaces: replaces)
+            callBooking = false
+            callLaterAllowQuiet = false
+            writeResults[id] = WriteResult(reply: result.reply, attempted: result.attempted)
+            await reply(id, result.reply)
         case .noteReminder(let id, let memoryID, let noteText, _, let target):
             guard let confirmed = confirmedNoteReminder(memoryID: memoryID, noteText: noteText, target: target) else {
                 await reply(id, VoiceToolReply.noteReminderFailed("That place can't be used."))
@@ -2066,6 +2077,9 @@ final class VoiceSessionController {
         case .callLater(let id, _, _, _):
             if !replaced { callLaterAllowQuiet = false }
             await answer(id, VoiceToolReply.callDeclined)
+        case .morningCall(let id, _, _, _, _):
+            if !replaced { callLaterAllowQuiet = false }
+            await answer(id, VoiceToolReply.morningCallDeclined)
         case .callNow(let id, _):
             await answer(id, VoiceToolReply.callNowDeclined)
         case .presentation(let id, _): await answer(id, VoiceToolReply.presentationDeclined)
@@ -2681,7 +2695,7 @@ final class VoiceSessionController {
         case .ask(_, _, let needsTap, _, _): return needsTap ? .other : .askFirst
         case .cloudRead: return .askFirst
         // A call booked for later (ADR-754): the island says only that something waits for a tap.
-        case .memory, .plan, .bulk, .undo, .parking, .home, .callLater, .callNow, .callTask: return .other
+        case .memory, .plan, .bulk, .undo, .parking, .home, .callLater, .callNow, .callTask, .morningCall: return .other
         }
     }
 
@@ -3579,6 +3593,10 @@ final class VoiceSessionController {
             await proposeCallLater(draft, toolCallID: call.toolCallId)
         case .callMeNow:
             await proposeCallNow(toolCallID: call.toolCallId)
+        case .callMeEveryMorning(let draft):
+            await proposeMorningCall(draft, toolCallID: call.toolCallId)
+        case .stopMorningCalls:
+            await reply(call.toolCallId, await stopMorningCalls())
         case .callPlaces(let draft):
             await proposeCallTask(draft, toolCallID: call.toolCallId)
         case .startTranslator(let proposal):
@@ -4634,6 +4652,90 @@ final class VoiceSessionController {
         defaults.set(draft.timeZoneID, forKey: CallZoneSync.lastSentKey)
     }
 
+    // MARK: Morning calls from Doddy's number (decision 2026-11-14-morning-call)
+
+    /// The same checks as `call_me_later` before the card, plus whether the server makes morning calls and which one
+    /// the new card would replace. Nothing is set up here.
+    private func proposeMorningCall(_ draft: MorningCallDraft, toolCallID: String) async {
+        guard let client = Self.messagingClient() else {
+            await reply(toolCallID, VoiceToolReply.callNoServer, isError: true)
+            return
+        }
+        guard await client.hasAccount() else {
+            await reply(toolCallID, VoiceToolReply.callNotReady(.noPhone))
+            return
+        }
+        let readiness: CallReadiness
+        let status: MorningCallStatus
+        do {
+            async let settings = client.callSettings()
+            async let phone = client.phoneStatus()
+            async let morning = client.morningCall()
+            readiness = CallReadiness(settings: try await settings, phone: try await phone)
+            status = try await morning
+        } catch {
+            await reply(toolCallID, VoiceToolReply.callCheckFailed(error as? ServerError), isError: true)
+            return
+        }
+        guard case .ready(let to, let quietHours) = readiness else {
+            await reply(toolCallID, VoiceToolReply.callNotReady(readiness))
+            return
+        }
+        guard status.enabled else {
+            await reply(toolCallID, VoiceToolReply.morningCallsOff)
+            return
+        }
+        callLaterAllowQuiet = false
+        propose(.morningCall(toolCallID: toolCallID, draft: draft, to: to, quietHours: quietHours, replaces: status.call), toolCallID: toolCallID)
+    }
+
+    /// After the yes or the tap: the schedule, the switch and the language go to the server with the approval hash of
+    /// exactly what the card showed. Each day's call is checked again by the server when it is due.
+    private func bookMorningCall(
+        _ draft: MorningCallDraft, to: String, quietHours: CallQuietHours, allowQuietHours: Bool, replaces: MorningCall?
+    ) async -> (reply: String, attempted: Bool) {
+        let language = NotificationLanguage.current
+        let identity = draft.identity(to: to, language: language)
+        let mayBeBooked = Self.unconfirmedCalls.contains(identity)
+        if draft.inQuietHours(quietHours) && !allowQuietHours {
+            return (VoiceToolReply.morningCallRefused("quiet_hours", quietHours: quietHours, mayBeBooked: mayBeBooked), false)
+        }
+        guard let client = Self.messagingClient() else { return (VoiceToolReply.callNoServer, false) }
+        do {
+            switch try await client.bookMorningCall(draft, to: to, allowQuietHours: allowQuietHours, language: language, replaces: replaces?.id) {
+            case .booked:
+                Self.unconfirmedCalls.remove(identity)
+                let next = try? await client.morningCall().call?.nextDate
+                return (VoiceToolReply.morningCallBooked(draft, next: next, calendar: .current), true)
+            case .refused(let code):
+                return (VoiceToolReply.morningCallRefused(code, quietHours: quietHours, mayBeBooked: mayBeBooked), false)
+            case .unknown:
+                Self.unconfirmedCalls.insert(identity)
+                return (VoiceToolReply.morningCallUnknown, true)
+            }
+        } catch {
+            let reply = VoiceToolReply.callNotBooked(error as? ServerError)
+            return (mayBeBooked ? reply + " An earlier try may already have set it up: tell the user to check Settings, Phone calls." : reply, false)
+        }
+    }
+
+    /// "Przestań dzwonić rano": at once, with no card (it only takes the permission away). The server answers whether
+    /// one was stopped and whether that day's call was already being placed.
+    private func stopMorningCalls() async -> String {
+        guard let client = Self.messagingClient() else { return VoiceToolReply.morningStopNoServer }
+        // No account means nothing was ever set up; asking would create one.
+        guard await client.hasAccount() else { return VoiceToolReply.noMorningCalls }
+        do {
+            switch try await client.stopMorningCalls() {
+            case .stopped(let calling): return VoiceToolReply.morningCallsStopped(calling: calling)
+            case .noneActive: return VoiceToolReply.noMorningCalls
+            case .unknown: return VoiceToolReply.morningStopUnknown
+            }
+        } catch {
+            return VoiceToolReply.morningStopFailed(error as? ServerError)
+        }
+    }
+
     private func propose(_ action: PendingAction, toolCallID: String) {
         // A proposal that finished its lookups after End shows no card (review H9), and one that
         // finished after End and a new Start shows none in the new conversation (ADR-458).
@@ -5544,7 +5646,7 @@ private extension VoiceSessionController.PendingAction {
     var changesSomething: Bool {
         switch self {
         case .memory, .event, .reminder, .timer, .alarm, .cancelAlarm, .cloud, .noteReminder, .createList, .changeEvent, .changeReminder,
-             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation, .home, .callLater, .callNow, .callTask: true
+             .deleteEvent, .deleteReminder, .bulk, .parking, .ingredients, .leaveBy, .presentation, .home, .callLater, .callNow, .callTask, .morningCall: true
         // Each step of a plan is logged on its own (runPlan), not the plan as a whole. An undo
         // is recorded on the row it undoes (ADR-271).
         // ASK-01 asks: the change itself (a list item) is logged by the flow it runs. A BLIK card only

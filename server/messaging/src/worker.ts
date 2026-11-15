@@ -28,7 +28,7 @@ const catalogCtx = catalogContext(db, providers.deals, dealWatchCtx);
 log("worker started", {
   push: !!push, sms: !!sms, scheduledCalls: !!scheduledCalls, taskCalls: !!taskCtx, killSwitch: config.taskCallSettings.killSwitch,
   errands: !!errandCtx?.enabled, studio: !!studioCtx?.enabled, watches: !!watchCtx?.enabled, radarAlerts: !!radarCtx,
-  leafletCatalog: !!catalogCtx, dealWatches: !!dealWatchCtx?.enabled,
+  leafletCatalog: !!catalogCtx, dealWatches: !!dealWatchCtx?.enabled, morningCalls: config.morningCalls.enabled,
 });
 
 let stopping = false;
@@ -38,6 +38,7 @@ process.on("SIGINT", () => { stopping = true; });
 await runWorkerLoop(db, {
   push, sms, phoneAgentVoice, phoneAgentId, cipher, news, taskCalls: taskCtx, errands: errandCtx, studio: studioCtx, watches: watchCtx, limits,
   deleter, taskDeleter, deleteAfterMinutes, scheduledCalls, radar: radarCtx, catalog: catalogCtx, dealWatches: dealWatchCtx,
+  morningCalls: config.morningCalls,
 }, () => stopping);
 push?.close();
 await db.end();
