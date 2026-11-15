@@ -2,23 +2,23 @@
 
 **An AI mate for your iPhone. Asks first, always.**
 
-Doddy is an app for iPhone and iPad that you talk to. You say what you need in a sentence, for example "move the dentist to 2 and remind me to buy bread". Doddy turns it into a card that shows exactly what it will do. Nothing happens until you tap. Doddy is a cartoon character and clearly an AI, not a person.
+Doddy is an app for iPhone and iPad that you talk to. You say what you need in a sentence, for example "move the dentist to 2 and remind me to buy bread". Doddy turns it into a card that shows exactly what it will do. Nothing that changes something happens until you tap the card or say a short yes (a note or a reminder you ask Doddy to save is saved at once, with Undo). Doddy is a cartoon character and clearly an AI, not a person.
 
 This repository holds everything: the iPhone app, the servers behind it, Doddy Web (a browser version for the same account), the website [www.doddy.lol](https://www.doddy.lol) and all the documents.
 
-> **Where things stand (14 Nov 2026, checked against `main`).** The app is in testing: CI builds it and runs its tests in the simulator, and the owner runs it on their own iPhone and through TestFlight (Doddy Beta), but it is not on the App Store. Doddy Web and the website are live. The Apple Watch and Mac apps are paused. [STATUS.md](STATUS.md) is the one page that says what is live and what is open right now.
+> **Where things stand (15 Nov 2026, checked against `main`).** The app is in testing: CI builds it and runs its tests in the simulator, and the owner runs it on their own iPhone and through TestFlight (Doddy Beta), but it is not on the App Store. Doddy Web and the website are live. The Apple Watch and Mac apps are paused. [STATUS.md](STATUS.md) is the one page that says what is live and what is open right now.
 
 ## How Doddy works
 
 Three promises shape the whole app. They are written down in [docs/trust/](docs/trust/README_START_HERE.md) (the "constitution"). The rule is that code enforces them, not only the AI's instructions; [docs/trust/REPO_ALIGNMENT.md](docs/trust/REPO_ALIGNMENT.md) says where the code does and where it doesn't yet.
 
-1. **Asks first.** Anything that changes something outside the app (an event, a message, a list someone else sees) is shown as a card with the details. Doddy acts only after you tap. If he can't tell whether it worked, he says so instead of trying again.
+1. **Asks first.** Anything that changes something outside the app (an event, a message, a list someone else sees) is shown as a card with the details. Doddy acts only after you tap the card or, for most cards, say a short yes after he has read it out. Payments and bookings always take a tap, and so does everything once text from an email, a web page or the screen has reached the conversation. If he can't tell whether it worked, he says so instead of trying again.
 2. **Never pretends.** Doddy says something is done only after the other service confirms it, and that he saved or forgot something only after the phone's database has done it. If he doesn't know, he says so. He says he is an AI, not a person.
 3. **Your notes are kept on your iPhone.** Memory lives in a database on the phone, not on a server. During a conversation, the voice company gets the notes and lists Doddy needs for it. A copy on Doddy's server exists only if you turn that on. Settings › Privacy › "What leaves this iPhone" lists what goes where, and when.
 
 ## What Doddy can do today
 
-This is what the code on `main` does (14 Nov 2026). It builds and passes its tests in CI, but most of what was added since 20 October hasn't been tried on a real iPhone yet. Every feature, with its status, is listed in [docs/platforms/iphone.md](docs/platforms/iphone.md).
+This is what the code on `main` does (15 Nov 2026). It builds and passes its tests in CI, but most of what was added since 20 October hasn't been tried on a real iPhone yet. Every feature, with its status, is listed in [docs/platforms/iphone.md](docs/platforms/iphone.md).
 
 - **Talk.** Tap Doddy on Home and talk. He listens only after a tap ("Start listening when I open Doddy" stays off unless you turn it on). The voice runs on ElevenLabs, in one voice (OpenAI voice was removed on 9 Nov); while you talk, your voice goes to ElevenLabs. Translating uses a separate agent with no tools.
 - **Remember.** Notes and lists live in a database on the phone. Doddy asks before keeping anything. You can find notes by their words or their meaning, correct them, delete them, export them, and back them up to an encrypted file.
@@ -27,7 +27,7 @@ This is what the code on `main` does (14 Nov 2026). It builds and passes its tes
 - **Around the phone.** Home Screen and Lock Screen widgets, Doddy in the Dynamic Island while he talks, Siri and Shortcuts, the Action Button, and "Save to Doddy" in the Share menu.
 - **Languages.** The app's screens are in Polish by default, with English and eight more languages to choose from. The eight are machine translations no native speaker has checked yet.
 - **Your Doddy account.** Everyone signs in with Apple or Google before using Doddy (a code sent by email is built but hidden for now). Google works only once the owner finishes its setup (the owner queue says what is left).
-- **Doddy Web.** In a browser, sign in with Apple or Google (the same sign-in opens the same account as the iPhone) or with a code from your iPhone to see the documents Doddy made, your connected apps, his activity and a chat. The iPhone sends the Logbook (usage counts, never words), on by default and switchable off in Settings; Memory and Messages are sent only if you turn that on. The owner has a separate admin page.
+- **Doddy Web.** In a browser, sign in with Apple or Google (the same sign-in opens the same account as the iPhone) or with a code from your iPhone to see the documents Doddy made, your connected apps, his activity and a chat. Web sign-up for a new account is off, so a browser sign-in opens an account that already exists: make yours in the iPhone app first. The iPhone sends the Logbook (usage counts, never words), on by default and switchable off in Settings; Memory and Messages are sent only if you turn that on. The owner has a separate admin page.
 - **The website** [www.doddy.lol](https://www.doddy.lol) explains Doddy in ten languages and has an early-access list.
 
 **Not done yet:**

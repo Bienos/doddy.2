@@ -1,2 +1,0 @@
-Records: owner queue 110 says `doddy` was deployed by hand at 52d8dd7d on 14 Nov 2026, 19:38 UTC (no variable changed; web sign-up for new accounts is off), and row 113 says in plain words not to save any `doddy` variable until the production-rules check is settled, because a save would deploy `main` and `main` refuses to start with today's settings.
-Ran: scripts/ci.sh --only checks. Not run: nothing else (docs only). Read from Render at 19:41 UTC: deploy dep-dbsbgiqfngtc73c928ng live, start log clean.
