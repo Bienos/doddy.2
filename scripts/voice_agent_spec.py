@@ -65,7 +65,9 @@ RUNS_NOW_OWN_TEXT = {"text_me"}
 # are `AskFirst.ownLooks` and `AskFirst.ownSmallActions` in DoddyCore; `ToolCatalogTests` keeps tools.json in step.
 RUNS_NOW_OWN_LOOKS = {"search_memories", "read_list", "read_calendar", "find_free_time", "lookup_contact", "upcoming_birthdays",
                       "find_photos", "look_at_screen", "read_steps", "read_health_week", "list_alarms", "check_stopwatch",
-                      "check_focus", "check_errands", "find_deals"}
+                      "check_focus", "check_errands", "find_deals",
+                      # The person's rough area, read once (decision docs/decisions/2026-11-14-approximate-location-by-voice.md).
+                      "where_am_i"}
 RUNS_NOW_SMALL_ACTIONS = {"start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",
                           "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap"}
 # Reads through Doddy's server (an inbox, a calendar, a page, Claude writing something): the server still makes

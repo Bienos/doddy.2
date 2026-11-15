@@ -527,61 +527,61 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy verwendet deinen Standort nur, wenn du darum bittest: für Erinnerungen, die du an einem Ort stellst (um herauszufinden, wo du bist, wenn du auf „Meinen aktuellen Standort verwenden“ tippst, und damit iOS dich beim Ankommen oder Gehen erinnern kann), um zu speichern, wo du geparkt hast, und um mit Apple Karten auszurechnen, wann du irgendwohin losmusst. Doddy behält ihn nicht und verfolgt nicht, wohin du gehst."
+            "value": "Doddy verwendet deinen Standort nur, wenn du darum bittest: für Erinnerungen, die du an einem Ort stellst (um herauszufinden, wo du bist, wenn du auf „Meinen aktuellen Standort verwenden“ tippst, und damit iOS dich beim Ankommen oder Gehen erinnern kann), um zu speichern, wo du geparkt hast, um mit Apple Karten auszurechnen, wann du irgendwohin losmusst, und um ungefähr herauszufinden, in welcher Stadt und welchem Stadtteil du bist (auf etwa einen Kilometer), wenn du Doddy fragst, wo du bist, oder nach etwas in deiner Nähe; diese Gegend geht als Teil des Gesprächs an ElevenLabs. Doddy behält ihn nicht und verfolgt nicht, wohin du gehst."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, and to work out with Apple Maps when to leave for somewhere. Doddy doesn't keep it or track where you go."
+            "value": "Doddy uses your location only when you ask: for reminders you set at a place (to find where you are when you tap Use where I am now, and so iOS can remind you when you arrive or leave), to save where you parked, to work out with Apple Maps when to leave for somewhere, and to find roughly which town and district you're in (to about a kilometre) when you ask Doddy where you are or for something near you; that area goes to ElevenLabs as part of the conversation. Doddy doesn't keep it or track where you go."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy usa tu ubicación solo cuando se lo pides: para los recordatorios que pones en un lugar (para saber dónde estás cuando tocas Usar donde estoy ahora, y para que iOS pueda recordártelo cuando llegues o salgas), para guardar dónde aparcaste y para calcular con Mapas de Apple cuándo salir hacia algún sitio. Doddy no la guarda ni rastrea adónde vas."
+            "value": "Doddy usa tu ubicación solo cuando se lo pides: para los recordatorios que pones en un lugar (para saber dónde estás cuando tocas Usar donde estoy ahora, y para que iOS pueda recordártelo cuando llegues o salgas), para guardar dónde aparcaste, para calcular con Mapas de Apple cuándo salir hacia algún sitio y para saber aproximadamente en qué ciudad y barrio estás (con un margen de un kilómetro) cuando le preguntas a Doddy dónde estás o por algo cerca de ti; esa zona va a ElevenLabs como parte de la conversación. Doddy no la guarda ni rastrea adónde vas."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy n’utilise ta position que lorsque tu le demandes : pour les rappels que tu règles à un lieu (pour trouver où tu es quand tu touches Utiliser ma position actuelle, et pour qu’iOS puisse te faire un rappel quand tu arrives ou pars), pour enregistrer où tu t’es garé, et pour calculer avec Apple Plans quand partir quelque part. Doddy ne la conserve pas et ne suit pas où tu vas."
+            "value": "Doddy n’utilise ta position que lorsque tu le demandes : pour les rappels que tu règles à un lieu (pour trouver où tu es quand tu touches Utiliser ma position actuelle, et pour qu’iOS puisse te faire un rappel quand tu arrives ou pars), pour enregistrer où tu t’es garé, pour calculer avec Apple Plans quand partir quelque part, et pour savoir à peu près dans quelle ville et quel quartier tu te trouves (à un kilomètre près) quand tu demandes à Doddy où tu es ou quelque chose près de toi ; cette zone est envoyée à ElevenLabs avec la conversation. Doddy ne la conserve pas et ne suit pas où tu vas."
           }
         },
         "hr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy koristi tvoju lokaciju samo kad to zatražiš: za podsjetnike koje postaviš na mjestu (da pronađe gdje si kad dodirneš Koristi gdje sam sad, i da te iOS može podsjetiti kad stigneš ili odeš), za spremanje mjesta parkiranja i da s Appleovim Kartama izračuna kad krenuti nekamo. Doddy je ne čuva i ne prati kamo ideš."
+            "value": "Doddy koristi tvoju lokaciju samo kad to zatražiš: za podsjetnike koje postaviš na mjestu (da pronađe gdje si kad dodirneš Koristi gdje sam sad, i da te iOS može podsjetiti kad stigneš ili odeš), za spremanje mjesta parkiranja, da s Appleovim Kartama izračuna kad krenuti nekamo i da otprilike utvrdi u kojem si gradu i kvartu (na oko kilometar) kad pitaš Doddyja gdje si ili za nešto u blizini; to područje ide ElevenLabsu kao dio razgovora. Doddy je ne čuva i ne prati kamo ideš."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy usa la tua posizione solo quando lo chiedi: per i promemoria che imposti in un luogo (per trovare dove sei quando tocchi Usa dove sono ora, e perché iOS possa ricordartelo quando arrivi o parti), per salvare dove hai parcheggiato, e per calcolare con Mappe di Apple quando partire per un posto. Doddy non la conserva e non traccia dove vai."
+            "value": "Doddy usa la tua posizione solo quando lo chiedi: per i promemoria che imposti in un luogo (per trovare dove sei quando tocchi Usa dove sono ora, e perché iOS possa ricordartelo quando arrivi o parti), per salvare dove hai parcheggiato, per calcolare con Mappe di Apple quando partire per un posto, e per capire più o meno in quale città e quartiere ti trovi (con un margine di circa un chilometro) quando chiedi a Doddy dove sei o qualcosa vicino a te; quella zona va a ElevenLabs come parte della conversazione. Doddy non la conserva e non traccia dove vai."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddyが位置情報を使うのは、あなたが頼んだときだけです。場所で設定したリマインダーのため（「今いる場所を使う」をタップしたときに現在地を調べ、到着時や出発時にiOSがリマインドできるようにするため）、駐車した場所を保存するため、そしてAppleのマップでどこかへの出発時刻を計算するためです。Doddyは位置情報を保存せず、あなたの行き先を追跡することもありません。"
+            "value": "Doddyが位置情報を使うのは、あなたが頼んだときだけです。場所で設定したリマインダーのため（「今いる場所を使う」をタップしたときに現在地を調べ、到着時や出発時にiOSがリマインドできるようにするため）、駐車した場所を保存するため、Appleのマップでどこかへの出発時刻を計算するため、そしてDoddyに今どこにいるかや近くの何かを尋ねたときに、だいたいどの町や地区にいるか（約1キロの精度）を調べるためです。そのおおよその場所は会話の一部としてElevenLabsに送られます。Doddyは位置情報を保存せず、あなたの行き先を追跡することもありません。"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy używa Twojej lokalizacji tylko wtedy, gdy o to prosisz: do przypomnień ustawionych w danym miejscu (żeby ustalić, gdzie jesteś, gdy stukniesz Użyj mojej obecnej lokalizacji, i żeby iOS mógł przypomnieć Ci po przyjściu lub wyjściu), do zapisania miejsca parkowania i do obliczenia z Mapami Apple, kiedy wyjść, żeby gdzieś dotrzeć. Doddy jej nie przechowuje i nie śledzi, dokąd chodzisz."
+            "value": "Doddy używa Twojej lokalizacji tylko wtedy, gdy o to prosisz: do przypomnień ustawionych w danym miejscu (żeby ustalić, gdzie jesteś, gdy stukniesz Użyj mojej obecnej lokalizacji, i żeby iOS mógł przypomnieć Ci po przyjściu lub wyjściu), do zapisania miejsca parkowania, do obliczenia z Mapami Apple, kiedy wyjść, żeby gdzieś dotrzeć, i do ustalenia, w jakim mieście i dzielnicy mniej więcej jesteś (z dokładnością do około kilometra), gdy zapytasz Doddy’ego, gdzie jesteś, albo o coś w pobliżu; ta okolica trafia do ElevenLabs jako część rozmowy. Doddy jej nie przechowuje i nie śledzi, dokąd chodzisz."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "O Doddy usa sua localização só quando você pede: para lembretes que você define em um lugar (para descobrir onde você está quando toca em Usar onde estou agora, e para o iOS poder lembrar você ao chegar ou sair), para salvar onde você estacionou, e para calcular com o Mapas da Apple quando sair para algum lugar. O Doddy não a guarda nem rastreia aonde você vai."
+            "value": "O Doddy usa sua localização só quando você pede: para lembretes que você define em um lugar (para descobrir onde você está quando toca em Usar onde estou agora, e para o iOS poder lembrar você ao chegar ou sair), para salvar onde você estacionou, para calcular com o Mapas da Apple quando sair para algum lugar, e para saber mais ou menos em que cidade e bairro você está (com precisão de cerca de um quilômetro) quando você pergunta ao Doddy onde está ou por algo perto de você; essa região vai para a ElevenLabs como parte da conversa. O Doddy não a guarda nem rastreia aonde você vai."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy 只在你提出请求时使用你的位置：用于你在某个地点设置的提醒（在你轻点“使用我现在的位置”时确定你的位置，并让 iOS 在你到达或离开时提醒你），用于保存你的停车位置，以及通过 Apple 地图计算何时该出发去某个地方。Doddy 不会保留你的位置，也不会追踪你去了哪里。"
+            "value": "Doddy 只在你提出请求时使用你的位置：用于你在某个地点设置的提醒（在你轻点“使用我现在的位置”时确定你的位置，并让 iOS 在你到达或离开时提醒你），用于保存你的停车位置，用于通过 Apple 地图计算何时该出发去某个地方，以及在你问 Doddy 你在哪里或附近有什么时，大致确定你所在的城市和城区（精确到约一公里）；这一大致区域会作为对话的一部分发送给 ElevenLabs。Doddy 不会保留你的位置，也不会追踪你去了哪里。"
           }
         }
       }

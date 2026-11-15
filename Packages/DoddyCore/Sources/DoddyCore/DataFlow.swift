@@ -232,6 +232,17 @@ public enum DataFlow {
                 what: "The words you type to find a place, and roughly where you are if Doddy already knows. For a leave reminder: where your iPhone is and the place you're going. For My shops: the shops' chain names and roughly where you are. For Food: the dish and the delivery address you type.",
                 when: "Only when you search for a place for a reminder, ask when to leave, look for your shops in Cheapest this week, or search for food in Food.", isActive: true,
                 note: "Doddy keeps only the place you pick, and only on this iPhone. iOS watches a reminder's place itself; Doddy doesn't follow where you go."),
+            // Decision 2026-11-14-approximate-location-by-voice: `where_am_i`, read once when asked; Pause all stops it.
+            DataFlowRow(
+                id: "whereAmI", destination: "Apple, ElevenLabs and your searches (roughly where you are, by voice)",
+                what: "When you ask Doddy where you are, or for something near you without naming a town: your iPhone's position rounded to about a kilometre goes to Apple's geocoder, which names the district and town. That area and the rounded position go to ElevenLabs as part of the conversation, and on to a search when Doddy puts the town or district in one (places or the web, through your Doddy server, or the weather, through Open-Meteo).",
+                when: "Only when you ask, and only while location is allowed for Doddy (While Using the App; iPhone asks you the first time).",
+                isActive: !state.pauseAll,
+                note: state.pauseAll
+                    ? "Connections are paused, so Doddy doesn't look up where you are."
+                    : "The app keeps no reading, coordinates or place of its own: no note, and no place in What Doddy did."
+                        + (state.rememberConversations ? " What Doddy says about it is part of the conversation, which this iPhone keeps while Remember what we talked about is on." : "")
+                        + " ElevenLabs keeps each conversation's recording and transcript, which can include the area."),
             DataFlowRow(
                 id: "tokenServer", destination: "Voice token server",
                 what: "A short-lived Doddy session credential and the selected voice provider/model. Apple sign-in is verified here to create your account; the session authorizes voice access. No voice, transcript, notes or profile details are sent to this server for token requests.",
@@ -517,6 +528,7 @@ public enum DataFlow {
         "ceidg": "CEIDG through your messaging server (buyers' NIPs the VAT register doesn't know)",
         "inFakt": "inFakt (invoices you confirm, with your own key)",
         "placeSearch": "Apple Maps (place searches)",
+        "whereAmI": "Apple's geocoder (roughly where you are, when you ask Doddy)",
         "tokenServer": "your voice token server",
         "doddyAccount": "Supabase (your Doddy account's sign-in)",
         "doddyServer": "your Doddy server (web search, online accounts and the web)",

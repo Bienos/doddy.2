@@ -55,6 +55,9 @@ extension DataFlow {
         CollectedDataType("Health", rows: ["askDoddy", "messagesCopy", "elevenlabs"]),
         // Steps, distance and floors from Motion & Fitness, to the voice when you ask.
         CollectedDataType("Fitness", rows: ["elevenlabs"]),
+        // Roughly where you are (town, district, a position to two decimals) when you ask Doddy where you are or for
+        // something near you: in the conversation ElevenLabs keeps (decision 2026-11-14-approximate-location-by-voice).
+        CollectedDataType("CoarseLocation", rows: ["whereAmI"]),
         // The Doddy account's id on every Doddy server.
         CollectedDataType("UserID", rows: ["doddyAccount", "doddyServer", "messagingServer"]),
         // The random device ID that signs this iPhone in, and its notification token.

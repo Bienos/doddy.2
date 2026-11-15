@@ -3152,6 +3152,8 @@ final class VoiceSessionController {
             await handleParking(action, toolCallID: call.toolCallId)
         case .leaveBy(let request):
             await handleLeaveBy(request, toolCallID: call.toolCallId)
+        case .whereAmI:
+            await handleWhereAmI(toolCallID: call.toolCallId)
         case .addIngredients(let proposal):
             guard let list = await resolveList(proposal.list, toolCallID: call.toolCallId) else { return }
             guard isCurrent(call.toolCallId) else { return dropStale(call.toolCallId) }
@@ -4292,6 +4294,43 @@ final class VoiceSessionController {
             WidgetSync.shared.refresh()
             await reply(toolCallID, ParkingStore.current() == nil ? VoiceToolReply.parkingCleared : VoiceToolReply.failed("The parking spot couldn't be removed."))
         }
+    }
+
+    /// "Gdzie jestem?" (decision 2026-11-14-approximate-location-by-voice): the person's rough area, so a look-up near them
+    /// needs no city. iOS's own question (While Using the App) is asked the first time and only while Doddy is on screen;
+    /// one reading about a kilometre sure, then Apple's geocoder for that position rounded (`WhereAmI`). Nothing is kept:
+    /// What Doddy did gets a row without a place, and the area goes only to the agent, as this tool's result.
+    private func handleWhereAmI(toolCallID: String) async {
+        let location = PlaceLocation.shared
+        var readiness = await location.readiness()
+        if readiness == .notDetermined {
+            // From the background iOS shows no question, and the wait for its answer would never end.
+            guard UIApplication.shared.applicationState == .active else {
+                await reply(toolCallID, VoiceToolReply.whereAmINotAskedOffScreen)
+                return
+            }
+            readiness = await location.requestWhenInUse()
+        }
+        switch WhereAmI.step(for: readiness) {
+        case .read: break
+        case .askIOS:
+            await reply(toolCallID, VoiceToolReply.whereAmINotAnswered)
+            return
+        case .notAllowed:
+            await reply(toolCallID, VoiceToolReply.whereAmINotAllowed)
+            return
+        case .servicesOff:
+            await reply(toolCallID, VoiceToolReply.whereAmIServicesOff)
+            return
+        }
+        let fresh = await location.approximateFix(timeout: WhereAmI.fixTimeout)
+        guard let fix = WhereAmI.best(fresh: fresh, lastKnown: location.lastKnownFix(), now: Date()) else {
+            await reply(toolCallID, VoiceToolReply.whereAmIUnknown(onScreen: UIApplication.shared.applicationState == .active))
+            return
+        }
+        let area = WhereAmI.area(of: fix)
+        let names = await location.areaNames(latitude: area.latitude, longitude: area.longitude, timeout: WhereAmI.geocodeTimeout)
+        await reply(toolCallID, VoiceToolReply.whereAmI(area, names: names, now: Date()))
     }
 
     // MARK: Texts from Doddy's number (ADR-750 U2)

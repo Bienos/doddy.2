@@ -147,6 +147,8 @@ public enum ToolCatalog {
         // the strictest of its three actions.
         .init(VoiceToolName.parkingSpot, .localChange, .card),
         .init(VoiceToolName.remindWhenToLeave, .localChange, .card),
+        // The person's rough area for a look-up near them, read once and never kept (decision 2026-11-14-approximate-location-by-voice).
+        .init(VoiceToolName.whereAmI, .lookup, .runsNow),
         // Worked out on the iPhone, or the ECB's public rates file (ADR-270, ADR-300). Run at once (ADR-575).
         .init(VoiceToolName.calculate, .lookup, .runsNow),
         .init(VoiceToolName.convertUnits, .lookup, .runsNow),
