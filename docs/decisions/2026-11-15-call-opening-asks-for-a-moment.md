@@ -35,3 +35,10 @@ The owner wanted the calls to sound more polite and less like a robot reading a 
 - `npm test` in `server/messaging` with a disposable PostgreSQL 16: 1317 pass, 0 fail, 0 skipped.
 - `voice_agent_spec.py check` for the three call agents: PASS.
 - Not run: a real call.
+
+## Later the same day: "no time" gets one quick try
+- **Owner:** "dla «czy mogę zająć chwilkę» i ktoś nie [ma czasu]: dobrze, nie ma problemu, dzwonię tylko w sprawie takiej i takiej, zanim się rozłączę, czy może mi xyz powiedzieć – albo coś takiego wymyśl lepiej".
+- **Change:** when they say they have no time, the agent tries once, kindly and in one breath: "Jasne, nie ma problemu. To dosłownie jedno szybkie pytanie, zanim się rozłączę:", then the question word for word.
+- **On a second no**, or if they ask to be called later: "Rozumiem, nie przeszkadzam. Miłego dnia, do widzenia." The call ends with no time agreed, and the agent never tries a second time.
+- **Tests:** `bookCalls.test.ts` asserts both lines in all three prompts.
+- **Drift:** the prompts live since about 15:00 UTC stay accepted (`SYNC_PENDING_PROMPTS`; fixtures `*-2026-11-15-moment.md`).
