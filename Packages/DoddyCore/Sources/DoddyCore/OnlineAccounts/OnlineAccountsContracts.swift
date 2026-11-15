@@ -121,7 +121,9 @@ public struct RunResult: Codable, Equatable, Sendable {
     /// make_document (ADR-564): the file Claude is making. Its link is for the screen only.
     public let document: RunDocument?
     /// find_flights (decision 2026-11-11-flights-kiwi-search-duffel-booking): Kiwi.com's page for each flight,
-    /// for buttons on screen. The voice agent never gets them. The server sends only https kiwi.com links.
+    /// for buttons on screen. plan_trip: each option's Kiwi.com page, then its Booking.com and Airbnb searches (and
+    /// wakacje.pl for a package); the voice screen shows only the Kiwi.com ones (`RunLink.isKiwi`). The voice agent
+    /// never gets them.
     public var links: [RunLink]? = nil
     public let receipt: OnlineToolReceipt
 }
@@ -250,23 +252,35 @@ public enum CloudToolName {
         // so like web search these ask with a card and run on a spoken yes or a tap.
         askClaude: ("Ask Claude", claudeAccount, false),
         makeDocument: ("Make a document with Claude", claudeAccount, false),
+        // 14 Nov 2026: a quick web look-up in the conversation. Claude searches and reads two or three pages with
+        // Anthropic's own tools on Doddy's server; it changes nothing, so it runs at once like web_search.
+        researchNow: ("Research the web with Claude", claudeAccount, false),
         // Decision 2026-11-11-flights-kiwi-search-duffel-booking: no account. The searches and the
         // booking check run at once; a booking waits for a tap on the card that shows the exact booking.
         findFlights: ("Find flights", flightsAccount, false),
         findBookableFlights: ("Find flights Doddy can book", flightsAccount, false),
         checkFlightBooking: ("Check a flight booking", flightsAccount, false),
         bookFlight: ("Book a flight", flightsAccount, true),
+        // The trip planner by voice (TRAVEL_PLANNER.md, "Ekran, potem głos"): reads Kiwi.com, books nothing, runs at once.
+        planTrip: ("Plan a trip", flightsAccount, false),
     ]
     /// Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking): Kiwi.com search, Duffel search and booking.
     public static let findFlights = "find_flights"
     public static let findBookableFlights = "find_bookable_flights"
     public static let checkFlightBooking = "check_flight_booking"
     public static let bookFlight = "book_flight"
+    /// The trip planner by voice: one call with everything the user said about the trip. Doddy's server asks the one
+    /// missing thing, or searches Kiwi.com and answers with up to three options (backend/src/flights/planTrip.ts).
+    /// Its answer is Kiwi.com's data, outside content like `find_flights`; its links are for buttons only.
+    public static let planTrip = "plan_trip"
     static let flightsAccount = "Flights"
-    public static let flightTools: Set<String> = [findFlights, findBookableFlights, checkFlightBooking, bookFlight]
+    public static let flightTools: Set<String> = [findFlights, findBookableFlights, checkFlightBooking, bookFlight, planTrip]
     /// Claude (ADR-564): quick writing and summaries, and documents made with Claude's skills.
     public static let askClaude = "ask_claude"
     public static let makeDocument = "make_document"
+    /// A quick, read-only web look-up answered in the conversation: Claude on Doddy's server searches the web and reads
+    /// two or three pages (backend/src/tools/claude.ts). Its answer is web content (`OutsideContentSession.isSource`).
+    public static let researchNow = "research_now"
     static let claudeAccount = "Claude"
     /// Web search through Monid on Doddy's server. No account; only a switch in Settings.
     public static let webSearch = "web_search"

@@ -550,6 +550,14 @@ struct VoiceView: View {
                 }
             }
         case .ended:
+            // The iPhone locked with the Face ID lock on and the conversation ended by itself, so the screen says why
+            // (`ProtectedDataGuard`). The header above stays the same as for any end.
+            if controller.sessionEnd == .iPhoneLocked {
+                Text("Doddy stopped listening because the iPhone locked. Unlock it and start a new conversation when you're ready.")
+                    .font(.footnote)
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityIdentifier("voice.endedLocked")
+            }
             // After Stop listening (ADR-361): the note Doddy was asking about, as a draft.
             if controller.recovery != nil || controller.recoverySaved != nil {
                 RecoveryDraftCard(controller: controller)

@@ -21,7 +21,8 @@ public enum VoiceWaitActivity: String, Sendable, CaseIterable {
     /// the plain "Working on it…" (most tools answer in well under a second).
     public static func forTool(_ name: String) -> VoiceWaitActivity? {
         switch name {
-        case "web_search": .searchingWeb
+        // research_now searches and reads pages: the same words on the screen, "Searching the web…".
+        case "web_search", "research_now": .searchingWeb
         case "news_search": .readingNews
         case "look_at_screen": .lookingAtScreen
         case "search_memories": .searchingNotes
@@ -30,7 +31,8 @@ public enum VoiceWaitActivity: String, Sendable, CaseIterable {
         case "find_places", "geocode_place": .findingPlaces
         case "make_document", "make_presentation", "make_something": .makingDocument
         case "get_weather": .checkingWeather
-        case "wikipedia_search", "wikipedia_summary": .lookingUp
+        // plan_trip reads the trip and searches Kiwi.com, up to 30 s: "Looking it up…", with no new wording.
+        case "wikipedia_search", "wikipedia_summary", "plan_trip": .lookingUp
         case "read_calendar", "read_google_calendar", "read_outlook_calendar", "find_free_time": .checkingCalendar
         default: nil
         }

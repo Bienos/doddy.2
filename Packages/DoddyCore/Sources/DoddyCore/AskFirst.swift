@@ -107,9 +107,13 @@ public enum AskFirst {
     /// Tools that run without asking (ADR-575): they read nothing of the user's, change nothing,
     /// and send at most the words searched for. Web search, news and places cost Doddy a little
     /// per search (ADR-489); the weather and Wikipedia ones run on ElevenLabs (`ToolCatalog.webLookups`).
+    /// `research_now` (14 Nov 2026) is the same kind of look-up, a few pages deeper: its question goes to Doddy's server and
+    /// to Anthropic, whose Claude searches the web and reads two or three pages, within the server's daily limit.
+    /// `plan_trip` (14 Nov 2026) is the trip screen's planner by voice: the words go to Doddy's server and Anthropic to
+    /// become a trip, then only places, dates, people and bags go to Kiwi.com. It books and pays nothing.
     public static let publicLookups: Set<String> = Set([
         VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency,
-        CloudToolName.webSearch, "news_search", "find_places",
+        CloudToolName.webSearch, "news_search", "find_places", CloudToolName.researchNow, CloudToolName.planTrip,
     ]).union(ToolCatalog.webLookups)
 
     /// Looks at the user's own things on this iPhone, or at what Doddy's server holds for them, that run at once

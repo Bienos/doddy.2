@@ -48,7 +48,12 @@ action_policy:
   # nothing run at once (AskFirst.publicLookups: weather, Wikipedia, web, news, places, sums, conversions).
   ask_first:
     applies_to: every_tool_that_changes_sends_deletes_calls_or_pays
-    public_lookups_run_at_once: [calculate, convert_units, convert_currency, web_search, news_search, find_places, geocode_place, get_weather, wikipedia_search, wikipedia_summary]
+    # Addition (2026-11-14): research_now, a quick look-up where Claude on Doddy's server searches the web and reads two
+    # or three pages with Anthropic's own tools; read-only, its own daily limit, its answer is outside (web) content.
+    # Addition (2026-11-14): plan_trip, the trip screen's planner by voice. Claude on Doddy's server turns the words into
+    # a trip, code asks what is missing or searches Kiwi.com; read-only, books and pays nothing, the trip screen's daily
+    # limits, its answer is outside (Kiwi.com) content and its links are buttons only.
+    public_lookups_run_at_once: [calculate, convert_units, convert_currency, web_search, news_search, find_places, research_now, plan_trip, geocode_place, get_weather, wikipedia_search, wikipedia_summary]
     # Exception (owner, 2026-11-09; decision docs/decisions/2026-11-09-restaurant-calls-one-tap.md): a text to the
     # user's own verified number (text_me) goes at once, without a card, only while Texts from Doddy (consent sms-v1)
     # is on. Texts to anyone else are not possible (contact_policy.text_recipients). The same text is not sent twice

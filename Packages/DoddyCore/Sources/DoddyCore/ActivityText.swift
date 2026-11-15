@@ -176,9 +176,13 @@ public enum ActivityText {
         "Book a flight": "Zarezerwuj lot",
         "Searched flights": "Wyszukano loty",
         "Checked a flight booking": "Sprawdzono rezerwację lotu",
+        // plan_trip, the trip planner by voice (TRAVEL_PLANNER.md).
+        "Plan a trip": "Zaplanowano podróż",
         // ADR-564
         "Ask Claude": "Zapytano Claude’a",
         "Make a document with Claude": "Zlecono Claude’owi dokument",
+        // Decision 2026-11-14-voice-agent-does-the-work-live (research_now).
+        "Research the web with Claude": "Przeszukano sieć z Claude’em",
         "Read a Notion page": "Odczytano stronę Notion",
     ]
 

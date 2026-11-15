@@ -96,7 +96,7 @@ swallows network failures; it cannot establish that a connection was prepared or
 
 Merged database migrations are frozen by tests: `DoddyDatabaseFrozenMigrationsTests` (the phone's 22 in
 `DoddyDatabase.swift`, in the `swift` group) and `server/messaging/test/migrationsFrozen.test.ts` (the server's
-SQL files, 001 to 039 on 14 Nov 2026, with no 011, 031 or 035 on `main`, in the `messaging` group). Renaming, reordering or removing a merged migration,
+SQL files, 001 to 040 on 15 Nov 2026, 38 of them, with no 011, 031 or 035 on `main`, in the `messaging` group). Renaming, reordering or removing a merged migration,
 or adding a server file that sorts before an applied one, fails CI; a new migration appends its name to the list in
 the same commit.
 
@@ -294,8 +294,11 @@ team, use `make project-iphone`: it sets `DODDY_APP_ENTITLEMENTS`, `DODDY_WIDGET
 
 `backend/` is the server the app calls `doddy` (Render). It signs the phone in, runs the online-account tools through
 Composio (Gmail, Outlook, Google Calendar, Drive, Notion, Todoist: anything that changes something waits for the
-person's tap on the exact card), web search, Claude's answers and the documents Doddy makes, account deletion, and
-Doddy Web (`docs/platforms/web.md`). On your own computer it starts in **mock mode**: demo data, no keys, a "Demo
+person's tap on the exact card), web search, Claude's answers, quick web research (`research_now`: Claude with
+Anthropic's own web search and web fetch; tested offline against a fake Anthropic API in `backend/test/research-now.test.ts`),
+the trip planner by voice (`plan_trip`: the Trips planner's model step and Kiwi.com search in one call; tested offline with
+stand-ins for both in `backend/test/plan-trip.test.ts`; like `find_flights` it answers "not set up" without
+`FLIGHT_SEARCH_ENABLED=1`, so it doesn't run in mock mode) and the documents Doddy makes, account deletion, and Doddy Web (`docs/platforms/web.md`). On your own computer it starts in **mock mode**: demo data, no keys, a "Demo
 server" banner. Live mode refuses to start while a setting it needs is missing, and never falls back to demo data.
 
 It began on 9 Oct as a read-only Google Calendar view, which a Debug build still has (below). Background:

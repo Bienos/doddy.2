@@ -48,8 +48,12 @@ final class OutsideContentTests: XCTestCase {
             CloudToolName.readOutlookCalendar, "read_google_calendar", CloudToolName.findDriveFile, CloudToolName.searchNotion,
             CloudToolName.readNotionPage, CloudToolName.listTodoistTasks, CloudToolName.webSearch, "news_search", "find_places",
             CloudToolName.findFlights, CloudToolName.findBookableFlights, CloudToolName.checkFlightBooking,
+            // plan_trip brings back Kiwi.com's flights, like find_flights.
+            CloudToolName.planTrip,
             "wikipedia_search", "wikipedia_summary", "get_weather", "geocode_place",
             VoiceToolName.checkErrands, VoiceToolName.findDeals, PaymentToolName.payForPage,
+            // Claude's answer there is made of the web pages it read: web content, like web_search's.
+            CloudToolName.researchNow,
         ]
         for tool in tools {
             var session = OutsideContentSession()
@@ -355,12 +359,28 @@ final class OutsideContentTests: XCTestCase {
             .checkStopwatch, .startStopwatch(label: nil), .followNews(.topic(id: "sport")), .checkErrands(about: nil),
             cloud(CloudToolName.checkEmail), cloud(CloudToolName.webSearch, ["query": .string("weather")]),
             .addToList(ListVoiceRequest(list: "Shopping", items: ["milk"])),
+            // A public look-up like web_search: its question carries no material, so the session rule leaves it alone.
+            cloud(CloudToolName.researchNow, ["question": .string("Weekend near Warsaw under 1500 zł"), "language": .string("pl")]),
         ]
         for request in atOnce {
             for session in [OutsideContentSession(), afterEmail()] {
                 XCTAssertEqual(AskFirst.need(for: request, in: session), .runsNow, "\(request)")
             }
         }
+    }
+
+    func testResearchNowMarksTheConversationBeforeItsAnswerArrives() {
+        // research_now runs at once, and what it brings back is web content: the next ask_claude with material, text_me
+        // or make_document asks for a tap, exactly as after web_search.
+        var session = OutsideContentSession()
+        XCTAssertTrue(OutsideContentSession.isSource(CloudToolName.researchNow))
+        XCTAssertFalse(OutsideContentRule.guardedTools.contains(CloudToolName.researchNow))
+        session.noteRun(of: CloudToolName.researchNow)
+        XCTAssertTrue(session.otherContentSeen)
+        XCTAssertFalse(session.screenContentSeen)
+        let summary = cloud(CloudToolName.askClaude, ["task": .string("summarize"), "request": .string("Sum it up"), "material": .string("What research found")])
+        guard case .tapFirst = AskFirst.need(for: summary, in: session) else { return XCTFail("ask_claude with material asks for a tap now") }
+        guard case .tapFirst = AskFirst.need(for: .textMe(body: "Kazimierz, 320 zł"), in: session) else { return XCTFail("text_me asks for a tap now") }
     }
 
     func testTheSessionRuleOnlyTouchesToolsTheSpecSaysRunAtOnce() throws {

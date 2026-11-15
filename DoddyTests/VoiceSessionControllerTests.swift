@@ -754,6 +754,101 @@ final class CallInterruptionTests: XCTestCase {
     }
 }
 
+/// The iPhone locking during a conversation (decision 2026-11-14-voice-mute-when-protected-data-unavailable; DOD-08,
+/// DOD-11, ASK-01). The rules are `ProtectedDataGuardTests` in DoddyCore, run on Linux; these check that the controller
+/// does what they say. App-target tests: hosted Mac job only.
+final class ProtectedDataControllerTests: XCTestCase {
+    private typealias Harness = VoiceSessionControllerTests.Harness
+
+    /// Turns the Face ID lock on or off for one test; the returned closure puts the setting back.
+    @MainActor
+    private func faceIDLock(_ on: Bool) -> () -> Void {
+        let saved = UserDefaults.standard.object(forKey: PrivateNotes.appLockKey)
+        UserDefaults.standard.set(on, forKey: PrivateNotes.appLockKey)
+        return { UserDefaults.standard.set(saved, forKey: PrivateNotes.appLockKey) }
+    }
+
+    @MainActor
+    func testTheIPhoneLockingEndsTheConversationWithTheFaceIDLockOn() async {
+        let t = Harness()
+        let putBack = faceIDLock(true)
+        defer { putBack(); t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        await t.controller.protectedDataForTesting(.becameUnavailable)?.value
+
+        XCTAssertEqual(t.controller.sessionEnd, .iPhoneLocked)
+        XCTAssertEqual(t.controller.phase, .ended)
+        XCTAssertFalse(t.controller.isLive, "the microphone, the island and the gate are freed")
+        XCTAssertNil(t.controller.recovery, "nothing the person said is offered back after a lock")
+    }
+
+    @MainActor
+    func testWithTheFaceIDLockOffTheConversationGoesOnInAPocket() async {
+        let t = Harness()
+        let putBack = faceIDLock(false)
+        defer { putBack(); t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        XCTAssertNil(t.controller.protectedDataForTesting(.becameUnavailable))
+
+        XCTAssertTrue(t.controller.isLive)
+        XCTAssertNil(t.controller.sessionEnd)
+        await t.controller.stop()
+    }
+
+    @MainActor
+    func testTheUnlockStartsNothingAgain() async {
+        let t = Harness()
+        let putBack = faceIDLock(true)
+        defer { putBack(); t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        await t.controller.protectedDataForTesting(.becameUnavailable)?.value
+        XCTAssertNil(t.controller.protectedDataForTesting(.becameAvailable))
+
+        XCTAssertFalse(t.controller.isLive)
+        XCTAssertEqual(t.controller.phase, .ended)
+        XCTAssertEqual(t.controller.sessionEnd, .iPhoneLocked)
+    }
+
+    @MainActor
+    func testACardWaitingWhenTheIPhoneLocksIsDroppedAndNothingRuns() async {
+        let t = Harness()
+        let putBack = faceIDLock(true)
+        defer { putBack(); t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        t.show(.memory(toolCallID: "call-lock-1", text: "Gate code 4821"))
+        XCTAssertNotNil(t.controller.pendingAction)
+
+        let ending = t.controller.protectedDataForTesting(.becameUnavailable)
+        XCTAssertNil(t.controller.pendingAction, "dropped at once, before the end has had its turn")
+        await ending?.value
+        await t.controller.confirmPendingAction() // a late tap
+
+        XCTAssertNil(t.controller.pendingAction)
+        XCTAssertTrue(t.link.results.isEmpty, "no save ran, so nothing was reported to the agent")
+    }
+
+    /// A call that reaches the controller after iOS has said the iPhone is locking, before the end has finished, is
+    /// refused in words. The notice arrives with the Face ID lock off here (the conversation goes on) and the lock is
+    /// turned on after: the quickest way to hold a live conversation in the "locked" state.
+    @MainActor
+    func testAToolCallAfterTheNoticeIsRefusedInWordsNotAnsweredEmpty() async {
+        let t = Harness()
+        let putBack = faceIDLock(false)
+        defer { putBack(); t.restore() }
+        t.controller.beginForTesting(link: t.link)
+        XCTAssertNil(t.controller.protectedDataForTesting(.becameUnavailable))
+        UserDefaults.standard.set(true, forKey: PrivateNotes.appLockKey)
+
+        await t.controller.receiveToolCallForTesting(
+            name: VoiceToolName.searchMemories, id: "lock-2", parameters: #"{"query":"gate code"}"#).value
+
+        XCTAssertEqual(t.link.results.map(\.id), ["lock-2"])
+        XCTAssertEqual(t.link.results.first?.text, ProtectedDataPolicy.reply)
+        XCTAssertEqual(t.link.results.first?.isError, true)
+        await t.controller.stop()
+    }
+}
+
 /// find_photos and open_camera (ADR-569) with the fake device: a read runs at once (since 11 Nov 2026) and the
 /// agent hears counts only; a device without a camera says so instead of asking for a permission.
 final class PhotosAndCameraControllerTests: XCTestCase {
