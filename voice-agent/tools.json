@@ -528,7 +528,7 @@
         "properties": {},
         "required": []
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_7901m7f2patgegat77mmr03swf12"}
     },
     {
       "type": "function",
@@ -775,14 +775,14 @@
         },
         "required": ["time"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": true, "ask": "yes_or_tap", "speak_before": "force", "timeout_secs": 90, "elevenlabs_tool_id": "tool_0701m7f2q11kep58eskh9eyb7s02"}
     },
     {
       "type": "function",
       "name": "stop_morning_calls",
       "description": "Stop the morning calls from Doddy's number that call_me_every_morning set up. Use it when the user asks Doddy to stop calling them in the morning, for example 'stop the morning calls' or 'przestań dzwonić rano'. It stops at once, with no card. The result starts with 'turned off' (no more morning calls; if it says that day's call was already being placed, it may still ring this once), 'not changed' (there was none to stop), 'failed' (not stopped; the reason follows) or 'unknown' (not confirmed; stopping again is safe). Don't ask first: call it, and after the result say in one short line what was done. Never say the calls are stopped unless the result starts with turned off.",
       "parameters": {"type": "object", "properties": {}, "required": []},
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 90, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 90, "elevenlabs_tool_id": "tool_2601m7f2q1kse3wr5c0jtz7j3z16"}
     },
     {
       "type": "function",
@@ -1517,7 +1517,7 @@
         },
         "required": ["question"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_0501m7f2neztfy5t52vbga601wd5"}
     },
     {
       "type": "function",
@@ -1539,7 +1539,7 @@
           "words"
         ]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "while_running": "finish", "timeout_secs": 60, "elevenlabs_tool_id": "tool_3401m7f2pa8sf5tawvpz5pfv5rzb"}
     },
     {
       "type": "function",
