@@ -8,7 +8,7 @@ import os
 /// "Talk to Doddy" from the Action Button or a control (ADR-579, wired again by ADR-632 after
 /// ADR-593 had the controls open the app). One press decides with `TalkLaunchPlanner`: start in
 /// the Dynamic Island without opening Doddy, or end the conversation that is running (press again
-/// to stop). `TalkInIslandIntent` does the same from the Shortcuts app.
+/// to stop).
 @MainActor
 enum TalkButton {
     /// What the intent does next.
@@ -134,15 +134,6 @@ enum TalkInIsland {
         let profile = profiles?.profile ?? .empty
         let started = await HomeConversation.shared.startFromShortcut(store: store, profile: profile, greeting: greeting(for: profile))
         if !started { router.talkButtonOpenedApp() }
-    }
-
-    /// The older "Talk in the Island" control: always the island; a problem is only said.
-    static func start() async throws {
-        switch await press(mode: .dynamicIsland, now: .now) {
-        case .done: return
-        case .openApp: throw Problem(message: TalkButton.openDoddyToTalk)
-        case .askToOpenApp(let message), .tell(let message): throw Problem(message: message)
-        }
     }
 
     private struct StartProblem: Error {

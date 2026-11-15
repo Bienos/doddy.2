@@ -59,7 +59,7 @@ struct StartDoddyRecordingIntent: AppIntent {
 /// Button: it tells iOS that this intent records audio, so iOS shows its recording indicator, and it
 /// requires the Live Activity that `RecordingCoordinator` starts before it says "recording".
 /// Not an App Shortcut, because the App Shortcuts list can't hold an iOS 18 intent in an app that
-/// still runs on iOS 17 (see `TalkInIslandIntent`); `StartDoddyRecordingIntent` is the Siri one.
+/// still runs on iOS 17 (see `TalkButtonIntent`); `StartDoddyRecordingIntent` is the Siri one.
 @available(iOS 18.0, *)
 struct RecordWithDoddyIntent: AudioRecordingIntent {
     static let title: LocalizedStringResource = "Record with Doddy"

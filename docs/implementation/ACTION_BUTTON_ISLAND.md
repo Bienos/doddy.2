@@ -12,7 +12,7 @@ Found in the code, not guessed. Two code defects and one setup trap.
 
 1. **Code: the main control always opened the app.** The "Talk to Doddy" control (`DoddyWidgets/TalkToDoddyControl.swift`, kind `com.bienos.doddy2.talk`) ran `TalkToDoddyIntent`, which has `openAppWhenRun = true`. So did the App Shortcut "Talk to Doddy" (`DoddyShortcuts.swift`), the one iOS lists under Action Button › Shortcut. iOS shows an app's own Live Activity in the Dynamic Island only while that app is *not* on screen, so with the voice screen in front there was never an island to see.
 2. **Code: the setting promised something it couldn't do.** Settings › Back Tap and Siri › "When I use Talk to Doddy: Big island / Small island / Only open Doddy" (`BackTapAction`) only decided whether the island would later *expand*. The app still opened first every time. "Big island" read like "use the island instead of the app", and it wasn't.
-3. **Setup trap: the background path was a second, hidden control.** ADR-577 added "Talk in the Island" (`TalkInIslandIntent`: `AudioRecordingIntent` + `LiveActivityIntent`, `openAppWhenRun = false`), which does start without opening. But it was only a *second* control, found only in Action Button › Controls. Anyone who had picked "Talk to Doddy" (the obvious name, in either list) kept getting the app.
+3. **Setup trap: the background path was a second, hidden control.** ADR-577 added "Talk in the Island" (an `AudioRecordingIntent` + `LiveActivityIntent`, `openAppWhenRun = false`), which does start without opening. But it was only a *second* control, found only in Action Button › Controls. Anyone who had picked "Talk to Doddy" (the obvious name, in either list) kept getting the app. (Since 15 Nov 2026 that second control and its Shortcuts action are gone: one control, "Talk to Doddy", decision `2026-11-15-one-talk-control`.)
 
 **Not the cause, checked:**
 - **`VoiceLiveActivity.endStale()`** runs once, in `DoddyApp.init`. It reads `Activity.activities` synchronously, before any intent of this run can request one. A cold start for the Action Button therefore can't end its own new island. It now also skips the activity this run owns and any that started after the run did, so a later caller can't break that either.
@@ -44,7 +44,7 @@ Found in the code, not guessed. Two code defects and one setup trap.
 
 **Siri, Back Tap, the Shortcuts app** keep the App Shortcut "Talk to Doddy" (`TalkToDoddyIntent`), which opens the app. It has to stay an iOS 17 type, and the App Shortcuts list can't hold the iOS 18 intent (ADR-577). Its choice is Settings › Siri and Back Tap › "When Siri or Back Tap opens Doddy".
 
-**"Talk in the Island"** (the ADR-577 control) stays registered so a button that has it keeps working. It always uses the island. The guide and Settings now point only at "Talk to Doddy".
+**"Talk in the Island"** (the ADR-577 control, kind `com.bienos.doddy2.talk-island`) **was removed on 15 Nov 2026** (decision `2026-11-15-one-talk-control`): it was an exact copy of "Talk to Doddy" with the same name, symbol and action, so the picker showed two identical entries. A button that was set to the removed one is empty after the update and has to be set to "Talk to Doddy" once. The guide and Settings point only at "Talk to Doddy".
 
 ## Setting it up (owner)
 
