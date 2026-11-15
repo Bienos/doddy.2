@@ -31,6 +31,10 @@ final class CallsModel {
     private(set) var morning: MorningCallStatus?
     /// Why the morning call couldn't be loaded, or nil. A failed load is never shown as "none".
     private(set) var morningProblem: String?
+    /// What the server said about the last change to the morning call, shown next to its switch.
+    private(set) var morningMessage: String?
+    /// Approval identities of morning calls booked from Settings whose outcome was unknown, so the card can say so.
+    private(set) static var unconfirmedMorning: Set<String> = []
     private(set) var isWorking = false
     private(set) var message: String?
 
@@ -42,6 +46,7 @@ final class CallsModel {
 
     func refresh() async {
         guard let client else { return }
+        morningMessage = nil
         await run {
             let settings = try await client.callSettings()
             self.settings = settings
@@ -219,22 +224,105 @@ final class CallsModel {
         }
     }
 
-    /// One tap stops it at once; the server's answer is read back either way, and only what it said is shown.
+    /// One tap (the switch turned off, or Stop) stops it at once; the server's answer is read back either way, and only
+    /// what it said is shown (DOD-05, DOD-08).
     func stopMorningCalls() async {
         guard let client else { return }
-        await run {
-            switch try await client.stopMorningCalls() {
-            case .stopped(let calling):
-                self.message = calling
-                    ? NSLocalizedString("Morning calls stopped. Today's call was already being placed, so it may still ring this once.", comment: "")
-                    : NSLocalizedString("Morning calls stopped. Doddy won't call you in the morning any more.", comment: "")
-            case .noneActive:
-                self.message = NSLocalizedString("There was no morning call to stop.", comment: "")
-            case .unknown:
-                self.message = NSLocalizedString("Couldn't confirm the stop reached Doddy's server. Tap Stop again: stopping twice is safe.", comment: "")
+        await runMorning {
+            do {
+                switch try await client.stopMorningCalls() {
+                case .stopped(let calling):
+                    self.morningMessage = calling
+                        ? NSLocalizedString("Morning calls stopped. Today's call was already being placed, so it may still ring this once.", comment: "")
+                        : NSLocalizedString("Morning calls stopped. Doddy won't call you in the morning any more.", comment: "")
+                case .noneActive:
+                    self.morningMessage = NSLocalizedString("There was no morning call to stop.", comment: "")
+                case .unknown:
+                    self.morningMessage = NSLocalizedString("Couldn't confirm the stop reached Doddy's server. Tap Stop again: stopping twice is safe.", comment: "")
+                }
+            } catch {
+                self.morningMessage = String(
+                    format: NSLocalizedString("Couldn't stop the morning calls. %@", comment: "Morning call: the stop failed"), Self.text(for: error))
             }
             await self.loadMorning(client)
         }
+    }
+
+    /// Before the card in Settings: the number, quiet hours, the server's switch and the morning call it would replace,
+    /// read from the server now, as the voice card does before it shows. Nothing is set up here.
+    func prepareMorningCall(_ draft: MorningCallDraft) async -> MorningCallPreparation {
+        guard let client else {
+            return .notReady(NSLocalizedString("Phone calls aren't available in this version of Doddy yet.", comment: ""))
+        }
+        isWorking = true
+        defer { isWorking = false }
+        do {
+            async let settings = client.callSettings()
+            async let phone = client.phoneStatus()
+            async let morning = client.morningCall()
+            let (s, p, m) = try await (settings, phone, morning)
+            self.settings = s
+            self.morning = m
+            self.morningProblem = nil
+            switch MorningCallProposal.check(draft, settings: s, phone: p, status: m) {
+            case .ready(let proposal): return .ready(proposal)
+            case .blocked(let blocker): return .notReady(blocker.localized)
+            }
+        } catch {
+            return .notReady(String(
+                format: NSLocalizedString("Couldn't check with Doddy's server before showing the card. %@", comment: "Morning call"), Self.text(for: error)))
+        }
+    }
+
+    /// After a tap on the card's own button, never on the switch alone (DOD-07): exactly what the card showed goes to the
+    /// server with its approval, through the voice card's call (`bookMorningCall`, `POST /v1/calls/morning`). A booking
+    /// while one is active replaces the one the card named. The switch then shows what the server reads back, whatever
+    /// the answer was (DOD-08); an unknown outcome is never retried on its own (DOD-09).
+    func bookMorningCall(_ proposal: MorningCallProposal, allowQuietHours: Bool) async {
+        guard let client else { return }
+        let language = NotificationLanguage.current
+        let identity = proposal.draft.identity(to: proposal.to, language: language)
+        await runMorning {
+            do {
+                switch try await client.bookMorningCall(
+                    proposal.draft, to: proposal.to, allowQuietHours: allowQuietHours, language: language, replaces: proposal.replaces?.id) {
+                case .booked:
+                    Self.unconfirmedMorning.remove(identity)
+                    self.morningMessage = String(
+                        format: NSLocalizedString("Morning call set up: %@. Each day is checked again before it rings.", comment: "Morning call"),
+                        proposal.draft.scheduleText(language))
+                case .refused("already_booked"):
+                    self.morningMessage = MorningCallRefusal.alreadySetUp.localized
+                case .refused(let code):
+                    self.morningMessage = String(
+                        format: NSLocalizedString("The morning call wasn't set up. %@", comment: "Morning call: the server refused it"),
+                        MorningCallRefusal(code: code).localized)
+                case .unknown:
+                    Self.unconfirmedMorning.insert(identity)
+                    self.morningMessage = NSLocalizedString("Couldn't confirm Doddy's server set up the morning call. The switch shows what the server says now. If it's off, setting up the same time and days again is safe: the server sets it up at most once.", comment: "Morning call")
+                }
+            } catch {
+                // Certainly not set up: it never left this iPhone, or the server's answer means it never ran.
+                self.morningMessage = String(
+                    format: NSLocalizedString("The morning call wasn't set up. %@", comment: "Morning call: the server refused it"), Self.text(for: error))
+            }
+            await self.loadMorning(client)
+        }
+    }
+
+    /// Whether an earlier try of this exact schedule, here or in a conversation, had an unclear outcome.
+    static func isUnconfirmed(_ proposal: MorningCallProposal) -> Bool {
+        let identity = proposal.draft.identity(to: proposal.to, language: .current)
+        return unconfirmedMorning.contains(identity) || VoiceSessionController.unconfirmedCalls.contains(identity)
+    }
+
+    /// Like `run`, but the answer is shown next to the morning call's switch; each step handles its own errors.
+    private func runMorning(_ work: @MainActor () async -> Void) async {
+        isWorking = true
+        message = nil
+        morningMessage = nil
+        defer { isWorking = false }
+        await work()
     }
 
     /// Only a call still waiting; the list is read back afterwards either way.
