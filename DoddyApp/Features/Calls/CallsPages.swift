@@ -145,6 +145,7 @@ struct DoddyCallsYouPage: View {
                 if s.available.outbound {
                     scheduledSection(s)
                 }
+                morningSection
             }
         }
         .navigationTitle("Doddy calls you")
@@ -214,20 +215,72 @@ struct DoddyCallsYouPage: View {
         }
     }
 
+    /// The morning call (decision 2026-11-14-morning-call): its schedule, the last days' calls and one tap to stop it.
+    /// Shown only once the server has said it makes morning calls, or while one is still set up.
+    @ViewBuilder
+    private var morningSection: some View {
+        if let problem = model.morningProblem {
+            Section("Morning call") {
+                Text(problem)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+        } else if let status = model.morning, status.enabled || status.call != nil {
+            Section {
+                if let call = status.call, let days = call.dayList {
+                    let schedule = MorningCallDraft(time: call.time, days: days, timeZoneID: call.timeZone).scheduleText(.current)
+                    Text(verbatim: schedule)
+                        .font(.body)
+                    Text(String(format: NSLocalizedString("Time in %@", comment: "Morning call: the zone its time is in"), call.timeZone))
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                    if let next = call.nextDate {
+                        Text(String(format: NSLocalizedString("Next call: %@", comment: ""), DateText.full(next)))
+                            .font(.footnote)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                    Button("Stop the morning calls", role: .destructive) { Task { await model.stopMorningCalls() } }
+                        .frame(minHeight: 44)
+                        .disabled(model.isWorking)
+                        .accessibilityIdentifier("calls.morning.stop")
+                } else {
+                    Text("None. Ask Doddy, for example “Call me every day at 8 with the plan of the day.”")
+                        .foregroundStyle(Theme.secondaryText)
+                }
+                ForEach(Array(status.recent.enumerated()), id: \.offset) { _, day in
+                    Text(verbatim: "\(DateText.full(ServerDates.parse(day.at))) · \(Self.scheduledState(state: day.state, errorCode: day.errorCode))")
+                        .font(.footnote)
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            } header: {
+                Text("Morning call")
+            } footer: {
+                Text("Each morning Doddy says the date and only what its server holds for you that day: calls you booked, notes waiting, results of tasks you handed over, new stories on your radar and when the daily news comes. It can't see your calendar or reminders. Each day is checked again before it rings, and quiet hours apply.")
+            }
+        }
+    }
+
     /// What happened to a booked call, from the server's state only.
     static func scheduledState(_ call: ScheduledCall) -> String {
-        switch call.state {
+        scheduledState(state: call.state, errorCode: call.errorCode)
+    }
+
+    /// The same for one day of a morning call (decision 2026-11-14-morning-call), which can also end because the
+    /// morning calls were stopped or replaced.
+    static func scheduledState(state: String, errorCode: String?) -> String {
+        switch state {
         case "scheduled": NSLocalizedString("Waiting. Doddy's server will call you then.", comment: "")
         case "placing": NSLocalizedString("Doddy's server is placing this call.", comment: "")
         case "placed": NSLocalizedString("Placed: the phone service accepted the call.", comment: "")
-        case "cancelled" where call.errorCode == "cancelled_by_user": NSLocalizedString("You cancelled it.", comment: "")
+        case "cancelled" where errorCode == "cancelled_by_user": NSLocalizedString("You cancelled it.", comment: "")
+        case "cancelled" where errorCode == "morning_calls_stopped": NSLocalizedString("Not called: you stopped the morning calls.", comment: "")
+        case "cancelled" where errorCode == "replaced": NSLocalizedString("Not called: a new morning call replaced it.", comment: "")
         case "cancelled": NSLocalizedString("Cancelled: your number or your consent to calls changed.", comment: "")
         case "skipped_quiet_hours": NSLocalizedString("Not called: it was quiet hours in your iPhone's time zone.", comment: "")
         case "missed": NSLocalizedString("Not called: Doddy's server couldn't place it in time.", comment: "")
         case "limit": NSLocalizedString("Not called: Doddy had already tried to call as many times as it may.", comment: "")
-        case "failed" where call.errorCode == "not_configured":
+        case "failed" where errorCode == "not_configured":
             NSLocalizedString("Not called: Doddy's phone line wasn't set up on its server.", comment: "")
-        case "failed" where call.errorCode == "reason_unreadable":
+        case "failed" where errorCode == "reason_unreadable":
             NSLocalizedString("Not called: Doddy's server couldn't read what the call was about.", comment: "")
         case "failed": NSLocalizedString("Not called: the phone service turned it down.", comment: "")
         case "unknown": NSLocalizedString("Not sure: Doddy couldn't confirm whether the call was placed. It won't try again.", comment: "")

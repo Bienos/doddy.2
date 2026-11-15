@@ -9,9 +9,10 @@ import { loadConfig } from "../src/config.js";
 import { apnsJwt } from "../src/providers/apns.js";
 import { ElevenLabsCallRegistrar } from "../src/providers/elevenlabs.js";
 import { isValidTwilioSignature, TwilioClient, TwilioVoiceCaller, twilioSignature } from "../src/providers/twilio.js";
-import { approvalHash, callApprovalHash, textApprovalHash, deliveryApprovalHash } from "../src/approval.js";
+import { approvalHash, callApprovalHash, textApprovalHash, deliveryApprovalHash, morningCallApprovalHash } from "../src/approval.js";
+import { MORNING_CALL_EARLIEST, MORNING_CALL_LATEST } from "../src/morningCalls.js";
 import { callOpening, numberLanguage, OUTBOUND_DAILY_LIMIT, OUTBOUND_HOURLY_LIMIT } from "../src/calls.js";
-import { DEFAULT_ABUSE_LIMITS } from "../src/config.js";
+import { DEFAULT_ABUSE_LIMITS, MORNING_CALLS_MAX_PER_SERVER_DEFAULT } from "../src/config.js";
 import { DEFAULT_ALLOWED_COUNTRY_CODES } from "../src/phoneCountries.js";
 import { TEXT_MAX_LENGTH } from "../src/routes/texts.js";
 import { CONTACT_TEXTS_PER_DAY } from "../src/contactTexts.js";
@@ -169,6 +170,11 @@ test("approval hashes reproduce the shared vectors (contracts/phone/approval-vec
       assert.ok(quiet === "0" || quiet === "1", v.description);
       assert.equal(callApprovalHash(to!, at!, reason!, quiet === "1").toString("hex"), v.sha256, v.description);
     }
+    if (version === "doddy-approval-1" && kind === "morning_call") {
+      const [, , , time, days, zone, quiet, language] = v.fields;
+      assert.ok(quiet === "0" || quiet === "1", v.description);
+      assert.equal(morningCallApprovalHash(to!, time!, days!, zone!, quiet === "1", language!).toString("hex"), v.sha256, v.description);
+    }
     if (version === "doddy-approval-1" && kind === "delivery") {
       const [, , id, fee, currency, pickup, dropoff, dropoffPhone, items, note] = v.fields;
       assert.equal(deliveryApprovalHash(id!, Number(fee), currency!, { pickup: pickup!, dropoff: dropoff!, dropoffPhone: dropoffPhone!, items: items!, note: note! })
@@ -176,6 +182,7 @@ test("approval hashes reproduce the shared vectors (contracts/phone/approval-vec
     }
   }
   assert.ok(file.vectors.some((v) => v.fields[1] === "call"), "call vectors are there too (ADR-754)");
+  assert.ok(file.vectors.filter((v) => v.fields[1] === "morning_call").length >= 3, "morning call vectors (decision 2026-11-14-morning-call)");
 });
 
 test("a text through Twilio: a server error after the request may have been sent is unknown, never retried", async () => {
@@ -242,6 +249,11 @@ test("the contact policy in doddy_rules.yaml matches what the server enforces", 
   assert.deepEqual([value("start"), value("end"), value("timezone_fallback"), value("applies_to"), value("scheduled_call_unknown_outcome")],
     [`"${formatClock(QUIET_HOURS_DEFAULT.start)}"`, `"${formatClock(QUIET_HOURS_DEFAULT.end)}"`, DEFAULT_TIME_ZONE, "[scheduled_calls,radar_alert_pushes]",
       "never_placed_again"]);
+  // Morning calls (decision 2026-11-14-morning-call).
+  assert.deepEqual([value("morning_call_earliest"), value("morning_call_latest")], [`"${MORNING_CALL_EARLIEST}"`, `"${MORNING_CALL_LATEST}"`]);
+  assert.deepEqual([value("morning_calls_per_account"), value("morning_calls_per_server_default")].map(Number),
+    [1, MORNING_CALLS_MAX_PER_SERVER_DEFAULT]);
+  assert.deepEqual([value("morning_call_stop"), value("morning_call_plan")], ["one_sentence_or_one_tap_at_once", "server_held_counts_and_times_only"]);
   assert.doesNotMatch(block, /\+\d{6,}/, "no phone number in the rules file");
 });
 

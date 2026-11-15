@@ -158,6 +158,8 @@ public enum AskFirst {
         VoiceToolName.startStopwatch, VoiceToolName.stopStopwatch, VoiceToolName.startFocus, VoiceToolName.stopFocus,
         VoiceToolName.startWindDown, VoiceToolName.stopWindDown, VoiceToolName.addToList, VoiceToolName.checkOff,
         VoiceToolName.followNews, VoiceToolName.openTrainingPlan, VoiceToolName.noteCapabilityGap,
+        // Taking away the standing permission for morning calls (decision 2026-11-14-morning-call): it only stops calls.
+        VoiceToolName.stopMorningCalls,
     ]
 
     /// True for a tool that never shows a card and never waits: the public lookups, the looks and the small actions
@@ -201,6 +203,9 @@ public enum AskFirst {
         // Doddy's own timers, lists and follows: started, ticked or added at once; each is undone in one step.
         case .startStopwatch, .stopStopwatch, .startFocus, .stopFocus, .startWindDown, .stopWindDown,
              .addToList, .checkOff, .followNews, .openTrainingPlan, .noteCapabilityGap:
+            return .runsNow
+        // Stopping the morning calls only takes a permission away (decision 2026-11-14-morning-call): at once.
+        case .stopMorningCalls:
             return .runsNow
         // ADR-619 (owner, 24 Oct 2026: "nie pytaj, od razu działaj, przełącz się i pytaj, co
         // tłumaczyć"), replacing ADR-542: translator mode starts and stops the moment the user asks.
@@ -250,7 +255,10 @@ public enum AskFirst {
              // The card shows the time and the exact reason; the tap approves exactly that (ADR-754).
              // call_places: the card shows every place, its number and where it came from, the exact
              // opening line and question; the one tap approves exactly that task's digest.
-             .callMeLater, .callMeNow, .callPlaces:
+             .callMeLater, .callMeNow, .callPlaces,
+             // The card shows the exact schedule, number and switch; a yes or a tap approves exactly that
+             // (decision 2026-11-14-morning-call).
+             .callMeEveryMorning:
             return .ownPayloadCard
         case .textMe:
             // A text to the user's own verified number goes at once while Texts from Doddy is on (owner, 9 Nov 2026,
@@ -299,10 +307,10 @@ public enum SpokenYes {
         "yes go ahead", "yes do it", "ok go ahead", "okay go ahead", "sure go ahead",
         // Polish
         "tak", "tak proszę", "tak prosze", "dobrze", "jasne", "śmiało", "smialo", "zrób to", "zrob to", "tak zrób to", "tak zrob to", "okej", "pewnie",
-        // German. "ja" is also Polish for "I", so a stray one could pass as a yes. It stays: it is the
-        // German yes, a spoken yes answers reads only (a hand-over needs a tap since ADR-716), and a list
-        // per language is the owner's call.
-        "ja", "ja bitte", "klar", "mach das", "ja mach das", "in ordnung",
+        // German. A lone "ja" is not here: it is also Polish for "I" (and the Dutch yes), and since step 2a of
+        // decision `2026-11-14-spoken-yes-and-fewer-cards` a spoken yes answers changes too, so "Ja…" said
+        // before a sentence must never delete an event. "ja bitte", "klar" and the rest still count.
+        "ja bitte", "klar", "mach das", "ja mach das", "in ordnung",
         // French
         "oui", "oui vas-y", "oui vas y", "vas-y", "vas y", "d'accord", "oui s'il te plaît", "oui s'il te plait",
         // Spanish

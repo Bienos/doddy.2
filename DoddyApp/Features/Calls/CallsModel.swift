@@ -27,6 +27,10 @@ final class CallsModel {
     private(set) var scheduled: [ScheduledCall] = []
     /// Why the booked calls couldn't be loaded, or nil. A failed load is never shown as "none".
     private(set) var scheduledProblem: String?
+    /// The morning call (decision 2026-11-14-morning-call) as the server reported it; nil until it answered.
+    private(set) var morning: MorningCallStatus?
+    /// Why the morning call couldn't be loaded, or nil. A failed load is never shown as "none".
+    private(set) var morningProblem: String?
     private(set) var isWorking = false
     private(set) var message: String?
 
@@ -43,6 +47,7 @@ final class CallsModel {
             self.settings = settings
             self.recent = (try? await client.recentCalls()) ?? []
             await self.loadScheduled(client, settings: settings)
+            await self.loadMorning(client)
             do {
                 let texts = try await client.textSettings()
                 self.textSettings = texts
@@ -199,6 +204,36 @@ final class CallsModel {
             if (try? await client.setCallTimeZone(zone)) != nil { defaults.set(zone, forKey: CallZoneSync.lastSentKey) }
         } else if let held = settings.timeZone {
             defaults.set(held, forKey: CallZoneSync.lastSentKey)
+        }
+    }
+
+    // MARK: The morning call (decision 2026-11-14-morning-call)
+
+    private func loadMorning(_ client: DoddyServerClient) async {
+        do {
+            morning = try await client.morningCall()
+            morningProblem = nil
+        } catch {
+            morning = nil
+            morningProblem = String(format: NSLocalizedString("Couldn't load your morning call. %@", comment: ""), Self.text(for: error))
+        }
+    }
+
+    /// One tap stops it at once; the server's answer is read back either way, and only what it said is shown.
+    func stopMorningCalls() async {
+        guard let client else { return }
+        await run {
+            switch try await client.stopMorningCalls() {
+            case .stopped(let calling):
+                self.message = calling
+                    ? NSLocalizedString("Morning calls stopped. Today's call was already being placed, so it may still ring this once.", comment: "")
+                    : NSLocalizedString("Morning calls stopped. Doddy won't call you in the morning any more.", comment: "")
+            case .noneActive:
+                self.message = NSLocalizedString("There was no morning call to stop.", comment: "")
+            case .unknown:
+                self.message = NSLocalizedString("Couldn't confirm the stop reached Doddy's server. Tap Stop again: stopping twice is safe.", comment: "")
+            }
+            await self.loadMorning(client)
         }
     }
 

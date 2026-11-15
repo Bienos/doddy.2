@@ -79,7 +79,9 @@ RUNS_NOW_OWN_LOOKS = {"search_memories", "read_list", "read_calendar", "find_fre
                       # The person's rough area, read once (decision docs/decisions/2026-11-14-approximate-location-by-voice.md).
                       "where_am_i"}
 RUNS_NOW_SMALL_ACTIONS = {"start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",
-                          "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap"}
+                          "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap",
+                          # Taking away the standing permission for morning calls (decision 2026-11-14-morning-call).
+                          "stop_morning_calls"}
 # Reads through Doddy's server (an inbox, a calendar, a page, Claude writing something): the server still makes
 # a single-use approval for exactly the call, and the app uses it straight away.
 RUNS_NOW_SERVER_READS = {"check_email", "read_email", "find_drive_file", "search_notion", "read_notion_page", "check_outlook_email",

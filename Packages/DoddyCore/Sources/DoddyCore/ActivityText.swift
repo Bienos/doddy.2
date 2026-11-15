@@ -86,6 +86,8 @@ public enum ActivityText {
         // ADR-754.
         "Call you later from Doddy's number": "Telefon do Ciebie później z numeru Doddy’ego",
         "Call you now from Doddy's number": "Telefon do Ciebie teraz z numeru Doddy’ego",
+        "Call you every morning from Doddy's number": "Telefon do Ciebie co rano z numeru Doddy’ego",
+        "Stop the morning calls from Doddy's number": "Koniec porannych telefonów z numeru Doddy’ego",
         "Call places for you from Doddy's number": "Telefony do miejsc w Twoim imieniu z numeru Doddy’ego",
         // Written before ADR-275 fixed the article; old rows still say it.
         "Draft a email": "Szkic e-maila",

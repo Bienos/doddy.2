@@ -122,5 +122,7 @@ extension VoiceToolReply {
 
     public static let cameraOpened = "opened: Doddy's camera is open on the user's screen. A photo they keep goes into a new note that they check and save themselves. Never say a photo was taken or saved. Once they say they saved it, call search_memories: it also lists the newest saved notes."
     public static let cameraDeclined = "declined: the user chose not to open the camera. Nothing was opened."
+    /// The yes came while Doddy wasn't on screen: iOS shows no camera there, so nothing was opened.
+    public static let cameraNeedsTheScreen = "failed: Doddy isn't on screen, so the camera couldn't open. Nothing was opened. Tell the user in one short sentence to open Doddy and ask again."
     public static let cameraUnavailable = "unavailable: this device has no camera Doddy can use. Nothing was opened. Tell the user in one short sentence."
 }

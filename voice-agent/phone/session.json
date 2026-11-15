@@ -8,8 +8,8 @@
     "pl"
   ],
   "variables": {
-    "doddy_call_opening": "The first sentence, set by the server and never by the model, always saying Doddy is an AI (DOD-03): \"Cześć, tu Doddy, asystent AI. W czym mogę pomóc?\" for a Polish (+48) number and \"Hi, this is Doddy, an AI assistant. How can I help?\" for any other, or on a scheduled call the same with the approved reason, in the language the call was asked for in (server/messaging/src/calls.ts callOpening)",
-    "doddy_call_reason": "none | the reason for a scheduled call, as the user approved it on the card (ADR-754)",
+    "doddy_call_opening": "The first sentence, set by the server and never by the model, always saying Doddy is an AI (DOD-03): \"Cześć, tu Doddy, asystent AI. W czym mogę pomóc?\" for a Polish (+48) number and \"Hi, this is Doddy, an AI assistant. How can I help?\" for any other, or on a scheduled call the same with the approved reason, in the language the call was asked for in; on a morning call (decision 2026-11-14-morning-call) \"Dzień dobry, tu Doddy, asystent AI, z Twoim planem dnia.\" followed by the plan the server wrote (server/messaging/src/calls.ts callOpening)",
+    "doddy_call_reason": "none | the reason for a scheduled call, as the user approved it on the card (ADR-754) | on a morning call, the plan of the day the server wrote from what it holds (morningCalls.ts morningPlan; counts and times only)",
     "doddy_caller": "known | unknown | calls_off | unavailable",
     "doddy_direction": "inbound | outbound",
     "doddy_memory": "on | off (memory on calls)",

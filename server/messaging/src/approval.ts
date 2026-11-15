@@ -30,6 +30,16 @@ export const callApprovalHash = (to: string, at: string, reason: string, allowQu
   approvalHash([APPROVAL_VERSION, "call", to, at, reason, allowQuietHours ? "1" : "0"]);
 
 /**
+ * A morning call every chosen day (decision 2026-11-14-morning-call): to `to` (E.164), at `time` on the wall clock
+ * (HH:MM) of `zone` (an IANA name), on `days` (ISO weekdays, Monday = 1, ascending: "12345", "1234567"), whether the
+ * user allowed it inside quiet hours, and the language the plan is said in. A standing permission, so every field the
+ * card showed is bound: a different number, time, day, zone, switch or language is not approved.
+ */
+export const morningCallApprovalHash = (
+  to: string, time: string, days: string, zone: string, allowQuietHours: boolean, language: string,
+) => approvalHash([APPROVAL_VERSION, "morning_call", to, time, days, zone, allowQuietHours ? "1" : "0", language]);
+
+/**
  * A delivery through Uber Direct (decision 2026-11-12-uber-direct-deliveries): Doddy's id for it, the
  * price in minor units and its currency as quoted, and the card's lines exactly as the server wrote
  * them (`DeliveryCard`): who and where it is picked up from, who and where it goes to, the recipient's

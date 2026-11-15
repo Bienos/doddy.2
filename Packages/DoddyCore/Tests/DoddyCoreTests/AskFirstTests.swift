@@ -165,7 +165,7 @@ final class AskFirstTests: XCTestCase {
         ])
         XCTAssertEqual(AskFirst.ownSmallActions, [
             "start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",
-            "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap",
+            "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap", "stop_morning_calls",
         ])
         // `parking_spot` is in neither set: only its "find" runs at once, saving and clearing keep their cards.
         XCTAssertFalse(AskFirst.ownLooks.contains(VoiceToolName.parkingSpot))
@@ -371,8 +371,12 @@ final class AskFirstTests: XCTestCase {
     }
 
     func testSpokenYesInTheAppLanguages() {
-        for yes in ["Yes", "yes please", "OK, go ahead", "tak", "Jasne!", "ja", "oui", "sí", "sim", "va bene", "ja graag"] {
+        for yes in ["Yes", "yes please", "OK, go ahead", "tak", "Jasne!", "Ja bitte.", "klar", "oui", "sí", "sim", "va bene", "ja graag"] {
             XCTAssertTrue(SpokenYes.isYes(yes), yes)
+        }
+        // A lone "ja" is Polish for "I": since a spoken yes answers changes, it must never pass as one.
+        for alone in ["ja", "Ja.", "JA!", "ja ja"] {
+            XCTAssertFalse(SpokenYes.isYes(alone), alone)
         }
         for no in ["no", "nie", "nein", "non", "nee", "não", "yes, but later", "maybe", "approved", "the user agreed"] {
             XCTAssertFalse(SpokenYes.isYes(no), no)

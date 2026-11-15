@@ -34,13 +34,16 @@ export interface CallVariables {
   doddy_memory: "on" | "off";
   doddy_pin: "set" | "not_set";
   doddy_direction: "inbound" | "outbound";
-  /** A scheduled call's reason as the user approved it on the card, or "none" (ADR-754). */
+  /** A scheduled call's reason as the user approved it on the card, or "none" (ADR-754). On a morning call, the plan the
+   * server wrote for the day (decision 2026-11-14-morning-call). */
   doddy_call_reason: string;
   /** The agent's first sentence, written by the server (callOpening below). */
   doddy_call_opening: string;
 }
 
 export type Language = "en" | "pl";
+/** A call booked once (ADR-754), or one day's call of a morning call (decision 2026-11-14-morning-call). */
+export type CallKind = "once" | "morning";
 export const lang = (v: string | null | undefined): Language => (v === "pl" ? "pl" : "en");
 
 /**
@@ -49,9 +52,16 @@ export const lang = (v: string | null | undefined): Language => (v === "pl" ? "p
  * reason the user approved, word for word. The Polish line without a reason is the one the live
  * agent spoke as its fixed first message until 14 Nov 2026, so Polish callers hear no change.
  */
-export function callOpening(reason: string | undefined, language: Language): string {
+export function callOpening(reason: string | undefined, language: Language, kind: CallKind = "once"): string {
   if (reason === undefined) {
     return language === "pl" ? "Cześć, tu Doddy, asystent AI. W czym mogę pomóc?" : "Hi, this is Doddy, an AI assistant. How can I help?";
+  }
+  // A morning call (decision 2026-11-14-morning-call): its "reason" is the plan the server wrote for the day from what
+  // it holds (morningCalls.ts morningPlan), never words of the model's.
+  if (kind === "morning") {
+    return language === "pl"
+      ? `Dzień dobry, tu Doddy, asystent AI, z Twoim planem dnia. ${reason}`
+      : `Good morning, this is Doddy, an AI assistant, with your plan for the day. ${reason}`;
   }
   return language === "pl"
     ? `Cześć, tu Doddy, asystent AI. Dzwonię zgodnie z Twoją prośbą w sprawie: ${reason}`
@@ -74,7 +84,7 @@ export function sameSecret(expected: string, given: string | undefined): boolean
 /** Creates the per-call capability and returns the variables for a recognised caller. */
 export async function openSession(
   db: Db, accountId: string, callId: string, direction: CallVariables["doddy_direction"],
-  purpose?: { reason: string; language: Language }, language: Language = "en",
+  purpose?: { reason: string; language: Language; kind?: CallKind }, language: Language = "en",
 ): Promise<CallVariables> {
   const token = randomBytes(32).toString("base64url");
   await db.query(
@@ -91,7 +101,7 @@ export async function openSession(
     doddy_pin: rows[0]?.pin_set ? "set" : "not_set",
     doddy_direction: direction,
     doddy_call_reason: purpose?.reason ?? "none",
-    doddy_call_opening: callOpening(purpose?.reason, purpose?.language ?? language),
+    doddy_call_opening: callOpening(purpose?.reason, purpose?.language ?? language, purpose?.kind),
   };
 }
 
