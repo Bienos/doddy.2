@@ -14,12 +14,16 @@ export const NOTICE_TEXT: Record<RecordingNotice, string> = {
   zapisywana: "Treść rozmowy jest zapisywana.",
 };
 
-/** "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. [notice] Chciałbym zapytać: …?" */
+/**
+ * "Dzień dobry, tu Doddy, wirtualny asystent Anny. [notice] Mam jedno krótkie pytanie. …?"
+ * Since 15 Nov 2026 (owner: the call sounded stiff; decision docs/decisions/2026-11-15-calls-sound-natural.md) it is
+ * shorter and spoken, without "Dzwonię w imieniu … Chciałbym zapytać:". The disclosure is still the first thing said.
+ */
 export function openingLine(principalGenitive: string, notice: RecordingNotice, question: string): string {
   const q = /[?？]$/.test(question) ? question : `${question}?`;
-  const parts = [`Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu ${principalGenitive}.`];
+  const parts = [`Dzień dobry, tu Doddy, wirtualny asystent ${principalGenitive}.`];
   if (NOTICE_TEXT[notice]) parts.push(NOTICE_TEXT[notice]);
-  parts.push(`Chciałbym zapytać: ${q}`);
+  parts.push(`Mam jedno krótkie pytanie. ${q}`);
   return parts.join(" ");
 }
 

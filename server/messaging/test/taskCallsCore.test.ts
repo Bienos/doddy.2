@@ -167,10 +167,10 @@ describe("payload", () => {
 
   test("the opening line says it is an AI, in Polish, word for word", () => {
     assert.equal(openingLine("Anny", "off", "Czy laptop z serwisu jest gotowy?"),
-      "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?");
+      "Dzień dobry, tu Doddy, wirtualny asystent Anny. Mam jedno krótkie pytanie. Czy laptop z serwisu jest gotowy?");
     assert.equal(openingLine("Anny", "nagrywana", "Czy laptop z serwisu jest gotowy"),
-      "Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Rozmowa jest nagrywana. Chciałbym zapytać: Czy laptop z serwisu jest gotowy?");
-    assert.match(compile().agent.variables.doddy_opening_line, /^Dzień dobry, tu Doddy, wirtualny asystent\. Dzwonię w imieniu Anny\. Chciałbym zapytać: Czy laptop z serwisu jest gotowy\?$/);
+      "Dzień dobry, tu Doddy, wirtualny asystent Anny. Rozmowa jest nagrywana. Mam jedno krótkie pytanie. Czy laptop z serwisu jest gotowy?");
+    assert.match(compile().agent.variables.doddy_opening_line, /^Dzień dobry, tu Doddy, wirtualny asystent Anny\. Mam jedno krótkie pytanie\. Czy laptop z serwisu jest gotowy\?$/);
   });
 
   test("the agent gets exactly the declared variables, and the Twilio part never records", () => {

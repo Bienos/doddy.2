@@ -76,11 +76,11 @@ test("the brief: a booking needs its details; its question is never written by a
 const facts = (lines: [string, string][], over: Partial<ResultFacts> = {}): ResultFacts => ({
   endReason: "completed", answered: true, voiceConnected: true, takenOverAtSecs: null, durationSecs: 40,
   question: bookingQuestion(table), callbackLine: "Sprawdzę to u Anny i oddzwonię.",
-  allowedTexts: [`Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: ${bookingQuestion(table)}`, bookingQuestion(table), bookingConfirmLine(table)],
+  allowedTexts: [`Dzień dobry, tu Doddy, wirtualny asystent Anny. Mam jedno krótkie pytanie. ${bookingQuestion(table)}`, bookingQuestion(table), bookingConfirmLine(table)],
   transcript: lines.map(([speaker, text]) => ({ speaker: speaker as "doddy" | "callee", text, atSecs: null })),
   source: "elevenlabs", voicemailToolUsed: false, bookingConfirmLine: bookingConfirmLine(table), ...over,
 });
-const opening = `Dzień dobry, tu Doddy, wirtualny asystent. Dzwonię w imieniu Anny. Chciałbym zapytać: ${bookingQuestion(table)}`;
+const opening = `Dzień dobry, tu Doddy, wirtualny asystent Anny. Mam jedno krótkie pytanie. ${bookingQuestion(table)}`;
 
 test("the confirmation sentence is the one commitment allowed; any other still warns", () => {
   const ok = buildCallResult(facts([["doddy", opening], ["callee", "Tak, mamy wolne o 19."],
@@ -177,11 +177,18 @@ test("until the live agents are synced, the drift check also accepts the earlier
     "The only goal of this call:\n{{doddy_goal}}\n\nThe question you asked:");
   const oldBook = nov12Book.replace("The only goal of this call is the booking the person approved. Only this, exactly as written:",
     "The only goal of this call:\n{{doddy_goal}}\n\nThe booking the person approved. Only this, exactly as written:");
-  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_AGENT_SPEC.promptSha256], [sha256Hex(oldAsk), sha256Hex(nov12Ask)]);
-  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_BOOK_AGENT_SPEC.promptSha256], [sha256Hex(oldBook), sha256Hex(nov12Book)]);
+  // The prompts on main until 15 Nov 2026, before the calls sounded like a relaxed person on the phone.
+  const nov14Ask = fixture("task-call-2026-11-14.md");
+  const nov14Book = fixture("task-call-book-2026-11-14.md");
+  const nov14Order = fixture("task-call-order-2026-11-14.md");
+  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_AGENT_SPEC.promptSha256], [sha256Hex(oldAsk), sha256Hex(nov12Ask), sha256Hex(nov14Ask)]);
+  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_BOOK_AGENT_SPEC.promptSha256], [sha256Hex(oldBook), sha256Hex(nov12Book), sha256Hex(nov14Book)]);
   // The order agent's first prompt (13 to 14 Nov 2026), before it sounded like the person's assistant.
   const firstOrder = fixture("task-call-order-2026-11-13.md");
-  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_ORDER_AGENT_SPEC.promptSha256], [sha256Hex(firstOrder)]);
+  assert.deepEqual(SYNC_PENDING_PROMPTS[TASK_ORDER_AGENT_SPEC.promptSha256], [sha256Hex(firstOrder), sha256Hex(nov14Order)]);
+  assert.deepEqual(checkAgentSafety(compliantAgent(nov14Ask)), [], "the ask agent live until the 15 Nov sync");
+  assert.deepEqual(checkAgentSafety(compliantAgent(nov14Book, TASK_BOOK_AGENT_ID), TASK_BOOK_AGENT_SPEC), []);
+  assert.deepEqual(checkAgentSafety(compliantAgent(nov14Order, TASK_ORDER_AGENT_ID), TASK_ORDER_AGENT_SPEC), []);
   assert.equal(sha256Hex(firstOrder), "ba6d0ba8035457bea8d80ba1671c2ca9c949302e32b6f8b37b69cc1747db6210", "the order prompt on main on 13 Nov");
   assert.deepEqual(checkAgentSafety(compliantAgent(firstOrder, TASK_ORDER_AGENT_ID), TASK_ORDER_AGENT_SPEC), []);
   assert.deepEqual(checkAgentSafety(compliantAgent(ORDER_PROMPT, TASK_ORDER_AGENT_ID), TASK_ORDER_AGENT_SPEC), []);
