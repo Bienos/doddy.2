@@ -161,6 +161,12 @@ extension XCUIApplication {
         // Back to its first page (Voice is its first row), where the tests start.
         if name == "settings" {
             _ = buttons["settings.voice"].appears(timeout: 2)
+            // Still on Home: the menu's tap didn't take (15 Nov 2026, PR #524's smoke run: Home's ••• menu
+            // item was tapped 0.7 s after it appeared and Settings never opened). Through the menu again.
+            for _ in 0..<2 where !buttons["settings.voice"].exists && buttons["home.more"].exists && !buttons["tab.settings"].exists {
+                tapHomeMenuItem("home.menu.settings")
+                _ = buttons["settings.voice"].appears(timeout: 3)
+            }
             for _ in 0..<3 where !buttons["settings.voice"].exists {
                 let back = navigationBars.buttons.element(boundBy: 0)
                 guard back.exists else { break }
@@ -176,8 +182,18 @@ extension XCUIApplication {
         let more = buttons["home.more"]
         _ = more.appears(timeout: 5)
         more.tap()
-        let item = buttons[identifier]
+        tapMenuItem(buttons[identifier])
+    }
+
+    /// Taps an item of a menu that was just opened, once the menu has finished opening. An item is in
+    /// the accessibility tree before its menu stops animating, and a tap in that time can be lost: the
+    /// one-second first look of XCTest's own wait used to cover it (15 Nov 2026, PR #524's smoke run,
+    /// decision 2026-11-15-faster-mac-ci). Half a second is longer than the menu's animation.
+    @MainActor
+    func tapMenuItem(_ item: XCUIElement) {
         _ = item.appears(timeout: 5)
+        _ = pollUntil(timeout: 2) { item.isHittable }
+        RunLoop.current.run(until: Date().addingTimeInterval(0.5))
         item.tap()
     }
 
@@ -199,9 +215,7 @@ extension XCUIApplication {
         let plus = buttons["home.save"]
         _ = plus.appears(timeout: 5)
         plus.tap()
-        let note = buttons["home.save.note"]
-        _ = note.appears(timeout: 5)
-        note.tap()
+        tapMenuItem(buttons["home.save.note"])
     }
 
     /// Settings (ADR-580): scrolls to a group's row and opens its page.
