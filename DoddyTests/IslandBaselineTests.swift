@@ -81,21 +81,20 @@ final class IslandBaselineTests: XCTestCase {
         XCTAssertTrue(ended)
     }
 
-    /// ADR-577: a start without opening Doddy checks `isShowing` before it takes the microphone,
-    /// and `expand()` (the alert update that opens the island up) keeps the state it shows.
+    /// ADR-577: a start without opening Doddy checks `isShowing` before it takes the microphone, and the
+    /// island shows the state it was given. (It no longer opens up into the big island: decision
+    /// `2026-11-15-small-island-only`.)
     @MainActor
-    func testIsShowingFollowsTheActivityAndExpandKeepsItsState() async throws {
+    func testIsShowingFollowsTheActivityAndShowsItsState() async throws {
         try requireActivities()
         await clearActivities()
         let island = VoiceLiveActivity()
         defer { island.end() }
         XCTAssertFalse(island.isShowing)
-        island.expand()  // nothing to open up: no activity is started for it
         XCTAssertTrue(Activity<DoddyVoiceAttributes>.activities.isEmpty)
         let greeting = DoddyVoiceAttributes.ContentState(status: .speaking, isMuted: false, greeting: "Hey Pat, what's up?")
         island.show(greeting, startedAt: .now)
         XCTAssertTrue(island.isShowing)
-        island.expand()
         await island.settle()
         let activity = try XCTUnwrap(Activity<DoddyVoiceAttributes>.activities.first)
         XCTAssertEqual(activity.content.state, greeting)

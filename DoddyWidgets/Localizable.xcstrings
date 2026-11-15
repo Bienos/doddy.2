@@ -4490,17 +4490,6 @@
         }
       }
     },
-    "Starts a voice conversation without opening Doddy. He greets you and stays in the Dynamic Island while you talk. Tap the island to see the conversation.": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zaczyna rozmowę głosową bez otwierania Doddy’ego. Doddy się wita i zostaje w Dynamic Island, gdy mówisz. Stuknij wyspę, żeby zobaczyć rozmowę."
-          }
-        }
-      }
-    },
     "Starts recording a meeting or conversation. Doddy opens first; the recording then carries on in the Dynamic Island and with the screen locked. The audio stays on this device.": {
       "extractionState": "manual",
       "localizations": {
@@ -4736,17 +4725,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Zajmie minutę lub dwie"
-          }
-        }
-      }
-    },
-    "Talk in the Island": {
-      "extractionState": "manual",
-      "localizations": {
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rozmowa w wyspie"
           }
         }
       }

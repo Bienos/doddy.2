@@ -60,10 +60,9 @@ struct DoddyWidgetsBundle: WidgetBundle {
 @available(iOS 18.0, *)
 struct DoddyControls: WidgetBundle {
     var body: some Widget {
+        // The one control that talks in the island (decision `2026-11-15-one-talk-control`; the second, older
+        // "Talk in the Island" control is gone).
         TalkToDoddyControl()
-        // Was "Talk in the Island" (ADR-577); the same as Talk to Doddy since ADR-632. Kept so an
-        // Action Button or control already set to it keeps working.
-        TalkInIslandControl()
         NewNoteControl()
         // Opens Doddy and starts a recording (ADR-588).
         StartRecordingControl()

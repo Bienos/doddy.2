@@ -7,7 +7,7 @@ import WidgetKit
 /// the Dynamic Island. iOS does not let a recording begin from a cold background, so it cannot start
 /// with no screen at all (docs/implementation/CAPTURE_AUDIT.md section 3). The user adds it
 /// themselves (Settings › Action Button › Controls); Doddy can't place it or tell whether it was
-/// added. "Talk in the Island" and "Talk to Doddy" are separate controls and are left alone.
+/// added. "Talk to Doddy" is a separate control and is left alone.
 @available(iOS 18.0, *)
 struct StartRecordingControl: ControlWidget {
     static let kind = "com.bienos.doddy2.record"

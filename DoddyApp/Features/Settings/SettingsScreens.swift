@@ -141,7 +141,6 @@ struct AppearanceSettingsView: View {
 /// on Settings › Account now. Personality, the island and Siri were their own Settings rows until ADR-633.
 struct VoiceSettingsView: View {
     @AppStorage(PreferenceKey.listenOnOpen) private var listenOnOpen = OpeningPreferences.listenOnOpenDefault
-    @AppStorage(LaunchPreferencesMigration.islandExpandsKey) private var islandExpands = false
     #if DEBUG
     @AppStorage(VoiceConfig.directVoiceKey) private var directVoice = true
     #endif
@@ -167,11 +166,6 @@ struct VoiceSettingsView: View {
             }
             VoiceStyleSections()
             Section {
-                // The island's expansion: iPhone only (ADR-432, ADR-453).
-                if DeviceSupport.hasDynamicIsland {
-                    Toggle("Expand when Doddy speaks", isOn: $islandExpands)
-                        .accessibilityIdentifier("settings.islandExpands")
-                }
                 NavigationLink {
                     WaysSettingsView()
                 } label: {

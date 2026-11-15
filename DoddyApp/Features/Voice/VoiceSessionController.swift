@@ -240,8 +240,6 @@ final class VoiceSessionController {
             }
             syncIsland()
             updateVoiceMeter()
-            // Doddy started speaking: the island may open up for a moment (ADR-577).
-            if phase == .speaking, oldValue != .speaking { expandIslandIfDue() }
             if phase == .speaking, let began = firstSpeechRequestedAt {
                 firstSpeechRequestedAt = nil
                 let took = VoiceStartTimeline.text(ProcessInfo.processInfo.systemUptime - began)
@@ -284,8 +282,6 @@ final class VoiceSessionController {
             // A new card, or the person changed what it shows: a spoken yes counts from now (`SpokenConfirmation`).
             if pendingAction != oldValue { pendingShownAt = pendingAction == nil ? nil : Date() }
             syncIsland()
-            // ADR-616: a new card opens the island up while Doddy isn't on screen.
-            if oldValue == nil, pendingAction != nil { expandIslandForCard() }
         }
     }
     /// When the card now up appeared, or last changed (decision 2026-11-14-spoken-yes-and-fewer-cards).
@@ -563,8 +559,6 @@ final class VoiceSessionController {
         didSet { syncIsland() }
     }
     @ObservationIgnored private var islandFlashClear: Task<Void, Never>?
-    /// When the island opens up into the big island while Doddy talks (ADR-577). Set at each start.
-    @ObservationIgnored private var islandExpansion = IslandExpansion(isOn: true)
     /// How long "Note saved" and "Reminder set" stay on the island.
     static let islandFlashSeconds: TimeInterval = 8
     /// Every note text Doddy put on a save card or plan in this conversation, saved or declined,
@@ -759,9 +753,6 @@ final class VoiceSessionController {
         isMuted = false
         savedThisConversation = 0
         islandFlash = nil
-        // Settings › Dynamic Island › "Open up when Doddy speaks" (ADR-579; was Back Tap's "Small island").
-        islandExpansion = IslandExpansion(isOn: LaunchPreferencesMigration.islandExpands(
-            UserDefaults.standard.object(forKey: LaunchPreferencesMigration.islandExpandsKey) as? Bool))
         backgroundStartRefused = false
         backgroundStartReady = false
         ConversationAudioSession.release(takeAudioHold())
@@ -2799,22 +2790,6 @@ final class VoiceSessionController {
         }
     }
 
-    /// Opens the island up for a moment when Doddy starts speaking, when `IslandExpansion` says
-    /// it's due (ADR-577): his first words, then the start of each answer, while Doddy isn't the
-    /// app on screen. Not while translating: he speaks after every phrase there.
-    private func expandIslandIfDue() {
-        guard ownsIsland, translator == nil else { return }
-        let onScreen = UIApplication.shared.applicationState == .active
-        if islandExpansion.doddyStartedSpeaking(at: Date(), appOnScreen: onScreen) { island.expand() }
-    }
-
-    /// ADR-616: a card arrived; `IslandExpansion` says whether the island opens up for it.
-    private func expandIslandForCard() {
-        guard ownsIsland, translator == nil else { return }
-        let onScreen = UIApplication.shared.applicationState == .active
-        if islandExpansion.cardArrived(at: Date(), appOnScreen: onScreen) { island.expand() }
-    }
-
     /// Listens to how loud Doddy's voice is while he talks, for Home's island extension (ADR-655):
     /// attached the first time he speaks (that is when his audio track exists), let go when the
     /// conversation is over. A provider without such a track attaches nothing.
@@ -2902,8 +2877,6 @@ final class VoiceSessionController {
         lines.append(Line(fromUser: fromUser, text: text))
         // The user's own words (not Doddy's, not a tool's): what a tool that works on their list may be matched to.
         if fromUser { outsideContent.userSaid(text) }
-        // The island opens up again when Doddy starts answering this (ADR-577).
-        if fromUser { islandExpansion.userSpoke() }
         if !fromUser, checkInNeedsBriefing {
             checkInNeedsBriefing = false
             Task { await sendToAgent("Morning check-in: give the briefing now, as the morning check-in section says.") }

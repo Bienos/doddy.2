@@ -18,6 +18,9 @@ import UIKit
 /// behind the one before it, so a status that flipped quickly (speaking, listening, speaking)
 /// reached the island one step at a time, seconds late, and it looked stuck.
 ///
+/// It never asks iOS to open the island up into the big island: the small island is the only one (owner,
+/// 15 Nov 2026, decision `2026-11-15-small-island-only`).
+///
 /// While Doddy talks and Doddy is not the app on screen, it also sends his beat (ADR-683): every
 /// `IslandVoiceBeat.interval` a step for how loud his voice was, so the island swells and eases
 /// with him as Home's strip does. iOS can't animate a Live Activity between updates, so this is
@@ -45,8 +48,6 @@ final class VoiceLiveActivity {
     private var updating: Task<Void, Never>?
     /// Tells a finished sender apart from the one that replaced it.
     private var updatingID = 0
-    /// Asks the next update to carry the alert that opens the island up (`expand`).
-    private var wantsAlert = false
     /// Asks the next update to go even if the state is the one iOS has (the heartbeat).
     private var wantsRefresh = false
     /// The last `finish`/`end` request, so callers can wait until iOS has it.
@@ -84,18 +85,6 @@ final class VoiceLiveActivity {
         } catch {
             // Not fatal: the conversation works without the island.
         }
-    }
-
-    /// Asks iOS to open the island up for a few seconds with what it shows now (the big island:
-    /// it unfolds and plays the alert sound). `IslandExpansion` (ADR-577) decides when. iOS does
-    /// this only while Doddy is not the app on screen, and decides the final size, so this is a
-    /// request. The alert's words are only shown on a paired Apple Watch: the status, never
-    /// anything said. A no-op when there is no activity. Only for a conversation the app is
-    /// running, so no push is needed.
-    func expand() {
-        guard activity != nil, pacer.latest != nil else { return }
-        wantsAlert = true
-        sendSoon()
     }
 
     /// How long the "Conversation ended" card stays on the Lock Screen. The Dynamic Island
@@ -187,14 +176,6 @@ final class VoiceLiveActivity {
         ActivityContent(state: state, staleDate: Date().addingTimeInterval(staleAfter))
     }
 
-    /// The alert that opens the island up. Its words are the status, never anything said.
-    private static func alert(for state: DoddyVoiceAttributes.ContentState) -> AlertConfiguration {
-        AlertConfiguration(
-            title: LocalizedStringResource(stringLiteral: "Doddy"),
-            body: LocalizedStringResource(stringLiteral: state.title),
-            sound: .default)
-    }
-
     // MARK: Sending
 
     /// Makes sure a task is sending the newest state. If one is already running it picks the new
@@ -213,22 +194,16 @@ final class VoiceLiveActivity {
         defer { if updatingID == id { updating = nil } }
         while !Task.isCancelled, let activity {
             // Nothing newer than what iOS has: don't wait out a gap for nothing.
-            guard wantsAlert || wantsRefresh || pacer.hasPending else { return }
+            guard wantsRefresh || pacer.hasPending else { return }
             let wait = pacer.delay(now: Date())
             if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
             // `finish`/`end` cancel this task before they end the activity.
             guard !Task.isCancelled, self.activity?.id == activity.id else { return }
-            let alert = wantsAlert
             let refresh = wantsRefresh
-            wantsAlert = false
             wantsRefresh = false
-            let state = (alert || refresh) ? pacer.resend(now: Date()) : pacer.next(now: Date())
+            let state = refresh ? pacer.resend(now: Date()) : pacer.next(now: Date())
             guard let state else { return }
-            if alert {
-                await activity.update(Self.content(state), alertConfiguration: Self.alert(for: state))
-            } else {
-                await activity.update(Self.content(state))
-            }
+            await activity.update(Self.content(state))
         }
     }
 
@@ -241,7 +216,6 @@ final class VoiceLiveActivity {
         pending?.cancel()
         updating = nil
         updatingID &+= 1
-        wantsAlert = false
         wantsRefresh = false
         pacer.reset()
         return pending

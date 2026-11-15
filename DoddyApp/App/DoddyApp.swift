@@ -19,8 +19,8 @@ struct DoddyApp: App {
         // The screens' language is read when the app starts: Polish unless the person picked another (ADR-459, ADR-573).
         // A choice made in Doddy shows at once (`ScreenLanguage`, decision 2026-11-14-language-switch-at-once).
         AppLanguageStore.applyAtLaunch()
-        // Back Tap's old "Small island" becomes Settings › "Expand when Doddy speaks" (ADR-579),
-        // before anything reads either preference.
+        // Back Tap's old "Small island" becomes the island switch `islandExpands` (ADR-579; nothing reads that
+        // switch since 15 Nov 2026, decision 2026-11-15-small-island-only), before anything reads either preference.
         Self.migrateLaunchPreferences()
         // Connections that need no iOS permission (Messages and email, Maps, Shortcuts, BLIK, Presentations)
         // start on until the person turns them off. A stored on or off always wins; this only fills the gap.
