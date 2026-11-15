@@ -127,8 +127,10 @@ public enum ToolCatalog {
         // Counts and times from the photo library; the pictures stay on screen (ADR-569).
         .init(VoiceToolName.findPhotos, .lookup, .runsNow),
         .init(VoiceToolName.lookAtScreen, .lookup, .runsNow),
-        .init(VoiceToolName.setTimer, .localChange, .card),
-        .init(VoiceToolName.setAlarm, .localChange, .card),
+        // Run when asked since step 2c (decision 2026-11-14-spoken-yes-and-fewer-cards): Undo in What Doddy did
+        // stops the timer while it counts down and turns the alarm off while the iPhone has it.
+        .init(VoiceToolName.setTimer, .localChange, .runsNow),
+        .init(VoiceToolName.setAlarm, .localChange, .runsNow),
         .init(VoiceToolName.listAlarms, .lookup, .runsNow),
         .init(VoiceToolName.cancelAlarm, .localChange, .card),
         // Follow something in Following (ADR-657): Doddy's own feature on this iPhone.

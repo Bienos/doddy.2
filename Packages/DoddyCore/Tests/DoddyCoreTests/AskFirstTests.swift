@@ -219,12 +219,11 @@ final class AskFirstTests: XCTestCase {
     }
 
     func testPhoneActionsWaitForATapOnTheirOwnCard() {
-        // Step 2.5: calls (no tool: Doddy can't call), shortcuts, alarms and timers show their own card (a tap or,
-        // since 14 Nov 2026, a spoken yes). A message draft, a BLIK draft and Maps hand over to another app and run
-        // when asked since step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards, while Doddy is on screen.
+        // Step 2.5: calls (no tool: Doddy can't call), shortcuts and turning an alarm off show their own card (a tap
+        // or, since 14 Nov 2026, a spoken yes). A message draft, a BLIK draft and Maps hand over to another app and run
+        // when asked since step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards, while Doddy is on screen; a
+        // timer and an alarm run when asked since step 2c, with Undo in What Doddy did.
         let calls: [(String, String)] = [
-            ("set_timer", #"{"minutes":5,"label":"Eggs"}"#),
-            ("set_alarm", #"{"time":"2099-01-05T07:30"}"#),
             ("cancel_alarm", #"{"time":"07:30"}"#),
             ("run_shortcut", #"{"name":"Home"}"#),
         ]
@@ -237,7 +236,9 @@ final class AskFirstTests: XCTestCase {
         for (name, json) in [("draft_message", #"{"to":"Anna","body":"On my way"}"#),
                              // BLIK (ADR-510): the details are shown; nothing is sent from Doddy.
                              ("draft_blik_transfer", #"{"to":"Ania","amount":50}"#),
-                             ("open_map", #"{"place":"Demo Café"}"#)] {
+                             ("open_map", #"{"place":"Demo Café"}"#),
+                             ("set_timer", #"{"minutes":5,"label":"Eggs"}"#),
+                             ("set_alarm", #"{"time":"2099-01-05T07:30"}"#)] {
             XCTAssertEqual(AskFirst.need(for: VoiceToolRequest.parse(name: name, parametersJSON: Data(json.utf8))), .runsNow, name)
         }
         XCTAssertNil(ToolCatalog.descriptor("make_call"), "there is no call tool")

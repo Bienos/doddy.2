@@ -330,7 +330,7 @@ struct ConnectionInfo {
                 symbol: "checklist",
                 examples: [NSLocalizedString("Remind me to call Marta at six", comment: ""), NSLocalizedString("Add buy milk to my reminders", comment: "")],
                 canDo: [
-                    NSLocalizedString("Add a reminder, after you tap Add", comment: ""),
+                    NSLocalizedString("Add a reminder when you ask, with Undo in What Doddy did", comment: ""),
                     NSLocalizedString("Move, complete or delete one open reminder, after you say yes or tap", comment: ""),
                 ],
                 leavesPhone: NSLocalizedString("The reminder text and due time, when Doddy adds one.", comment: ""),
@@ -340,9 +340,9 @@ struct ConnectionInfo {
                 symbol: "timer",
                 examples: [NSLocalizedString("Set a timer for ten minutes", comment: ""), NSLocalizedString("Forty-five seconds for the eggs", comment: "")],
                 canDo: [
-                    NSLocalizedString("Start a countdown, after you tap Start", comment: ""),
+                    NSLocalizedString("Start a countdown when you ask, with Undo in What Doddy did", comment: ""),
                     NSLocalizedString("Ring it like the Clock app's timer, even in Silent mode or a Focus, with the time left, Pause and Stop on the Lock Screen (iOS 26 and later; before that, a notification)", comment: ""),
-                    NSLocalizedString("Set an alarm that rings even in Silent mode, after you tap Set alarm (iOS 26 and later)", comment: ""),
+                    NSLocalizedString("Set an alarm that rings even in Silent mode when you ask, with Undo in What Doddy did (iOS 26 and later)", comment: ""),
                 ],
                 leavesPhone: NSLocalizedString("The length and label of a timer, or the time and label of an alarm, when Doddy sets one.", comment: ""),
                 staysHere: NSLocalizedString("iPhone asks once to allow alarms and timers (on iOS before 26, notifications). Doddy keeps each timer's ring time and label on this iPhone, only to find it again.", comment: ""))

@@ -23,6 +23,25 @@ enum AlarmScheduler {
         return .needsNewerIOS
     }
 
+    /// True once iOS has been asked about alarms, or when there is no AlarmKit. iOS can only show that question while
+    /// Doddy is on screen, so a first timer or alarm asked for in the background waits for Doddy's own permission card
+    /// (step 2c of decision 2026-11-14-spoken-yes-and-fewer-cards: they run with no card of their own).
+    static var permissionAsked: Bool {
+        #if canImport(AlarmKit)
+        if #available(iOS 26.0, *) { return AlarmKitBackend.permissionAsked }
+        #endif
+        return true
+    }
+
+    /// Asks iOS about alarms if it never has. True when alarms are allowed.
+    @discardableResult
+    static func requestPermission() async -> Bool {
+        #if canImport(AlarmKit)
+        if #available(iOS 26.0, *) { return await AlarmKitBackend.requestPermission() }
+        #endif
+        return false
+    }
+
     /// Asks for permission the first time and sets the alarm under `id`. Whether it is set is
     /// read from AlarmKit's list afterwards, by AlarmSetAction (ADR-320).
     static func schedule(_ draft: AlarmDraft, id: UUID) async throws -> AlarmScheduleAttempt {
@@ -61,6 +80,34 @@ enum AlarmScheduler {
     /// As `currentIfReadable()`, with an unreadable list shown as empty (the AlarmBook is kept).
     static func current() -> [DoddyAlarm] {
         currentIfReadable() ?? []
+    }
+
+    /// What turning an alarm off for Undo did (step 2c of decision `2026-11-14-spoken-yes-and-fewer-cards`).
+    enum TurnOff: Equatable {
+        /// AlarmKit's list was read back and no longer has it.
+        case gone
+        /// Still listed after a second try: nothing changed.
+        case stillListed
+        /// The list couldn't be read back: Doddy isn't sure.
+        case unreadable
+    }
+
+    /// Turns one off for Undo, with one more try when AlarmKit still lists it, reading the list back after each.
+    static func turnOff(_ id: UUID) -> TurnOff {
+        #if canImport(AlarmKit)
+        if #available(iOS 26.0, *) {
+            for _ in 0..<2 {
+                AlarmKitBackend.cancel(id)
+                guard let ids = AlarmKitBackend.scheduledIDs() else { return .unreadable }
+                if !ids.contains(id) {
+                    AlarmBook.keepOnly(ids)
+                    return .gone
+                }
+            }
+            return .stillListed
+        }
+        #endif
+        return .unreadable
     }
 
     /// Turns one off. True only when AlarmKit's list was read back and no longer has it.
@@ -142,6 +189,18 @@ private enum AlarmKitBackend {
         case .denied: .notAllowed
         default: .available
         }
+    }
+
+    static var permissionAsked: Bool {
+        if case .notDetermined = AlarmManager.shared.authorizationState { return false }
+        return true
+    }
+
+    static func requestPermission() async -> Bool {
+        let manager = AlarmManager.shared
+        if case .authorized = manager.authorizationState { return true }
+        guard case .notDetermined = manager.authorizationState else { return false }
+        return (try? await manager.requestAuthorization()) == .authorized
     }
 
     /// False when alarms aren't allowed. A schedule that returns doesn't prove the alarm is listed.
