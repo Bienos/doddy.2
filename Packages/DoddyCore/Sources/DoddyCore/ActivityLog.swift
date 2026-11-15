@@ -430,8 +430,9 @@ public struct ActivityRequest: Equatable, Sendable {
             case "Todoist": .todoist
             case "Notion": .notion
             case "Google Drive": .drive
-            // ADR-564: Claude is listed with the web lookups (no account, Doddy's server).
-            case "Web search", "Claude": .web
+            // ADR-564: Claude is listed with the web lookups (no account, Doddy's server). So are flights and plan_trip
+            // (Kiwi.com, Duffel), which had fallen through to Calendar.
+            case "Web search", "Claude", "Flights": .web
             default: .calendar
             }
             return ActivityRequest(app: app, title: more.title, detail: nil, isLookup: !more.write)

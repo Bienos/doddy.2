@@ -269,8 +269,10 @@ answer 200 and do nothing.
 
 The Doddy account signs in once, at Supabase. Its token is then traded once, here, for a token that only this server
 accepts, which this server can end itself. Code: the `account-session` action in `src/voice-auth.js`; the session,
-refresh and sign-out code is the one an Apple voice account has always used. **This is the server's half. Nothing in the
-app calls it yet**, so installed apps change in no way: they keep sending the Supabase token, which is still accepted.
+refresh and sign-out code is the one an Apple voice account has always used. **This is live on Vercel (production
+deployment of 14 Nov, read 15 Nov), and the app half is merged (#484): the app asks for the session and sends its access
+token, and sends the Supabase token only when no session can be had.** It merged on green checks and has not been tried on a
+device, so installed apps that predate it change in no way: they keep sending the Supabase token, which is still accepted.
 
 - **`POST /api/voice-auth` `{ "action": "account-session" }`** takes the **Doddy account's access token** as the Bearer,
   checked exactly like `apple-link` checks it (the project's published keys; a voice session's token and an access token
@@ -322,7 +324,8 @@ app calls it yet**, so installed apps change in no way: they keep sending the Su
   - **Known limits.** This server can't see that a Supabase account was deleted, so a session made on another device in the
     minutes after the deletion, or a deletion that didn't go through `delete-conversations`, leaves a session that works
     until its 30 days end (its tokens are still counted and limited under the account like any other). A session made
-    while the code is live is a plain session in the store: nothing about it is read by the app yet.
+    while the code is live is a plain session in the store; the app reads it since #484 (renewing it with the rotating
+    refresh token, and keeping the server's sign-out owed in the Keychain until this server answers).
 - **Refreshing never shortens the Apple link.** A Doddy account's sealed Apple token (`apple-token:account:<id>`) is the
   same key an Apple voice account's refresh keeps alive. A refresh now only lengthens it, never shortens it (the 400 days
   `apple-link` gave it stay), so using the new session can't make deleting the account stop revoking Sign in with Apple.
@@ -330,7 +333,7 @@ app calls it yet**, so installed apps change in no way: they keep sending the Su
 - **Moving over.** This release: `/api/voice-token` takes both kinds, `apple-link`, `apple-revoke`, `delete-conversations` and
   `account-session` take the Supabase token only (they run right after sign-in and right before deletion). A later pull
   request, once the owner confirms the installed builds are new enough (owner queue 50), stops accepting the Supabase
-  token at `/api/voice-token` and leaves it only at those four. The app half is a separate pull request.
+  token at `/api/voice-token` and leaves it only at those four. The app half is merged (#484).
 - **Rolling back.** Revert the change and redeploy. `account-session` then answers `400 unknown_action`, and the app, which
   keeps the Supabase token it still holds, uses that. Sessions made while the new code was live are plain voice sessions
   to the earlier code too: `/api/voice-token`, `refresh` and `sign-out` read them the same way and keep working until they

@@ -52,7 +52,10 @@ extension VoiceToolReply {
     static let cloudResultPrefixes = ["drafted:", "added:", "completed:", "moved:", "email:", "page:", "sent:", "changed:", "trashed:", "deleted:", "answered:", "started:",
                                          // book_flight (decision 2026-11-11-flights-kiwi-search-duffel-booking): "booked:" only with
                                          // Duffel's order id and booking reference; "failed:" when Duffel said nothing was booked; else "unknown:".
-                                         "booked:", "failed:", "unknown:"]
+                                         "booked:", "failed:", "unknown:",
+                                         // plan_trip (backend/src/flights/planTrip.ts): the trip planner's one question for what is
+                                         // still missing, in code's words; nothing was searched.
+                                         "ask:"]
 
     /// What the agent hears when `make_document` was asked with too little to go on. Starts with the fixed word
     /// `need_details`, then the server's one-line list of what is missing, then what to do.
@@ -69,6 +72,26 @@ extension VoiceToolReply {
             : "Doddy's research didn't finish in time"
         return "failed: \(what), so nothing was found. Don't make up an answer. Offer a quick web_search instead, "
             + "or hand_over_errand to research it properly in the background (the result arrives in Messages)."
+    }
+
+    /// plan_trip didn't come back: the app's 40 s wait ended or the server couldn't be reached. Nothing half-done is passed
+    /// on, so the agent never has half a plan to fill in.
+    static let planTripNotReached =
+        "failed: Doddy's trip planning didn't come back in time, or Doddy's server couldn't be reached, so no flights were found. "
+        + "Don't make up flights, prices or times. Offer to try once more, or find_flights for one route and date."
+
+    /// The server's codes for a plan_trip step that failed or hit a daily limit (backend `planTripFailed`, `runPlanTrip`).
+    static let planTripFailureCodes: Set<String> = ["provider_timeout", "provider_unavailable", "malformed_provider_result", "rate_limited", "quota_exceeded"]
+
+    /// plan_trip failed on the server: its own words (code-written: the planner or Kiwi.com, out of time, unreachable or
+    /// at today's limit), flattened to one line, and what the agent may offer. Nothing was booked.
+    static func planTripFailed(_ serverMessage: String, dailyLimit: Bool) -> String {
+        let said = ToolData.clean(serverMessage).trimmingCharacters(in: .whitespacesAndNewlines)
+        let what = said.isEmpty ? (dailyLimit ? "Today's trip planning limit was reached." : "Doddy's trip planning didn't work just now.") : said
+        let offer = dailyLimit
+            ? "Tell the user it works again tomorrow."
+            : "Offer to try again in a moment, or find_flights for one route and date."
+        return "failed: \(what) Nothing was booked. Don't make up flights, prices or times. \(offer)"
     }
 
     public static func cloudDeclined(_ tool: String) -> String {
@@ -90,6 +113,8 @@ extension VoiceToolReply {
         case .transport:
             // research_now waits up to 45 s; a request that runs out of time ends here too, so the reply covers both.
             if tool == CloudToolName.researchNow { return researchNotFound(inTimeOrReached: true) }
+            // plan_trip waits up to 40 s, so the same: out of time or not reached, and nothing to fill in.
+            if tool == CloudToolName.planTrip { return planTripNotReached }
             return isWrite ? maybeDone : "failed: Doddy's server couldn't be reached. Nothing was changed."
         case .unreadableResponse:
             return isWrite ? maybeDone : "failed: Doddy's server sent an answer the app couldn't read, so nothing is shown."
@@ -100,6 +125,10 @@ extension VoiceToolReply {
             // means the server proved nothing went to Duffel's booking (or Duffel said nothing was booked).
             if tool == CloudToolName.bookFlight, let status = receipt?.status, status == .blocked || status == .failed {
                 return "failed: \(ToolData.clean(error.userMessage)) Nothing was booked."
+            }
+            // plan_trip: the server's own words say which step failed (the planner or Kiwi.com) and why; never "no flights".
+            if tool == CloudToolName.planTrip, Self.planTripFailureCodes.contains(code) {
+                return planTripFailed(error.userMessage, dailyLimit: code == "quota_exceeded")
             }
             switch code {
             case "capability_disabled":
