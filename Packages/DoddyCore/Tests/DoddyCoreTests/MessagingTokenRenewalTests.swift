@@ -24,30 +24,21 @@ private final class Wire: HTTPTransport, @unchecked Sendable {
     private let lock = NSLock()
     private var recorded: [HTTPRequest] = []
     private var answers: [(status: Int, body: Data)]
-    private var gate: CheckedContinuation<Void, Never>?
-    private var held = false
+    /// "Is it held?" and "register my wait" must be one step (see `TestGate`): a separate flag and continuation let a
+    /// `release()` fall between them and hang the test for ever (a hosted macOS run did, until its 100-minute timeout).
+    private let gate = TestGate()
     var offline = false
     init(_ answers: [(status: Int, body: Data)]) { self.answers = answers }
     var requests: [HTTPRequest] { lock.withLock { recorded } }
     /// The next request waits until `release()`.
-    func hold() { lock.withLock { held = true } }
+    func hold() { gate.close() }
     func send(_ request: HTTPRequest) async throws -> (status: Int, body: Data) {
         lock.withLock { recorded.append(request) }
-        if lock.withLock({ held }) {
-            await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in lock.withLock { gate = c } }
-        }
+        await gate.wait()
         if offline { throw URLError(.notConnectedToInternet) }
         return lock.withLock { answers.count > 1 ? answers.removeFirst() : answers[0] }
     }
-    func release() {
-        let c = lock.withLock { () -> CheckedContinuation<Void, Never>? in
-            held = false
-            let g = gate
-            gate = nil
-            return g
-        }
-        c?.resume()
-    }
+    func release() { gate.open() }
     func sentDeviceToken(_ i: Int) -> String? {
         guard let body = requests[i].body, let json = try? JSONSerialization.jsonObject(with: body) as? [String: String] else { return nil }
         return json["deviceToken"]
@@ -135,6 +126,17 @@ private extension Date {
 
 @MainActor
 final class MessagingTokenRenewalTests: XCTestCase {
+    /// Waits until the held call's request has reached the wire. Gives up after a few seconds and fails the test, rather than
+    /// spinning until the job's timeout; the held call is let go so nothing is left waiting.
+    private func waitForRequest(_ rig: Rig) async -> Bool {
+        let sent = await waitUntil { !rig.wire.requests.isEmpty }
+        if !sent {
+            XCTFail("the held call never reached the wire")
+            rig.wire.release()
+        }
+        return sent
+    }
+
     // MARK: When
 
     func testRenewsWithinFourteenDaysOfTheEnd() async throws {
@@ -212,7 +214,7 @@ final class MessagingTokenRenewalTests: XCTestCase {
         rig.know(expiresIn: day)
         rig.wire.hold()
         let first = Task { @MainActor in await rig.renewal.renewIfDue() }
-        while rig.wire.requests.isEmpty { await Task.yield() }
+        guard await waitForRequest(rig) else { return }
         let second = await rig.renewal.renewIfDue()
         XCTAssertEqual(second, .alreadyRunning)
         rig.wire.release()
@@ -290,7 +292,7 @@ final class MessagingTokenRenewalTests: XCTestCase {
         rig.know(expiresIn: 3 * day)
         rig.wire.hold()
         let task = Task { @MainActor in await rig.renewal.renewIfDue() }
-        while rig.wire.requests.isEmpty { await Task.yield() }
+        guard await waitForRequest(rig) else { return }
         rig.account.identityEpoch += 1
         rig.account.session = Account.make("user-2")
         rig.wire.release()
@@ -305,7 +307,7 @@ final class MessagingTokenRenewalTests: XCTestCase {
         rig.know(expiresIn: 3 * day)
         rig.wire.hold()
         let task = Task { @MainActor in await rig.renewal.renewIfDue() }
-        while rig.wire.requests.isEmpty { await Task.yield() }
+        guard await waitForRequest(rig) else { return }
         try rig.tokens.save(otherToken)
         rig.wire.release()
         let result = await task.value
