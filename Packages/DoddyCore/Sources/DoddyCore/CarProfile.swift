@@ -68,6 +68,12 @@ public enum CarProfile {
         case .callMeNow:
             // The card is the approval, and the phone would ring while the user drives.
             return .refuse(reason: "A call from Doddy needs a tap on the iPhone, so it waits until the user isn't driving.")
+        case .callMeEveryMorning:
+            // A standing permission set up on a card with the exact schedule (decision 2026-11-14-morning-call).
+            return .refuse(reason: "Setting up morning calls from Doddy needs the card on the iPhone, so it waits until the user isn't driving.")
+        case .stopMorningCalls:
+            // Taking the permission away is never held back: it only stops calls.
+            return .run
         case .draftInvoice:
             // An invoice is checked line by line on the screen (ADR-677), so not while driving.
             return .refuse(reason: "An invoice draft is checked on the iPhone's screen, so it waits until the user isn't driving.")

@@ -68,7 +68,7 @@ action_policy:
     # person's rough area (district, town, a position rounded to two decimals), read once when asked; iOS's own location
     # question (While Using the App) is the consent, as Calendar's is for read_calendar. See privacy_policy for what is kept.
     own_looks_run_at_once: [search_memories, read_list, read_calendar, find_free_time, lookup_contact, upcoming_birthdays, find_photos, look_at_screen, read_steps, read_health_week, list_alarms, check_stopwatch, check_focus, check_errands, find_deals, parking_spot_find, where_am_i]
-    own_small_actions_run_at_once: [start_stopwatch, stop_stopwatch, start_focus, stop_focus, start_wind_down, stop_wind_down, add_to_list, check_off, follow_news, open_training_plan, note_capability_gap]
+    own_small_actions_run_at_once: [start_stopwatch, stop_stopwatch, start_focus, stop_focus, start_wind_down, stop_wind_down, add_to_list, check_off, follow_news, open_training_plan, note_capability_gap, stop_morning_calls]
     # Change (owner, 2026-11-14; decision docs/decisions/2026-11-14-spoken-yes-and-fewer-cards.md, step 2b): Doddy's own changes
     # that have Undo in "What Doddy did", and the drafts and hand-overs that change nothing anywhere, run when asked with no
     # card (AskFirst.ownChangesAtOnce). Those that open another app or the camera do so only while Doddy is on screen;
@@ -205,6 +205,21 @@ contact_policy:
   scheduled_call_late_minutes: 15
   scheduled_calls_pending_max: 10
   call_reason_max_length: 200
+  # Morning calls (owner, 14 Nov 2026; decision docs/decisions/2026-11-14-morning-call.md; server/messaging/src/morningCalls.ts
+  # and routes/morningCalls.ts; DoddyCore MorningCall.swift). A standing permission to call the user's own number on chosen
+  # days at one local time, approved on a card bound to the number, the time, the days, the zone, the quiet-hours choice
+  # and the language (a changed field is a new approval). Each day it becomes a scheduled call with every check above.
+  # What the call says is written by the server from what it holds (counts and times, never a reason, note or headline);
+  # the calendar stays on the iPhone. Stopping is one sentence (stop_morning_calls, at once) or one tap, and nothing rings
+  # after it is answered except a call already being placed. Off by default (MORNING_CALLS_ENABLED); test/unit.test.ts
+  # and DoddyCore's MorningCallTests check these values.
+  morning_calls: approved_card_number_time_days_zone_quiet_hours_choice_and_language
+  morning_call_earliest: "05:00"
+  morning_call_latest: "11:59"
+  morning_calls_per_account: 1
+  morning_calls_per_server_default: 10
+  morning_call_stop: one_sentence_or_one_tap_at_once
+  morning_call_plan: server_held_counts_and_times_only
   quiet_hours_default:
     start: "21:00"
     end: "08:00"

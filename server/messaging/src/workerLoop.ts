@@ -12,6 +12,7 @@ import { dispatchDue, reconcileUnknownSms } from "./outbox.js";
 import { DELETE_AFTER_HOURS_DEFAULT, deleteAfterMinutes, pruneDeletions, runDueDeletions } from "./providerRecords.js";
 import type { PushSender, RecordDeleter, SmsSender } from "./providers/types.js";
 import { placeDueCall, pruneCallReasons, type ScheduledCallDeps } from "./scheduledCalls.js";
+import { prepareMorningCall } from "./morningCalls.js";
 import { pruneDeliveries } from "./delivery/deliveries.js";
 import type { TaskVoice } from "./providers/taskCalls.js";
 import type { TaskCallContext } from "./taskCalls/context.js";
@@ -68,6 +69,8 @@ export interface WorkerDeps {
   deleteAfterMinutes?: number;
   /** Places scheduled calls (ADR-754); only when calls are fully set up, else due calls fail with a notice. */
   scheduledCalls?: Omit<ScheduledCallDeps, "db" | "cipher" | "now">;
+  /** Morning calls (decision 2026-11-14-morning-call): each due one becomes that day's scheduled call. Only with MORNING_CALLS_ENABLED=1. */
+  morningCalls?: { enabled: boolean };
   /** Deletes phone-agent conversations queued at account deletion when task calls (and their worker) are off. */
   phoneAgentVoice?: TaskVoice;
   /** The phone agent whose conversations no call owns are swept (with phoneAgentVoice). */
@@ -338,17 +341,33 @@ async function deletionLoop(db: Db, deps: WorkerDeps, shouldStop: () => boolean)
   }
 }
 
-/** Scheduled calls, one at a time, checked every few seconds so a call rings close to its time. */
+/**
+ * Scheduled calls, one at a time, checked every few seconds so a call rings close to its time. A due morning call is
+ * first made that day's scheduled call, so the same pass checks and places it.
+ */
 async function callLoop(db: Db, deps: WorkerDeps, shouldStop: () => boolean) {
   while (!shouldStop()) {
-    let handled = false;
-    try {
-      handled = await placeDueCall({ db, cipher: deps.cipher, ...deps.scheduledCalls });
-    } catch (err) {
-      log("scheduled call pass failed", { error: (err as Error).message });
-    }
+    const handled = await runCallPass(db, deps);
     if (!handled) await pause(5000, shouldStop);
   }
+}
+
+/** One pass of the call loop: a due morning call (only with the switch on) becomes that day's call, then one due call is placed. */
+export async function runCallPass(
+  db: Db, deps: Pick<WorkerDeps, "cipher" | "scheduledCalls" | "morningCalls">, now?: () => Date,
+): Promise<boolean> {
+  let handled = false;
+  try {
+    if (deps.morningCalls?.enabled) handled = await prepareMorningCall({ db, cipher: deps.cipher, ...(now ? { now } : {}) });
+  } catch (err) {
+    log("morning call pass failed", { error: (err as Error).message });
+  }
+  try {
+    handled = (await placeDueCall({ db, cipher: deps.cipher, ...deps.scheduledCalls, ...(now ? { now } : {}) })) || handled;
+  } catch (err) {
+    log("scheduled call pass failed", { error: (err as Error).message });
+  }
+  return handled;
 }
 
 async function digestLoop(db: Db, news: NewsDeps, shouldStop: () => boolean) {
