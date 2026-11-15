@@ -3993,9 +3993,12 @@ final class VoiceSessionController {
         }
     }
 
-    /// find_flights: the flights' Kiwi.com pages become buttons; a new search replaces the old ones.
+    /// find_flights and plan_trip: the flights' Kiwi.com pages become buttons; a new search replaces the old ones.
+    /// plan_trip's question ("ask:") searched nothing, so it leaves them. Its Booking.com, Airbnb and wakacje.pl links
+    /// stay in its result: the flights card says "Flights on Kiwi.com", so they would be mislabelled there.
     private func keepFlightLinks(_ result: RunResult) {
-        guard result.tool == CloudToolName.findFlights else { return }
+        guard result.tool == CloudToolName.findFlights || result.tool == CloudToolName.planTrip else { return }
+        if result.tool == CloudToolName.planTrip && result.text.hasPrefix("ask:") { return }
         flightLinks = (result.links ?? []).filter(\.isKiwi)
     }
 
