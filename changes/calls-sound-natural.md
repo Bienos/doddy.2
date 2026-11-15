@@ -5,3 +5,4 @@ Calls Doddy makes for you sound less stiff (owner, 15 Nov 2026).
 - The three call agents' prompts are rewritten. Decision `2026-11-15-calls-sound-natural`.
 Ran: `npm test` in `server/messaging` with a disposable PostgreSQL 16 (1317 pass, 0 fail, 0 skipped); `voice_agent_spec.py check` for the three call agents (PASS). Not run: a real call.
 Deploy `doddy-messaging` first (it still accepts the old prompts), then sync the three live call agents' prompts.
+Live (15 Nov 2026, about 14:07 UTC): `doddy-messaging` deployed with #522, then the three call agents' prompts synced (versions and rollbacks in `voice-agent/README.md`).
