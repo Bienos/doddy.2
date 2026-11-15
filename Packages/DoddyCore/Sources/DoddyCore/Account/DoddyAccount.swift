@@ -434,37 +434,64 @@ public enum DoddyAccountLink {
         case retryLater
     }
 
+    /// What the messaging sign-in answered, with the time the token stops working however it is used (`expiresAt`, absolute;
+    /// nil when the server sent none, as an older server or one with expiry switched off does).
+    public struct MessagingSignInResult: Equatable, Sendable {
+        public let outcome: MessagingSignIn
+        public let expiresAt: Date?
+        public init(outcome: MessagingSignIn, expiresAt: Date? = nil) {
+            self.outcome = outcome
+            self.expiresAt = expiresAt
+        }
+    }
+
     /// Doddy's messaging server (`POST /v1/accounts/sign-in`). `earlierDeviceToken`: this iPhone's
     /// anonymous token there, if it has one, so that account is linked (or, when empty, moved in).
     public static func signInMessaging(server: URL, account: DoddyAccountSession, earlierDeviceToken: String?, transport: any HTTPTransport) async -> MessagingSignIn {
+        await signInMessagingWithExpiry(server: server, account: account, earlierDeviceToken: earlierDeviceToken, transport: transport).outcome
+    }
+
+    /// The same request, keeping the token's `expiresAt`. Sending the iPhone's current token of this account rotates it
+    /// (`earlierDeviceToken` is then that token).
+    public static func signInMessagingWithExpiry(server: URL, account: DoddyAccountSession, earlierDeviceToken: String?, transport: any HTTPTransport) async -> MessagingSignInResult {
         var fields: [String: Any] = [:]
         if let token = earlierDeviceToken, token.count == 43, token.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") }) {
             fields["deviceToken"] = token
         }
-        guard let body = try? JSONSerialization.data(withJSONObject: fields) else { return .retryLater }
+        guard let body = try? JSONSerialization.data(withJSONObject: fields) else { return .init(outcome: .retryLater) }
         let request = HTTPRequest(
             method: "POST", url: server.appendingPathComponent("v1/accounts/sign-in"),
             headers: ["authorization": account.authorization, "content-type": "application/json", "accept": "application/json"],
             body: body)
-        guard let response = try? await transport.send(request) else { return .retryLater }
-        struct Reply: Decodable { let accountId: String; let deviceToken: String }
+        guard let response = try? await transport.send(request) else { return .init(outcome: .retryLater) }
+        struct Reply: Decodable { let accountId: String; let deviceToken: String; let expiresAt: String? }
         struct Refusal: Decodable { let error: String; let reason: String? }
         switch response.status {
         case 200:
             guard let reply = try? JSONDecoder().decode(Reply.self, from: response.body),
                   UUID(uuidString: reply.accountId) != nil, reply.deviceToken.count == 43
-            else { return .retryLater }
-            return .signedIn(accountID: reply.accountId.lowercased(), deviceToken: reply.deviceToken)
+            else { return .init(outcome: .retryLater) }
+            return .init(
+                outcome: .signedIn(accountID: reply.accountId.lowercased(), deviceToken: reply.deviceToken),
+                expiresAt: reply.expiresAt.flatMap(Self.parseServerTime))
         case 409:
             let refusal = try? JSONDecoder().decode(Refusal.self, from: response.body)
-            return .conflict(reason: refusal?.reason ?? "account_conflict")
+            return .init(outcome: .conflict(reason: refusal?.reason ?? "account_conflict"))
         case 401:
-            return .accountRefused
+            return .init(outcome: .accountRefused)
         case 503:
             let refusal = try? JSONDecoder().decode(Refusal.self, from: response.body)
-            return refusal?.error == "not_configured" ? .notSetUp : .retryLater
+            return .init(outcome: refusal?.error == "not_configured" ? .notSetUp : .retryLater)
         default:
-            return .retryLater
+            return .init(outcome: .retryLater)
         }
+    }
+
+    /// ISO 8601 as the server writes it (`2026-05-14T10:00:00.000Z`), with or without fractional seconds.
+    static func parseServerTime(_ text: String) -> Date? {
+        let plain = ISO8601DateFormatter()
+        let fractional = ISO8601DateFormatter()
+        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return fractional.date(from: text) ?? plain.date(from: text)
     }
 }
