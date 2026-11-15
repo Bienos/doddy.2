@@ -119,10 +119,8 @@ jobs:
       - name: Install XcodeGen (pinned)
         run: scripts/install_xcodegen.sh
 
-      # scripts/check_platform_specs.py reads the per-platform XcodeGen specs.
-      - name: Install PyYAML
-        # Not --user: ci.sh runs python3 -I, which ignores the user site-packages.
-        run: python3 -m pip install --break-system-packages pyyaml || python3 -m pip install pyyaml
+      # No PyYAML here since 15 Nov 2026: its one reader, scripts/check_platform_specs.py, is in the
+      # `checks` group, which --app-only skips (decision 2026-11-15-faster-mac-ci).
 
       - name: Tool versions
         run: |
