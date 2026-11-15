@@ -167,9 +167,10 @@ tests primary success, download/install failures, fallback failure and cleanup.
 - `core`: one result for all the Linux groups, green when every group that ran passed (a skipped group is fine).
 - `ios-build` (macOS; named `ci` until ADR-811; runner image `macos-26` and Xcode 26.6 pinned):
   `scripts/ci.sh --app-only`: the Swift package tests (pushes to `main` and runs by hand only; on pull
-  requests `DODDY_SKIP_PACKAGE_TESTS=1` leaves them to the Linux `swift` job), then the Xcode part (the
-  simulator starts booting in the background, the build runs once with `xcodebuild build-for-testing`, the
-  boot is waited for, unit tests, restart the simulator, UI tests: ADR-561; then the
+  requests `DODDY_SKIP_PACKAGE_TESTS=1` leaves them to the Linux `swift` job), then the Xcode part (build
+  once with `xcodebuild build-for-testing`, unit tests, restart the simulator, UI tests: ADR-561; booting the
+  simulator in the background during the build stalled `xcodebuild` and was taken out, decision
+  `2026-11-15-faster-mac-ci`; then the
   simulator restarted again and the native island test alone, under an 8-minute watchdog, because the hosted
   simulator sometimes freezes during it: ADR-764). A UI test that failed only because the app would not start
   ("Failed to launch", "Failed to get launch progress") is run once more on a restarted simulator; any other

@@ -2,8 +2,8 @@
 # Tests the Mac section of scripts/ci.sh as the hosted jobs drive it since 15 Nov 2026 (decision
 # docs/decisions/2026-11-15-faster-mac-ci.md), on any OS, with stand-ins for xcodegen, xcrun, xcodebuild
 # and swift that write down what they were asked to do:
-#   - the simulator's boot starts before the build and is waited for before the unit tests;
-#   - a failed background boot is booted again, and only a failed second boot fails the step;
+#   - the simulator is not booted before the build (an early boot in the background stalled
+#     xcodebuild for about 2.5 minutes on the hosted Mac, 15 Nov 2026, and was taken out);
 #   - DODDY_RELEASE_BUILD=only builds Release for a device and nothing else, with no simulator;
 #   - DODDY_SKIP_PACKAGE_TESTS=1 with --app-only leaves out the Swift package tests and says so.
 #
@@ -79,23 +79,11 @@ before() {  # description, earlier call text, later call text
   if [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ]; then echo "ok    $1"; else echo "FAIL  $1: \"$2\" (line ${a:-none}) not before \"$3\" (line ${b:-none})"; failures=$((failures + 1)); fi
 }
 
-# The usual pull-request run: boot in the background before the build, wait for it before the unit tests.
-run_ci "simulator boot started before the build" 0 "--only ios"
-before "the boot is asked for before build-for-testing" "simctl bootstatus AAAAAAAA" "xcodebuild build-for-testing"
+# The usual pull-request run: build, then the unit tests; no boot before the build.
+run_ci "build, then tests" 0 "--only ios"
 before "the unit tests start after the build" "xcodebuild build-for-testing" "test-without-building"
-has "the wait for the boot is its own step and passes" "PASS     Simulator booted (started before the build)"
+before "the simulator is first restarted after the build" "xcodebuild build-for-testing" "simctl bootstatus"
 not_called "no Release build on a pull request" "-configuration Release"
-
-# A failed background boot loses only the head start.
-run_ci "background boot fails once: booted again, run passes" 0 "--only ios" FAKE_BOOT_FAILS=1
-has "the second boot is announced" "The background boot failed (exit 149); booting the simulator again now."
-has "the step passes after the second boot" "PASS     Simulator booted (started before the build)"
-run_ci "both boots fail: the step fails, the run fails" 1 "--only ios" FAKE_BOOT_FAILS=2
-has "the failed boot is in the summary" "FAIL     Simulator booted (started before the build)"
-
-# A named destination: this script did not pick the simulator, so it boots nothing early.
-run_ci "DODDY_DESTINATION: no early boot" 0 "--only ios" "DODDY_DESTINATION=platform=iOS Simulator,name=iPhone 17"
-not_called "no bootstatus call with a named destination" "simctl bootstatus"
 
 # The ios-release job: Release for a device, nothing else, no simulator.
 run_ci "DODDY_RELEASE_BUILD=only" 0 "--only ios" DODDY_RELEASE_BUILD=only

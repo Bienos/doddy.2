@@ -114,27 +114,6 @@ restart_simulator() {
   xcrun simctl shutdown "$1" 2>/dev/null || true  # fails harmlessly if it is already shut down
   xcrun simctl bootstatus "$1" -b                 # -b boots it first, then waits for the boot
 }
-# The simulator's first boot on a hosted Mac takes about 3.5 minutes (15 Nov 2026, run 43715540139: the
-# unit-test step ran 5 minutes for 1 minute of tests). It is started in the background before the build
-# and waited for before the unit tests (decision 2026-11-15-faster-mac-ci). If that boot failed, the
-# simulator is booted again here in the foreground, so a failed early boot only loses the head start.
-early_boot_pid="" early_boot_log=""
-start_early_boot() {  # simulator id
-  early_boot_log=$(mktemp)
-  echo "Booting the simulator in the background while the app builds ($1)"
-  xcrun simctl bootstatus "$1" -b >"$early_boot_log" 2>&1 &
-  early_boot_pid=$!
-}
-finish_early_boot() {  # simulator id
-  local rc=0
-  wait "$early_boot_pid" || rc=$?
-  cat "$early_boot_log"; rm -f "$early_boot_log"
-  early_boot_pid=""
-  if [ "$rc" -ne 0 ]; then
-    echo "The background boot failed (exit $rc); booting the simulator again now."
-    xcrun simctl bootstatus "$1" -b
-  fi
-}
 # Runs a command again when it failed because a download failed (8 Nov 2026: github.com release
 # downloads of the LiveKit binary frameworks answered 504 on hosted runs 42465092351 and others, so
 # `xcodebuild` could not resolve packages and exited 74). It retries only when the output names a failed
@@ -260,7 +239,7 @@ run_step "Vercel builds a project whenever it can't tell nothing changed (9 Nov 
 run_step "Which Vercel statuses are replaced on pull requests (decision 2026-11-09-vercel-blocked-status)" scripts/test_vercel_blocked_status.sh
 run_step "Privacy manifest declares every required-reason API (7 Nov audit)" scripts/test_check_privacy_manifest.sh
 run_step "The Mac job's package-pin step never blocks without pins (7 Nov audit)" scripts/test_ci_package_pins.sh
-run_step "The Mac jobs' early simulator boot, Release-only and package-test skip (decision 2026-11-15-faster-mac-ci)" scripts/test_ci_mac_phases.sh
+run_step "The Mac jobs' Release-only build and package-test skip (decision 2026-11-15-faster-mac-ci)" scripts/test_ci_mac_phases.sh
 if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
 else
@@ -421,8 +400,6 @@ else
     not_run "iOS app build + tests" "no available iPhone simulator; install one or set DODDY_DESTINATION"
   else
     echo "Destination: $dest"
-    # Only when this script picked the simulator (a DODDY_DESTINATION may name one by name).
-    if [ "$release_only" -eq 0 ] && [ -n "${sim_id:-}" ]; then start_early_boot "$sim_id"; fi
     # Resolve the packages first, and again when a download fails (with_fetch_retries): `-list` also
     # resolves, so before this a single failed download failed all three steps. A failure to fetch
     # a package still stops the run before the long build, and the pins can be checked now. If Xcode
@@ -448,9 +425,6 @@ else
       # up the job (on 2 Nov one waited 49 minutes for the app to close, run 41368047283). The
       # longest UI test takes about 290 s, so 600 s only ends a test that is stuck.
       test_limits="-test-timeouts-enabled YES -default-test-execution-time-allowance 600"
-      if [ -n "$early_boot_pid" ]; then
-        run_step "Simulator booted (started before the build)" finish_early_boot "$sim_id"
-      fi
       # shellcheck disable=SC2086
       run_step "xcodebuild test: unit tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
         -destination "$dest" -only-testing:DoddyTests $test_limits
