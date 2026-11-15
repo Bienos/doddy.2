@@ -129,7 +129,7 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .steps: [VoiceToolName.readSteps]
         case .onlineAccounts: CloudToolName.all.subtracting(Feature.webSearch.tools).subtracting(Feature.claudeDocuments.tools)
             .subtracting(Feature.flights.tools)
-        case .webSearch: [CloudToolName.webSearch, "news_search", "find_places"]
+        case .webSearch: [CloudToolName.webSearch, "news_search", "find_places", CloudToolName.planEvening]
         case .flights: CloudToolName.flightTools
         case .claudeDocuments: [CloudToolName.askClaude, CloudToolName.makeDocument, CloudToolName.researchNow]
         case .deals: [VoiceToolName.findDeals]

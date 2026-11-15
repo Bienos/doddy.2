@@ -75,9 +75,11 @@ final class OnlineAccountsContractTests: XCTestCase {
         // Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking) have no Settings section either: book_flight
         // is a write on the server's own gate, not an account tool in the catalog.
         XCTAssertEqual(Set(writes), CloudToolName.writes.subtracting(CloudToolName.flightTools), "the app and the server agree on which tools write")
-        // Claude (ADR-564) has no Settings section: its tools run but aren't listed in the catalog.
+        // Claude (ADR-564) has no Settings section: its tools run but aren't listed in the catalog. plan_evening has no row
+        // of its own either: it follows Find places' switch (decision 2026-11-14-plan-evening-tool).
         XCTAssertEqual(Set(catalog.toolkits.flatMap(\.tools).map(\.name)),
-                       CloudToolName.all.subtracting([CloudToolName.askClaude, CloudToolName.makeDocument, CloudToolName.researchNow])
+                       CloudToolName.all.subtracting([CloudToolName.askClaude, CloudToolName.makeDocument, CloudToolName.researchNow,
+                                                      CloudToolName.planEvening])
                            .subtracting(CloudToolName.flightTools))
 
         let on = try decode(ToolsCatalog.self, "catalog-gmail-on")
@@ -553,6 +555,38 @@ final class WebSearchToolTests: XCTestCase {
         XCTAssertTrue(VoiceToolReply.cloudFailed(off, tool: "web_search").contains("\"Search the web\" is switched off"))
         let down = OnlineAccountsError.server(code: "provider_unavailable", message: "m", retryAfterSeconds: nil, receipt: nil)
         XCTAssertEqual(VoiceToolReply.cloudFailed(down, tool: "web_search"), "failed: Web search couldn't be reached. Nothing was changed.")
+    }
+
+    func testAnEveningOutIsAPlacesLookUpWithFindPlacesSwitch() throws {
+        // Decision 2026-11-14-plan-evening-tool: a read in the Web search section, no account, run at once, its answer outside content.
+        let parsed = VoiceToolRequest.parse(
+            name: "plan_evening", parametersJSON: Data(#"{"what":"kolacja włoska","area":"Mokotów, Warszawa","time":"20:00","party_size":4}"#.utf8))
+        guard case .cloudTool(let call) = parsed else { return XCTFail("expected a cloud tool call, got \(parsed)") }
+        XCTAssertEqual(call.name, CloudToolName.planEvening)
+        XCTAssertEqual(call.arguments["what"], .string("kolacja włoska"), "passed on untouched; the server checks them")
+        XCTAssertFalse(call.isWrite)
+        XCTAssertEqual(CloudToolName.account(CloudToolName.planEvening), "Web search")
+        XCTAssertEqual(AskFirst.need(for: parsed), .runsNow)
+        XCTAssertTrue(OutsideContentSession.isSource(CloudToolName.planEvening))
+        XCTAssertTrue(Feature.webSearch.tools.contains(CloudToolName.planEvening))
+        XCTAssertFalse(Feature.onlineAccounts.tools.contains(CloudToolName.planEvening))
+        // It has no switch of its own: the server follows Find places, so the reply names that switch.
+        let off = OnlineAccountsError.server(code: "capability_disabled", message: "m", retryAfterSeconds: nil, receipt: nil)
+        let reply = VoiceToolReply.cloudFailed(off, tool: CloudToolName.planEvening)
+        XCTAssertTrue(reply.hasPrefix("failed: \"Find places\" is switched off"), reply)
+        XCTAssertTrue(reply.contains("Nothing was looked up."))
+        // The rest reads like any web look-up: the daily limit, and a provider that is down is "failed", never partial.
+        let limit = OnlineAccountsError.server(code: "quota_exceeded", message: "m", retryAfterSeconds: nil, receipt: nil)
+        XCTAssertTrue(VoiceToolReply.cloudFailed(limit, tool: CloudToolName.planEvening).contains("web search limit"))
+        let down = OnlineAccountsError.server(code: "provider_unavailable", message: "m", retryAfterSeconds: nil, receipt: nil)
+        XCTAssertEqual(VoiceToolReply.cloudFailed(down, tool: CloudToolName.planEvening), "failed: Web search couldn't be reached. Nothing was changed.")
+        // "What Doddy did" names the look-up, never the words.
+        let row = try XCTUnwrap(ActivityRequest.describe(cloud: CloudToolName.planEvening))
+        XCTAssertEqual(row.app, .web)
+        XCTAssertEqual(row.title, "Find places for an evening out")
+        XCTAssertNil(row.detail)
+        XCTAssertTrue(row.isLookup)
+        XCTAssertEqual(ActivityText.title(row.title, .polish), "Wyszukano miejsca na wieczór")
     }
 
     func testActivityLogNamesTheLookUpButNotTheSearchWords() throws {

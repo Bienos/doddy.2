@@ -133,6 +133,7 @@ final class AskFirstTests: XCTestCase {
             .cloudTool(CloudToolCall(name: CloudToolName.webSearch, arguments: ["query": .string("weather Warsaw tomorrow")])),
             .cloudTool(CloudToolCall(name: "news_search", arguments: ["query": .string("Warsaw")])),
             .cloudTool(CloudToolCall(name: "find_places", arguments: ["query": .string("pharmacy"), "near": .string("Mokotów")])),
+            .cloudTool(CloudToolCall(name: CloudToolName.planEvening, arguments: ["what": .string("kolacja włoska"), "area": .string("Mokotów")])),
         ]
         for request in now { XCTAssertEqual(AskFirst.need(for: request), .runsNow, "\(request)") }
         // Since 11 Nov 2026 the user's own data is read at once too: asking for it is the yes.

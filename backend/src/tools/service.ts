@@ -97,6 +97,7 @@ import {
   WEB_SECTION,
   WEB_SECTION_ID,
   type WebSearchProvider,
+  type WebSearchRun,
   WebSearchInput,
   isMonidTool,
   MONID_TOOL_INPUT,
@@ -106,10 +107,19 @@ import {
   type MonidToolName,
   normalizeMonidTool,
 } from "./websearch.js";
+import { EVENING_SEARCH_TOOL, eveningCard, eveningDay, eveningSearch, normalizeEvening, PLAN_EVENING_TOOL, PlanEveningInput, type PlanEveningArgs } from "./evening.js";
 
 /** Web search and the other fixed Monid tools (ADR-489): no account, a switch each, Doddy pays. */
 type WebTool = typeof WEB_SEARCH_TOOL | MonidToolName;
 const isWebTool = (name: string): name is WebTool => name === WEB_SEARCH_TOOL || isMonidTool(name);
+/**
+ * What the agent can call in the Web search section: the switchable tools above, and plan_evening, which is one run of
+ * find_places's endpoint with a fuller answer (evening.ts). It has no switch of its own: find_places's switch is its switch,
+ * so "Find places" off means no places search by any tool.
+ */
+type WebLookup = WebTool | typeof PLAN_EVENING_TOOL;
+const isWebLookup = (name: string): name is WebLookup => isWebTool(name) || name === PLAN_EVENING_TOOL;
+const switchOf = (tool: WebLookup): WebTool => (tool === PLAN_EVENING_TOOL ? EVENING_SEARCH_TOOL : tool);
 /**
  * Web lookups are on until the user switches them off (ADR-563). Before, every one started off and
  * the only switch was in a Settings screen the app could not reach without a hand-made server
@@ -654,7 +664,7 @@ export class CloudToolsService {
       const call = translateAppsCall(request.tool, request.arguments);
       return { ...(await this.prepare(userId, { ...request, tool: call.tool, arguments: call.arguments })), tool: request.tool };
     }
-    if (isWebTool(request.tool)) return this.prepareWebSearch(userId, request.tool, request.arguments);
+    if (isWebLookup(request.tool)) return this.prepareWebSearch(userId, request.tool, request.arguments);
     if (request.tool === PLAN_TRIP_TOOL) return this.preparePlanTrip(userId, request.arguments);
     if (isFlightTool(request.tool)) return this.flights.prepare(userId, request.tool, request.arguments, this.flightReceipt(userId));
     if (isClaudeTool(request.tool)) return this.prepareClaude(userId, request.tool, request.arguments);
@@ -1190,7 +1200,7 @@ export class CloudToolsService {
       const call = translateAppsCall(request.tool, request.arguments);
       return { ...(await this.run(userId, { ...request, tool: call.tool, arguments: call.arguments })), tool: request.tool };
     }
-    if (isWebTool(request.tool)) return this.runWebSearch(userId, request.tool, request);
+    if (isWebLookup(request.tool)) return this.runWebSearch(userId, request.tool, request);
     if (request.tool === PLAN_TRIP_TOOL) return this.runPlanTrip(userId, request);
     if (isFlightTool(request.tool)) return this.flights.run(userId, request.tool, request, this.flightReceipt(userId));
     if (isClaudeTool(request.tool)) return this.runClaude(userId, request.tool, request);
@@ -1315,12 +1325,19 @@ export class CloudToolsService {
     }
   }
 
+  /** A web look-up's arguments, checked strictly against its own schema. */
+  private webArgs(tool: WebLookup, raw: Record<string, unknown>): Record<string, unknown> {
+    if (tool === WEB_SEARCH_TOOL) return parse(WebSearchInput, raw);
+    if (tool === PLAN_EVENING_TOOL) return parse(PlanEveningInput, raw);
+    return parse(MONID_TOOL_INPUT[tool], raw);
+  }
+
   /**
-   * The card for web search, news or places (ASK-01): the exact words, and what Doddy pays for it
+   * The card for web search, news, places or an evening out (ASK-01): the exact words, and what Doddy pays for it
    * (ADR-489: the price is on the card). Nothing is searched.
    */
-  private async prepareWebSearch(userId: string, tool: WebTool, raw: Record<string, unknown>): Promise<PrepareResult> {
-    const args = tool === WEB_SEARCH_TOOL ? parse(WebSearchInput, raw) : parse(MONID_TOOL_INPUT[tool], raw);
+  private async prepareWebSearch(userId: string, tool: WebLookup, raw: Record<string, unknown>): Promise<PrepareResult> {
+    const args = this.webArgs(tool, raw);
     const now = this.now();
     await this.limiter.reserveRequest(userId, now);
     const blocked = async (code: "capability_disabled" | "live_not_configured", message: string): Promise<never> => {
@@ -1328,7 +1345,7 @@ export class CloudToolsService {
     };
     const provider = this.webSearch;
     if (!provider || !provider.isConfigured()) return await blocked("live_not_configured", "Web search isn't set up on this server.");
-    if (!(await this.webToolOn(userId, tool))) return await blocked("capability_disabled", `${webTitle(tool)} is turned off in Settings.`);
+    if (!(await this.webToolOn(userId, switchOf(tool)))) return await blocked("capability_disabled", `${webTitle(switchOf(tool))} is turned off in Settings.`);
     const { approvalId, expiresAt } = await this.ask.issue({ userId, tool, accountId: WEB_ACCOUNT, argsDigest: argumentDigest(args) });
     // The price is the endpoint the server asks first (decision 2026-11-14-web-search-exa); a fallback costs less.
     const preview =
@@ -1338,7 +1355,9 @@ export class CloudToolsService {
             lines: [`Search words: ${(args as { query: string }).query}`, `They go to Doddy's server and a search provider (Monid). Doddy pays ${MONID_SEARCH[provider.searchSource].price}; there is a daily limit.`],
             confirmLabel: "Yes, search",
           }
-        : monidCard(tool, args);
+        : tool === PLAN_EVENING_TOOL
+          ? eveningCard(args as PlanEveningArgs)
+          : monidCard(tool, args);
     return { mode: this.mode, tool, preview, approvalId, expiresAt: new Date(expiresAt).toISOString() };
   }
 
@@ -1347,9 +1366,10 @@ export class CloudToolsService {
    * set up -> limits (incl. the web search caps) -> one Monid call (never retried: each run is billed;
    * web search's one fallback, Exa to Search1API after a refusal Monid doesn't bill, is in websearch.ts)
    * -> normalized result -> receipt. Search words are not stored anywhere, receipts included.
+   * plan_evening is one run too: find_places's endpoint with only its words and area, its switch, one web search of the cap.
    */
-  private async runWebSearch(userId: string, tool: WebTool, request: { arguments: Record<string, unknown>; timeZone: string; approvalId?: string | undefined }): Promise<RunResult> {
-    const args: Record<string, unknown> = tool === WEB_SEARCH_TOOL ? parse(WebSearchInput, request.arguments) : parse(MONID_TOOL_INPUT[tool], request.arguments);
+  private async runWebSearch(userId: string, tool: WebLookup, request: { arguments: Record<string, unknown>; timeZone: string; approvalId?: string | undefined }): Promise<RunResult> {
+    const args = this.webArgs(tool, request.arguments);
     if (!isSupportedTimeZone(request.timeZone)) {
       throw new AppError("invalid_request", { message: "Use an IANA time zone such as Europe/Warsaw." });
     }
@@ -1360,7 +1380,7 @@ export class CloudToolsService {
     };
     const provider = this.webSearch;
     if (!provider || !provider.isConfigured()) return await blocked("live_not_configured", "Web search isn't set up on this server.");
-    if (!(await this.webToolOn(userId, tool))) return await blocked("capability_disabled", `${webTitle(tool)} is turned off in Settings.`);
+    if (!(await this.webToolOn(userId, switchOf(tool)))) return await blocked("capability_disabled", `${webTitle(switchOf(tool))} is turned off in Settings.`);
     // ASK-01: the user's yes for exactly these words, checked before the search is counted.
     const binding: AskBinding = { userId, tool, accountId: WEB_ACCOUNT, argsDigest: argumentDigest(args) };
     const unasked = async () => askFirstRefusal(await this.receipt(userId, WEB_SECTION_ID, "read", tool, "blocked", "Not done: Doddy didn't have a yes for this.", "ask_first_required", null));
@@ -1382,6 +1402,12 @@ export class CloudToolsService {
           const result = await provider.search({ query: args.query as string, signal });
           outcome = normalizeWebSearch(result.output, args.query as string, result.source);
           runId = result.runId;
+        } else if (tool === PLAN_EVENING_TOOL) {
+          // One places search with only the words and the area; the day, time, party and budget shape the answer here.
+          const evening = args as PlanEveningArgs;
+          const result = await provider.call({ tool: EVENING_SEARCH_TOOL, args: eveningSearch(evening), signal });
+          outcome = normalizeEvening(result.output, evening, eveningDay(now, request.timeZone, evening.day));
+          runId = result.runId;
         } else {
           const result = await provider.call({ tool, args, signal });
           outcome = normalizeMonidTool(tool, result.output, args);
@@ -1392,7 +1418,7 @@ export class CloudToolsService {
       });
     } catch (error) {
       if (error instanceof AppError) throw error;
-      const appError = toAppError(error, webTitle(tool));
+      const appError = toAppError(error, webTitle(switchOf(tool)));
       const message =
         appError.code === "rate_limited" ? "Web search is busy right now. Try again shortly." : appError.code === "malformed_provider_result" ? "Web search sent an answer Doddy couldn't read, so nothing is shown." : "Web search couldn't be reached. Nothing is shown instead.";
       const receipt = await this.receipt(userId, WEB_SECTION_ID, "read", tool, "failed", message, appError.code, null);

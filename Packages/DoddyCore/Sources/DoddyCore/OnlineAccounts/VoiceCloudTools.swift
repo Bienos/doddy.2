@@ -149,6 +149,10 @@ extension VoiceToolReply {
                 if tool == CloudToolName.researchNow {
                     return "failed: Search the web is switched off in Settings, so Doddy didn't research it. Tell the user they can switch it on in Settings, Online accounts, Web search. Nothing was looked up."
                 }
+                // plan_evening has no switch of its own: it follows Find places (backend `switchOf`), so the reply names that one.
+                if tool == CloudToolName.planEvening {
+                    return "failed: \"Find places\" is switched off, so Doddy didn't look for places. Tell the user they can switch it on in Settings, Online accounts, Web search. Nothing was looked up."
+                }
                 return "failed: \"\(CloudToolName.title(tool))\" is switched off. Tell the user they can switch it on in Settings, Online accounts. Nothing was done."
             case OnlineAccountsError.needDetailsCode:
                 // Decision 2026-11-10-files-ask-for-details: the server turned a too-thin file request away before any

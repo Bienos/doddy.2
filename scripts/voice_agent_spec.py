@@ -62,8 +62,9 @@ TAP_ONLY = {"pay_for_page", "book_flight", "call_places"}
 # Read nothing of the user's and change nothing (AskFirst.publicLookups in DoddyCore must match).
 # research_now (14 Nov 2026): Claude on Doddy's server searches the web and reads two or three pages; a look-up like web_search.
 # plan_trip (14 Nov 2026): the trip screen's planner by voice; Claude on Doddy's server reads the trip, Kiwi.com is searched.
+# plan_evening (14 Nov 2026, decision 2026-11-14-plan-evening-tool): one run of find_places's search, a fuller answer.
 PUBLIC_LOOKUPS = {"calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places", "research_now",
-                  "plan_trip", "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"}
+                  "plan_trip", "plan_evening", "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"}
 # Translator mode starts and stops at once, without asking (owner, 24 Oct 2026, ADR-619).
 RUNS_NOW_MODES = {"start_translator", "stop_translator"}
 # A text to the user's own verified number goes at once while Texts from Doddy is on (owner, 9 Nov 2026,

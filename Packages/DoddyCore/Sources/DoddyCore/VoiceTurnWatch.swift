@@ -28,7 +28,8 @@ public enum VoiceWaitActivity: String, Sendable, CaseIterable {
         case "search_memories": .searchingNotes
         case "ask_claude": .askingClaude
         case "check_email", "read_email", "check_outlook_email", "read_outlook_email": .checkingEmail
-        case "find_places", "geocode_place": .findingPlaces
+        // plan_evening is one places search (decision 2026-11-14-plan-evening-tool): the same "Finding places…".
+        case "find_places", "geocode_place", "plan_evening": .findingPlaces
         case "make_document", "make_presentation", "make_something": .makingDocument
         case "get_weather": .checkingWeather
         // plan_trip reads the trip and searches Kiwi.com, up to 30 s: "Looking it up…", with no new wording.
