@@ -1796,8 +1796,13 @@ final class VoiceSessionController {
             writeResults[id] = WriteResult(reply: text, attempted: true)
             await reply(id, text, isError: outcome != .confirmed)
         case .camera(let id):
-            // ADR-569: the camera opens on this screen; a kept photo goes into a new note.
-            if onScreen(attempt) { cameraRequest = UUID() }
+            // ADR-569: the camera opens on this screen; a kept photo goes into a new note. Only while Doddy is on
+            // screen: a yes said with Doddy in the background opens nothing there, so it is never told "opened".
+            guard onScreen(attempt), UIApplication.shared.applicationState == .active else {
+                await reply(id, VoiceToolReply.cameraNeedsTheScreen)
+                return
+            }
+            cameraRequest = UUID()
             await reply(id, VoiceToolReply.cameraOpened)
         case .ask(let id, _, _, let toolName, _):
             guard askLedger.answer(.tapped, for: id, at: Date()) == .granted else {
@@ -1857,14 +1862,19 @@ final class VoiceSessionController {
             await reply(id, changeEvent(plan), undo: .changedEvent(plan))
         case .undo(let id, let entry):
             await reply(id, await undoFromVoice(entry, attempt: attempt))
-        case .ingredients(let id, let listID, let listName, let dish, let items, _):
+        case .ingredients(let id, let listID, let listName, let dish, let items, let alreadyOpen):
             // Only the ticked ones, through the same add as add_to_list (ADR-305).
             let ticked = items.indices.filter { !ingredientsUnticked.contains($0) }.map { items[$0] }
-            let leftOut = items.indices.filter { ingredientsUnticked.contains($0) }.map { items[$0] }
+            // Each left-out one by its real reason: with no card (step 2b) nobody unticked anything.
+            let left = items.indices.filter { ingredientsUnticked.contains($0) }
+            let leftOut = IngredientsLeftOut(
+                onTheList: left.filter { alreadyOpen.contains($0) }.map { items[$0] },
+                atHome: left.filter { !alreadyOpen.contains($0) && ingredientsAtHome.contains($0) }.map { items[$0] },
+                unticked: left.filter { !alreadyOpen.contains($0) && !ingredientsAtHome.contains($0) }.map { items[$0] })
             ingredientsUnticked = []
             ingredientsAtHome = []
             guard !ticked.isEmpty else {
-                await reply(id, VoiceToolReply.ingredientsNoneTicked)
+                await reply(id, VoiceToolReply.ingredientsNoneAdded(leftOut))
                 return
             }
             do {
@@ -4642,6 +4652,10 @@ final class VoiceSessionController {
         // as the card's button would, says what it did, and doesn't close a card that is waiting for something else.
         if runsWithoutItsCard(action) {
             let attempt = startAttempt
+            // Its row goes on disk now, before the Task starts: an End in between keeps it as "in progress" and the
+            // result then finishes it, with its Undo, instead of End logging "not answered" for a change that still
+            // runs (review of step 2b).
+            if action.changesSomething { markStarted(action.toolCallID) }
             Task { await perform(action, attempt: attempt) }
             return
         }

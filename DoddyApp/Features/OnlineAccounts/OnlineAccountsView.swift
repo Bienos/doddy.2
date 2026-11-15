@@ -273,7 +273,7 @@ struct OnlineAccountsView: View {
         switch mode {
         case .off: NSLocalizedString("Doddy won't use this account.", comment: "")
         case .read: NSLocalizedString("Doddy can look things up in this account when you ask. He asks first every time.", comment: "")
-        case .act: NSLocalizedString("Doddy can also send, add or change things, but only after you tap a card that shows exactly what will happen.", comment: "")
+        case .act: NSLocalizedString("Doddy can also send, add or change things, but only after you say yes to, or tap, a card that shows exactly what will happen. After Doddy has read an email or a page, only a tap.", comment: "")
         }
     }
 

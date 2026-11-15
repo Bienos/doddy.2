@@ -288,10 +288,10 @@ public enum SpokenYes {
         "yes go ahead", "yes do it", "ok go ahead", "okay go ahead", "sure go ahead",
         // Polish
         "tak", "tak proszę", "tak prosze", "dobrze", "jasne", "śmiało", "smialo", "zrób to", "zrob to", "tak zrób to", "tak zrob to", "okej", "pewnie",
-        // German. "ja" is also Polish for "I", so a stray one could pass as a yes. It stays: it is the
-        // German yes, a spoken yes answers reads only (a hand-over needs a tap since ADR-716), and a list
-        // per language is the owner's call.
-        "ja", "ja bitte", "klar", "mach das", "ja mach das", "in ordnung",
+        // German. A lone "ja" is not here: it is also Polish for "I" (and the Dutch yes), and since step 2a of
+        // decision `2026-11-14-spoken-yes-and-fewer-cards` a spoken yes answers changes too, so "Ja…" said
+        // before a sentence must never delete an event. "ja bitte", "klar" and the rest still count.
+        "ja bitte", "klar", "mach das", "ja mach das", "in ordnung",
         // French
         "oui", "oui vas-y", "oui vas y", "vas-y", "vas y", "d'accord", "oui s'il te plaît", "oui s'il te plait",
         // Spanish
