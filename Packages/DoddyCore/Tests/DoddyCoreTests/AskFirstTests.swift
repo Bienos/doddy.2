@@ -159,6 +159,8 @@ final class AskFirstTests: XCTestCase {
             "search_memories", "read_list", "read_calendar", "find_free_time", "lookup_contact", "upcoming_birthdays",
             "find_photos", "look_at_screen", "read_steps", "read_health_week", "list_alarms", "check_stopwatch",
             "check_focus", "check_errands", "find_deals",
+            // Decision 2026-11-14-approximate-location-by-voice: iOS's own location question is its consent.
+            "where_am_i",
         ])
         XCTAssertEqual(AskFirst.ownSmallActions, [
             "start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",

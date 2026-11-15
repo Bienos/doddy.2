@@ -349,6 +349,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// "I lost my wallet" (ADR-692): a checklist of official steps on a card. Doddy does none of them;
     /// a step's page opens or its number is dialled only on the person's tap.
     case lostWallet(LostWalletSituation)
+    /// The person's approximate area, read once now (decision 2026-11-14-approximate-location-by-voice, WhereAmI.swift).
+    case whereAmI
     case unsupported(name: String)
     case invalid(name: String, reason: String)
 
@@ -515,6 +517,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseDraftInvoice(args, name: name)
         case VoiceToolName.lostWallet:
             return parseLostWallet(args, name: name)
+        case VoiceToolName.whereAmI:
+            return .whereAmI
         default:
             return parseCloud(name: name, parametersJSON: parametersJSON) ?? .unsupported(name: name)
         }

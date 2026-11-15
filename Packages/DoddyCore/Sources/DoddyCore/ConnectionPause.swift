@@ -42,6 +42,9 @@ public enum ConnectionPause {
         case .draftInvoice:
             // A draft on this iPhone's screen (ADR-677); no other app or account is used.
             false
+        case .whereAmI:
+            // The rounded position goes to Apple's geocoder for the area's name (decision 2026-11-14-approximate-location-by-voice).
+            true
         case .readCalendar, .findFreeTime, .leaveBy, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,
              .openMap, .openFoodApp, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .controlHome, .cloudTool, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,
