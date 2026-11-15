@@ -127,6 +127,8 @@ public enum AskFirst {
         VoiceToolName.lookupContact, VoiceToolName.upcomingBirthdays, VoiceToolName.findPhotos, VoiceToolName.lookAtScreen,
         VoiceToolName.readSteps, VoiceToolName.readHealthWeek, VoiceToolName.listAlarms, VoiceToolName.checkStopwatch,
         VoiceToolName.checkFocus, VoiceToolName.checkErrands, VoiceToolName.findDeals,
+        // The person's rough area (decision 2026-11-14-approximate-location-by-voice): iOS's own location question is its consent.
+        VoiceToolName.whereAmI,
     ]
 
     /// Doddy's own changes on this iPhone that have Undo in "What Doddy did" (a note, a reminder, ingredients on a list,
@@ -189,6 +191,10 @@ public enum AskFirst {
             // time: that is the yes for Doddy to look while it stays on (decision 2026-11-11-asked-for-runs-at-once,
             // replacing "each look asks first" in 2026-11-09-doddy-looks-at-the-screen). With sharing off nothing is
             // looked at: the app opens iOS's sheet instead.
+            return .runsNow
+        case .whereAmI:
+            // The person's rough area, read once when asked (decision 2026-11-14-approximate-location-by-voice). The consent is
+            // iOS's own location question (While Using the App), asked the first time, as Calendar's is for read_calendar.
             return .runsNow
         case .calculate, .convertUnits, .convertCurrency:
             return .runsNow
