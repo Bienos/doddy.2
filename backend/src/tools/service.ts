@@ -6,7 +6,7 @@ import { argumentDigest, UsageLimiter } from "../policy.js";
 import { AccessRequestSchema, type AppAccess, isAppsTool, toolsForAccess, translateAppsCall } from "./apps.js";
 import { AskGate, type AskBinding, WEB_ACCOUNT } from "./askFirst.js";
 import { ANTHROPIC_FILE_CLEANUP, type ApprovalRun, CLEANUP_RETRY, type ConnectionRow, type QueuedCleanup, type Store, stuckCleanupLine } from "../store.js";
-import { isSupportedTimeZone } from "../time.js";
+import { isSupportedTimeZone, localDate } from "../time.js";
 import {
   bindsTimeZone,
   CLOUD_TOOLS,
@@ -56,6 +56,7 @@ import {
   MakeDocumentInput,
   type MakeDocumentArgs,
   MODEL_TEXT_LABEL,
+  questionWithoutLinks,
   RESEARCH_NOW_TIMEOUT_MS,
   RESEARCH_NOW_TOOL,
   ResearchNowInput,
@@ -82,6 +83,10 @@ import {
 import type { DuffelClient } from "../flights/duffel.js";
 import { type KiwiClient, KiwiTripSearch, KIWI_TIMEOUT_MS } from "../flights/kiwi.js";
 import { FlightsService, isFlightTool } from "../flights/service.js";
+import {
+  askReply, optionsReply, PLAN_TRIP_ACCOUNT, PLAN_TRIP_TIMEOUT_MS, PLAN_TRIP_TOOL, PLAN_UNDERSTAND_TIMEOUT_MS, planTripCard, planTripLinks,
+  PlanTripInput, type PlanTripArgs,
+} from "../flights/planTrip.js";
 import type { ToolsProvider } from "./provider.js";
 import {
   normalizeWebSearch,
@@ -142,6 +147,8 @@ export interface ToolsServiceDeps {
   travelReader?: TravelReader;
   /** The trip planner's flights. Absent: Kiwi.com in live mode, the mock in mock mode. */
   flightSearch?: FlightSearch;
+  /** Tests only: plan_trip's whole deadline instead of PLAN_TRIP_TIMEOUT_MS, so a run out of time can be tested quickly. */
+  planTripDeadlineMs?: number;
   /** Signed links for documents (ADR-564). Null: make_document says "not set up". */
   documentLinks?: DocumentLinks | null;
   /** Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking). Absent: every flight tool says "not set up". */
@@ -657,6 +664,7 @@ export class CloudToolsService {
       return { ...(await this.prepare(userId, { ...request, tool: call.tool, arguments: call.arguments })), tool: request.tool };
     }
     if (isWebLookup(request.tool)) return this.prepareWebSearch(userId, request.tool, request.arguments);
+    if (request.tool === PLAN_TRIP_TOOL) return this.preparePlanTrip(userId, request.arguments);
     if (isFlightTool(request.tool)) return this.flights.prepare(userId, request.tool, request.arguments, this.flightReceipt(userId));
     if (isClaudeTool(request.tool)) return this.prepareClaude(userId, request.tool, request.arguments);
     const tool = this.requireTool(request.tool);
@@ -796,33 +804,17 @@ export class CloudToolsService {
    */
   async understandTrip(userId: string, body: unknown): Promise<PlanUnderstood> {
     const request = parse(PlanUnderstandRequest, body);
-    const claude = this.deps.travelClaude !== undefined ? this.deps.travelClaude : (this.deps.claude ?? null);
-    if (!claude || !claude.isConfigured()) throw new AppError("live_not_configured", { message: "The trip planner isn't set up on this server." });
+    const claude = this.plannerClaude();
+    if (!claude) throw new AppError("live_not_configured", { message: "The trip planner isn't set up on this server." });
     const now = this.now();
     await this.limiter.reserveRequest(userId, now);
     await this.limiter.reserveClaude(userId, now, 1);
-    const before = request.brief ?? EMPTY_BRIEF;
-    let proposed: unknown;
+    let brief: TripBrief;
     try {
-      const result = await claude.structured(
-        {
-          system: UNDERSTAND_SYSTEM,
-          user: JSON.stringify({ today: request.today, briefSoFar: before, newWords: request.words }),
-          schema: BRIEF_JSON_SCHEMA,
-          maxTokens: 800,
-          effort: "low",
-          name: UNDERSTAND_STEP,
-        },
-        AbortSignal.timeout(15_000),
-        new UsageScope(userId, "travel_plan"),
-      );
-      proposed = result.value;
+      brief = await this.readBrief(claude, userId, request.words, request.brief ?? EMPTY_BRIEF, request.today, AbortSignal.timeout(PLAN_UNDERSTAND_TIMEOUT_MS), "travel_plan");
     } catch (error) {
       throw toAppError(error, "Claude");
     }
-    const parsed = TripBrief.safeParse(proposed);
-    // An answer of the wrong shape changes nothing: the brief stays as it was.
-    const brief = cleanBrief(parsed.success ? parsed.data : before, request.today);
     return { brief, missing: missing(brief), assumptions: assumptions(brief) };
   }
 
@@ -835,22 +827,195 @@ export class CloudToolsService {
     const now = this.now();
     await this.limiter.reserveRequest(userId, now);
     await this.limiter.reserveToolRun(userId, now);
-    const flights = this.deps.flightSearch ?? (this.mode === "live" ? new KiwiTripSearch() : new MockFlightSearch());
     let answer: Awaited<ReturnType<FlightSearch["search"]>>;
     try {
-      answer = await flights.search(query, AbortSignal.timeout(KIWI_TIMEOUT_MS));
+      answer = await this.plannerFlights().search(query, AbortSignal.timeout(KIWI_TIMEOUT_MS));
     } catch (error) {
       const reason = error instanceof FlightSearchError ? error.reason : "unavailable";
       throw new AppError("provider_unavailable", { message: reason === "refused" ? "Kiwi.com didn't answer this search." : "Kiwi.com couldn't be reached. Try again in a moment." });
     }
+    const plan = this.planOptions(brief, answer);
+    this.deps.log?.({ event: "trip_search", results: answer.itineraries.length, options: plan.options.length });
+    return plan;
+  }
+
+  /** The planner's model: the small chat model when the server has one, else Claude. Null: not set up. */
+  private plannerClaude(): ClaudeProvider | null {
+    const claude = this.deps.travelClaude !== undefined ? this.deps.travelClaude : (this.deps.claude ?? null);
+    return claude && claude.isConfigured() ? claude : null;
+  }
+
+  /** The planner's flights: Kiwi.com in live mode, the demo flights in mock mode, a stand-in in tests. */
+  private plannerFlights(): FlightSearch {
+    return this.deps.flightSearch ?? (this.mode === "live" ? new KiwiTripSearch() : new MockFlightSearch());
+  }
+
+  /**
+   * The model's one step: the words (and the brief so far) to a brief. An answer of the wrong shape changes nothing:
+   * the brief stays as it was. Code then drops what can't be right (`cleanBrief`). A provider failure is thrown as it is.
+   */
+  private async readBrief(
+    claude: ClaudeProvider, userId: string, words: string, before: TripBrief, today: string, signal: AbortSignal, feature: string,
+  ): Promise<TripBrief> {
+    const result = await claude.structured(
+      {
+        system: UNDERSTAND_SYSTEM,
+        user: JSON.stringify({ today, briefSoFar: before, newWords: words }),
+        schema: BRIEF_JSON_SCHEMA,
+        maxTokens: 800,
+        effort: "low",
+        name: UNDERSTAND_STEP,
+      },
+      signal,
+      new UsageScope(userId, feature),
+    );
+    const parsed = TripBrief.safeParse(result.value);
+    return cleanBrief(parsed.success ? parsed.data : before, today);
+  }
+
+  /** Up to three options chosen by code, each with its stay (and package) links. */
+  private planOptions(brief: TripBrief, answer: Awaited<ReturnType<FlightSearch["search"]>>): PlanResult {
     const options = pickOptions(answer.itineraries, answer.currency, brief.budget);
-    this.deps.log?.({ event: "trip_search", results: answer.itineraries.length, options: options.length });
     return {
       brief,
       options: options.map((option) => ({ ...option, links: stayLinks(option, brief) })),
       source: "Kiwi.com",
       checkedAt: new Date(this.now()).toISOString(),
     };
+  }
+
+  // ---------------------------------------------------------------- travel: plan_trip, the planner by voice
+
+  /**
+   * plan_trip's gates: Kiwi.com search switched on on this server (`FLIGHT_SEARCH_ENABLED`, the same check and words as
+   * find_flights), and the planner's model. A refusal is a blocked receipt under Flights; nothing is counted or sent.
+   */
+  private async planTripReady(userId: string): Promise<ClaudeProvider> {
+    const receipt = this.flightReceipt(userId);
+    const refuse = async (message: string) =>
+      new AppError("live_not_configured", { message, receipt: await receipt("read", PLAN_TRIP_TOOL, "blocked", `Not done: ${message}`, "live_not_configured", null) });
+    if (!this.deps.flights?.kiwi?.isConfigured()) throw await refuse("Flight search isn't switched on on this server.");
+    const claude = this.plannerClaude();
+    if (!claude) throw await refuse("The trip planner isn't set up on this server.");
+    return claude;
+  }
+
+  /** ASK-01: a card from the arguments alone and a single-use approval; nothing goes to Anthropic or Kiwi.com yet. */
+  private async preparePlanTrip(userId: string, raw: Record<string, unknown>): Promise<PrepareResult> {
+    const args = parse(PlanTripInput, raw);
+    await this.limiter.reserveRequest(userId, this.now());
+    await this.planTripReady(userId);
+    const { approvalId, expiresAt } = await this.ask.issue({ userId, tool: PLAN_TRIP_TOOL, accountId: PLAN_TRIP_ACCOUNT, argsDigest: argumentDigest(args) });
+    return { mode: this.mode, tool: PLAN_TRIP_TOOL, preview: planTripCard(args), approvalId, expiresAt: new Date(expiresAt).toISOString() };
+  }
+
+  /**
+   * plan_trip (TRAVEL_PLANNER.md, "Ekran, potem głos"): one stateless call. The words become a brief (the planner's
+   * model step, one Claude unit); when something is missing the answer is the one question the planner's code chose
+   * and nothing is searched; otherwise Kiwi.com is searched (one tool run) and up to three options come back, with
+   * every link in `links` for the app and none in the text. The same daily limits as the trip screen's two routes.
+   * Understand and search together stay within PLAN_TRIP_TIMEOUT_MS. The words are not stored; the receipt and the
+   * log hold counts and fixed words only.
+   */
+  private async runPlanTrip(userId: string, request: { arguments: Record<string, unknown>; timeZone: string; approvalId?: string | undefined }): Promise<RunResult> {
+    const tool = PLAN_TRIP_TOOL;
+    const args = parse(PlanTripInput, request.arguments);
+    const now = this.now();
+    await this.limiter.reserveRequest(userId, now);
+    const claude = await this.planTripReady(userId);
+    const receipt = this.flightReceipt(userId);
+    const binding: AskBinding = { userId, tool, accountId: PLAN_TRIP_ACCOUNT, argsDigest: argumentDigest(args) };
+    const unasked = async () => askFirstRefusal(await receipt("read", tool, "blocked", "Not done: Doddy didn't have a yes for this.", "ask_first_required", null));
+    const overLimit = async (message: string, error: unknown): Promise<never> => {
+      if (!(error instanceof AppError)) throw error;
+      throw new AppError("quota_exceeded", { message, receipt: await receipt("read", tool, "blocked", `Not done: ${message}`, error.code, null) });
+    };
+    if (!(await this.ask.allows(binding, request.approvalId, "check"))) throw await unasked();
+    // The understand step is one Claude unit, as on the trip screen; counted before the yes is used, so a refusal costs nothing.
+    try {
+      await this.limiter.reserveClaude(userId, now, 1);
+    } catch (error) {
+      await overLimit("Today's trip planning limit was reached.", error);
+    }
+    // Today where the person is (the trip screen sends the phone's own day); a zone the server doesn't know: Warsaw's.
+    const today = localDate(now, isSupportedTimeZone(request.timeZone) ? request.timeZone : "Europe/Warsaw");
+    // A link in the words is cut to its site before the model sees it (research_now's rule).
+    const words = questionWithoutLinks(args.words).text;
+    return this.limiter.withSlot(userId, async () => {
+      if (!(await this.ask.allows(binding, request.approvalId, "use"))) throw await unasked();
+      const started = Date.now();
+      const deadline = started + (this.deps.planTripDeadlineMs ?? PLAN_TRIP_TIMEOUT_MS);
+      const within = (cap: number) => AbortSignal.timeout(Math.max(1, Math.min(cap, deadline - Date.now())));
+      let brief: TripBrief;
+      try {
+        brief = await this.readBrief(claude, userId, words, EMPTY_BRIEF, today, within(PLAN_UNDERSTAND_TIMEOUT_MS), PLAN_TRIP_TOOL);
+      } catch (error) {
+        throw await this.planTripFailed(userId, "understand", error, isTimeout(error));
+      }
+      const needs = missing(brief);
+      const assumed = assumptions(brief);
+      const first = needs[0];
+      if (first !== undefined) {
+        this.deps.log?.({ level: "info", event: "plan_trip", step: "ask", missing: first, ms: Date.now() - started });
+        const r = await receipt("read", tool, "succeeded", `Planned a trip: asked ${NEED_WORDS[first]}.`, null, null);
+        return { mode: this.mode, tool, text: askReply(first, brief, assumed, args.language), count: 0, truncated: false, receipt: r };
+      }
+      // The search is one tool run, as on the trip screen.
+      try {
+        await this.limiter.reserveToolRun(userId, this.now());
+      } catch (error) {
+        await overLimit("Today's flight search limit was reached.", error);
+      }
+      const signal = within(KIWI_TIMEOUT_MS);
+      let answer: Awaited<ReturnType<FlightSearch["search"]>>;
+      try {
+        answer = await this.plannerFlights().search(toQuery(brief)!, signal);
+      } catch (error) {
+        // Kiwi.com's client turns a cut request into "unavailable"; the deadline's own signal says it was time.
+        throw await this.planTripFailed(userId, "search", error, signal.aborted || isTimeout(error));
+      }
+      const plan = this.planOptions(brief, answer);
+      const links = planTripLinks(plan.options, brief);
+      const n = plan.options.length;
+      this.deps.log?.({ level: "info", event: "plan_trip", step: "search", results: answer.itineraries.length, options: n, links: links.length, ms: Date.now() - started });
+      const r = await receipt("read", tool, "succeeded", n > 0 ? `Planned a trip on Kiwi.com: ${n} option${n === 1 ? "" : "s"}.` : "Planned a trip on Kiwi.com: no flights found.", null, null);
+      return {
+        mode: this.mode, tool, text: optionsReply(brief, plan.options, assumed, args.language), count: n, truncated: false,
+        ...(links.length > 0 ? { links } : {}), receipt: r,
+      };
+    });
+  }
+
+  /**
+   * A plan_trip step that failed, as the receipt and the error the app turns into the agent's reply: never a half plan,
+   * never "no flights". The log line is the step and the code only.
+   */
+  private async planTripFailed(userId: string, step: "understand" | "search", error: unknown, timedOut: boolean): Promise<AppError> {
+    let code: "provider_timeout" | "provider_unavailable" | "rate_limited" | "malformed_provider_result";
+    let message: string;
+    if (step === "understand") {
+      code = timedOut
+        ? "provider_timeout"
+        : error instanceof ProviderError && (error.code === "provider_timeout" || error.code === "rate_limited") ? error.code : "provider_unavailable";
+      message = code === "provider_timeout"
+        ? "Doddy's trip planner didn't finish in time, so nothing was searched."
+        : code === "rate_limited"
+          ? "Claude is busy right now, so nothing was searched. Try again shortly."
+          : "Doddy's trip planner couldn't read the trip just now, so nothing was searched.";
+    } else {
+      const reason = error instanceof FlightSearchError ? error.reason : "unavailable";
+      code = timedOut ? "provider_timeout" : reason === "malformed" ? "malformed_provider_result" : "provider_unavailable";
+      message = timedOut
+        ? "Kiwi.com didn't answer in time, so no flights are shown."
+        : reason === "refused"
+          ? "Kiwi.com didn't answer this search, so no flights are shown."
+          : reason === "malformed"
+            ? "Kiwi.com sent an answer Doddy couldn't read, so no flights are shown."
+            : "Kiwi.com couldn't be reached, so no flights are shown.";
+    }
+    this.deps.log?.({ level: "info", event: "plan_trip_failed", step, code });
+    const receipt = await this.flightReceipt(userId)("read", PLAN_TRIP_TOOL, "failed", message, code, null);
+    return new AppError(code, { message, receipt });
   }
 
   private travelReaderOrRefuse(userId?: string): TravelReader {
@@ -1035,6 +1200,7 @@ export class CloudToolsService {
       return { ...(await this.run(userId, { ...request, tool: call.tool, arguments: call.arguments })), tool: request.tool };
     }
     if (isWebLookup(request.tool)) return this.runWebSearch(userId, request.tool, request);
+    if (request.tool === PLAN_TRIP_TOOL) return this.runPlanTrip(userId, request);
     if (isFlightTool(request.tool)) return this.flights.run(userId, request.tool, request, this.flightReceipt(userId));
     if (isClaudeTool(request.tool)) return this.runClaude(userId, request.tool, request);
     const tool = this.requireTool(request.tool);
@@ -1854,6 +2020,11 @@ export interface TravelScanResult {
 const PlanDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const PlanUnderstandRequest = z.object({ words: z.string().trim().min(1).max(600), brief: TripBrief.optional(), today: PlanDay }).strict();
 const PlanSearchRequest = z.object({ brief: TripBrief, today: PlanDay }).strict();
+
+/** plan_trip's receipt: which question it asked, in fixed words (never the person's). */
+const NEED_WORDS: Record<Needed, string> = { to: "where to", from: "where from", when: "when", nights: "how many nights", who: "how many people" };
+/** A request cut by its timeout signal (a fetch, or a stand-in, rejects with the signal's reason). */
+const isTimeout = (error: unknown) => (error as { name?: unknown } | null)?.name === "TimeoutError";
 
 export interface PlanUnderstood { brief: TripBrief; missing: Needed[]; assumptions: Assumption[] }
 export interface PlanResult {

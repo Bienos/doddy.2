@@ -108,4 +108,9 @@ final class VoiceTurnWatchTests: XCTestCase {
         // research_now searches and reads pages; the screen says "Searching the web…" for it, with no new wording.
         XCTAssertEqual(VoiceWaitActivity.forTool("research_now"), .searchingWeb)
     }
+
+    func testPlanTripSaysItIsLookingItUp() {
+        // plan_trip reads the trip and searches Kiwi.com, up to 30 s: "Looking it up…", with no new wording.
+        XCTAssertEqual(VoiceWaitActivity.forTool("plan_trip"), .lookingUp)
+    }
 }

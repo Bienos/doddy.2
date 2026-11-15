@@ -114,9 +114,11 @@ public struct BackendOnlineAccountsClient: OnlineAccountsClient {
 
     /// How long the app waits for one tool's run, when it isn't the transport's usual 20 s. `research_now` searches
     /// and reads pages on Doddy's server for up to 40 s (`RESEARCH_NOW_TIMEOUT_MS` in backend/src/tools/claude.ts), so
-    /// the app waits 45 s for it and hears the server's own honest timeout first. Every other tool: nil.
+    /// the app waits 45 s for it and hears the server's own honest timeout first. `plan_trip` reads the trip (up to 15 s)
+    /// and searches Kiwi.com (up to 15 s), within 30 s in all (`PLAN_TRIP_TIMEOUT_MS` in backend/src/flights/planTrip.ts):
+    /// the app waits 40 s. Every other tool: nil.
     public static func timeout(for tool: String) -> TimeInterval? {
-        tool == CloudToolName.researchNow ? 45 : nil
+        tool == CloudToolName.researchNow ? 45 : tool == CloudToolName.planTrip ? 40 : nil
     }
 
     public func receipts() async throws(OnlineAccountsError) -> [OnlineToolReceipt] {

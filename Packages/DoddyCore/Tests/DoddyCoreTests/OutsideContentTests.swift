@@ -47,7 +47,11 @@ final class OutsideContentTests: XCTestCase {
             CloudToolName.checkEmail, CloudToolName.readEmail, CloudToolName.checkOutlookEmail, CloudToolName.readOutlookEmail,
             CloudToolName.readOutlookCalendar, "read_google_calendar", CloudToolName.findDriveFile, CloudToolName.searchNotion,
             CloudToolName.readNotionPage, CloudToolName.listTodoistTasks, CloudToolName.webSearch, "news_search", "find_places",
-            CloudToolName.planEvening, CloudToolName.findFlights, CloudToolName.findBookableFlights, CloudToolName.checkFlightBooking,
+            CloudToolName.findFlights, CloudToolName.findBookableFlights, CloudToolName.checkFlightBooking,
+            // plan_trip brings back Kiwi.com's flights, like find_flights.
+            CloudToolName.planTrip,
+            // plan_evening brings back places listings, like find_places.
+            CloudToolName.planEvening,
             "wikipedia_search", "wikipedia_summary", "get_weather", "geocode_place",
             VoiceToolName.checkErrands, VoiceToolName.findDeals, PaymentToolName.payForPage,
             // Claude's answer there is made of the web pages it read: web content, like web_search's.

@@ -121,7 +121,9 @@ public struct RunResult: Codable, Equatable, Sendable {
     /// make_document (ADR-564): the file Claude is making. Its link is for the screen only.
     public let document: RunDocument?
     /// find_flights (decision 2026-11-11-flights-kiwi-search-duffel-booking): Kiwi.com's page for each flight,
-    /// for buttons on screen. The voice agent never gets them. The server sends only https kiwi.com links.
+    /// for buttons on screen. plan_trip: each option's Kiwi.com page, then its Booking.com and Airbnb searches (and
+    /// wakacje.pl for a package); the voice screen shows only the Kiwi.com ones (`RunLink.isKiwi`). The voice agent
+    /// never gets them.
     public var links: [RunLink]? = nil
     public let receipt: OnlineToolReceipt
 }
@@ -262,14 +264,20 @@ public enum CloudToolName {
         findBookableFlights: ("Find flights Doddy can book", flightsAccount, false),
         checkFlightBooking: ("Check a flight booking", flightsAccount, false),
         bookFlight: ("Book a flight", flightsAccount, true),
+        // The trip planner by voice (TRAVEL_PLANNER.md, "Ekran, potem głos"): reads Kiwi.com, books nothing, runs at once.
+        planTrip: ("Plan a trip", flightsAccount, false),
     ]
     /// Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking): Kiwi.com search, Duffel search and booking.
     public static let findFlights = "find_flights"
     public static let findBookableFlights = "find_bookable_flights"
     public static let checkFlightBooking = "check_flight_booking"
     public static let bookFlight = "book_flight"
+    /// The trip planner by voice: one call with everything the user said about the trip. Doddy's server asks the one
+    /// missing thing, or searches Kiwi.com and answers with up to three options (backend/src/flights/planTrip.ts).
+    /// Its answer is Kiwi.com's data, outside content like `find_flights`; its links are for buttons only.
+    public static let planTrip = "plan_trip"
     static let flightsAccount = "Flights"
-    public static let flightTools: Set<String> = [findFlights, findBookableFlights, checkFlightBooking, bookFlight]
+    public static let flightTools: Set<String> = [findFlights, findBookableFlights, checkFlightBooking, bookFlight, planTrip]
     /// Claude (ADR-564): quick writing and summaries, and documents made with Claude's skills.
     public static let askClaude = "ask_claude"
     public static let makeDocument = "make_document"

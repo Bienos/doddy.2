@@ -51,6 +51,8 @@ export async function start(
     travelReader?: TravelReader;
     flightSearch?: FlightSearch;
     flights?: { kiwi: KiwiClient | null; duffel: DuffelClient | null; bookingEnabled: boolean; bookingWaitMs?: number } | null;
+    /** plan_trip's whole deadline, for a quick test of a run out of time. */
+    planTripDeadlineMs?: number;
   } = {},
 ): Promise<Rig> {
   const store = await Store.memory();
@@ -62,7 +64,7 @@ export async function start(
   const webSearch = o.webSearch === undefined ? new MockWebSearchProvider() : o.webSearch;
   const claude = o.claude === undefined ? new MockClaudeProvider() : o.claude;
   const documentLinks = o.documentLinks === false ? null : new DocumentLinks(TEST_LINK_KEY, common.publicBaseUrl);
-  const tools = new CloudToolsService({ ...common, provider, webSearch, claude, documentLinks, flights: o.flights ?? null, ...(o.travelReader ? { travelReader: o.travelReader } : {}), ...(o.flightSearch ? { flightSearch: o.flightSearch } : {}), completionMode: "mock", log: (line) => logs.push(JSON.stringify(line)) });
+  const tools = new CloudToolsService({ ...common, provider, webSearch, claude, documentLinks, flights: o.flights ?? null, ...(o.travelReader ? { travelReader: o.travelReader } : {}), ...(o.flightSearch ? { flightSearch: o.flightSearch } : {}), ...(o.planTripDeadlineMs !== undefined ? { planTripDeadlineMs: o.planTripDeadlineMs } : {}), completionMode: "mock", log: (line) => logs.push(JSON.stringify(line)) });
   const service = new ConnectedAppsService({ ...common, provider: new MockCalendarProvider(), registry: defaultRegistry(), completionMode: "mock" });
   const handler = createHandler({
     service,

@@ -111,9 +111,11 @@ public enum AskFirst {
     /// to Anthropic, whose Claude searches the web and reads two or three pages, within the server's daily limit.
     /// `plan_evening` (decision 2026-11-14-plan-evening-tool) is one places search like `find_places`: only what to look
     /// for and the area leave Doddy's server.
+    /// `plan_trip` (14 Nov 2026) is the trip screen's planner by voice: the words go to Doddy's server and Anthropic to
+    /// become a trip, then only places, dates, people and bags go to Kiwi.com. It books and pays nothing.
     public static let publicLookups: Set<String> = Set([
         VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency,
-        CloudToolName.webSearch, "news_search", "find_places", CloudToolName.researchNow, CloudToolName.planEvening,
+        CloudToolName.webSearch, "news_search", "find_places", CloudToolName.researchNow, CloudToolName.planTrip, CloudToolName.planEvening,
     ]).union(ToolCatalog.webLookups)
 
     /// Looks at the user's own things on this iPhone, or at what Doddy's server holds for them, that run at once

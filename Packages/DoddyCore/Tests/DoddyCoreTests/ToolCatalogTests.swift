@@ -113,7 +113,7 @@ final class ToolCatalogTests: XCTestCase {
                            .union(CloudToolName.all.subtracting(CloudToolName.writes)),
                        "public lookups, looks at the user's own things, Doddy's own small actions and own changes with Undo or that change nothing (step 2b), every read through Doddy's server, translator start and stop (ADR-619), and text_me to the user's own number (decision 2026-11-09-restaurant-calls-one-tap)")
         XCTAssertEqual(AskFirst.publicLookups, ["calculate", "convert_units", "convert_currency", "web_search", "news_search", "find_places",
-                                                "research_now", "plan_evening", "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"])
+                                                "research_now", "plan_trip", "plan_evening", "geocode_place", "get_weather", "wikipedia_search", "wikipedia_summary"])
         for name in AskFirst.publicLookups { XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .lookup, name) }
         XCTAssertEqual(AskFirst.ownLooks, ["search_memories", "read_list", "read_calendar", "find_free_time", "lookup_contact", "upcoming_birthdays",
                                            "find_photos", "look_at_screen", "read_steps", "read_health_week", "list_alarms", "check_stopwatch",
@@ -214,7 +214,8 @@ final class ToolCatalogTests: XCTestCase {
         // Flights live in backend/src/flights (decision 2026-11-11-flights-kiwi-search-duffel-booking); booking is their one write.
         XCTAssertEqual(Set(server.filter { $0.value == "write" }.keys), CloudToolName.writes.subtracting([CloudToolName.bookFlight]))
         XCTAssertTrue(CloudToolName.isWrite(CloudToolName.bookFlight))
-        let flights = try ["kiwi.ts", "duffel.ts", "service.ts"].map {
+        // plan_trip's name, input and words are in planTrip.ts; backend/src/tools/service.ts routes it (it needs Claude).
+        let flights = try ["kiwi.ts", "duffel.ts", "service.ts", "planTrip.ts"].map {
             try String(contentsOf: repoRoot.appendingPathComponent("backend/src/flights/\($0)"), encoding: .utf8)
         }.joined()
         for name in CloudToolName.flightTools {
