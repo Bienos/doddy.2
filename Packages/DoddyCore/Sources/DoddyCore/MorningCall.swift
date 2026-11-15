@@ -166,6 +166,10 @@ extension VoiceToolRequest {
                 problem: "a morning call can be from \(MorningCallLimits.earliest) to \(MorningCallLimits.latest); for one call at another time use call_me_later",
                 question: "for a time in the morning"))
         }
+        // Left out means every day; sent but empty is unclear, so it is refused like any other unreadable days.
+        if args.has("days"), args.text("days") == nil {
+            return .invalid(name: name, reason: "days must be every_day, weekdays, weekend, or weekday names such as mon,wed,fri")
+        }
         guard let days = MorningCallDays(spoken: args.text("days") ?? "every_day") else {
             return .invalid(name: name, reason: "days must be every_day, weekdays, weekend, or weekday names such as mon,wed,fri")
         }
