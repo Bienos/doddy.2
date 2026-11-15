@@ -75,9 +75,11 @@ final class OnlineAccountsContractTests: XCTestCase {
         // Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking) have no Settings section either: book_flight
         // is a write on the server's own gate, not an account tool in the catalog.
         XCTAssertEqual(Set(writes), CloudToolName.writes.subtracting(CloudToolName.flightTools), "the app and the server agree on which tools write")
-        // Claude (ADR-564) has no Settings section: its tools run but aren't listed in the catalog.
+        // Claude (ADR-564) has no Settings section: its tools run but aren't listed in the catalog. plan_evening has no row
+        // of its own either: it follows Find places' switch (decision 2026-11-14-plan-evening-tool).
         XCTAssertEqual(Set(catalog.toolkits.flatMap(\.tools).map(\.name)),
-                       CloudToolName.all.subtracting([CloudToolName.askClaude, CloudToolName.makeDocument, CloudToolName.researchNow])
+                       CloudToolName.all.subtracting([CloudToolName.askClaude, CloudToolName.makeDocument, CloudToolName.researchNow,
+                                                      CloudToolName.planEvening])
                            .subtracting(CloudToolName.flightTools))
 
         let on = try decode(ToolsCatalog.self, "catalog-gmail-on")
