@@ -8,6 +8,9 @@
 #                              the iOS app build and tests are reported NOT RUN (exit 0
 #                              only if everything that was requested passed)
 #   scripts/ci.sh --app-only   Swift package and iOS build/unit/UI tests; Linux checks SKIPPED (ADR-680)
+#                              DODDY_SKIP_PACKAGE_TESTS=1 leaves out the Swift package tests (hosted pull
+#                              requests: the Linux swift job runs them); DODDY_RELEASE_BUILD=only builds
+#                              only Release for a device, no simulator (the ios-release job)
 #   scripts/ci.sh --only a,b   only these groups (hosted Linux jobs run one group each, in parallel):
 #                              checks swift backend node messaging ios
 #                              `ios` is the Xcode build and tests; --only never includes it unless listed.
@@ -110,6 +113,27 @@ pins_not_found() {
 restart_simulator() {
   xcrun simctl shutdown "$1" 2>/dev/null || true  # fails harmlessly if it is already shut down
   xcrun simctl bootstatus "$1" -b                 # -b boots it first, then waits for the boot
+}
+# The simulator's first boot on a hosted Mac takes about 3.5 minutes (15 Nov 2026, run 43715540139: the
+# unit-test step ran 5 minutes for 1 minute of tests). It is started in the background before the build
+# and waited for before the unit tests (decision 2026-11-15-faster-mac-ci). If that boot failed, the
+# simulator is booted again here in the foreground, so a failed early boot only loses the head start.
+early_boot_pid="" early_boot_log=""
+start_early_boot() {  # simulator id
+  early_boot_log=$(mktemp)
+  echo "Booting the simulator in the background while the app builds ($1)"
+  xcrun simctl bootstatus "$1" -b >"$early_boot_log" 2>&1 &
+  early_boot_pid=$!
+}
+finish_early_boot() {  # simulator id
+  local rc=0
+  wait "$early_boot_pid" || rc=$?
+  cat "$early_boot_log"; rm -f "$early_boot_log"
+  early_boot_pid=""
+  if [ "$rc" -ne 0 ]; then
+    echo "The background boot failed (exit $rc); booting the simulator again now."
+    xcrun simctl bootstatus "$1" -b
+  fi
 }
 # Runs a command again when it failed because a download failed (8 Nov 2026: github.com release
 # downloads of the LiveKit binary frameworks answered 504 on hosted runs 42465092351 and others, so
@@ -233,6 +257,7 @@ run_step "Vercel builds a project whenever it can't tell nothing changed (9 Nov 
 run_step "Which Vercel statuses are replaced on pull requests (decision 2026-11-09-vercel-blocked-status)" scripts/test_vercel_blocked_status.sh
 run_step "Privacy manifest declares every required-reason API (7 Nov audit)" scripts/test_check_privacy_manifest.sh
 run_step "The Mac job's package-pin step never blocks without pins (7 Nov audit)" scripts/test_ci_package_pins.sh
+run_step "The Mac jobs' early simulator boot, Release-only and package-test skip (decision 2026-11-15-faster-mac-ci)" scripts/test_ci_mac_phases.sh
 if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
 else
@@ -241,6 +266,12 @@ fi
 fi  # checks
 
 if ! want swift; then :
+elif [ "$app_only" -eq 1 ] && [ "${DODDY_SKIP_PACKAGE_TESTS:-0}" = "1" ]; then
+  # Hosted pull requests (decision 2026-11-15-faster-mac-ci): the Linux `swift` job runs the same tests at
+  # the same time, so the Mac saves about 3 minutes; every push to main still runs them here on Apple's
+  # Foundation (ADR-680), so a difference that only Apple's Foundation shows is found a merge later.
+  record "Swift package tests (DoddyCore)" "SKIPPED" "DODDY_SKIP_PACKAGE_TESTS=1: the Linux swift job runs them; pushes to main run them here too"
+  record "Dynamic Island art and scenes" "SKIPPED" "--app-only: Linux core runs them"
 elif command -v swift >/dev/null 2>&1; then
   swift --version
   # Ubuntu's system SQLite lacks the snapshot API GRDB enables by default; Doddy does not use it.
@@ -370,8 +401,14 @@ else
   # generated project before anything resolves, and checked once Xcode has resolved (check_package_pins).
   run_step "Install the pinned package versions" scripts/install_package_resolved.sh Doddy.xcodeproj
   pins_checked=0
+  # DODDY_RELEASE_BUILD=only (the ios-release job, decision 2026-11-15-faster-mac-ci): only the Release
+  # build for a device below, beside the ios-build job instead of after its tests; no simulator.
+  release_only=0
+  if [ "${DODDY_RELEASE_BUILD:-0}" = "only" ]; then release_only=1; fi
   # Default: first available iPhone simulator; override with DODDY_DESTINATION.
-  if [ -n "${DODDY_DESTINATION:-}" ]; then
+  if [ "$release_only" -eq 1 ]; then
+    dest="generic/platform=iOS"
+  elif [ -n "${DODDY_DESTINATION:-}" ]; then
     dest=$DODDY_DESTINATION
   else
     sim_id=$(xcrun simctl list devices available | grep -E '^ +iPhone' | head -1 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
@@ -381,6 +418,8 @@ else
     not_run "iOS app build + tests" "no available iPhone simulator; install one or set DODDY_DESTINATION"
   else
     echo "Destination: $dest"
+    # Only when this script picked the simulator (a DODDY_DESTINATION may name one by name).
+    if [ "$release_only" -eq 0 ] && [ -n "${sim_id:-}" ]; then start_early_boot "$sim_id"; fi
     # Resolve the packages first, and again when a download fails (with_fetch_retries): `-list` also
     # resolves, so before this a single failed download failed all three steps. A failure to fetch
     # a package still stops the run before the long build, and the pins can be checked now. If Xcode
@@ -398,12 +437,17 @@ else
     # hold of the app for three minutes, so the first 12 UI tests failed before any test code ran.
     # Keep compiling the other targets after the first error, so one run lists every compile
     # error instead of stopping at the first target that fails (owner request, 2026-10-12).
-    if run_step "xcodebuild build-for-testing" xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy \
+    if [ "$release_only" -eq 1 ]; then
+      record "xcodebuild build-for-testing, unit and UI tests" "SKIPPED" "DODDY_RELEASE_BUILD=only: the ios-build job runs them"
+    elif run_step "xcodebuild build-for-testing" xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy \
       -destination "$dest" -IDEBuildingContinueBuildingAfterErrors=YES; then
       # A per-test time limit (ADR-680): a test that hangs fails after 10 minutes instead of using
       # up the job (on 2 Nov one waited 49 minutes for the app to close, run 41368047283). The
       # longest UI test takes about 290 s, so 600 s only ends a test that is stuck.
       test_limits="-test-timeouts-enabled YES -default-test-execution-time-allowance 600"
+      if [ -n "$early_boot_pid" ]; then
+        run_step "Simulator booted (started before the build)" finish_early_boot "$sim_id"
+      fi
       # shellcheck disable=SC2086
       run_step "xcodebuild test: unit tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
         -destination "$dest" -only-testing:DoddyTests $test_limits
@@ -468,7 +512,8 @@ else
     # DODDY_RELEASE_BUILD=1 (hosted CI on pushes to main): compile the Release configuration for
     # devices, unsigned. Everything above is a Debug simulator build; without this, Xcode Cloud's
     # archive was the first Release compile, where a failure costs build hours and a TestFlight build.
-    if [ "${DODDY_RELEASE_BUILD:-0}" = "1" ]; then
+    # DODDY_RELEASE_BUILD=only: the same build, on its own (see release_only above).
+    if [ "${DODDY_RELEASE_BUILD:-0}" = "1" ] || [ "$release_only" -eq 1 ]; then
       run_step "xcodebuild build: Release, generic iOS device, unsigned" xcodebuild build -project Doddy.xcodeproj \
         -scheme Doddy -configuration Release -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO \
         -IDEBuildingContinueBuildingAfterErrors=YES

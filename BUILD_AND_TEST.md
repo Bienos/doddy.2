@@ -166,8 +166,10 @@ tests primary success, download/install failures, fallback failure and cleanup.
   (gateway, web, site, voice token, secrets tool) and `messaging` (with Postgres). npm downloads are cached.
 - `core`: one result for all the Linux groups, green when every group that ran passed (a skipped group is fine).
 - `ios-build` (macOS; named `ci` until ADR-811; runner image `macos-26` and Xcode 26.6 pinned):
-  `scripts/ci.sh --app-only`: the Swift package tests, then the Xcode part (build
-  once with `xcodebuild build-for-testing`, unit tests, restart the simulator, UI tests: ADR-561; then the
+  `scripts/ci.sh --app-only`: the Swift package tests (pushes to `main` and runs by hand only; on pull
+  requests `DODDY_SKIP_PACKAGE_TESTS=1` leaves them to the Linux `swift` job), then the Xcode part (the
+  simulator starts booting in the background, the build runs once with `xcodebuild build-for-testing`, the
+  boot is waited for, unit tests, restart the simulator, UI tests: ADR-561; then the
   simulator restarted again and the native island test alone, under an 8-minute watchdog, because the hosted
   simulator sometimes freezes during it: ADR-764). A UI test that failed only because the app would not start
   ("Failed to launch", "Failed to get launch progress") is run once more on a restarted simulator; any other
@@ -195,8 +197,11 @@ tests primary success, download/install failures, fallback failure and cleanup.
   download fails, such as the `badResponseStatusCode(504)` that github.com release downloads of the LiveKit
   binary frameworks gave on 8 Nov 2026 (`xcodebuild` exit 74). Any other error is not retried, and the step
   still fails after the last attempt. `CI_FETCH_TRIES` and `CI_FETCH_WAIT` change the numbers.
-- Pushes to `main` also compile Release for a generic iOS device, unsigned (`DODDY_RELEASE_BUILD=1`), so a
-  Release-only error shows up before Xcode Cloud archives.
+- Pushes to `main` also compile Release for a generic iOS device, unsigned, so a Release-only error shows up
+  before Xcode Cloud archives. Since 15 Nov 2026 that is its own job, `ios-release`
+  (`DODDY_RELEASE_BUILD=only scripts/ci.sh --app-only`: no simulator, no tests), beside `ios-build` instead of
+  its last 18 minutes; it is not a required check. `DODDY_RELEASE_BUILD=1` still adds the Release build after
+  the tests in a local run (decision `2026-11-15-faster-mac-ci`).
 - `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): fails when a pull request changes how Doddy
   is signed, configured, deployed or governed (`scripts/check_sensitive_paths.sh` lists the paths: also
   dependency manifests and lockfiles, CI scripts and the `Makefile`, agent settings, skills and prompts,
@@ -217,6 +222,12 @@ Locally: `scripts/ci.sh --only swift,backend` runs just those groups; `--app-onl
 minutes at the median, 59 at the 90th percentile. The Mac job takes about 34 minutes, 28 of them UI tests (the
 motion, art and memory-journey classes about 20, the smoke classes about 8). The Linux groups finish well
 before it. Older measurements (1 Nov, before the Linux groups split, ADR-684) are in the git history of this file.
+
+**Timings measured 15 Nov 2026** (job logs, before decision `2026-11-15-faster-mac-ci`): a pull request's `ios-build`
+waited 9.5 minutes for a Mac, then ran 28.7 (package tests 3, build 5, unit tests 5 of which 3.5 were the simulator's
+first boot, UI smoke tests 14.5; run 43716467848). A push to `main` ran 70.5 (UI tests 35, Release build 18.5;
+run 43715540139). The slowest UI tests: `MemoryJourneyTests.testApprovedJourneyCorrectionRetainsOriginalAfterRestart`
+269 s and `MotionRideTests.testHeRidesTheMemoriesListAndAPageCoversHimInPlace` 171 s.
 
 **Cost:** the repository is public, so standard hosted Actions runners are free (ADR-543). If it goes private
 again, a Mac run costs about $2 to $3 (about $0.062 a minute in October 2026).

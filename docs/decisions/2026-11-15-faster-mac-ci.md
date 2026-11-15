@@ -1,0 +1,29 @@
+# The Mac CI boots its simulator during the build, leaves the package tests to Linux on pull requests, and builds Release in a job of its own
+
+- **Date:** 2026-11-15
+- **Decided by:** owner ("jak można ogólnie te buildy przyspieszyć, ten iOS za długo trwa", then "okej to dawaj zaaktualizuj to żeby to było szybciej")
+- **Status:** accepted
+- **Replaces:** nothing; narrows ADR-680 (DoddyCore on Apple's Foundation now runs on pushes to `main` and runs by hand, not on pull requests) and moves ADR-811's Release compile into its own job
+
+## Why
+Measured from the job logs of 15 Nov 2026:
+
+- Pull request, run 43716467848 (`ios-build`, 28.7 minutes of `scripts/ci.sh --app-only`, after 9.5 minutes waiting for a Mac): Swift package tests 3 min, build for testing 5 min, unit tests 5 min (30 s of tests), UI smoke tests 14.5 min.
+- Push to `main`, run 43715540139 (70.5 minutes): package tests 2.6 min, build 5.5 min, unit tests 5 min (1 min of tests), UI tests 35 min, island test 2.4 min, Release build for a device **18.5 min**.
+- In the unit-test step, 3.5 minutes pass between xcodebuild picking the simulator and the first test: the simulator's first boot on the hosted Mac. The restart before the UI tests (a warm boot) takes 30 s.
+- The Linux `swift` job already runs the same DoddyCore tests in parallel with the Mac.
+
+## Decision
+1. `scripts/ci.sh` starts the simulator's boot (`xcrun simctl bootstatus <id> -b`) in the background as soon as it has picked the simulator, before the packages resolve and the build runs, and waits for it in a step of its own, "Simulator booted (started before the build)", right before the unit tests. If the background boot failed, the simulator is booted again in the foreground, so a failed early boot only loses the head start. With `DODDY_DESTINATION` set, nothing boots early (as before, the script restarts only a simulator it picked).
+2. `DODDY_SKIP_PACKAGE_TESTS=1` with `--app-only` leaves out the Swift package tests and lists them as SKIPPED. `ios-build` sets it on pull requests only; pushes to `main` and runs by hand still run them on Apple's Foundation.
+3. `DODDY_RELEASE_BUILD=only` builds only Release for a generic iOS device, unsigned, with no simulator and no tests. The new job `ios-release` (pushes to `main` and full runs by hand, same image and Xcode, restores the package cache but never saves it) runs it beside `ios-build`; `ios-build` no longer builds Release (`DODDY_RELEASE_BUILD=0`). `ios-release` is not a required check; pull requests never run it, as before.
+
+## Consequences
+- Expected: about 3 minutes less on every Mac run from the early boot, about 3 more on pull requests from the package tests, and a `main` run that ends about 18 minutes sooner. These are estimates from the logs above; this pull request's own run is the first measurement of 1 and 2, and the first push to `main` after it measures 3.
+- A difference that only Apple's Foundation shows in DoddyCore is found one merge later, on `main`, the same trade ADR-811 made for the full UI suite.
+- A push to `main` now takes two Macs at once for about 20 minutes instead of one Mac for 18 more minutes, so the Mac minutes are about the same; while several merges land together, a pull request can wait a little longer for a free Mac.
+- The early boot competes with the compiler for the hosted Mac's cores; if the build step gets slower by more than the boot saves, undo item 1.
+- Not done, waiting on the owner: skipping the Mac on pushes to `main` that change only documents (ADR-811 says every push runs everything), splitting the full UI suite across two Macs, and caching compiled build products.
+
+## Evidence
+`scripts/test_ci_mac_phases.sh` (stand-ins for xcrun, xcodebuild, xcodegen and swift; 24 checks, in the `checks` group; 11 of them fail against the previous `scripts/ci.sh`), `scripts/test_ci_package_pins.sh` and `scripts/ci.sh --only checks` on Linux. Not run here: the hosted Mac jobs (no Xcode in this session).
