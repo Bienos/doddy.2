@@ -250,6 +250,9 @@ public enum CloudToolName {
         // so like web search these ask with a card and run on a spoken yes or a tap.
         askClaude: ("Ask Claude", claudeAccount, false),
         makeDocument: ("Make a document with Claude", claudeAccount, false),
+        // 14 Nov 2026: a quick web look-up in the conversation. Claude searches and reads two or three pages with
+        // Anthropic's own tools on Doddy's server; it changes nothing, so it runs at once like web_search.
+        researchNow: ("Research the web with Claude", claudeAccount, false),
         // Decision 2026-11-11-flights-kiwi-search-duffel-booking: no account. The searches and the
         // booking check run at once; a booking waits for a tap on the card that shows the exact booking.
         findFlights: ("Find flights", flightsAccount, false),
@@ -267,6 +270,9 @@ public enum CloudToolName {
     /// Claude (ADR-564): quick writing and summaries, and documents made with Claude's skills.
     public static let askClaude = "ask_claude"
     public static let makeDocument = "make_document"
+    /// A quick, read-only web look-up answered in the conversation: Claude on Doddy's server searches the web and reads
+    /// two or three pages (backend/src/tools/claude.ts). Its answer is web content (`OutsideContentSession.isSource`).
+    public static let researchNow = "research_now"
     static let claudeAccount = "Claude"
     /// Web search through Monid on Doddy's server. No account; only a switch in Settings.
     public static let webSearch = "web_search"

@@ -21,7 +21,8 @@ public enum VoiceWaitActivity: String, Sendable, CaseIterable {
     /// the plain "Working on it…" (most tools answer in well under a second).
     public static func forTool(_ name: String) -> VoiceWaitActivity? {
         switch name {
-        case "web_search": .searchingWeb
+        // research_now searches and reads pages: the same words on the screen, "Searching the web…".
+        case "web_search", "research_now": .searchingWeb
         case "news_search": .readingNews
         case "look_at_screen": .lookingAtScreen
         case "search_memories": .searchingNotes
