@@ -145,7 +145,7 @@ final class DeviceStoreInventoryTests: XCTestCase {
     func testEveryKeychainServiceInTheSourcesIsClassified() throws {
         let known = Set(DeviceKeychain.services.map(\.name))
         var used = Set<String>()
-        let pattern = try NSRegularExpression(pattern: #""(com\.bienos\.doddy2\.[A-Za-z0-9\-]+)""#)
+        let pattern = try NSRegularExpression(pattern: #""(com\.bienos\.doddy2\.[A-Za-z0-9.\-]+)""#)
         for file in try AppSourceScan.swiftFiles() where file.text.contains("kSecClass") && !file.path.contains("/DeviceErasure/") {
             for match in pattern.matches(in: file.text, range: NSRange(file.text.startIndex..., in: file.text)) {
                 if let range = Range(match.range(at: 1), in: file.text) { used.insert(String(file.text[range])) }
@@ -162,7 +162,7 @@ final class DeviceStoreInventoryTests: XCTestCase {
         XCTAssertTrue(DeviceKeychain.shouldErase(service: "com.bienos.doddy2.gateway", scope: .keepSignIn))
         XCTAssertTrue(DeviceKeychain.shouldErase(service: "com.bienos.doddy2.voice-access-code", scope: .keepSignIn))
         // The sign-in and what ties this iPhone to its servers stay, unless the account was deleted.
-        for name in ["doddy-account", "voice-session", "voice-account-session", "voice-account-session-owed", "backend-account-session", "backend-account-session-owed", "connected-apps", "server", "device"] {
+        for name in ["doddy-account", "voice-session", "voice-account-session", "voice-account-session-owed", "backend-account-session", "backend-account-session-owed", "connected-apps", "server", "server.pending-revocation", "device"] {
             XCTAssertFalse(DeviceKeychain.shouldErase(service: "com.bienos.doddy2.\(name)", scope: .keepSignIn), name)
             XCTAssertTrue(DeviceKeychain.shouldErase(service: "com.bienos.doddy2.\(name)", scope: .afterAccountDeleted), name)
         }
@@ -190,7 +190,7 @@ final class DeviceStoreInventoryTests: XCTestCase {
             ["com.bienos.doddy2.doddy-account", "com.bienos.doddy2.voice-session", "com.bienos.doddy2.voice-account-session",
              "com.bienos.doddy2.voice-account-session-owed", "com.bienos.doddy2.backend-account-session",
              "com.bienos.doddy2.backend-account-session-owed", "com.bienos.doddy2.connected-apps",
-             "com.bienos.doddy2.server", "com.bienos.doddy2.device"])
+             "com.bienos.doddy2.server", "com.bienos.doddy2.server.pending-revocation", "com.bienos.doddy2.device"])
         XCTAssertEqual(DeviceKeychain.keptServices(scope: .afterAccountDeleted), [])
     }
 
@@ -228,5 +228,17 @@ final class DeviceStoreInventoryTests: XCTestCase {
         }
         let names = DeviceKeychain.services.map(\.name)
         XCTAssertEqual(Set(names).count, names.count, "no service is listed twice")
+    }
+
+    /// The messaging server's owed sign-out slot has a dot after its first segment (`server.pending-revocation`). It is
+    /// a server tie: kept while the person stays signed in, so erasing the iPhone's data cannot drop a sign-out the
+    /// server is still owed, and erased once the account is deleted.
+    func testTheMessagingServersOwedSignOutSlotIsRegisteredKeptWhileSignedInAndErasedWithTheAccount() {
+        let owed = "com.bienos.doddy2.server.pending-revocation"
+        XCTAssertEqual(DeviceKeychain.services.first { $0.name == owed }?.role, .serverTie)
+        XCTAssertFalse(DeviceKeychain.shouldErase(service: owed, scope: .keepSignIn))
+        XCTAssertTrue(DeviceKeychain.shouldErase(service: owed, scope: .afterAccountDeleted))
+        XCTAssertEqual(DeviceKeychain.store(for: owed), .keychainServerHandles)
+        XCTAssertFalse(DeviceKeychain.services.first { $0.name == owed }?.holds.isEmpty ?? true)
     }
 }
