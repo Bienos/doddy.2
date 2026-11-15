@@ -182,6 +182,9 @@ tests primary success, download/install failures, fallback failure and cleanup.
   push's files for `scripts/ci_needs_mac.sh`; decision `2026-11-15-faster-mac-ci`), so a skipped `ios-build`
   on `main` means "not needed", never "passed". Pull requests keep the path selection above, and a newer push
   to a pull request cancels its older run.
+- UI tests wait with `appears(timeout:)` and `pollUntil` (`DoddyUITests/UITestLaunch.swift`), never XCTest's
+  `waitForExistence(timeout:)`, whose first look comes only after about a second even when the element is there
+  (`scripts/check_ui_test_waits.sh`, in `checks`; decision `2026-11-15-faster-mac-ci`).
 - UI tests on pull requests are the smoke classes only (`DODDY_UI_TESTS=smoke`: `LaunchSmokeTests`,
   `WelcomeUITests`, `LegalAcceptanceUITests`, `PolishSmokeTests`, about 8 of the suite's 27 minutes on
   7 Nov 2026); pushes to `main`, runs by hand and pull requests labelled `full-ui-tests` run every UI

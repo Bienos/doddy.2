@@ -249,7 +249,7 @@ final class ScreenFixtureTests: XCTestCase {
 
     @MainActor
     private func see(_ element: XCUIElement, _ timeout: TimeInterval = 6) -> Bool {
-        element.waitForExistence(timeout: timeout)
+        element.appears(timeout: timeout)
     }
 
     @MainActor

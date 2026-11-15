@@ -56,18 +56,41 @@ enum UITestLaunch {
     }
 }
 
+/// Looks at `condition` about every 0.1 s until it holds or `timeout` has passed; true when it held.
+/// XCTest's own waits (`waitForExistence(timeout:)`, an `XCTNSPredicateExpectation`) look the first time
+/// only about a second after they start, even when the answer is already yes: on the hosted Mac on
+/// 15 Nov 2026 (run 43715540139) the UI suite's 484 waits took 581 of its 1,995 seconds, and 467 of them
+/// ended within 1.5 s (decision 2026-11-15-faster-mac-ci). The answer is the same; the second isn't spent.
+@MainActor
+func pollUntil(timeout: TimeInterval, _ condition: () -> Bool) -> Bool {
+    let deadline = Date().addingTimeInterval(timeout)
+    while true {
+        if condition() { return true }
+        let now = Date()
+        if now >= deadline { return false }
+        RunLoop.current.run(until: min(deadline, now.addingTimeInterval(0.1)))
+    }
+}
+
 extension XCUIElement {
+    /// `waitForExistence(timeout:)` without its first second (see `pollUntil`): true as soon as the element
+    /// exists, false if it still doesn't after `timeout`. The UI tests use this instead of
+    /// `waitForExistence`, also for "it must not appear" checks, which still wait the whole `timeout`.
+    @MainActor
+    func appears(timeout: TimeInterval) -> Bool {
+        pollUntil(timeout: timeout) { exists }
+    }
+
     /// Taps a text field or text view and types once it really has the keyboard focus. A tap while
     /// its sheet is still sliding in can land before the view accepts focus, and `typeText` then
     /// fails with "Neither element nor any descendant has keyboard focus" (PR #119's second Mac
     /// run, in MotionRideTests' note saves). Taps again, up to `tries` times, before typing.
+    /// The focus is polled (`pollUntil`), the same attribute the earlier predicate read.
     @MainActor
     func tapAndType(_ text: String, tries: Int = 3) {
-        let focused = NSPredicate(format: "hasKeyboardFocus == true")
         for _ in 0..<tries {
             tap()
-            let wait = XCTNSPredicateExpectation(predicate: focused, object: self)
-            if XCTWaiter.wait(for: [wait], timeout: 2) == .completed { break }
+            if pollUntil(timeout: 2, { (value(forKey: "hasKeyboardFocus") as? Bool) == true }) { break }
         }
         typeText(text)
     }
@@ -112,7 +135,7 @@ extension XCUIApplication {
         descendants(matching: .button)
             .matching(NSPredicate(format: "identifier IN %@", ["tab.\(name)", "home.more"]))
             .firstMatch
-            .waitForExistence(timeout: timeout)
+            .appears(timeout: timeout)
     }
 
     /// Goes to tab `name` ("memories", "settings"): the tab bar (or iPad's sidebar) where there is
@@ -137,12 +160,12 @@ extension XCUIApplication {
         // Settings keeps the page it was on: Doddy's memory, when notes were opened from it (ADR-633).
         // Back to its first page (Voice is its first row), where the tests start.
         if name == "settings" {
-            _ = buttons["settings.voice"].waitForExistence(timeout: 2)
+            _ = buttons["settings.voice"].appears(timeout: 2)
             for _ in 0..<3 where !buttons["settings.voice"].exists {
                 let back = navigationBars.buttons.element(boundBy: 0)
                 guard back.exists else { break }
                 back.tap()
-                _ = buttons["settings.voice"].waitForExistence(timeout: 2)
+                _ = buttons["settings.voice"].appears(timeout: 2)
             }
         }
     }
@@ -151,10 +174,10 @@ extension XCUIApplication {
     @MainActor
     func tapHomeMenuItem(_ identifier: String) {
         let more = buttons["home.more"]
-        _ = more.waitForExistence(timeout: 5)
+        _ = more.appears(timeout: 5)
         more.tap()
         let item = buttons[identifier]
-        _ = item.waitForExistence(timeout: 5)
+        _ = item.appears(timeout: 5)
         item.tap()
     }
 
@@ -165,19 +188,19 @@ extension XCUIApplication {
     func openFind() -> Bool {
         goToTab("memories")
         let find = buttons["memories.find"]
-        guard find.waitForExistence(timeout: 5) else { return false }
+        guard find.appears(timeout: 5) else { return false }
         find.tap()
-        return textFields["memories.query"].waitForExistence(timeout: 5)
+        return textFields["memories.query"].appears(timeout: 5)
     }
 
     /// Home's + is a menu since 5 Nov 2026 (Take a photo, Choose a photo, New note): opens the new-note screen.
     @MainActor
     func openNewNote() {
         let plus = buttons["home.save"]
-        _ = plus.waitForExistence(timeout: 5)
+        _ = plus.appears(timeout: 5)
         plus.tap()
         let note = buttons["home.save.note"]
-        _ = note.waitForExistence(timeout: 5)
+        _ = note.appears(timeout: 5)
         note.tap()
     }
 

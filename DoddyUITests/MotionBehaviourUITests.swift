@@ -29,7 +29,7 @@ final class MotionBehaviourUITests: XCTestCase {
     func testATapOnHimOpensTheVoiceScreen() {
         let app = launch()
         let him = app.marker("doddy.motion.idle")
-        XCTAssertTrue(him.waitForExistence(timeout: 8))
+        XCTAssertTrue(him.appears(timeout: 8))
         let soles = CGPoint(x: him.frame.midX, y: him.frame.maxY)
         app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: soles.x, dy: soles.y - 60)).tap()
         let end = Date().addingTimeInterval(5)
@@ -46,9 +46,9 @@ final class MotionBehaviourUITests: XCTestCase {
     func testLeftAloneOnHomeHeSitsCrossLeggedOnTheStage() {
         let app = launch()
         let stage = app.marker("doddy.surface.stage")
-        XCTAssertTrue(stage.waitForExistence(timeout: 8))
+        XCTAssertTrue(stage.appears(timeout: 8))
         let sitting = app.marker("doddy.pose.crosslegged")
-        XCTAssertTrue(sitting.waitForExistence(timeout: 30))
+        XCTAssertTrue(sitting.appears(timeout: 30))
         XCTAssertEqual(sitting.frame.maxY, stage.frame.minY, accuracy: 2)
         XCTAssertEqual(drawings(in: app).count, 1)
         let label = app.staticTexts["doddy.debug"].label
