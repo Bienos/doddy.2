@@ -446,6 +446,14 @@ Both lines are merged now, so the spec has them all.
 - **Version:** `agtvrsn_8601m4n87tvmf83azq8ek4wtpst4` → `agtvrsn_7701m4n8vprrem78gmfjjmq77t96`. Rollback: the first version, which has 39 tools. An installed app without this round replies "unsupported" to the four new tools.
 - **Known drift at the time, since merged:** the live agent also had `undo_last`, `upcoming_birthdays`, `calculate` and `convert_units` from another line. They are now in this spec and the app answers them.
 
+## Every conversation is scored (live since 14 Nov 2026)
+**Applied 14 Nov 2026, about 21:22 UTC (owner's "8 okej" to "automatic evaluation of each conversation"; decision `docs/decisions/2026-11-14-score-every-voice-conversation.md`).** Main agent, analysis settings only: the prompt (31,434 characters), the 119 tools, the voice and the turn settings are unchanged (read back with the config summary after each call). ElevenLabs runs the analysis when a conversation ends, with its default analysis model (`gemini-2.5-flash`), on the transcript it already keeps; nothing new leaves the phone and no new company sees the conversation.
+- `agtvrsn_1201m7dyz6xdeharp66kmmazayce`: four yes/no criteria (the exact texts are in `voice-agent/evaluation.json`): `doddy_did_the_task` (every clear request done, answered or honestly declined), `doddy_no_false_cant` (no wrong "I can't", no "Mam poszukać?" before a look-up the user asked for), `doddy_tools_worked` (no tool error, timeout or abandoned tool), `doddy_true_to_results` (no price, date, hour or "done" that no tool result supports; DOD-08, DOD-09); and two data fields: `failure_kind` (one of `none`, `said_cant`, `asked_instead_of_doing`, `tool_failed`, `tool_abandoned`, `wrong_tool`, `slow`, `made_up_detail`, `other`) and `failed_request` (at most 12 English words, no personal details).
+- `agtvrsn_2201m7dyzktqfcc9k4djgfjgf5mc`: ElevenLabs' built-in frustration check (`__system_eval_criteria_frustration`) added to the same list. Sentiment and topic discovery were already on.
+- **Rollback:** `agents_update_analysis` with empty `analysis_items` (`evaluation_criteria: []`, `data_collection: []`); before this there were none. The live version before: `agtvrsn_3801m7dy4mebeeys840egzdqvb0w`.
+- **How it's used:** conversations that fail a criterion, or whose `failure_kind` isn't `none`, are where new agent tests come from (as the five of 14 Nov were made by hand). Read them in the agent's Conversations list (filter by evaluation) or with the ElevenLabs connector.
+- **Not run:** no conversation has been scored yet at the time of writing; whether the checks judge fairly is read from the first real ones.
+
 ## App side (DoddyCore `RealtimeVoice.swift`)
 
 - `RealtimeEvent`: what any provider reports, named after Realtime server events
