@@ -128,6 +128,7 @@ public enum DevicePreferences {
         "paymentsEverEnabled", "paymentsAcknowledgedUnresolved", "paymentsLastUnresolved",
         "assistantUseNotes", "suggestSavesAfterConversation", "connectedConversations", "welcomeReplay",
         "deals.programsNotUsed", "deals.myShops", "deals.minimumSaving",
+        "startTimingJournal",
     ]
 
     /// True when somebody decided about this key: it is kept with a reason, or listed as erased.
