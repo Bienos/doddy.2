@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-14
 - **Decided by:** owner, 14 Nov 2026: "Niech zapisuje ale nie mówi użytkownikowi co chwilę że zapisał nie trzeba my będziemy tego używać żeby mieć lepszy context o użytkowniku", then chose the recommended option (kept on this iPhone only, used by Doddy, visible and deletable) and added: "te przełączniki to nw ogólnie powinno być coś takie jak memories or storage w ustawieniach i tam powinien być dostęp"
-- **Status:** accepted; step 1 of 3 in the pull request that adds this file
+- **Status:** accepted; step 1 in the pull request that adds this file (#473), step 3 in the one after it; step 2 waits for #454
 - **Replaces:** for people who turn it on, the after-conversation card that asks about a preference or personal fact (`FactProposer`, ADR-440 Phase C). Nothing else; the "Worth keeping?" card for notes stays
 
 ## Why
@@ -32,7 +32,7 @@ Steps:
    - everything Doddy keeps: notes, learned facts, recaps. Each one is visible, with "kept from what you said on <date>" for a quietly kept fact, and each can be deleted.
    - The app calls `keepQuietlyAfterConversation` when a conversation ends, before the "Worth keeping?" card, and never announces it.
    - `docs/trust/config/doddy_rules.yaml` gets its `memory_policy.quiet_learning` lines in the same pull request, so the constitution names quiet memory when the app starts doing it.
-3. **A changed fact replaces the old one:** "Mieszkam w Berlinie" kept quietly retires "Mieszkam w Warszawie" (the rules of decision `2026-11-14-changed-facts-update-the-note`). The old one stays visible as replaced.
+3. **A changed fact replaces the old one:** "Mieszkam w Berlinie" kept quietly retires "Mieszkam w Warszawie" (the rules of decision `2026-11-14-changed-facts-update-the-note`, `NoteUpdateMatch.isSameThing`: where the person lives or works, or the same words with a different number). Only when exactly one confirmed fact fits, whether it was kept quietly or confirmed on a card; two that fit, or none, change nothing. The old one is retired, not deleted, so it stays visible as replaced and no longer reaches a conversation. Built after step 1, before step 2 (`LearningService.retireFactChanged`).
 
 ## Consequences
 - **Doddy gets to know the person** from what they say, without a card per fact, once they have said yes to it.
