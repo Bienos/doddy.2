@@ -34,6 +34,9 @@ final class AgentVoiceMeter: NSObject, AudioRenderer, @unchecked Sendable {
     private var attached = false
     /// Waits for the first sound after a press; nothing is timed without one (`beginStart`).
     private var onset = VoiceAudibleOnset()
+    /// From the provider's interruption event to his voice going quiet at the output (decision
+    /// 2026-11-15-conversation-core-and-corrections).
+    private var silence = VoiceInterruptSilence()
 
     func render(pcmBuffer: AVAudioPCMBuffer) {
         let rate = pcmBuffer.format.sampleRate
@@ -45,8 +48,37 @@ final class AgentVoiceMeter: NSObject, AudioRenderer, @unchecked Sendable {
         peak = max(peak, smoother.push(level, seconds: seconds))
         updatedAt = now
         let firstSound = onset.push(level: level, seconds: seconds, at: now)
+        let quiet = silence.push(level: level, seconds: seconds, at: now)
         lock.unlock()
         if let firstSound { Self.reportFirstSound(firstSound) }
+        if let quiet { Self.reportSilence(quiet) }
+    }
+
+    /// The provider's interruption event reached the phone: times how long his voice still came out. Buffers may
+    /// stop coming once his track is quiet, so it also looks after the quiet stretch and at the limit.
+    func beginInterruption(at now: TimeInterval) {
+        lock.lock()
+        silence.begin(at: now)
+        lock.unlock()
+        for delay in [VoiceInterruptSilence.quietSeconds + 0.05, VoiceInterruptSilence.maxWait + 0.05] {
+            DispatchQueue.global(qos: .utility).asyncAfter(deadline: .now() + delay) { [weak self] in
+                self?.checkSilence()
+            }
+        }
+    }
+
+    private func checkSilence() {
+        lock.lock()
+        let quiet = silence.check(at: ProcessInfo.processInfo.systemUptime)
+        lock.unlock()
+        if let quiet { Self.reportSilence(quiet) }
+    }
+
+    /// One log line, off the audio thread. Fixed words and seconds only; never sent anywhere.
+    private static func reportSilence(_ result: VoiceInterruptSilence.Result) {
+        DispatchQueue.global(qos: .utility).async {
+            audioLog.notice("voice \(result.line, privacy: .public)")
+        }
     }
 
     /// A press (Home's tap, the Action Button) that is about to start a conversation: `startedAt` is
@@ -112,6 +144,7 @@ final class AgentVoiceMeter: NSObject, AudioRenderer, @unchecked Sendable {
         updatedAt = nil
         attached = false
         onset.reset()
+        silence.reset()
         lock.unlock()
     }
 
