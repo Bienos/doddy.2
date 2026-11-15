@@ -1,0 +1,41 @@
+# Doddy's web search asks Exa through Monid instead of Search1API, with Search1API one setting away
+
+- **Date:** 2026-11-14
+- **Decided by:** owner, 14 Nov 2026: "Możemy ogarnąć szybszą wyszukiwarkę" (we can sort out a faster search engine). The choice of Exa, the setting, the deadlines and the fallback are this proposal's; shipping it is a deploy of `doddy`, on the owner's word (`docs/OWNER_QUEUE.md` 121).
+- **Status:** proposed; applied in the pull request that adds `webSearchRequest` to `backend/src/tools/websearch.ts`. Nothing is live until `doddy` is deployed with it.
+- **Replaces:** the endpoint part of ADR-173 (Search1API `/search` as web search's one endpoint). ADR-489 (news and places, the price on the card) is unchanged.
+
+## Why
+Voice web search felt slow. Monid's catalog, read 14 Nov 2026 21:18 UTC:
+
+| Endpoint | p50 | p95 | Price |
+|---|---|---|---|
+| Exa `/search` | 3,396 ms | 4,404 ms | $0.007 per call (up to 10 results) |
+| Search1API `/search` (live until now) | 3,753 ms | 15,840 ms | $0.001 per search (none when nothing is found) |
+
+The code's comment said p50 ≈ 7 s, p95 ≈ 17 s for Search1API. The middle case is close; Search1API's slow tail is the problem, and the 15 s deadline cut some searches off. Read again on 15 Nov 2026 about 00:20 UTC (inspect only): Exa the same, Search1API p50 3,606 ms, p95 6,838 ms, so Search1API's tail moves around.
+
+One real Exa run through the Monid connector, 14 Nov 2026 21:19 UTC, run `01M7DYW86MDJRN56SVKD3HYGBV`, body `{"query":"weekend w Warszawie 14-15 listopada 2026 wydarzenia","type":"fast","numResults":5,"contents":{"highlights":{"numSentences":3,"highlightsPerUrl":2}}}`: COMPLETED in 2.19 s end to end (Exa's own `searchTime` 265.6 ms), $0.007. Output `{ requestId, resolvedSearchType, results: [{ id, title, url, publishedDate?, author?, highlights: string[], image? } ×5], searchTime, warnings }`. The one warning was `IGNORED_FIELD` for `highlightsPerUrl` ("no longer supported"). One result's single highlight was about 3,000 characters of a list. The results were current, dated pages in Polish.
+
+## Decision
+- **Exa by default.** `web_search` asks Monid's Exa `/search` with exactly `{ query, type: "fast", numResults: 5, contents: { highlights: { numSentences: 3 } } }` (`webSearchRequest`). That is the verified body without `highlightsPerUrl`. The model still passes only the search words; the endpoint and the body are fixed in `backend/src/tools/websearch.ts`, still the only file that names Monid (`scripts/check_forbidden_capabilities.sh`).
+- **Switch back without a code change:** `DODDY_WEB_SEARCH_PROVIDER` = `exa` (default) | `search1api`, a non-secret setting (`backend/src/config.ts`, `backend/.env.example`, `secrets/manifest.json` `notSecrets`). Any other value stops the server at start. With `search1api`, web search is exactly as before (same body, same 300-character snippets).
+- **Read strictly, never forwarded.** Per result: the title (120 characters), the site (from `url`), the date (`publishedDate`, kept only as a real `YYYY-MM-DD`) and the text: at most three highlights, Markdown pictures dropped, links reduced to their words, bare addresses removed, clipped to about 600 characters. The whole text for the voice model is at most 3,500 characters, notes included: when long titles and notes leave less, each result's text gets an equal share. Ids, authors, images, warnings, scores and costs are dropped. The voice text keeps its contract ("title, site and a short snippet", `voice-agent/tools.json`, unchanged): the date sits in the site's brackets, as `news_search` already does, and the full link is only used for the site's name and for booking and order pages.
+- **Deadlines.** The request keeps 15 s (`WEB_SEARCH_TIMEOUT_MS`, under the app's 20 s request timeout). Search1API, the switch back and the fallback, has a p95 of up to 15.8 s, and news and places use the same deadline. Exa's own attempt has 8 s (`EXA_SEARCH_TIMEOUT_MS`): about twice its p95 and more than three times the verified fast run, so a slow search still finishes and a stuck one is reported 7 s sooner than before.
+- **One fallback, Exa to Search1API, only after a refusal.** A refusal means the run FAILED, Exa answered with an HTTP error other than 404 (its 429 included), or Monid turned the request down as 400, 404 or 422 when it was started. Then the same request asks Search1API once, inside the same 15 s, and logs `web_search_fallback` (no search words). It is a different endpoint, never the same request again, and Monid doesn't bill the refused run. **No fallback** after: a timeout (the time is spent); BLOCKED (a wallet or workspace control: the same wallet pays Search1API, and a control is not to be worked around); STOPPED; Monid refusing the key or the payment (401, 402, 403); Monid's own 429 or 5xx (whether a run started is unknown); or a completed answer that can't be read (that run was billed). If Search1API fails too, its failure is the answer; there is no third try. The day's web search count is taken once.
+- **The card** shows the price of the endpoint asked first: "about $0.007 per search" with Exa, "about $0.001" with Search1API (ADR-489).
+- Document research (`backend/src/decks/research.ts`) uses the same search and reads either shape with the same rules, keeping its own 400-character snippets.
+
+## Consequences
+- **Cost ×7:** $0.007 instead of $0.001 per search, about **$7 per 1,000 searches** instead of $1. The daily caps are unchanged (30 per user, 200 per server: at most $1.40 a day for web search, deck research included). A fallback search costs Search1API's $0.001 (the refused Exa run isn't billed). Spend limit on the Monid wallet: owner queue 13.
+- **Faster at the tail:** the p95 falls from 15.8 s to 4.4 s by the catalog, and a stuck search fails at 8 s instead of 15 s. Not measured on Doddy's server or on a phone yet.
+- **Longer text per result** (about 600 characters instead of 300, 3,500 at most in all): more for the voice model to read, so slightly more tokens per answer.
+- **Privacy:** search words now go to Exa (through Monid) as well as Search1API (news, the fallback). The published privacy pages name "Search1API for web and news"; their wording is the owner's (owner queue 122, with the proposed lines). `docs/legal/PRIVACY_POLICY_DRAFT.md` names Monid only and is unchanged.
+- **Watch:** `web_search_fallback` lines in `doddy`'s log (Exa refusing); the first live receipts after the deploy (whether Monid's REST API takes Exa's body as the connector did).
+- **Ships only with a deploy of `doddy`**, on the owner's word, together with owner queue 113: that deploy carries the production-rules check, so this goes out with it, not on its own. No variable has to be set: `exa` is the default.
+- **Rollback:** set `DODDY_WEB_SEARCH_PROVIDER=search1api` on `doddy`. Saving a variable redeploys the newest `main`, so while owner queue 113 is open, roll back by redeploying the earlier commit instead.
+
+## Evidence
+- Run here: `backend/test/websearch.test.ts` (Exa answers with very long highlights, missing, odd and extra fields, empty and malformed answers, Markdown and addresses, dates, the text budget with escaped quotes; the exact request body with no `highlightsPerUrl`; the setting and its refusal of other values; the card's price both ways; Exa's own deadline, a still-running run, Search1API without it, a request already past its deadline; the fallback for each refusal, its failures, and every case without one; news unchanged), `backend/test/live-websearch-only.test.ts` (a live-mode server with a fake Monid: Exa's body, the card, a refusal answered by Search1API with one receipt and no search words in the log), and the booking-page, food-page and deck research tests in both shapes. Mutation checks: removing the fallback, Exa's deadline, the text budget, or treating BLOCKED as a refusal each fail tests.
+- Read, not run: Monid's catalog and `monid_inspect` for both endpoints (free); Monid's REST docs (`input` is the endpoint's own fields; sync or async is the provider's choice).
+- Not run: a search with Exa through Monid's REST API (the one Exa run above went through the Monid connector, before this change), `doddy` with this code, the app on a phone. No paid call was made while writing this change.

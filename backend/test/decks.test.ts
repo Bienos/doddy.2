@@ -370,9 +370,21 @@ test("research: licences Doddy can honour, article text without reference sectio
       { title: "Bad", link: "javascript:alert(1)", snippet: "x" },
       { title: "", link: "https://a.example", snippet: "x" },
     ],
-  });
+  }, "search1api");
   assert.equal(web.length, 1);
   assert.equal(web[0]!.site, "visit.example");
+  // Exa's answer: `url` and highlights; extra fields ignored, no text means no source, malformed means none.
+  const exa = webSources({
+    requestId: "r", searchTime: 200,
+    results: [
+      { id: "1", title: "Visit Iława", url: "https://www.visit.example/ilawa", publishedDate: "2026-11-01T00:00:00.000Z", author: "x", image: "https://img.example/a.png", highlights: ["Iława lies on Jeziorak. ".repeat(40)] },
+      { id: "2", title: "No words", url: "https://b.example", highlights: [] },
+      { id: "3", title: "Iława - Wikipedia", url: "https://pl.wikipedia.org/wiki/Iława", highlights: ["x"] },
+    ],
+  }, "exa");
+  assert.deepEqual(exa.map((s) => s.site), ["visit.example"]);
+  assert.ok(exa[0]!.text.length <= 400, "research keeps its own 400-character snippets");
+  assert.deepEqual(webSources({ results: "nope" }, "exa"), []);
 });
 
 test("research: picture bytes are checked as JPEG or PNG and measured", () => {

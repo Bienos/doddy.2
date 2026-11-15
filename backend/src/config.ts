@@ -3,7 +3,7 @@ import type { InviteLimits } from "./deviceSession.js";
 import { CdpKeyError, type CdpSettings, loadCdpKeys } from "./payments/coinbase.js";
 import { NETWORK_IDS, NETWORKS, type NetworkId, parseUsdc } from "./payments/x402.js";
 import { TOOLKIT_IDS, type ToolkitId } from "./tools/catalog.js";
-import { MONID_DEFAULT_BASE_URL } from "./tools/websearch.js";
+import { DEFAULT_WEB_SEARCH_PROVIDER, MONID_DEFAULT_BASE_URL, WEB_SEARCH_PROVIDERS, type WebSearchSource } from "./tools/websearch.js";
 import { DUFFEL_DEFAULT_URL } from "./flights/duffel.js";
 import { KIWI_DEFAULT_URL } from "./flights/kiwi.js";
 import { SigningKeys } from "./signingKeys.js";
@@ -81,6 +81,8 @@ export interface ToolkitSettings {
 export interface MonidSettings {
   apiKey: string;
   baseUrl: string;
+  /** Which fixed endpoint web search asks (DODDY_WEB_SEARCH_PROVIDER, decision 2026-11-14-web-search-exa). */
+  webSearchProvider: WebSearchSource;
 }
 
 /**
@@ -378,6 +380,8 @@ const EnvSchema = z.object({
   COMPOSIO_OUTLOOK_TOOLKIT_VERSION: z.string().optional(),
   MONID_API_KEY: z.string().optional(),
   MONID_BASE_URL: z.string().default(MONID_DEFAULT_BASE_URL),
+  /** exa (default) or search1api: a switch back without a code change (decision 2026-11-14-web-search-exa). */
+  DODDY_WEB_SEARCH_PROVIDER: z.enum(WEB_SEARCH_PROVIDERS).default(DEFAULT_WEB_SEARCH_PROVIDER),
   /** Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking). Each is off until the owner sets it. */
   FLIGHT_SEARCH_ENABLED: z.enum(["0", "1"]).default("0"),
   KIWI_MCP_URL: z.string().default(KIWI_DEFAULT_URL),
@@ -650,7 +654,7 @@ export function loadConfig(source: NodeJS.ProcessEnv = process.env): Config {
     if (base && (base.protocol !== "https:" || base.pathname !== "/" || base.search || base.hash)) {
       problems.push("MONID_BASE_URL must be an https origin without a path");
     }
-    if (base) monid = { apiKey: monidKey, baseUrl: base.origin };
+    if (base) monid = { apiKey: monidKey, baseUrl: base.origin, webSearchProvider: e.DODDY_WEB_SEARCH_PROVIDER };
   }
 
   // Flights (decision 2026-11-11-flights-kiwi-search-duffel-booking). Live mode only; each part off by default.
