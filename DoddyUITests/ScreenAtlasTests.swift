@@ -373,7 +373,7 @@ final class ScreenAtlasTests: XCTestCase {
 
     @MainActor
     private func see(_ element: XCUIElement, _ timeout: TimeInterval = 6) -> Bool {
-        element.waitForExistence(timeout: timeout)
+        element.appears(timeout: timeout)
     }
 
     @MainActor
@@ -397,7 +397,7 @@ final class ScreenAtlasTests: XCTestCase {
     @MainActor
     private func allowNotificationsIfAsked() {
         let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow"]
-        if allow.waitForExistence(timeout: 5) { allow.tap(); settle(0.8) }
+        if allow.appears(timeout: 5) { allow.tap(); settle(0.8) }
     }
 
     /// Stops the timers the `running:` visits started: the app keeps them in UserDefaults, so otherwise every

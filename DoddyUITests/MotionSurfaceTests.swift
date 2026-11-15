@@ -23,7 +23,7 @@ final class MotionSurfaceTests: XCTestCase {
 
     @MainActor
     private func tapInSheet(_ button: XCUIElement, app: XCUIApplication) {
-        XCTAssertTrue(button.waitForExistence(timeout: 5))
+        XCTAssertTrue(button.appears(timeout: 5))
         for _ in 0..<6 where !button.isHittable { app.scrollStep() }
         button.tap()
     }
@@ -34,13 +34,13 @@ final class MotionSurfaceTests: XCTestCase {
     func testHomeHasA140PtStageAndNoRailAndTheTabBarIsTheRailElsewhere() {
         let app = launch()
         let stage = surface("stage", in: app)
-        XCTAssertTrue(stage.waitForExistence(timeout: 5))
+        XCTAssertTrue(stage.appears(timeout: 5))
         XCTAssertEqual(stage.frame.width, 140, accuracy: 1)
         XCTAssertEqual(stage.frame.midX, app.windows.firstMatch.frame.midX, accuracy: 2)
         XCTAssertFalse(surface("rail", in: app).exists)
         app.goToTab("memories")
         let rail = surface("rail", in: app)
-        XCTAssertTrue(rail.waitForExistence(timeout: 5))
+        XCTAssertTrue(rail.appears(timeout: 5))
         // The capsule's top edge: 8 pt above the tab buttons (Home and Settings since ADR-633).
         XCTAssertEqual(rail.frame.minY, app.buttons["tab.settings"].frame.minY - 8, accuracy: 3)
     }
@@ -50,21 +50,21 @@ final class MotionSurfaceTests: XCTestCase {
     func testEmptyMemoriesAndSettingsHaveALedge() {
         let app = launch()
         app.goToTab("memories")
-        XCTAssertTrue(app.descendants(matching: .any)["memories.empty"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["memories.empty"].appears(timeout: 5))
         XCTAssertTrue(surface("ledge.emptyMemories", in: app).exists)
         app.goToTab("settings")
-        XCTAssertTrue(surface("ledge.settings", in: app).waitForExistence(timeout: 5))
+        XCTAssertTrue(surface("ledge.settings", in: app).appears(timeout: 5))
     }
 
     /// "Hide Doddy's pictures": no surfaces at all, so no room is kept for him.
     @MainActor
     func testHidingThePicturesRemovesEverySurface() {
         let app = launch(hideArt: true)
-        XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["home.save"].appears(timeout: 5))
         XCTAssertFalse(surface("stage", in: app).exists)
         XCTAssertFalse(surface("rail", in: app).exists)
         app.goToTab("memories")
-        XCTAssertTrue(app.descendants(matching: .any)["memories.empty"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["memories.empty"].appears(timeout: 5))
         XCTAssertFalse(surface("ledge.emptyMemories", in: app).exists)
     }
 
@@ -75,13 +75,13 @@ final class MotionSurfaceTests: XCTestCase {
         let app = launch()
         app.openNewNote()
         let editor = app.textViews.firstMatch
-        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        XCTAssertTrue(editor.appears(timeout: 5))
         editor.tap(); editor.typeText("Synthetic blue kettle is on the top shelf.")
         if app.buttons["capture.keyboardDone"].exists { app.buttons["capture.keyboardDone"].tap() }
         // Inside the capture sheet `reveal` never succeeds: the tab bar under the sheet is still
         // in the hierarchy. Scroll the sheet until the button can be tapped instead.
         tapInSheet(app.buttons["capture.save"], app: app)
-        XCTAssertTrue(app.staticTexts["capture.saved"].waitForExistence(timeout: 6))
+        XCTAssertTrue(app.staticTexts["capture.saved"].appears(timeout: 6))
         tapInSheet(app.buttons["capture.done"], app: app)
 
         app.goToTab("memories")
@@ -94,7 +94,7 @@ final class MotionSurfaceTests: XCTestCase {
 
         card.tap()
         let text = app.staticTexts["detail.currentText"]
-        XCTAssertTrue(text.waitForExistence(timeout: 5))
+        XCTAssertTrue(text.appears(timeout: 5))
         let detail = surface("detail", in: app)
         XCTAssertTrue(detail.exists)
         // The paper card's top edge, above its text and wider than it.
@@ -103,9 +103,9 @@ final class MotionSurfaceTests: XCTestCase {
 
         XCTAssertTrue(app.reveal(app.buttons["detail.delete"]))
         app.buttons["detail.delete"].tap()
-        XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Delete"].appears(timeout: 5))
         app.buttons["Delete"].tap()
-        XCTAssertTrue(app.buttons["undoDelete"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["undoDelete"].appears(timeout: 5))
         let strip = surface("panel", in: app)
         XCTAssertTrue(strip.exists)
         XCTAssertLessThan(strip.frame.minY, app.buttons["undoDelete"].frame.minY)
@@ -116,10 +116,10 @@ final class MotionSurfaceTests: XCTestCase {
     @MainActor
     func testAskComposerIsASurface() {
         let app = launch()
-        XCTAssertTrue(app.buttons["home.ask"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["home.ask"].appears(timeout: 5))
         app.buttons["home.ask"].tap()
         let input = app.textFields["ask.input"]
-        XCTAssertTrue(input.waitForExistence(timeout: 5))
+        XCTAssertTrue(input.appears(timeout: 5))
         let composer = surface("composer", in: app)
         XCTAssertTrue(composer.exists)
         XCTAssertLessThan(composer.frame.minY, input.frame.minY)

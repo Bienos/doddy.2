@@ -10,9 +10,9 @@ final class IslandPolishTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = UITestLaunch.arguments(store: .inMemory, language: .polish) + ["-islandBaseline"]
         app.launch()
-        XCTAssertTrue(app.buttons["island.fixture.start"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["island.fixture.start"].appears(timeout: 8))
         let enabled = app.staticTexts["island.fixture.activitiesEnabled"]
-        XCTAssertTrue(enabled.waitForExistence(timeout: 5))
+        XCTAssertTrue(enabled.appears(timeout: 5))
         if enabled.label != "Live Activities on" {
             throw XCTSkip("Live Activities are off on this simulator; no Dynamic Island proof claimed.")
         }
@@ -21,17 +21,17 @@ final class IslandPolishTests: XCTestCase {
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         // The compact island says what Doddy is doing in Polish ("Test activity" is "Test wyspy").
         let compact = springboard.descendants(matching: .any).matching(NSPredicate(format: "label == 'Test wyspy'")).firstMatch
-        XCTAssertTrue(compact.waitForExistence(timeout: 30), "The island's words follow the app's Polish.")
+        XCTAssertTrue(compact.appears(timeout: 30), "The island's words follow the app's Polish.")
         attach(springboard, name: "Native compact Island in Polish - offline labelled fixture")
         compact.press(forDuration: 1.2)
         // The owner kept "Stop" on the island in Polish too: "Zatrzymaj" didn't fit.
         let stop = springboard.buttons["Stop"]
-        XCTAssertTrue(stop.waitForExistence(timeout: 15), "Stop stays Stop")
+        XCTAssertTrue(stop.appears(timeout: 15), "Stop stays Stop")
         XCTAssertTrue(springboard.buttons["Wycisz"].exists, "Mute is Wycisz")
         attach(springboard, name: "Native expanded Island in Polish - offline labelled fixture")
         stop.tap()
         app.activate()
-        XCTAssertTrue(app.buttons["island.fixture.start"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["island.fixture.start"].appears(timeout: 10))
     }
 
     @MainActor

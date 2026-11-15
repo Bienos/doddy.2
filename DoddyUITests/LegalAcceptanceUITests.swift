@@ -19,7 +19,7 @@ final class LegalAcceptanceUITests: XCTestCase {
     @MainActor
     func testTheTermsStepComesFirstAndNeedsAnExplicitTick() {
         let app = launch(store: .inMemory)
-        XCTAssertTrue(app.staticTexts["legal.title"].waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["legal.title"].appears(timeout: 10), app.debugDescription)
         XCTAssertTrue(app.links["legal.terms"].exists || app.buttons["legal.terms"].exists, "the Terms open from here")
         XCTAssertTrue(app.links["legal.privacy"].exists || app.buttons["legal.privacy"].exists, "the Privacy Policy opens from here")
 
@@ -36,22 +36,22 @@ final class LegalAcceptanceUITests: XCTestCase {
         XCTAssertTrue(proceed.isEnabled)
         proceed.tap()
         XCTAssertTrue(app.staticTexts["legal.title"].waitForNonExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["home.talk"].appears(timeout: 5))
     }
 
     @MainActor
     func testOnceAcceptedItStaysAcceptedAndSettingsShowsIt() {
         let id = UUID()
         var app = launch(store: .persistent(id))
-        XCTAssertTrue(app.staticTexts["legal.title"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["legal.title"].appears(timeout: 10))
         let agree = app.switches["legal.agree"].exists ? app.switches["legal.agree"] : app.buttons["legal.agree"]
         agree.tap()
         app.buttons["legal.continue"].tap()
-        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["home.talk"].appears(timeout: 5))
         app.terminate()
 
         app = launch(store: .persistent(id), fresh: false)
-        XCTAssertTrue(app.buttons["home.talk"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["home.talk"].appears(timeout: 10))
         XCTAssertFalse(app.staticTexts["legal.title"].exists, "accepted once is enough until the terms change")
         app.goToTab("settings")
         // The Terms stay two taps away: Settings › About.

@@ -101,7 +101,7 @@ final class MotionHopTests: XCTestCase {
             XCUIDevice.shared.press(.home)
             RunLoop.current.run(until: Date().addingTimeInterval(2))
             app.activate()
-            XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.buttons["home.save"].appears(timeout: 5))
             // Long enough for a hop he mustn't make to start and land.
             RunLoop.current.run(until: Date().addingTimeInterval(1.5))
             let him = waitUntilHeStands(on: "stage", in: app)
@@ -140,7 +140,7 @@ final class MotionHopTests: XCTestCase {
         XCTAssertEqual(him.frame.height, 96 / 0.72 * 0.94, accuracy: 3)
         assertOneDoddy(in: app)
         app.goToTab("memories")
-        XCTAssertTrue(app.descendants(matching: .any)["memories.empty"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["memories.empty"].appears(timeout: 5))
         // The empty notebook: he sits cross-legged on its spot, in place of the old picture.
         waitUntilHeStands(on: "ledge.emptyMemories", as: "doddy.pose.crosslegged", in: app)
         assertOneDoddy(in: app)
@@ -155,7 +155,7 @@ final class MotionHopTests: XCTestCase {
         let app = launch()
         waitUntilHeStands(on: "stage", in: app)
         app.openNewNote()
-        XCTAssertTrue(app.textViews.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.textViews.firstMatch.appears(timeout: 5))
         XCTAssertFalse(app.marker("doddy.motion.idle").exists, "hidden under the sheet")
         // Nothing typed: Cancel closes the sheet.
         app.navigationBars.buttons["Cancel"].tap()
@@ -166,11 +166,11 @@ final class MotionHopTests: XCTestCase {
     @MainActor
     func testHidingThePicturesHidesHimEverywhere() {
         let app = launch(hideArt: true)
-        XCTAssertTrue(app.buttons["home.save"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["home.save"].appears(timeout: 5))
         RunLoop.current.run(until: Date().addingTimeInterval(1))
         XCTAssertEqual(drawings(in: app).count, 0)
         app.goToTab("memories")
-        XCTAssertTrue(app.descendants(matching: .any)["memories.empty"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["memories.empty"].appears(timeout: 5))
         RunLoop.current.run(until: Date().addingTimeInterval(1))
         XCTAssertEqual(drawings(in: app).count, 0)
     }
@@ -181,9 +181,9 @@ final class MotionHopTests: XCTestCase {
         let app = launch(debug: true, lists: true)
         app.goToTab("memories")
         let picker = app.segmentedControls["memories.notesOrLists"]
-        XCTAssertTrue(picker.waitForExistence(timeout: 5))
+        XCTAssertTrue(picker.appears(timeout: 5))
         picker.buttons["Lists"].tap()
-        XCTAssertTrue(app.descendants(matching: .any)["lists.empty"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any)["lists.empty"].appears(timeout: 5))
         waitUntilHeStands(on: "ledge.emptyLists", as: "doddy.pose.crosslegged", in: app)
         assertOneDoddy(in: app)
     }
@@ -194,9 +194,9 @@ final class MotionHopTests: XCTestCase {
         let app = launch()
         app.openFind()
         let query = app.textFields["memories.query"]
-        XCTAssertTrue(query.waitForExistence(timeout: 5))
+        XCTAssertTrue(query.appears(timeout: 5))
         query.tap(); query.typeText("zzqx nothing like this\n")
-        XCTAssertTrue(app.staticTexts["memories.noMatch"].waitForExistence(timeout: 6))
+        XCTAssertTrue(app.staticTexts["memories.noMatch"].appears(timeout: 6))
         waitUntilHeStands(on: "ledge.find", as: "doddy.pose.shrug", in: app)
         assertOneDoddy(in: app)
     }
@@ -207,7 +207,7 @@ final class MotionHopTests: XCTestCase {
     func testDebugChecksFindNothingAcrossTabHops() {
         let app = launch(debug: true)
         let debug = app.staticTexts["doddy.debug"]
-        XCTAssertTrue(debug.waitForExistence(timeout: 5))
+        XCTAssertTrue(debug.appears(timeout: 5))
         waitUntilHeStands(on: "stage", in: app)
         for tab in ["memories", "settings", "home", "settings", "memories", "home"] {
             app.openTab(tab)

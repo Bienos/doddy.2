@@ -18,7 +18,7 @@ final class FirstRunAccessUITests: XCTestCase {
     @MainActor
     func testTheStepListsEveryItemTickedAndNotNowMovesOnWithoutAsking() {
         let app = launch()
-        XCTAssertTrue(app.staticTexts["access.title"].waitForExistence(timeout: 10), app.debugDescription)
+        XCTAssertTrue(app.staticTexts["access.title"].appears(timeout: 10), app.debugDescription)
         for item in ["microphone", "notifications", "contacts", "calendar", "reminders", "location", "motion", "photos", "camera"] {
             let row = app.switches["access.\(item)"]
             XCTAssertTrue(app.reveal(row), "\(item) is on the list")

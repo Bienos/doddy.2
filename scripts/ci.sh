@@ -8,6 +8,9 @@
 #                              the iOS app build and tests are reported NOT RUN (exit 0
 #                              only if everything that was requested passed)
 #   scripts/ci.sh --app-only   Swift package and iOS build/unit/UI tests; Linux checks SKIPPED (ADR-680)
+#                              DODDY_SKIP_PACKAGE_TESTS=1 leaves out the Swift package tests (hosted pull
+#                              requests: the Linux swift job runs them); DODDY_RELEASE_BUILD=only builds
+#                              only Release for a device, no simulator (the ios-release job)
 #   scripts/ci.sh --only a,b   only these groups (hosted Linux jobs run one group each, in parallel):
 #                              checks swift backend node messaging ios
 #                              `ios` is the Xcode build and tests; --only never includes it unless listed.
@@ -218,6 +221,9 @@ run_step "Web app tokens and brand files match the app (ADR-600)" python3 -I too
 run_step "Site colour tokens match the app" python3 -I tools/gen_site_tokens.py --check
 run_step "One scripts/regen.sh run brings every generated file up to date" scripts/test_regen.sh
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
+run_step "Which pushes to main need the macOS build (decision 2026-11-15-faster-mac-ci)" scripts/test_ci_push_changed_files.sh
+run_step "UI tests wait without XCTest's one-second first look (decision 2026-11-15-faster-mac-ci)" scripts/check_ui_test_waits.sh
+run_step "UI-test wait check (tests)" scripts/test_check_ui_test_waits.sh
 run_step "UI tests that failed only because the app would not start are named for one more run (2026-11-13)" scripts/test_ci_launch_failures.sh
 run_step "Binary packages' dSYMs into the archive (ADR-693)" scripts/test_copy_binary_dsyms.sh
 run_step "Xcode Cloud post-clone script (ADR-697)" scripts/test_xcode_cloud_post_clone.sh
@@ -233,6 +239,7 @@ run_step "Vercel builds a project whenever it can't tell nothing changed (9 Nov 
 run_step "Which Vercel statuses are replaced on pull requests (decision 2026-11-09-vercel-blocked-status)" scripts/test_vercel_blocked_status.sh
 run_step "Privacy manifest declares every required-reason API (7 Nov audit)" scripts/test_check_privacy_manifest.sh
 run_step "The Mac job's package-pin step never blocks without pins (7 Nov audit)" scripts/test_ci_package_pins.sh
+run_step "The Mac jobs' Release-only build and package-test skip (decision 2026-11-15-faster-mac-ci)" scripts/test_ci_mac_phases.sh
 if python3 -I -c "import yaml" 2>/dev/null; then
   run_step "Per-platform Xcode specs in step" python3 -I scripts/check_platform_specs.py
 else
@@ -241,6 +248,12 @@ fi
 fi  # checks
 
 if ! want swift; then :
+elif [ "$app_only" -eq 1 ] && [ "${DODDY_SKIP_PACKAGE_TESTS:-0}" = "1" ]; then
+  # Hosted pull requests (decision 2026-11-15-faster-mac-ci): the Linux `swift` job runs the same tests at
+  # the same time, so the Mac saves about 3 minutes; every push to main still runs them here on Apple's
+  # Foundation (ADR-680), so a difference that only Apple's Foundation shows is found a merge later.
+  record "Swift package tests (DoddyCore)" "SKIPPED" "DODDY_SKIP_PACKAGE_TESTS=1: the Linux swift job runs them; pushes to main run them here too"
+  record "Dynamic Island art and scenes" "SKIPPED" "--app-only: Linux core runs them"
 elif command -v swift >/dev/null 2>&1; then
   swift --version
   # Ubuntu's system SQLite lacks the snapshot API GRDB enables by default; Doddy does not use it.
@@ -370,8 +383,14 @@ else
   # generated project before anything resolves, and checked once Xcode has resolved (check_package_pins).
   run_step "Install the pinned package versions" scripts/install_package_resolved.sh Doddy.xcodeproj
   pins_checked=0
+  # DODDY_RELEASE_BUILD=only (the ios-release job, decision 2026-11-15-faster-mac-ci): only the Release
+  # build for a device below, beside the ios-build job instead of after its tests; no simulator.
+  release_only=0
+  if [ "${DODDY_RELEASE_BUILD:-0}" = "only" ]; then release_only=1; fi
   # Default: first available iPhone simulator; override with DODDY_DESTINATION.
-  if [ -n "${DODDY_DESTINATION:-}" ]; then
+  if [ "$release_only" -eq 1 ]; then
+    dest="generic/platform=iOS"
+  elif [ -n "${DODDY_DESTINATION:-}" ]; then
     dest=$DODDY_DESTINATION
   else
     sim_id=$(xcrun simctl list devices available | grep -E '^ +iPhone' | head -1 | sed -E 's/.*\(([0-9A-F-]{36})\).*/\1/')
@@ -398,7 +417,9 @@ else
     # hold of the app for three minutes, so the first 12 UI tests failed before any test code ran.
     # Keep compiling the other targets after the first error, so one run lists every compile
     # error instead of stopping at the first target that fails (owner request, 2026-10-12).
-    if run_step "xcodebuild build-for-testing" xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy \
+    if [ "$release_only" -eq 1 ]; then
+      record "xcodebuild build-for-testing, unit and UI tests" "SKIPPED" "DODDY_RELEASE_BUILD=only: the ios-build job runs them"
+    elif run_step "xcodebuild build-for-testing" xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy \
       -destination "$dest" -IDEBuildingContinueBuildingAfterErrors=YES; then
       # A per-test time limit (ADR-680): a test that hangs fails after 10 minutes instead of using
       # up the job (on 2 Nov one waited 49 minutes for the app to close, run 41368047283). The
@@ -468,7 +489,8 @@ else
     # DODDY_RELEASE_BUILD=1 (hosted CI on pushes to main): compile the Release configuration for
     # devices, unsigned. Everything above is a Debug simulator build; without this, Xcode Cloud's
     # archive was the first Release compile, where a failure costs build hours and a TestFlight build.
-    if [ "${DODDY_RELEASE_BUILD:-0}" = "1" ]; then
+    # DODDY_RELEASE_BUILD=only: the same build, on its own (see release_only above).
+    if [ "${DODDY_RELEASE_BUILD:-0}" = "1" ] || [ "$release_only" -eq 1 ]; then
       run_step "xcodebuild build: Release, generic iOS device, unsigned" xcodebuild build -project Doddy.xcodeproj \
         -scheme Doddy -configuration Release -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO \
         -IDEBuildingContinueBuildingAfterErrors=YES
