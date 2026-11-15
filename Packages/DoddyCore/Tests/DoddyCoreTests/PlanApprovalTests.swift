@@ -105,9 +105,10 @@ final class PlanApprovalTests: XCTestCase {
     // MARK: A spoken yes
 
     func testAFreshCardTakesASpokenYesOnceAsTheOwnersTableSays() {
-        // Plans are on the spoken-yes tier (decision 2026-11-14-spoken-yes-and-fewer-cards); until outside text arrives.
+        // Plans are on the spoken-yes tier (decision 2026-11-14-spoken-yes-and-fewer-cards), and stay there after outside
+        // text: Doddy asks once and the person's own yes is enough (owner, 15 Nov 2026, option 2).
         XCTAssertEqual(ConfirmationTiers.tier(for: VoiceToolName.proposePlan), .spokenYes)
-        XCTAssertEqual(ConfirmationTiers.tier(for: VoiceToolName.proposePlan, outsideContentSeen: true), .tapOnly)
+        XCTAssertEqual(ConfirmationTiers.tier(for: VoiceToolName.proposePlan, outsideContentSeen: true), .spokenYes)
         var gate = shown()
         XCTAssertEqual(gate.answer(.userSaid, for: card, payload: payload(), at: after(5)), .run)
         XCTAssertEqual(gate.answer(.tapped, for: card, payload: payload(), at: after(6)), .ignore, "the yes used the card up")

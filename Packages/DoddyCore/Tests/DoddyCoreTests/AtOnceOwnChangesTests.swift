@@ -54,12 +54,17 @@ final class AtOnceOwnChangesTests: XCTestCase {
         }
     }
 
-    func testTextFromOutsideDoesntPutTheirCardBack() {
-        // Doddy's own undoable things stay at once (the table, step 1); the person sees each result and can undo it.
+    func testAfterTextFromOutsideTheirOwnCardComesBackByTheirTierNotAnAskFirstCard() {
+        // Owner, 15 Nov 2026, option 2: after outside text none of them runs at once. AskFirst adds no card of its own
+        // for them; the voice controller keeps the tool's own payload card by its tier, and Doddy asks once.
         var afterEmail = OutsideContentSession()
         afterEmail.noteRun(of: "read_email")
         for (name, request) in requests {
             XCTAssertEqual(AskFirst.need(for: request, in: afterEmail), .runsNow, name)
+            let tier = ConfirmationTiers.tier(for: request, toolName: name, outsideContentSeen: true)
+            XCTAssertTrue(tier.showsCard, "\(name): the card shows what will happen")
+            XCTAssertTrue(tier.acceptsSpokenYes, "\(name): the person's own yes or a tap runs it")
+            XCTAssertFalse(ConfirmationTiers.tier(for: request, toolName: name).showsCard, "\(name): no card without outside text")
         }
     }
 

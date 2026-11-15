@@ -302,8 +302,8 @@ final class AskFirstTests: XCTestCase {
     }
 
     func testASpokenYesNeverApprovesAnAskThatNeedsATap() {
-        // The ledger's own contract: an ask made with needsTap (a tap-only tool, or any change once text from outside
-        // is in the conversation) is never answered by words.
+        // The ledger's own contract: an ask made with needsTap (a tap-only tool: money, bookings, a tool nobody
+        // classified) is never answered by words. Text from outside no longer makes an ask tap only (15 Nov 2026).
         var ledger = AskLedger()
         ledger.asked("c1", request: removeMilk, needsTap: true, at: t0)
         XCTAssertEqual(ledger.answer(.userSaid("yes"), for: "c1", at: t0.addingTimeInterval(1)), .stillWaiting)
