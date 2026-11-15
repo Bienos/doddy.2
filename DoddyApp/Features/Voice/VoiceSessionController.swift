@@ -283,6 +283,9 @@ final class VoiceSessionController {
     private var pendingShownAt: Date?
     /// ASK-01 (ADR-483): which calls the user said yes to. Checked right before a tool runs.
     private var askLedger = AskLedger()
+    /// DOD-07: a tap on the plan card runs it only while the card is fresh and for the payload it showed; a card that ran
+    /// out is shown again and never runs (`PlanApprovalGate`, decision 2026-11-14-plan-card-ran-out).
+    private var planApproval = PlanApprovalGate()
     /// The payment card the voice agent asked for (ADR-736). Only a page address came from the agent; the card
     /// shows Doddy's server's own terms. Kept after the outcome until the person closes the card.
     private(set) var paymentApproval: PaymentApprovalModel?
@@ -1369,6 +1372,7 @@ final class VoiceSessionController {
         conversation = nil
         pendingAction = nil
         askLedger.clear()
+        planApproval.clear()
         contactCard = nil
         parkingCard = nil
         outsideContent = OutsideContentSession()
@@ -1601,9 +1605,19 @@ final class VoiceSessionController {
         if (try? await conversation.setMuted(false)) != nil { isMuted = false }
     }
 
-    /// The user tapped the card's confirm button: Save, Add, Start, Open or Run.
-    func confirmPendingAction() async {
+    /// The user tapped the card's confirm button: Save, Add, Start, Open or Run. A plan card runs only through
+    /// `PlanApprovalGate`: one that ran out runs nothing and is shown again for a new tap.
+    func confirmPendingAction(answeredBy answer: PlanApprovalGate.Answer = .tapped) async {
         guard let action = pendingAction else { return }
+        if case .plan(let id, let steps, _) = action {
+            switch planApproval.answer(answer, for: id, payload: planPayload(steps, planCloud), at: Date()) {
+            case .run: break
+            case .refresh:
+                await showPlanAgain(action)
+                return
+            case .ignore: return
+            }
+        }
         pendingAction = nil
         // The conversation the card belongs to. The change runs to the end even if the user taps
         // End meanwhile; what it shows on screen after an await is shown only if this one is
@@ -2031,6 +2045,7 @@ final class VoiceSessionController {
             await answer(id, VoiceToolReply.bulkDeclined)
         case .plan(let id, let steps, _):
             askedPlans[id] = nil
+            planApproval.forget(id)
             let planID = UUID()
             for step in steps {
                 logPlanStep(step, reply: PlanReply.declined, plan: ActivityPlanRef(id: planID, step: step.number, count: steps.count))
@@ -3617,27 +3632,7 @@ final class VoiceSessionController {
         proposedNoteTexts += steps.compactMap { step in
             if case .saveMemory(let text) = step.request { text } else { nil }
         }
-        var blocked: [Int: PlanBlock] = [:]
-        // This plan's own approvals (review H7): kept apart until its card is shown, so an
-        // overlapping propose_plan can't mix its approvals into this card or this one's into it.
-        var approvals: [Int: PlanCloudApproval] = [:]
-        for step in steps {
-            if let block = await planBlock(for: step) {
-                blocked[step.number] = block
-                if connectionNeeded == nil, isCurrent(call.toolCallId), case .notConnected(let connection) = block { connectionNeeded = connection }
-            } else if let request = step.activity(calendar: .current),
-                      case .stop(let count) = ActionRetry.decide(for: request, in: activity.entries, now: Date()) {
-                // Tried too often without a confirmed result (ADR-319): shown on the card, not run.
-                blocked[step.number] = .tooManyTries(app: request.app, count: count)
-            } else if let call = step.cloudCall {
-                // As a single card: the server checks the switch, the connection and the arguments,
-                // and returns the preview the card shows with an approval for exactly these.
-                switch await prepareCloud(call) {
-                case .ready(let approval): approvals[step.number] = approval
-                case .blocked(let block): blocked[step.number] = block
-                }
-            }
-        }
+        let (blocked, approvals) = await checkPlanSteps(steps, toolCallID: call.toolCallId)
         // Ended, or ended and started again, while the steps were checked: no card, no reply and
         // no plan state in the next conversation (review H9, ADR-458).
         guard isLive, isCurrent(call.toolCallId) else {
@@ -3661,7 +3656,69 @@ final class VoiceSessionController {
         planChanged = []
         planCloud = approvals
         askedPlans[call.toolCallId] = steps
+        planApproval.show(call.toolCallId, payload: planPayload(steps, approvals), preparedAt: planPreparedAt(approvals), at: Date())
         propose(.plan(toolCallID: call.toolCallId, steps: steps, blocked: blocked), toolCallID: call.toolCallId)
+    }
+
+    /// Every step checked as if asked on its own (the part of `handlePlan` the card needs again when it is shown again):
+    /// what the app can't run is blocked with its reason, and a Gmail or Todoist step is sent to Doddy's server for the
+    /// preview the card shows and a one-time approval for exactly those arguments. This plan's own approvals are returned,
+    /// not stored (review H7): an overlapping propose_plan can't mix its approvals into this card or this one's into it.
+    private func checkPlanSteps(_ steps: [PlanStep], toolCallID: String) async -> (blocked: [Int: PlanBlock], approvals: [Int: PlanCloudApproval]) {
+        var blocked: [Int: PlanBlock] = [:]
+        var approvals: [Int: PlanCloudApproval] = [:]
+        for step in steps {
+            if let block = await planBlock(for: step) {
+                blocked[step.number] = block
+                if connectionNeeded == nil, isCurrent(toolCallID), case .notConnected(let connection) = block { connectionNeeded = connection }
+            } else if let request = step.activity(calendar: .current),
+                      case .stop(let count) = ActionRetry.decide(for: request, in: activity.entries, now: Date()) {
+                // Tried too often without a confirmed result (ADR-319): shown on the card, not run.
+                blocked[step.number] = .tooManyTries(app: request.app, count: count)
+            } else if let call = step.cloudCall {
+                // As a single card: the server checks the switch, the connection and the arguments,
+                // and returns the preview the card shows with an approval for exactly these.
+                switch await prepareCloud(call) {
+                case .ready(let approval): approvals[step.number] = approval
+                case .blocked(let block): blocked[step.number] = block
+                }
+            }
+        }
+        return (blocked, approvals)
+    }
+
+    /// What the plan card's approval is bound to (`PlanCardPayload`).
+    private func planPayload(_ steps: [PlanStep], _ approvals: [Int: PlanCloudApproval]) -> PlanCardPayload {
+        PlanCardPayload(steps: steps, prepared: approvals.mapValues { PlanCardPayload.Prepared(preview: $0.preview, approvalID: $0.approvalID) })
+    }
+
+    /// The card's window counts from the oldest server approval it holds, or from now when the plan has none.
+    private func planPreparedAt(_ approvals: [Int: PlanCloudApproval]) -> Date {
+        approvals.values.map(\.preparedAt).min() ?? Date()
+    }
+
+    /// A tap on a plan card that ran out, or whose payload is not the one its approvals were made for: nothing runs.
+    /// The steps are checked and prepared again, and the card is shown again with what is true now and a new window.
+    /// A step whose preview changed comes back unticked. Only a new tap on that card runs the plan (a spoken yes
+    /// never does). The agent's call stays open: it hears what that tap does, or the decline (DOD-07, DOD-08).
+    private func showPlanAgain(_ card: PendingAction) async {
+        guard case .plan(let id, let steps, _) = card else { return }
+        let before = planPayload(steps, planCloud)
+        let checked = await checkPlanSteps(steps, toolCallID: id)
+        // Declined, replaced by a newer card or ended while the steps were checked: no card, and no approval is kept.
+        // An edit the person made to a step meanwhile is kept: the card comes back with the steps as they are now.
+        guard isLive, isCurrent(id), case .plan(let current, let liveSteps, _) = pendingAction, current == id else { return }
+        let after = planPayload(liveSteps, checked.approvals)
+        planTicked = PlanApprovalGate.tickedAfterRefresh(planTicked, old: before, new: after, blocked: Set(checked.blocked.keys))
+        planCloud = checked.approvals
+        planApproval.show(id, payload: after, preparedAt: planPreparedAt(checked.approvals), at: Date())
+        pendingAction = .plan(toolCallID: id, steps: liveSteps, blocked: checked.blocked)
+    }
+
+    /// True while the plan card on screen is one that ran out and was shown again, for its explanation line.
+    var planCardShownAgain: Bool {
+        guard case .plan(let id, _, _) = pendingAction else { return false }
+        return planApproval.wasShownAgain(id)
     }
 
     /// Ticked steps run one after another, each through the same path as its single card, and each
@@ -3791,8 +3848,9 @@ final class VoiceSessionController {
         }
     }
 
-    /// The server's approval works once and lasts two minutes. If the card waited longer, a fresh
-    /// one is asked for the same arguments the user saw; the server checks them again.
+    /// The server's approval works once and lasts two minutes. The step runs with the approval the server made for the
+    /// preview on the card, never one made later: the tap approved what the card showed, and `PlanApprovalGate` keeps
+    /// the tap inside the card's window. The server refuses an approval that has run out, and that step says so.
     private func runPlanCloud(_ call: CloudToolCall, approval: PlanCloudApproval?, app: ActivityApp) async -> WriteResult {
         func written(_ record: CloudWriteRecord) -> WriteResult {
             WriteResult(reply: record.reply, receipt: record.receipt, attempted: record.attempted)
@@ -3800,25 +3858,8 @@ final class VoiceSessionController {
         guard let client = await OnlineAccountsClientFactory.ready() else {
             return written(CloudWriteRecord(.failure(.notConfigured), tool: call.name, app: app, readAt: Date()))
         }
-        var approvalID = approval?.approvalID
-        if approval == nil || Date().timeIntervalSince(approval?.preparedAt ?? .distantPast) > 90 {
-            do {
-                let prepared = try await client.prepare(call)
-                if prepared.earlier?.status == .found {
-                    return WriteResult(reply: VoiceToolReply.cloudAlreadyThere(call.name), attempted: false)
-                }
-                approvalID = prepared.approvalId
-            } catch {
-                return written(CloudWriteRecord(.failure(error), tool: call.name, app: app, readAt: Date()))
-            }
-        }
-        guard let approvalID else {
-            // A read in a plan runs without a confirmation.
-            do {
-                return WriteResult(reply: VoiceToolReply.cloudResult(try await client.run(call, timeZone: TimeZone.current.identifier, approvalId: nil)))
-            } catch {
-                return WriteResult(reply: VoiceToolReply.cloudFailed(error, tool: call.name))
-            }
+        guard let approvalID = approval?.approvalID else {
+            return WriteResult(reply: PlanReply.stepNotApproved, attempted: false)
         }
         let outcome = await CloudRun.confirmed(call, approvalId: approvalID, timeZone: TimeZone.current.identifier, client: client)
         return written(CloudWriteRecord(outcome, tool: call.name, app: app, readAt: Date()))
@@ -4080,9 +4121,10 @@ final class VoiceSessionController {
             await runAsked(action, attempt: startAttempt)
         default:
             // The tool's own payload card, or the server's write card with its single-use approval for exactly these
-            // arguments: the same path as the card's button, for the card as it is on screen now.
+            // arguments: the same path as the card's button, for the card as it is on screen now. A plan card takes the
+            // yes only while it is a fresh first card (`PlanApprovalGate`); a card that ran out waits for a tap.
             guard pendingAction == action else { return }
-            await confirmPendingAction()
+            await confirmPendingAction(answeredBy: .userSaid)
         }
     }
 
@@ -4098,6 +4140,8 @@ final class VoiceSessionController {
     var pendingTakesSpokenYes: Bool {
         guard let action = pendingAction, let tier = confirmationTier(of: action), tier.acceptsSpokenYes, !action.waitsForAChoice else { return false }
         if case .ask(_, _, true, _, _) = action { return false }
+        // A plan card that ran out, or was shown again, takes a tap only (`PlanApprovalGate`).
+        if case .plan(let id, _, _) = action, !planApproval.acceptsSpokenYes(for: id, at: Date()) { return false }
         return true
     }
 
