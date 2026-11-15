@@ -535,7 +535,7 @@ public struct ActivityEntry: Codable, Equatable, Identifiable, Sendable {
         self.reminderKey = reminderKey
         self.checkedAt = checkedAt
         self.plan = plan
-        self.undo = outcome == .done ? undo : nil
+        self.undo = Self.keepsUndo(outcome, undo) ? undo : nil
         self.undoState = undoState
         self.operationKey = operationKey ?? reminderKey
         self.receipt = outcome.status == .confirmed ? receipt : nil

@@ -87,6 +87,9 @@ final class DeviceConnections {
     func request(_ connection: VoiceConnection) async -> Access {
         switch connection {
         case .timers:
+            // Alarms first, on screen (step 2c): a timer then rings like the Clock app's, and an alarm can be set.
+            if !AlarmScheduler.permissionAsked { await AlarmScheduler.requestPermission() }
+            if TimerRinger.canRing { return .granted }
             let current = await notificationAccess()
             guard current == .notDetermined else { return current }
             let granted = (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
@@ -365,7 +368,11 @@ final class DeviceConnections {
             // AlarmKit is the truth about whether it is still set (ADR-283); only this one id is turned off.
             guard let listed = AlarmScheduler.scheduledIDs() else { return .notDone(ActivityUndo.timersUnreadable) }
             guard listed.contains(id) else { return .leftAlone }
-            return AlarmScheduler.cancel(id) ? .undone : .notSure
+            switch AlarmScheduler.turnOff(id) {
+            case .gone: return .undone
+            case .stillListed: return .notDone(ActivityUndo.alarmNotTurnedOff)
+            case .unreadable: return .notSure
+            }
 
         case .addedEvent(let eventID, let added):
             guard access(for: .calendar) == .granted else { return .notDone("Calendar isn't connected.") }
@@ -753,7 +760,7 @@ final class DeviceConnections {
         try await center.add(UNNotificationRequest(identifier: identifier, content: content, trigger: trigger))
     }
 
-    /// Undo of a timer Doddy started (step 2c): AlarmKit's first (ADR-650), only while it still counts down; else the
+    /// Undo of a timer Doddy started (step 2c): AlarmKit's first (ADR-650), counting down or paused; else the
     /// notification timer with this exact identifier, only while iOS still has it waiting. Read back after either.
     private func stopTimer(_ identifier: String) async -> UndoResult {
         let inAlarmKit = TimerRinger.stop(identifier)
@@ -761,7 +768,6 @@ final class DeviceConnections {
         case .stopped: return .undone
         case .notConfirmed: return .notSure
         case .notStopped(let reason): return .notDone(reason)
-        case .notCountingDown: return .leftAlone
         case .notListed, .unreadable: break
         }
         let center = UNUserNotificationCenter.current()

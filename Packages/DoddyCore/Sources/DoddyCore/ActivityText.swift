@@ -206,6 +206,9 @@ public enum ActivityText {
             "Not in your lists when Doddy checked, so it didn't happen. You can ask again.":
                 "Nie było na listach przy sprawdzaniu, więc to się nie stało. Możesz poprosić ponownie.",
             ActivityLog.partlyNote: "Zmieniono tylko część z nich.",
+            // Undo found no timer or alarm to stop (step 2c).
+            ActivityUndo.timerGone: "Nie cofnięto: minutnik już zadzwonił albo został zatrzymany, więc nie było czego zatrzymać.",
+            ActivityUndo.alarmGone: "Nie cofnięto: budzik już zadzwonił albo został wyłączony, więc nie było czego wyłączyć.",
         ]
         for connection in VoiceConnection.allCases {
             notes["\(connection.title) isn't connected."] = "Brak połączenia: \(Self.polish(connection))."
@@ -232,6 +235,7 @@ public enum ActivityText {
             "Connections are paused in Settings.": "Połączenia są wstrzymane w Ustawieniach.",
             "Doddy couldn't read Reminders.": "Doddy nie mógł odczytać Przypomnień.",
             ActivityUndo.timersUnreadable: "Doddy nie mógł odczytać swoich minutników i budzików.",
+            ActivityUndo.alarmNotTurnedOff: "iPhone nie wyłączył budzika.",
         ]
         for connection in [VoiceConnection.calendar, .reminders, .timers] {
             reasons["\(connection.title) is off in Settings, Connections."] = "\(Self.polish(connection)): wyłączone w Ustawieniach, Połączenia."

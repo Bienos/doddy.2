@@ -68,17 +68,15 @@ enum TimerRinger {
         case stopped
         /// Cancelled, or maybe, but the list couldn't be read back or still has it.
         case notConfirmed
-        /// AlarmKit refused, and the list still has it: nothing changed.
+        /// AlarmKit refused twice, and the list still has it: nothing changed.
         case notStopped(String)
-        /// Listed, but paused or ringing: the person has it in hand now, so it is left alone.
-        case notCountingDown
         /// AlarmKit doesn't have it: a notification timer, or one that is gone.
         case notListed
         /// AlarmKit's list couldn't be read.
         case unreadable
     }
 
-    /// Stops the timer named by `identifier` only while AlarmKit still counts it down as Doddy started it, then
+    /// Stops the timer named by `identifier` while AlarmKit still has it (counting down, paused or ringing), then
     /// reads the list back. A timer AlarmKit doesn't have is `notListed`, for the caller to look among notifications.
     static func stop(_ identifier: String) -> Stop {
         #if canImport(AlarmKit)
@@ -176,22 +174,30 @@ private enum TimerKitBackend {
         (try? AlarmManager.shared.alarms).map { Set($0.map(\.id)) }
     }
 
-    /// Cancels the timer only while it is counting down; paused or ringing, the person has it. Read back after.
+    /// Cancels the timer in whatever state AlarmKit lists it: a paused one is still the person's timer that Doddy
+    /// started. One more try when AlarmKit refuses; the list read back after each decides.
     static func stop(_ id: UUID) -> TimerRinger.Stop {
         let manager = AlarmManager.shared
         guard let alarms = try? manager.alarms else { return .unreadable }
-        guard let mine = alarms.first(where: { $0.id == id }) else { return .notListed }
-        guard case .countdown = mine.state else { return .notCountingDown }
-        do {
-            try manager.cancel(id: id)
-        } catch {
+        guard alarms.contains(where: { $0.id == id }) else { return .notListed }
+        var refusal: (any Error)?
+        for _ in 0..<2 {
+            do {
+                try manager.cancel(id: id)
+                refusal = nil
+            } catch {
+                refusal = error
+            }
             // A throw doesn't prove nothing changed: a fresh look decides.
             guard let after = listedIDs() else { return .notConfirmed }
-            return after.contains(id) ? .notStopped(UserFacingError.message(for: error)) : .stopped
+            if !after.contains(id) {
+                TimerBook.forget(id)
+                return .stopped
+            }
+            // Cancelled without a throw, yet still listed: not something a second try fixes.
+            if refusal == nil { return .notConfirmed }
         }
-        guard let after = listedIDs(), !after.contains(id) else { return .notConfirmed }
-        TimerBook.forget(id)
-        return .stopped
+        return .notStopped(UserFacingError.message(for: refusal ?? CancellationError()))
     }
 }
 #endif
