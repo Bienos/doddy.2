@@ -47,11 +47,14 @@ test("web results on a delivery app carry the page and the note; others don't", 
   const out = normalizeWebSearch({ results: [
     { title: "Sushi Kushi – Wolt", link: "https://wolt.com/pl/pol/warsaw/restaurant/sushi-kushi?ref=x", snippet: "Zamów online" },
     { title: "Blog", link: "https://blog.example/sushi" },
-  ] }, "sushi kushi wolt");
+  ] }, "sushi kushi wolt", "search1api");
   assert.match(out.text, /- "Sushi Kushi – Wolt" \(wolt\.com\): "Zamów online", order page \(Wolt\): https:\/\/wolt\.com\/pl\/pol\/warsaw\/restaurant\/sushi-kushi\n/);
   assert.match(out.text, /- "Blog" \(blog\.example\)\n/);
   assert.match(out.text, /Doddy has ordered nothing/);
-  assert.doesNotMatch(normalizeWebSearch({ results: [{ title: "Blog", link: "https://blog.example" }] }, "q").text, /order page/);
+  assert.doesNotMatch(normalizeWebSearch({ results: [{ title: "Blog", link: "https://blog.example" }] }, "q", "search1api").text, /order page/);
+  // Exa names the page `url`.
+  const exa = normalizeWebSearch({ results: [{ title: "Sushi Kushi – Wolt", url: "https://wolt.com/pl/pol/warsaw/restaurant/sushi-kushi", highlights: ["Zamów online"] }] }, "sushi kushi wolt", "exa");
+  assert.match(exa.text, /order page \(Wolt\): https:\/\/wolt\.com\/pl\/pol\/warsaw\/restaurant\/sushi-kushi\n/);
 });
 
 test("the platforms are exactly the apps open_food_app can name (voice-agent/tools.json)", async () => {
