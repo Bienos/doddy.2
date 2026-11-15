@@ -117,6 +117,8 @@
   "elevenlabs": {
     "agent_id": "agent_0501m4et27vyeawrwqfdxxfszfa6",
     "llm": "gpt-6-luna",
+    "service_tier": "fast",
+    "service_tier_note": "fast since 15 Nov 2026 (owner: \"try to switch to fast\"; version agtvrsn_4401m7ez5dncese85wmb5gb0qw85; standard before). Measured on temporary branches on 15 Nov: 42/42 test attempts, the model's first token 1.47 s -> 1.00 s median, about +$0.005 a minute. Rollback: service_tier standard.",
     "backup_llm": "default",
     "temperature": 0.7,
     "timezone": "Europe/Warsaw",

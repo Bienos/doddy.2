@@ -124,7 +124,7 @@ export async function buildApp(
       ? overrides.webSearch
       : config.mode === "live"
         ? config.monid
-          ? new MonidWebSearchProvider(config.monid)
+          ? new MonidWebSearchProvider(config.monid, fetch, 1_000, { log: (line) => process.stdout.write(`${JSON.stringify(line)}\n`) })
           : null
         : new MockWebSearchProvider();
   // Every live Anthropic call writes a content-free usage row for its account (usageLedger.ts); mock calls cost nothing and write none.

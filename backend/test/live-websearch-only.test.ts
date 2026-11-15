@@ -44,17 +44,26 @@ let url = "";
 let token = "";
 let close: () => void = () => {};
 const monidCalls: string[] = [];
+const monidBodies: any[] = [];
+/** Answers given before the default one, in order (a test that wants Exa to refuse first puts it here). */
+const monidQueue: { status: number; body: unknown }[] = [];
+const serverLog: string[] = [];
 
 before(async () => {
   const config = loadConfig({ ...base, MONID_API_KEY: "monid_live_abcdefgh123" });
-  const fakeMonid = (async (input: string | URL | Request) => {
+  const fakeMonid = (async (input: string | URL | Request, init?: RequestInit) => {
     monidCalls.push(String(input));
-    return new Response(
-      JSON.stringify({ runId: "r1", status: "COMPLETED", providerResponse: { httpStatus: 200 }, output: { results: [{ title: "Real-looking result", link: "https://example.org/a", snippet: "Open until 18:00." }] } }),
-      { status: 200 },
-    );
+    monidBodies.push(init?.body ? JSON.parse(String(init.body)) : null);
+    const queued = monidQueue.shift();
+    if (queued) return new Response(JSON.stringify(queued.body), { status: queued.status });
+    const body = monidBodies.at(-1);
+    // Exa's answer shape (the real run of 14 Nov 2026), or Search1API's for the fallback.
+    const output = body?.provider === "exa"
+      ? { requestId: "x", results: [{ id: "a", title: "Real-looking result", url: "https://example.org/a", publishedDate: "2026-11-12T00:00:00.000Z", highlights: ["Open until 18:00."] }], searchTime: 200 }
+      : { results: [{ title: "Search1API result", link: "https://example.org/b", snippet: "Open until 19:00." }] };
+    return new Response(JSON.stringify({ runId: `r${monidCalls.length}`, status: "COMPLETED", providerResponse: { httpStatus: 200 }, output }), { status: 200 });
   }) as typeof fetch;
-  const { server, store } = await buildApp(config, { webSearch: new MonidWebSearchProvider(config.monid!, fakeMonid) });
+  const { server, store } = await buildApp(config, { webSearch: new MonidWebSearchProvider(config.monid!, fakeMonid, 1, { log: (line) => serverLog.push(JSON.stringify(line)) }) });
   server.listen(0, "127.0.0.1");
   await once(server, "listening");
   url = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -100,8 +109,24 @@ test("accounts are not set up; web search is ready and runs against Monid", asyn
   const search = await call("POST", "/v1/tools/run", { tool: "web_search", arguments: { query: "cafe hours" }, timeZone: "Europe/Warsaw", approvalId: asked.body.approvalId });
   assert.equal(search.status, 200);
   assert.equal(search.body.mode, "live", "live results are never labelled as demo");
-  assert.match(search.body.text, /Real-looking result/);
+  assert.match(search.body.text, /- "Real-looking result" \(example\.org, 2026-11-12\): "Open until 18:00\."/);
   assert.deepEqual(monidCalls, ["https://api.monid.ai/v1/run"]);
+  assert.equal(monidBodies[0].provider, "exa", "Exa by default (decision 2026-11-14-web-search-exa)");
+  assert.match(asked.body.preview.lines[1], /Doddy pays about \$0\.007 per search/);
+});
+
+test("a refusal from Exa is answered by Search1API in the same request: one search counted, one receipt, the run that answered", async () => {
+  monidCalls.length = 0;
+  monidBodies.length = 0;
+  monidQueue.push({ status: 200, body: { runId: "exa-failed", status: "FAILED" } });
+  const asked = await call("POST", "/v1/tools/prepare", { tool: "web_search", arguments: { query: "bakery hours" } });
+  const search = await call("POST", "/v1/tools/run", { tool: "web_search", arguments: { query: "bakery hours" }, timeZone: "Europe/Warsaw", approvalId: asked.body.approvalId });
+  assert.equal(search.status, 200, JSON.stringify(search.body));
+  assert.match(search.body.text, /- "Search1API result" \(example\.org\): "Open until 19:00\."/);
+  assert.equal(search.body.receipt.providerReference, "r2");
+  assert.deepEqual(monidBodies.map((b) => b.provider), ["exa", "search1api"]);
+  assert.ok(serverLog.some((l) => l.includes("web_search_fallback")));
+  assert.ok(serverLog.every((l) => !l.includes("bakery")), "the log never has the search words");
 });
 
 test("Google Calendar says not set up instead of showing demo data", async () => {

@@ -89,6 +89,7 @@ import {
 } from "../flights/planTrip.js";
 import type { ToolsProvider } from "./provider.js";
 import {
+  MONID_SEARCH,
   normalizeWebSearch,
   WEB_SEARCH_COPY,
   WEB_SEARCH_TIMEOUT_MS,
@@ -1325,14 +1326,16 @@ export class CloudToolsService {
     const blocked = async (code: "capability_disabled" | "live_not_configured", message: string): Promise<never> => {
       throw new AppError(code, { message, receipt: await this.receipt(userId, WEB_SECTION_ID, "read", tool, "blocked", `Not done: ${message}`, code, null) });
     };
-    if (!this.webSearch || !this.webSearch.isConfigured()) return await blocked("live_not_configured", "Web search isn't set up on this server.");
+    const provider = this.webSearch;
+    if (!provider || !provider.isConfigured()) return await blocked("live_not_configured", "Web search isn't set up on this server.");
     if (!(await this.webToolOn(userId, tool))) return await blocked("capability_disabled", `${webTitle(tool)} is turned off in Settings.`);
     const { approvalId, expiresAt } = await this.ask.issue({ userId, tool, accountId: WEB_ACCOUNT, argsDigest: argumentDigest(args) });
+    // The price is the endpoint the server asks first (decision 2026-11-14-web-search-exa); a fallback costs less.
     const preview =
       tool === WEB_SEARCH_TOOL
         ? {
             title: "Search the web?",
-            lines: [`Search words: ${(args as { query: string }).query}`, "They go to Doddy's server and a search provider (Monid). Doddy pays about $0.001 per search; there is a daily limit."],
+            lines: [`Search words: ${(args as { query: string }).query}`, `They go to Doddy's server and a search provider (Monid). Doddy pays ${MONID_SEARCH[provider.searchSource].price}; there is a daily limit.`],
             confirmLabel: "Yes, search",
           }
         : monidCard(tool, args);
@@ -1341,7 +1344,8 @@ export class CloudToolsService {
 
   /**
    * Same order as account tools, minus the account: known tool -> valid arguments -> switch on ->
-   * set up -> limits (incl. the web search caps) -> one Monid call (never retried: each run is billed)
+   * set up -> limits (incl. the web search caps) -> one Monid call (never retried: each run is billed;
+   * web search's one fallback, Exa to Search1API after a refusal Monid doesn't bill, is in websearch.ts)
    * -> normalized result -> receipt. Search words are not stored anywhere, receipts included.
    */
   private async runWebSearch(userId: string, tool: WebTool, request: { arguments: Record<string, unknown>; timeZone: string; approvalId?: string | undefined }): Promise<RunResult> {
@@ -1372,11 +1376,18 @@ export class CloudToolsService {
       return await this.limiter.withSlot(userId, async () => {
         if (!(await this.ask.allows(binding, request.approvalId, "use"))) throw await unasked();
         const signal = AbortSignal.timeout(WEB_SEARCH_TIMEOUT_MS);
-        const result = tool === WEB_SEARCH_TOOL
-          ? await provider.search({ query: args.query as string, signal })
-          : await provider.call({ tool, args, signal });
-        const outcome = tool === WEB_SEARCH_TOOL ? normalizeWebSearch(result.output, args.query as string) : normalizeMonidTool(tool, result.output, args);
-        const receipt = await this.receipt(userId, WEB_SECTION_ID, "read", tool, "succeeded", outcome.summary, null, result.runId);
+        let outcome: ToolOutcome;
+        let runId: string | null;
+        if (tool === WEB_SEARCH_TOOL) {
+          const result = await provider.search({ query: args.query as string, signal });
+          outcome = normalizeWebSearch(result.output, args.query as string, result.source);
+          runId = result.runId;
+        } else {
+          const result = await provider.call({ tool, args, signal });
+          outcome = normalizeMonidTool(tool, result.output, args);
+          runId = result.runId;
+        }
+        const receipt = await this.receipt(userId, WEB_SECTION_ID, "read", tool, "succeeded", outcome.summary, null, runId);
         return { mode: this.mode, tool, text: outcome.text, count: outcome.count, truncated: outcome.truncated, receipt };
       });
     } catch (error) {

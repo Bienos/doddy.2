@@ -76,22 +76,23 @@ final class ToolCatalogTests: XCTestCase {
         // which can reach only the user's own verified number, while Texts from Doddy is on (owner,
         // 9 Nov 2026, decision 2026-11-09-restaurant-calls-one-tap).
         // Since 14 Nov 2026 (step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards) also Doddy's own changes with
-        // Undo and the drafts and hand-overs that change nothing (`AskFirst.ownChangesAtOnce`).
+        // Undo and the drafts and hand-overs that change nothing (`AskFirst.ownChangesAtOnce`), and since step 2c a timer
+        // and an alarm, which have Undo too.
         let withoutCard = Set(ToolCatalog.all.filter { $0.effect != .lookup && $0.approval != .card && $0.approval != .serverApproval }.map(\.name))
         XCTAssertEqual(withoutCard, [
             "start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",
             "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap", "stop_morning_calls",
             VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe,
             "save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app", "lost_wallet",
-            "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation",
+            "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation", "set_timer", "set_alarm",
         ])
         XCTAssertEqual(withoutCard, AskFirst.ownSmallActions.union(AskFirst.ownChangesAtOnce)
             .union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe]))
         for name in withoutCard { XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .runsNow, name) }
         // What takes something away, reaches past Doddy's own lists and timers, or starts paid
-        // background work keeps its card.
+        // background work keeps its card, and so does what has no Undo yet.
         for name in [VoiceToolName.removeFromList, VoiceToolName.parkingSpot, VoiceToolName.undoLast, VoiceToolName.createList,
-                     VoiceToolName.createCalendarEvent, VoiceToolName.deleteCalendarEvent, VoiceToolName.setTimer, VoiceToolName.setAlarm,
+                     VoiceToolName.createCalendarEvent, VoiceToolName.deleteCalendarEvent, VoiceToolName.cancelAlarm,
                      VoiceToolName.remindWhenToLeave, VoiceToolName.handOverErrand, VoiceToolName.makeSomething, VoiceToolName.callPlaces] {
             XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .card, name)
         }

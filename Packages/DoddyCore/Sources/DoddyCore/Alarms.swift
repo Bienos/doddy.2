@@ -12,7 +12,7 @@ extension VoiceToolName {
 }
 
 /// Which days a repeating alarm rings on.
-public enum AlarmRepeat: String, CaseIterable, Equatable, Sendable {
+public enum AlarmRepeat: String, CaseIterable, Codable, Equatable, Sendable {
     case everyDay = "every_day"
     case weekdays
     case weekends
