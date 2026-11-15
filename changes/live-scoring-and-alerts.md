@@ -1,0 +1,5 @@
+# Live on 14 Nov 2026: every voice conversation is scored; radar alerts and price alerts are on
+
+- **Voice agent:** the live main agent scores every conversation (four yes/no checks, ElevenLabs' frustration check, two fields); prompt and tools unchanged. Texts in `voice-agent/evaluation.json`, log in `voice-agent/README.md`, decision `2026-11-14-score-every-voice-conversation`.
+- **`doddy-messaging`:** `RADAR_ALERTS_ENABLED=1` and `DEAL_WATCHES_ENABLED=1` set on the owner's "Do now everything" (14 Nov 2026, 21:26 UTC). The save redeployed `main` `4842724` (deploy `dep-dbsd3mbncjis73fihc2g`; no messaging code or migration differed from the live `3c31b6f3`); start log `radarAlerts:true`, `dealWatches:true`, no warning or error since; first radar pass 23:01 UTC (2 follows, 78 feeds, 1 failed). Rollback deploy `dep-dbsbfhon74is739dc17g`, or set both to `0`.
+- **For STATUS.md:** move radar alerts and deal watches from "Merged but off" to on; `doddy-messaging` runs `4842724`. Still open: the published privacy page and App Store answers (owner queue 7, 34, 66) and APNs (row 8), so alerts show in the app until pushes work.
