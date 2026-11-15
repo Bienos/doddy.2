@@ -281,6 +281,14 @@ if [ -f "$voice_controller" ] && ! { grep -q 'AskFirst.need(for: request, in: ou
     && grep -q 'outsideContent.noteRun(of:' "$voice_controller" && grep -q 'outsideContent.userSaid(' "$voice_controller"; }; then
   echo "FAIL: DOD-07: $voice_controller must apply the outside-content rule (AskFirst.need(for: request, in: outsideContent, ...), outsideContent.noteRun, outsideContent.userSaid)." >&2; status=1
 fi
+# DOD-07 (decision 2026-11-14-plan-card-ran-out): a plan card runs only through PlanApprovalGate (DoddyCore PlanApproval.swift).
+# The controller must ask it before a plan runs (`planApproval.answer`), register the card when it is first shown and
+# again when it is shown again (`planApproval.show`, two calls), and a plan step must never get an approval made after
+# the card was shown: the old age check that asked the server for a new one (`approval?.preparedAt`) is gone and stays gone.
+if [ -f "$voice_controller" ] && ! { grep -q 'planApproval.answer(' "$voice_controller" && [ "$(grep -c 'planApproval.show(' "$voice_controller")" -ge 2 ] \
+    && ! grep -q 'approval?.preparedAt' "$voice_controller"; }; then
+  echo "FAIL: DOD-07: $voice_controller must run a plan card only through PlanApprovalGate (planApproval.answer, planApproval.show) and never make a plan step's approval after its card was shown." >&2; status=1
+fi
 if grep -RInE --include='*.swift' "$wake_only" "${dirs[@]}" | code_only; then
   echo "FAIL: wake-word engine code is back (removed in ADR-549)." >&2; status=1
 fi
