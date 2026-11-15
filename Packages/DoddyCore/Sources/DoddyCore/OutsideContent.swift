@@ -34,7 +34,8 @@ public struct OutsideContentSession: Equatable, Sendable {
 
     /// True for a tool whose result is text somebody else wrote. A new online-account tool counts until
     /// someone decides it doesn't. Claude's own writing is not a source: what it was given as material was
-    /// already counted when it came into the conversation.
+    /// already counted when it came into the conversation. `research_now` is: Claude's answer there is made of
+    /// web pages it read, so it counts like `web_search`.
     public static func isSource(_ tool: String) -> Bool {
         if tool == CloudToolName.askClaude || tool == CloudToolName.makeDocument { return false }
         if CloudToolName.all.contains(tool) || ToolCatalog.webLookups.contains(tool) { return true }

@@ -337,12 +337,29 @@ final class DataFlowSummaryTests: XCTestCase {
         // ElevenLabs is the only voice (9 Nov 2026): nothing names OpenAI for voice.
         XCTAssertEqual(
             DataFlow.cloudAISummary(everything),
-            "ElevenLabs (voice); Anthropic (Ask Doddy); Anthropic (your screen, when you share it and ask about it); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (Studio); Anthropic (the answer card of calls Doddy places for you); Anthropic (leaflets you check)")
+            "ElevenLabs (voice); Anthropic (Ask Doddy); Anthropic (your screen, when you share it and ask about it); Anthropic (research you ask for in a conversation, through your Doddy server); ElevenLabs (phone calls) and Anthropic or OpenAI (daily news) on your messaging server; Anthropic (tasks you hand over); Anthropic (Studio); Anthropic (the answer card of calls Doddy places for you); Anthropic (leaflets you check)")
         XCTAssertTrue(DataFlow.networkSummary(everything).contains("ElevenLabs (while talking)"))
         XCTAssertFalse(DataFlow.networkSummary(everything).contains("OpenAI (while talking)"))
         var state = everything
         state.newsWriterProvider = "anthropic"
         XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (daily news)"))
+    }
+
+    func testResearchNowSaysItsQuestionGoesToAnthropicAndTheWeb() throws {
+        // research_now (14 Nov 2026): the question goes at once to Doddy's server and Anthropic, which searches and reads pages.
+        var state = base
+        state.doddyServerSet = true
+        let row = try XCTUnwrap(DataFlow.rows(state).first { $0.id == "doddyServer" })
+        for part in ["research something in a conversation", "to Doddy's server and to Anthropic", "searches the web and reads a few pages",
+                     "Anthropic's search provider", "Doddy's server keeps none of the words"] {
+            XCTAssertTrue(row.what.contains(part), part)
+        }
+        XCTAssertFalse(row.what.localizedCaseInsensitiveContains("guarantee"))
+        XCTAssertTrue(DataFlow.cloudAISummary(state).contains("Anthropic (research you ask for in a conversation, through your Doddy server)"))
+        // Before the first sign-in nothing has gone there, and while connections are paused Doddy doesn't use it.
+        XCTAssertFalse(DataFlow.cloudAISummary(base).contains("research"))
+        state.pauseAll = true
+        XCTAssertFalse(DataFlow.cloudAISummary(state).contains("research"))
     }
 
     func testWebSignInSaysWhatTheBrowserSeesAndThatNotesStayHere() throws {

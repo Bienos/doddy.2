@@ -101,11 +101,14 @@ final class MorningCheckInTests: XCTestCase {
     /// went to the voice agent. Now they never enter the briefing, and the prompt leaves the reminder out altogether.
     func testAPrivateNotesWordsNeverReachTheBriefingOrThePrompt() throws {
         let now = date(8)
-        let secret = try MemoryRecord(id: UUID(), rawText: "Bank PIN 4417 for the safe", source: .explicitText, category: .other, capturedAt: now)
-        let plain = try MemoryRecord(id: UUID(), rawText: "Dentist at Mokotów", source: .explicitText, category: .other, capturedAt: now)
+        // Fixed ids, not `UUID()`: a random id's hex digits can spell "4417", and then the checks below fail for no
+        // real reason. These hold only zeros and a counter, so the private words can only come from the note.
+        func id(_ n: Int) -> UUID { UUID(uuidString: "00000000-0000-4000-8000-00000000000\(n)")! }
+        let secret = try MemoryRecord(id: id(1), rawText: "Bank PIN 4417 for the safe", source: .explicitText, category: .other, capturedAt: now)
+        let plain = try MemoryRecord(id: id(2), rawText: "Dentist at Mokotów", source: .explicitText, category: .other, capturedAt: now)
         let reminders = [
-            MemoryReminder(id: UUID(), memoryID: secret.id, fireAt: date(9), timeZoneID: "Europe/Warsaw", createdAt: now),
-            MemoryReminder(id: UUID(), memoryID: plain.id, fireAt: date(10), timeZoneID: "Europe/Warsaw", createdAt: now),
+            MemoryReminder(id: id(3), memoryID: secret.id, fireAt: date(9), timeZoneID: "Europe/Warsaw", createdAt: now),
+            MemoryReminder(id: id(4), memoryID: plain.id, fireAt: date(10), timeZoneID: "Europe/Warsaw", createdAt: now),
         ]
         let briefing = MorningBriefing.make(
             now: now, memories: [secret, plain], lists: [], reminders: reminders,
