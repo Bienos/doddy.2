@@ -103,4 +103,9 @@ final class VoiceTurnWatchTests: XCTestCase {
         // plan_evening is one places search (decision 2026-11-14-plan-evening-tool).
         XCTAssertEqual(VoiceWaitActivity.forTool(CloudToolName.planEvening), .findingPlaces)
     }
+
+    func testResearchSaysItIsSearchingTheWeb() {
+        // research_now searches and reads pages; the screen says "Searching the web…" for it, with no new wording.
+        XCTAssertEqual(VoiceWaitActivity.forTool("research_now"), .searchingWeb)
+    }
 }

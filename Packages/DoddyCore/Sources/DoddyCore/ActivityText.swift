@@ -181,6 +181,8 @@ public enum ActivityText {
         // ADR-564
         "Ask Claude": "Zapytano Claude’a",
         "Make a document with Claude": "Zlecono Claude’owi dokument",
+        // Decision 2026-11-14-voice-agent-does-the-work-live (research_now).
+        "Research the web with Claude": "Przeszukano sieć z Claude’em",
         "Read a Notion page": "Odczytano stronę Notion",
     ]
 

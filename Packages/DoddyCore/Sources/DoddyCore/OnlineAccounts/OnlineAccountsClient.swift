@@ -108,7 +108,15 @@ public struct BackendOnlineAccountsClient: OnlineAccountsClient {
     public func run(_ call: CloudToolCall, timeZone: String, approvalId: UUID?) async throws(OnlineAccountsError) -> RunResult {
         try await self.call(
             "POST", "v1/tools/run",
-            body: RunBody(tool: call.name, arguments: call.arguments, timeZone: timeZone, approvalId: approvalId?.uuidString.lowercased()))
+            body: RunBody(tool: call.name, arguments: call.arguments, timeZone: timeZone, approvalId: approvalId?.uuidString.lowercased()),
+            timeout: Self.timeout(for: call.name))
+    }
+
+    /// How long the app waits for one tool's run, when it isn't the transport's usual 20 s. `research_now` searches
+    /// and reads pages on Doddy's server for up to 40 s (`RESEARCH_NOW_TIMEOUT_MS` in backend/src/tools/claude.ts), so
+    /// the app waits 45 s for it and hears the server's own honest timeout first. Every other tool: nil.
+    public static func timeout(for tool: String) -> TimeInterval? {
+        tool == CloudToolName.researchNow ? 45 : nil
     }
 
     public func receipts() async throws(OnlineAccountsError) -> [OnlineToolReceipt] {
@@ -139,7 +147,9 @@ public struct BackendOnlineAccountsClient: OnlineAccountsClient {
         let approvalId: String?
     }
 
-    private func call<Body: Encodable, Response: Decodable>(_ method: String, _ path: String, body: Body?) async throws(OnlineAccountsError) -> Response {
+    private func call<Body: Encodable, Response: Decodable>(
+        _ method: String, _ path: String, body: Body?, timeout: TimeInterval? = nil
+    ) async throws(OnlineAccountsError) -> Response {
         guard let token = sessionToken(), !token.isEmpty else { throw .notConfigured }
         var headers = ["authorization": "Bearer \(token)", "accept": "application/json"]
         var data: Data?
@@ -147,7 +157,7 @@ public struct BackendOnlineAccountsClient: OnlineAccountsClient {
             headers["content-type"] = "application/json"
             do { data = try JSONEncoder().encode(body) } catch { throw .transport("encoding") }
         }
-        let request = HTTPRequest(method: method, url: baseURL.appendingPathComponent(path), headers: headers, body: data)
+        let request = HTTPRequest(method: method, url: baseURL.appendingPathComponent(path), headers: headers, body: data, timeout: timeout)
         let status: Int
         let payload: Data
         do {

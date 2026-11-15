@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-14
 - **Decided by:** owner, 14 Nov 2026: "Tak!" to "more one-move tools, e.g. 'wieczór na mieście': a place, a phone call for a table and the route in one". The shape below (one places search, no travel time, the next step still its own tool) is this change's proposal within that yes.
-- **Status:** proposed in the pull request that adds this file. It ships with a `doddy` deploy and goes on the live agent after a TestFlight build, both the owner's steps (`docs/OWNER_QUEUE.md` 117).
+- **Status:** proposed in the pull request that adds this file. It ships with a `doddy` deploy and goes on the live agent after a TestFlight build, both the owner's steps (`docs/OWNER_QUEUE.md` 119).
 - **Replaces:** nothing. `find_places`, `call_places` and `open_map` stay as they are.
 
 ## Why
@@ -28,7 +28,7 @@ A new server look-up, `plan_evening` (`backend/src/tools/evening.ts`, routed by 
 - One tool call instead of three or four for an evening out, and the same cost as one `find_places` (about $0.0002 per search, Monid's price as read on 18 Oct 2026).
 - The options are only as good as Google's order for the words. No model ranks them, and the budget is not matched against prices (a listing gives a price level at most), so the answer tells the agent never to say a place fits the budget.
 - The listing fields `type`, `price`, `operating_hours` and `hours` are read from the shape Litescrape documents. No live `/google/local` answer has been seen (`docs/integrations/ONLINE_ACCOUNTS.md`, 18 Oct 2026). A field the live answer names differently is simply missing from the options, and the answer then says the listing doesn't give it. It never errors and never invents it.
-- Privacy: nothing new leaves Doddy's server beyond a places search. The day, time, party size and budget are new on Doddy's server; they are not stored, logged or put in receipts (the receipt says only how many places were found). The privacy draft's wording is the owner's; a proposed sentence is in `docs/OWNER_QUEUE.md` 117.
+- Privacy: nothing new leaves Doddy's server beyond a places search. The day, time, party size and budget are new on Doddy's server; they are not stored, logged or put in receipts (the receipt says only how many places were found). The privacy draft's wording is the owner's; a proposed sentence is in `docs/OWNER_QUEUE.md` 119.
 
 ## Evidence
 - Run here: `scripts/ci.sh --only backend` and `scripts/ci.sh --only checks` (results in the change note and the pull request), and `python3 -I scripts/voice_agent_spec.py check`. `backend/test/plan-evening.test.ts` covers strict input, that only the words and area reach the search, ASK-01 (no yes, other words, used once), at most three options, clipping, no invented fields, hours for the day asked across midnight and clock changes, closed places, the next step with and without phone numbers, the switch, the daily cap, "not set up", and provider down, busy, out of time and unreadable.
