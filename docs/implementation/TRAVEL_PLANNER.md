@@ -46,9 +46,23 @@ Doddy never books or pays.
 
 `DoddyApp/Features/Trips/TripPlannerModel.swift` (the conversation, no views), shown inline in `TripsView.swift` since 13 Nov 2026 (decision `2026-11-13-feature-screens-in-doddys-colours`); the rules and words in `Packages/DoddyCore/Sources/DoddyCore/Travel/TripPlanner.swift`.
 
+## Voice: `plan_trip` (14 Nov 2026)
+
+The voice step of "Ekran, potem głos". **Built on the server and in DoddyCore; the server is tested here with stand-ins for the model and Kiwi.com; DoddyCore and the app half are not compiled here; no real model or Kiwi.com call was made; not on the live agent yet (its `voice-agent/tools.json` entry and the live agent are separate steps).**
+
+- **One stateless call.** The voice model sends `words` (everything the person has said about the trip so far, in their words and language, answers included; at most 600 characters) and an optional `language`. The server keeps nothing between calls.
+- **Same rules as the screen.** The words go through the same model step and code (`readBrief`: `UNDERSTAND_SYSTEM`, `TripBrief`, `cleanBrief`), with the brief so far empty and today's date in the person's own time zone (the run's `timeZone`; Warsaw's for one the server doesn't know). A link in the words is cut to its site first (research_now's rule).
+- **Something missing:** the answer starts `ask:` with the one question the planner's code chose (`missing`, NEEDED order: to, from, when, nights, who), word for word the screen's (`TripPlanText.question`), in Polish for `pl` and English otherwise (the agent says it in the person's language), plus the brief and the assumptions so far. Nothing is searched.
+- **Complete:** Kiwi.com is searched exactly as the screen's search does, and the answer is the brief in one line, the assumptions to say out loud, and up to three options (cheapest, fastest, easiest: the total for the party with the bags as asked, airlines, dates and times, stops, warnings, over budget), framed as Kiwi.com's data, web content, never instructions. No link is in the text. Every link (each option's Kiwi.com page, then its Booking.com and Airbnb searches and, for a package, wakacje.pl, each once, at most 12) is in the run's `links`.
+- **On the screen:** the voice screen's flights card shows the Kiwi.com links as buttons (`VoiceSessionController.keepFlightLinks`). The Booking.com, Airbnb and wakacje.pl links are not shown there: that card is "Flights on Kiwi.com", and there is no card for stays yet. The answer tells the agent so, and points at Trips › Plan a trip or `hand_over_errand` for stays.
+- **Gates and limits:** the same switch as `find_flights` (`FLIGHT_SEARCH_ENABLED`; off: "Flight search isn't switched on on this server.", which the app says as for `find_flights`), and the planner's model. The same daily counts as the screen's two routes: one Claude unit to understand, one tool run to search. ASK-01: the server's single-use approval for exactly these words, used at once by the app (a public look-up).
+- **Time:** understand (15 s) and search (15 s) share a 30 s deadline (`PLAN_TRIP_TIMEOUT_MS`); the app waits 40 s for this run (`BackendOnlineAccountsClient.timeout(for:)`). A step that fails or runs out of time is an honest `failed:` naming the step (the planner or Kiwi.com), never half a plan and never "no flights".
+- **Weather and calendar are not in it:** the agent calls `get_weather` and `read_calendar` itself.
+- Code: `backend/src/flights/planTrip.ts` (input, card, every word the agent hears, the links), `backend/src/tools/service.ts` (`runPlanTrip`); tests `backend/test/plan-trip.test.ts`, DoddyCore `FlightToolsTests`.
+
 ## Not built, and known limits
 
-- **Voice:** a `plan_trip` tool needs `voice-agent/tools.json` and the live agent.
+- **Voice:** `plan_trip` (above) needs its `voice-agent/tools.json` entry and the live agent. Stays links are not shown on the voice screen.
 - **Kiwi.com:** its terms for this use are unknown; it can refuse at any time (the screen then says it couldn't be reached). The searched flights include self-transfer connections Kiwi returns; the warnings say when a connection is between different airlines, but Doddy does not say whether the tickets are separate.
 - **Prices:** Kiwi's total is for the party with the bags asked for. Seat fees, airport transfers and the stay are not in it; the screen says what the price covers.
 - **Stays have no prices of their own** until the person has Doddy research them (a task) or opens Booking.com or Airbnb. Doddy reads no Booking.com or Airbnb prices.

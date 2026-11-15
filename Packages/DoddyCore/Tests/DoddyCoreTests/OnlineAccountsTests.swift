@@ -226,19 +226,25 @@ final class OnlineAccountsClientTests: XCTestCase {
         XCTAssertNil(try object(try XCTUnwrap(transport.requests.first).body)["approvalId"])
     }
 
-    func testOnlyResearchNowWaitsLongerThanTheTransportsUsualTime() async throws {
+    func testOnlyResearchNowAndPlanTripWaitLongerThanTheTransportsUsualTime() async throws {
         // The server gives research up to 40 s; the app waits 45 s for that one run, so it hears the server's honest
-        // timeout first. Its card request and every other tool keep the transport's own 20 s (nil here).
+        // timeout first. plan_trip: the planner's 15 s and Kiwi.com's 15 s, 30 s in all on the server; the app waits 40 s.
+        // Their card requests and every other tool keep the transport's own 20 s (nil here).
         XCTAssertEqual(BackendOnlineAccountsClient.timeout(for: CloudToolName.researchNow), 45)
+        XCTAssertEqual(BackendOnlineAccountsClient.timeout(for: CloudToolName.planTrip), 40)
         XCTAssertNil(BackendOnlineAccountsClient.timeout(for: CloudToolName.askClaude))
         XCTAssertNil(BackendOnlineAccountsClient.timeout(for: CloudToolName.webSearch))
+        XCTAssertNil(BackendOnlineAccountsClient.timeout(for: CloudToolName.findFlights))
         let transport = RecordingTransport(body: try fixture("run-result-email"))
         let research = CloudToolCall(name: CloudToolName.researchNow, arguments: ["question": .string("Weekend near Warsaw")])
+        let trip = CloudToolCall(name: CloudToolName.planTrip, arguments: ["words": .string("Rome in December for a week, two of us")])
         _ = try? await client(transport).prepare(research)
         _ = try? await client(transport).run(research, timeZone: "UTC", approvalId: nil)
+        _ = try? await client(transport).prepare(trip)
+        _ = try? await client(transport).run(trip, timeZone: "UTC", approvalId: nil)
         _ = try await client(transport).run(CloudToolCall(name: "check_email", arguments: [:]), timeZone: "UTC", approvalId: nil)
-        XCTAssertEqual(transport.requests.map(\.url.lastPathComponent), ["prepare", "run", "run"])
-        XCTAssertEqual(transport.requests.map(\.timeout), [nil, 45, nil])
+        XCTAssertEqual(transport.requests.map(\.url.lastPathComponent), ["prepare", "run", "prepare", "run", "run"])
+        XCTAssertEqual(transport.requests.map(\.timeout), [nil, 45, nil, 40, nil])
     }
 
     func testNothingIsSentWithoutASessionToken() async {

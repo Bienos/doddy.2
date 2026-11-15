@@ -145,10 +145,11 @@ export const RunResultSchema = z
       .strict()
       .optional(),
     /**
-     * find_flights: Kiwi.com's page for each flight shown, for buttons in the app. Never for the voice
-     * agent, which is told the flights without their links.
+     * find_flights: Kiwi.com's page for each flight shown, for buttons in the app. plan_trip: each option's
+     * Kiwi.com page, then its Booking.com and Airbnb searches (and wakacje.pl for a package), at most 12
+     * (flights/planTrip.ts). Never for the voice agent, which is told the flights without their links.
      */
-    links: z.array(z.object({ title: z.string().max(160), url: z.string().url() }).strict()).max(5).optional(),
+    links: z.array(z.object({ title: z.string().max(160), url: z.string().url() }).strict()).max(12).optional(),
     receipt: ToolReceiptSchema,
   })
   .strict();
