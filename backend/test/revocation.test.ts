@@ -39,7 +39,7 @@ afterEach(async () => {
 
 /** The server as the iPhone sees it: sign in with a device ID, call the API, delete the account. */
 async function rig() {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   stores.push(store);
   const clock = new Clock(Date.parse("2026-11-04T10:00:00.400Z"));
   const floors = new TokenFloors(store);

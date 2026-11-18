@@ -835,7 +835,7 @@ test("a Supabase removal that failed at the deletion is retried by the hourly sw
   const { Store } = await import("../src/store.js");
   const { AccountEraser } = await import("../src/account.js");
   const { SupabaseUserRemover } = await import("../src/web/social.js");
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     let up = false;
     const calls: string[] = [];

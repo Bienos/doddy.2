@@ -771,6 +771,9 @@ interface StoredDocumentRow extends DocumentRow {
 
 const bytes = (value: unknown): Buffer | null => (value === null || value === undefined ? null : Buffer.from(value as Uint8Array));
 
+/** The ready database `Store.memoryForTests()` starts from, once a first store has made it. */
+let memoryTemplate: Promise<Blob | undefined> | undefined;
+
 export class Store {
   private constructor(readonly db: Database) {}
 
@@ -818,10 +821,13 @@ export class Store {
   static async open(options: DatabaseOptions): Promise<Store> {
     const db = await openDatabase(options);
     try {
-      await db.transaction(async (tx) => {
-        for (const statement of SCHEMA_SQL.split(";").map((s) => s.trim()).filter(Boolean)) await tx.query(statement);
-        for (const statement of SCHEMA_GUARDS) await tx.query(statement);
-      });
+      // A database started from a template already holds the schema and its guards.
+      if (!options.template) {
+        await db.transaction(async (tx) => {
+          for (const statement of SCHEMA_SQL.split(";").map((s) => s.trim()).filter(Boolean)) await tx.query(statement);
+          for (const statement of SCHEMA_GUARDS) await tx.query(statement);
+        });
+      }
     } catch (error) {
       await db.close().catch(() => {});
       throw error;
@@ -832,6 +838,33 @@ export class Store {
   /** A fresh in-memory store (tests, mock mode). */
   static memory(): Promise<Store> {
     return Store.open({});
+  }
+
+  /**
+   * A fresh in-memory store for tests, the same as `memory()` but quicker after the first one: opening
+   * PGlite and applying the schema took about 1.7 s a store, so the first store in a process keeps a
+   * copy of the ready database and every later one starts from that copy (about 0.3 s). Each store is
+   * still its own database; nothing is shared between them. Not for mock mode: it keeps the copy
+   * (about 40 MB) for the life of the process.
+   */
+  static memoryForTests(): Promise<Store> {
+    if (memoryTemplate === undefined) {
+      // The first caller builds the template; callers meanwhile wait for it (or fall back to a full open).
+      let settle!: (template: Blob | undefined) => void;
+      memoryTemplate = new Promise<Blob | undefined>((resolve) => (settle = resolve));
+      return Store.open({}).then(
+        async (store) => {
+          settle(await store.db.dump?.().catch(() => undefined));
+          return store;
+        },
+        (error: unknown) => {
+          settle(undefined);
+          memoryTemplate = undefined;
+          throw error;
+        },
+      );
+    }
+    return memoryTemplate.then((template) => Store.open(template ? { template } : {}));
   }
 
   close(): Promise<void> {
