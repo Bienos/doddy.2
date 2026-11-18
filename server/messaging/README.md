@@ -1,5 +1,7 @@
 # Doddy server (S1)
 
+**Agent execution audit (18 Nov 2026, branch only):** [calling/report contract](../../DODDY_CALLING_AND_REPORTS.md), [background contract](../../DODDY_BACKGROUND_ARCHITECTURE.md), [tests](../../DODDY_AGENT_TEST_RESULTS.md). New migration `042_errand_progress.sql` adds optional content-free stages and bounded history to existing errands. Apply it before the changed worker/API. Call results gain an optional evidence-checked report; free-form model summary/next-step prose no longer establishes facts. Task previews echo their configured language so a direct inquiry grant cannot silently switch languages. No production migration, deploy, provider call or setting change was made. Existing running-job crash handling remains interrupted/terminal, not checkpoint resume.
+
 TypeScript / Node 22 + Postgres on Render (EU). **Live** as `doddy-messaging`, made by hand, with the worker inside the web process (`RUN_WORKER_IN_WEB=1`); on a paid instance (`0.5c-512mb`, Render's Starter size) since 14 Nov 2026, so it no longer sleeps when idle. The `render.yaml` Blueprint at the repo root has not been applied (`STATUS.md`).
 It holds provider keys so the iPhone app never does, and sends updates by **push** and **SMS**.
 **Memories are not stored here.** They stay in the app's local SQLite database.

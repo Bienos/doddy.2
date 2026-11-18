@@ -425,6 +425,7 @@ public enum CallConfidence: String, Codable, Sendable {
 
 /// The answer card, as built by the server (quote always cut from the transcript).
 public struct CallResultCard: Codable, Equatable, Sendable {
+    public var report: CallReport? = nil
     public struct Quote: Codable, Equatable, Sendable { public let text: String; public let line: Int }
     public struct Line: Codable, Equatable, Sendable { public let speaker: String; public let text: String; public let atSecs: Double? }
     public struct NextStep: Codable, Equatable, Sendable { public let kind: String; public let text: String }

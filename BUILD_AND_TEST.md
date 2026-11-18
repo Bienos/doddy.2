@@ -1,5 +1,7 @@
 # Build and test
 
+Agent execution audit (18 Nov 2026): [actual results and scenario coverage](DODDY_AGENT_TEST_RESULTS.md) and [implementation/rollout](DODDY_IMPLEMENTATION_SUMMARY.md). New tests cover exact-user-request authorization, call report evidence, structured call destinations and durable errand progress. Messaging database tests require a **disposable** `TEST_DATABASE_URL` and run serially; they drop its schema. Linux Core/state tests do not compile `VoiceSessionController`, SwiftUI report/progress views or ActivityKit. Those need the normal Mac `ios-build` and device checks before release.
+
 Memory retrieval diagnostics (10 Nov 2026): see [memory/RAG implementation evidence](docs/architecture/memory-rag/DODDY-MEMORY-RAG-IMPLEMENTATION.md). The opt-in `DODDY_MEMORY_BENCHMARK=1 swift test --package-path Packages/DoddyCore --filter MemoryRetrievalBenchmarkTests` runs synthetic quality and timing fixtures without keys, user data or model calls. Routine tests skip these observational benchmarks. Run on a quiet machine in the same configuration before/after; Mac results do not establish iPhone voice latency. Static checks require a current Python (the existing generator uses Python 3.12+ syntax), PyYAML, ReportLab and Matplotlib.
 
 How to build Doddy, run its tests and checks, and what CI runs. What is live is in [STATUS.md](STATUS.md); each

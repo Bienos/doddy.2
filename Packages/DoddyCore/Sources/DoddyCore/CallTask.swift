@@ -147,10 +147,10 @@ public struct CallTaskDraft: Equatable, Sendable {
     /// The body of `POST /v1/call-tasks` (the server's strict schema). Every number is marked as
     /// found by Doddy's place search, which the card says.
     public func body(principalName: String, principalGenitive: String? = nil,
-                     maxDurationSecs: Int = CallBriefDraft.defaultMaxDuration) -> CallTaskBody {
+                     maxDurationSecs: Int = CallBriefDraft.defaultMaxDuration, source: CallNumberSource = .places) -> CallTaskBody {
         CallTaskBody(
             kind: order != nil ? "order" : (booking == nil ? "ask" : "book"),
-            places: places.map { .init(name: $0.name, phone: $0.phone, source: .places, sourceLabel: nil) },
+            places: places.map { .init(name: $0.name, phone: $0.phone, source: source, sourceLabel: nil) },
             principal: .init(name: principalName, genitive: principalGenitive ?? PolishGenitive.suggest(principalName)),
             goal: goal, question: (booking == nil && order == nil) ? question : nil, booking: booking, order: order, facts: [],
             maxDurationSecs: maxDurationSecs, textResult: textResult)
@@ -175,6 +175,7 @@ public struct CallTaskBody: Encodable, Equatable, Sendable {
 /// What the card shows: every place's preview, built by the server from the exact payload it will
 /// send, and the digest the one tap approves.
 public struct CallTaskPreview: Decodable, Equatable, Sendable {
+    public let language: String?
     public let taskId: UUID
     /// "book" for a call that may book (decision 2026-11-12-book-agent), "order" for one that may order food
     /// (2026-11-12-food-by-phone); "ask", or nil from older servers.
@@ -192,7 +193,8 @@ public struct CallTaskPreview: Decodable, Equatable, Sendable {
 
 extension VoiceToolRequest {
     /// `place_names` and `place_phones` (1 to 3 each, matched by position), `question`, `goal`,
-    /// optional `text_result` (default true). Exactly as the agent wrote them: the card shows them
+    /// optional `text_result` (default false). Texting is a separate requested effect.
+    /// Exactly as the agent wrote them: the card shows them
     /// and the server checks them again.
     static func parseCallPlaces(_ args: Arguments, name: String) -> VoiceToolRequest {
         guard case .list(let names) = args.stringList("place_names"), !names.isEmpty else {
@@ -271,7 +273,7 @@ extension VoiceToolRequest {
         if written.contains(where: { $0.contains("{") || $0.contains("}") }) {
             return .invalid(name: name, reason: "no curly braces in the question, goal, names, booking or order")
         }
-        let textResult = args.has("text_result") ? args.flag("text_result") : true
+        let textResult = args.has("text_result") ? args.flag("text_result") : false
         return .callPlaces(CallTaskDraft(places: places, question: question, goal: goal, textResult: textResult, booking: booking, order: order))
     }
 

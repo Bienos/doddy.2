@@ -354,6 +354,14 @@ struct CallResultSections: View {
                 .accessibilityIdentifier("callResult.quote")
             }
             Text(result.summary)
+            if let report = result.report {
+                NavigationLink {
+                    CallReportReader(report: report)
+                } label: {
+                    Text(verbatim: CallReport.title(polish: NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish))
+                }
+                .accessibilityIdentifier("callResult.openReport")
+            }
             Group {
                 if result.summaryBy == "doddy_model" {
                     Text("Summary written by Claude from the transcript.")

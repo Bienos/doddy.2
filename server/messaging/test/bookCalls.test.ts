@@ -134,7 +134,7 @@ const result = (over: Partial<CallResult>): CallResult => ({
   quote: { text: "Tak, zapisuję.", line: 1 }, transcript: [], nextStep: { kind: "none", text: "" }, warnings: [], callbackPromised: false,
   takenOverAtSecs: null, durationSecs: 30, ...over,
 });
-const said = (answer: WriterOutput["answer"]): WriterOutput => ({ kind: "answered", answerLine: 1, answerQuote: "x", summary: "", nextStep: "", answer });
+const said = (answer: WriterOutput["answer"]): WriterOutput => ({ kind: "answered", answerLine: 1, answerQuote: answer === "no" ? "Nie, nie mamy terminu." : "Tak, zapisuję.", summary: "", nextStep: "", answer });
 
 test("a booking counts as made only with Doddy's confirmation sentence, the model's yes and a quote", () => {
   assert.equal(answerOf(result({ bookingConfirmed: true }), said("yes"), "book"), "yes");
@@ -142,7 +142,7 @@ test("a booking counts as made only with Doddy's confirmation sentence, the mode
   assert.equal(answerOf(result({}), said("yes"), "book"), "unclear");
   assert.equal(answerOf(result({ bookingConfirmed: true }), said("no"), "book"), "unclear", "Doddy accepted; the person must read it, never the next place");
   assert.equal(answerOf(result({ bookingConfirmed: true }), said("unclear"), "book"), "unclear");
-  assert.equal(answerOf(result({ bookingConfirmed: false }), said("no"), "book"), "no");
+  assert.equal(answerOf(result({ bookingConfirmed: false, quote: { text: "Nie, nie mamy terminu.", line: 1 } }), said("no"), "book"), "no");
   assert.equal(answerOf(result({ bookingConfirmed: true, warnings: [{ kind: "possible_commitment", line: 3 }] }), said("yes"), "book"), "unclear");
   assert.equal(answerOf(result({}), said("yes")), "yes", "ask calls unchanged");
 });
@@ -355,9 +355,9 @@ describe("booking calls", { skip: dbSkip }, () => {
     const tap = await s.api("POST", `/v1/call-tasks/${p.taskId}/approve`, { digest: p.digest });
     assert.equal(tap.statusCode, 202, tap.body);
 
-    // The first place: they can only do 20:00. Doddy doesn't accept; the next place is called.
+    // A clear source-backed refusal of the approved time permits the next place; a hedged reply does not.
     await placeCall(s, card.caseId, TASK_BOOK_AGENT_ID,
-      [["doddy", card.openingLine], ["callee", "Nie, o 19 nie mamy, może 20?"], ["doddy", "Sprawdzę to u Anny i oddzwonię."]], "conv_b1");
+      [["doddy", card.openingLine], ["callee", "Nie, o 19 nie mamy."], ["doddy", "Dziękuję, do widzenia."]], "conv_b1");
     const registered = s.voice.registered.at(-1)!;
     assert.equal(registered.agentId, TASK_BOOK_AGENT_ID, "a booking is talked by the booking agent, never the ask agent");
     assert.equal(registered.variables.doddy_booking_confirm_line, bookingConfirmLine(table));

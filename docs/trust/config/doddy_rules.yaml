@@ -47,6 +47,14 @@ action_policy:
   # Exception (owner, 2026-10-21; ADR-575): public lookups that read nothing of the user's and change
   # nothing run at once (AskFirst.publicLookups: weather, Wikipedia, web, news, places, sums, conversions).
   ask_first:
+    # Owner's scoped direct-request direction (18 Nov 2026). Metadata only: RequestedWorkSession
+    # enforces exact payload/turn, lifetime, one use, destination provenance and compiled preview.
+    # Baseline tool ask values below stay conservative; this is not a blanket runs_now list.
+    direct_requested_work:
+      research: exact_recent_user_instruction_once
+      inquiry_call: one_exact_known_destination_and_verbatim_question_once
+      excludes: [booking, order, payment, external_write, result_sms, unsolicited_proactive_call]
+      fallback: existing_exact_payload_card
     applies_to: every_tool_that_changes_sends_deletes_calls_or_pays
     # Addition (2026-11-14): research_now, a quick look-up where Claude on Doddy's server searches the web and reads two
     # or three pages with Anthropic's own tools; read-only, its own daily limit, its answer is outside (web) content.

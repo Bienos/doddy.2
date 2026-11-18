@@ -18,6 +18,7 @@ import { takeServerSlots } from "../serverUsage.js";
 import { contentAad, resultAad, type ErrandContext } from "./context.js";
 import { linkFields } from "./links.js";
 import { contentDigest, contentJson, createBody, type ErrandContent, type ErrandResult } from "./schema.js";
+import type { ErrandProgress } from "./progress.js";
 
 export const DRAFT_MINUTES = 10;
 export const LIST_LIMIT = 50;
@@ -35,6 +36,7 @@ export type Refusal =
 const refuse = (r: Refusal) => ({ refusal: r });
 
 export interface ErrandRow {
+  progress?: ErrandProgress | null;
   id: string; account_id: string; state: string; language: string;
   content_ciphertext: Buffer | null; payload_digest: Buffer;
   result_ciphertext: Buffer | null; result_digest: Buffer | null; failure: string | null;
@@ -149,6 +151,7 @@ function view(ctx: ErrandContext, e: ErrandRow) {
     finishedAt: iso(e.finished_at),
     acknowledgedAt: iso(e.acknowledged_at),
     cancelRequested: e.cancel_requested_at !== null,
+    ...(e.progress ? { progress: e.progress } : {}),
     searches: e.searches,
     fetches: e.fetches,
     ...(result && e.result_digest ? { result, resultDigest: e.result_digest.toString("hex") } : {}),
@@ -172,6 +175,7 @@ export async function listErrands(ctx: ErrandContext, accountId: string) {
     createdAt: iso(e.created_at),
     finishedAt: iso(e.finished_at),
     failure: e.failure,
+    ...(e.progress ? { progress: e.progress } : {}),
   }));
 }
 

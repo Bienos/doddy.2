@@ -1414,7 +1414,8 @@ export class CloudToolsService {
           runId = result.runId;
         }
         const receipt = await this.receipt(userId, WEB_SECTION_ID, "read", tool, "succeeded", outcome.summary, null, runId);
-        return { mode: this.mode, tool, text: outcome.text, count: outcome.count, truncated: outcome.truncated, receipt };
+        return { mode: this.mode, tool, text: outcome.text, count: outcome.count, truncated: outcome.truncated, receipt,
+          ...(tool === "find_places" && outcome.callDestinations ? { callDestinations: outcome.callDestinations } : {}) };
       });
     } catch (error) {
       if (error instanceof AppError) throw error;

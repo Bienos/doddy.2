@@ -158,14 +158,14 @@ const result = (over: Partial<CallResult>): CallResult => ({
   quote: { text: "Tak, przyjmujemy.", line: 1 }, transcript: [], nextStep: { kind: "none", text: "" }, warnings: [], callbackPromised: false,
   takenOverAtSecs: null, durationSecs: 30, ...over,
 });
-const said = (answer: WriterOutput["answer"]): WriterOutput => ({ kind: "answered", answerLine: 1, answerQuote: "x", summary: "", nextStep: "", answer });
+const said = (answer: WriterOutput["answer"]): WriterOutput => ({ kind: "answered", answerLine: 1, answerQuote: answer === "no" ? "Nie, kuchnia jest zamknięta." : "Tak, przyjmujemy.", summary: "", nextStep: "", answer });
 
 test("an order counts as placed only with Doddy's confirmation sentence, the model's yes and a quote", () => {
   assert.equal(answerOf(result({ bookingConfirmed: true }), said("yes"), "order"), "yes");
   assert.equal(answerOf(result({ bookingConfirmed: false }), said("yes"), "order"), "unclear", "they said yes but Doddy never accepted");
   assert.equal(answerOf(result({}), said("yes"), "order"), "unclear");
   assert.equal(answerOf(result({ bookingConfirmed: true }), said("no"), "order"), "unclear", "Doddy accepted; the person must read it");
-  assert.equal(answerOf(result({ bookingConfirmed: false }), said("no"), "order"), "no");
+  assert.equal(answerOf(result({ bookingConfirmed: false, quote: { text: "Nie, kuchnia jest zamknięta.", line: 1 } }), said("no"), "order"), "no");
   assert.equal(answerOf(result({ bookingConfirmed: true, quote: null }), said("yes"), "order"), "unclear");
   assert.equal(answerOf(result({ bookingConfirmed: true, warnings: [{ kind: "possible_commitment", line: 3 }] }), said("yes"), "order"), "unclear");
   assert.equal(answerOf(result({ outcome: "no_answer" }), undefined, "order"), "none");

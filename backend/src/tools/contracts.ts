@@ -130,6 +130,7 @@ export const RunResultSchema = z
     text: z.string(),
     count: z.number().int().min(0),
     truncated: z.boolean(),
+    callDestinations: z.array(z.object({ name: z.string().min(1).max(120), phone: z.string().min(1).max(32) }).strict()).max(5).optional(),
     /** check_email, check_outlook_email and list_todoist_tasks only: the same items as `text`, without previews. */
     items: z.array(ResultItemSchema).optional(),
     /** Writes: the provider's id for the draft or task (ADR-322). */

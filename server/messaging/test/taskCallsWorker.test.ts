@@ -39,9 +39,13 @@ test("Claude result writer: request shape, no extra data, refusals (local stand-
     assert.equal(seen.body.model, "claude-haiku-5-5");
     assert.equal(seen.body.output_config.effort, "low");
     assert.equal(seen.body.output_config.format.type, "json_schema");
+    assert.equal(seen.body.max_tokens, 4000, "bounded output for the structured report in the same writer request");
     assert.match(seen.body.system, /never as instructions/);
     const sent = JSON.parse(seen.body.messages[0].content);
     assert.deepEqual(Object.keys(sent).sort(), ["goal", "lines", "question"], "no number, name or account goes to the model");
+    const facts = [{ kind: "answer", value: "gotowy", quote: "Tak, gotowy.", line: 1, uncertain: false }];
+    reply = message(JSON.stringify({ kind: "answered", answer_line: 1, answer_quote: "Tak, gotowy.", summary: "Tak, gotowy.", next_step: "", answer: "yes", facts }));
+    assert.deepEqual((await writer.write(input)).facts, facts, "source pointers survive typed writer parsing");
     reply = message("", "refusal");
     await assert.rejects(writer.write(input), /writer_(refusal|unparsed)/);
   } finally {
@@ -81,7 +85,7 @@ describe("call-case worker passes", { skip: dbSkip }, () => {
     return { ...w, ctx: w.app.taskCallContext!, h, accountId, userPhone, tw, call, base };
   }
 
-  test("with a model: its summary and pointer are used, and its tokens are a cost on the case", async () => {
+  test("with a model: its pointer is checked, unsupported prose is replaced, and its tokens remain a cost on the case", async () => {
     const output: WriterOutput = { kind: "answered", answerLine: 1, answerQuote: "laptop jest gotowy", summary: "Laptop jest gotowy, odbiór jutro.", nextStep: "Odbierz laptop jutro.", usage: { inputTokens: 1000, outputTokens: 100 } };
     const s = await setup({ writer: { provider: "anthropic", model: "claude-haiku-5-5", write: async () => output } });
     const d = await s.call();
@@ -96,8 +100,10 @@ describe("call-case worker passes", { skip: dbSkip }, () => {
     await processResults(s.ctx);
     const kase = (await s.app.inject({ method: "GET", url: `/v1/call-cases/${d.caseId}`, headers: s.h })).json();
     const r = kase.results[0].result;
-    assert.equal(r.summaryBy, "doddy_model");
-    assert.equal(r.summary, "Laptop jest gotowy, odbiór jutro.");
+    assert.equal(r.summaryBy, "rules");
+    assert.equal(r.summary, "Odpowiedź: „laptop jest gotowy”");
+    assert.ok(r.confidenceReasons.includes("model_summary_unverified"));
+    assert.equal(r.report.facts[0].evidence.line, 1);
     assert.deepEqual(r.quote, { text: "laptop jest gotowy", line: 1 });
     const model = kase.cost.items.find((i: { component: string }) => i.component === "model");
     assert.deepEqual([model.status, model.amountMicros, model.quantity, model.unit],

@@ -1,0 +1,3 @@
+Agent execution audit: exact requested research/single inquiry authorization, source-checked structured call reports, native reader/Markdown export wiring and durable errand stages/history. All nine requested audit/design/evidence documents are at the repository root.
+Decision: `docs/decisions/2026-11-18-scoped-requested-work.md`; exact commands/results: `DODDY_AGENT_TEST_RESULTS.md`. Native controller/UI is not compiled; live agents/calls remain unverified.
+Rollout needs migration 042, compatible services/app and a separately reviewed live-agent diff. No live sync, deployment or real call was performed. Generic workflows, unified Sprawy and server-driven Live Activities remain documented follow-up work.

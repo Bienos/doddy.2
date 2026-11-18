@@ -16,6 +16,7 @@ import { resultAad, type ErrandContext } from "./context.js";
 import type { ResearchOutcome } from "./researcher.js";
 import { contentDigest, resultDigest, resultJson } from "./schema.js";
 import { decryptContent, wipeContent } from "./service.js";
+import { recordProgress, type ProgressUpdate } from "./progress.js";
 
 export const MAX_CONCURRENT_RUNS = 3;
 /** A running errand this long past its time limit has lost its worker. */
@@ -113,6 +114,20 @@ export async function runClaimed(ctx: ErrandContext, e: Claimed, shutdown?: Abor
     return !r || r.state !== "running" || r.cancel_requested_at !== null;
   };
   ctx.log("errand started", { errandId: e.id, model: researcher.model, timeLimitMinutes: ctx.settings.timeLimitMinutes });
+  const progress = async (update: ProgressUpdate) => {
+    try { await recordProgress(ctx.db, e.account_id, e.id, update, ctx.now()); }
+    catch { ctx.log("errand progress could not be stored", { errandId: e.id }); }
+  };
+  await progress({ stage: "running", requests: 0, searches: 0, fetches: 0 });
+  // Shutdown/cancel may arrive while the initial progress write awaits PostgreSQL. Do not start a
+  // provider afterwards (or rely on a newly registered abort listener seeing an already-fired event).
+  const cancelledBeforeStart = await isCancelled();
+  if (shutdown?.aborted || cancelledBeforeStart) {
+    await finish(ctx, e, shutdown?.aborted
+      ? { kind: "failed", code: "interrupted", ...noStats(researcher.model) }
+      : { kind: "cancelled", ...noStats(researcher.model) });
+    return;
+  }
   let outcome: ResearchOutcome;
   try {
     outcome = await researcher.research(
@@ -120,7 +135,7 @@ export async function runClaimed(ctx: ErrandContext, e: Claimed, shutdown?: Abor
         id: e.id, words: content.words, brief: content.brief, language: content.language,
         ...(content.kind ? { kind: content.kind, priorities: content.priorities ?? [], accountId: e.account_id } : {}),
       },
-      { deadline, isCancelled, signal: shutdown, now: ctx.now, cancelPollMs: ctx.cancelPollMs, log: ctx.log });
+      { deadline, isCancelled, signal: shutdown, now: ctx.now, cancelPollMs: ctx.cancelPollMs, log: ctx.log, progress });
   } catch (err) {
     ctx.log("errand researcher threw", { errandId: e.id, error: (err as Error).name });
     outcome = { kind: "failed", code: "interrupted", ...noStats(researcher.model) };
@@ -145,6 +160,10 @@ async function finish(ctx: ErrandContext, e: Claimed, outcome: ResearchOutcome):
       "SELECT state, cancel_requested_at FROM errands WHERE id = $1 FOR UPDATE", [e.id]);
     const r = rows[0];
     if (!r || r.state !== "running") return r ? `already_${r.state}` : "deleted";
+    await recordProgress(c, e.account_id, e.id, {
+      stage: outcome.kind === "cancelled" || r.cancel_requested_at ? "cancelled" : outcome.kind === "done" ? "completed" : "failed",
+      requests: 0, searches: outcome.searches, fetches: outcome.fetches,
+    }, now, true);
     const stats = [e.id, now, outcome.searches, outcome.fetches, u.inputTokens, u.cacheWriteTokens, u.cacheReadTokens, u.outputTokens, outcome.model.slice(0, 64)];
     // The model that actually ran (a shopping errand runs on the shopping model, not the one claimed).
     const set = `finished_at = $2, searches = $3, fetches = $4, input_tokens = $5, cache_write_tokens = $6, cache_read_tokens = $7, output_tokens = $8, model = $9`;

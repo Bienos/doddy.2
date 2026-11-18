@@ -117,7 +117,9 @@ describe("answer card", () => {
     const t = [d(opening), c("Laptop jest gotowy do odbioru, zapraszamy jutro."), d("Dziękuję, do widzenia.")];
     const good = buildCallResult(base(t, { writer: { answerLine: 1, answerQuote: "laptop jest GOTOWY do odbioru", summary: "Laptop jest gotowy.", nextStep: "Odbierz laptop jutro.", kind: "answered" } }));
     assert.deepEqual(good.quote, { text: "Laptop jest gotowy do odbioru", line: 1 });
-    assert.equal(good.summaryBy, "doddy_model");
+    assert.equal(good.summaryBy, "rules", "a valid quote does not verify a separate model paraphrase");
+    assert.ok(good.summary.includes("Laptop jest gotowy do odbioru"));
+    assert.ok(good.confidenceReasons.includes("model_summary_unverified"));
     const invented = buildCallResult(base(t, { writer: { answerLine: 1, answerQuote: "laptop będzie gotowy w piątek", summary: "x", nextStep: "y", kind: "answered" } }));
     assert.equal(invented.confidence, "low");
     assert.ok(invented.confidenceReasons.includes("model_quote_rejected"));

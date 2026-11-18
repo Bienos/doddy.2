@@ -347,6 +347,7 @@ final class VoiceSessionController {
     /// what the user said last. After it has, the few tools that run at once and could carry it out ask for a tap
     /// (`AskFirst.need(for:in:)`). A new value for every conversation: reset where one starts and where it ends.
     private var outsideContent = OutsideContentSession()
+    private var requestedWork = RequestedWorkSession()
     /// The searches of Contacts this conversation made for a text, email or BLIK draft, before any
     /// card: at most `ContactSearchBudget.perConversation` (ADR-717).
     private var contactSearches = ContactSearchBudget()
@@ -742,6 +743,7 @@ final class VoiceSessionController {
         permissionRequest = nil
         declinedPermissions = []
         outsideContent = OutsideContentSession()
+        requestedWork = RequestedWorkSession()
         contactSearches = ContactSearchBudget()
         callsAsReceived = [:]
         presentationReady = nil
@@ -965,11 +967,11 @@ final class VoiceSessionController {
         }
         config.onUserTranscript = { text, _ in
             Task { @MainActor in
+                // An event from the previous SDK connection must not grant work in a new conversation.
+                guard let controller = ref.value, controller.isLive, controller.startAttempt == attempt else { return }
                 // The person's words arrived: the turn starts here (decision 2026-11-12-voice-turn-feedback).
-                if let controller = ref.value, controller.isLive {
-                    controller.turnFeedback.userFinished(tap: controller.phase != .speaking && controller.translator == nil)
-                }
-                ref.value?.append(text, fromUser: true)
+                controller.turnFeedback.userFinished(tap: controller.phase != .speaking && controller.translator == nil)
+                controller.append(text, fromUser: true)
             }
         }
         // Tools the agent runs itself (web tools) reach the app only as these two events; the app's
@@ -1495,6 +1497,7 @@ final class VoiceSessionController {
         contactCard = nil
         parkingCard = nil
         outsideContent = OutsideContentSession()
+        requestedWork = RequestedWorkSession()
         connectionNeeded = nil
         // A call held for the permission sheet goes with its conversation (ADR-566).
         permissionRequest = nil
@@ -2876,7 +2879,10 @@ final class VoiceSessionController {
         }
         lines.append(Line(fromUser: fromUser, text: text))
         // The user's own words (not Doddy's, not a tool's): what a tool that works on their list may be matched to.
-        if fromUser { outsideContent.userSaid(text) }
+        if fromUser {
+            outsideContent.userSaid(text)
+            requestedWork.userSaid(text, at: Date())
+        }
         if !fromUser, checkInNeedsBriefing {
             checkInNeedsBriefing = false
             Task { await sendToAgent("Morning check-in: give the briefing now, as the morning check-in section says.") }
@@ -3170,6 +3176,20 @@ final class VoiceSessionController {
         // user's tap, or their own spoken yes (`spokenAnswer`), for exactly this call; after outside text too (option 2).
         // Tools with a payload card of their own (and the server's writes) ask through that card. What the user asked
         // to see or start of their own runs at once (`.runsNow`). Decision 2026-11-14-spoken-yes-and-fewer-cards.
+        // The user's exact research instruction is already scoped authorization. This never grants a write,
+        // never takes instructions from a tool result, and is consumed before the hand-over leaves the iPhone.
+        if case .handOverErrand(let draft) = request {
+            if let grant = requestedWork.grant(for: request, at: Date()),
+               requestedWork.consume(grant, for: request, at: Date()) {
+                outsideContent.noteRun(of: call.toolName)
+                await reply(call.toolCallId, await ErrandsModel.shared.handOver(draft))
+                return
+            }
+            if requestedWork.hasConsumed(.research, at: Date()) {
+                await reply(call.toolCallId, "not_done: This voice turn was already handled. Check its earlier result or use check_errands; do not create a duplicate.")
+                return
+            }
+        }
         let sessionAsk = await asksBecauseOfOutsideContent(call, request: request)
         if sessionAsk == .cardShown { return }
         switch AskFirst.need(for: request, polish: Self.cardsInPolish) {
@@ -4086,6 +4106,7 @@ final class VoiceSessionController {
     /// switch (and, for accounts, the connection and the grant). Reads answer at once; writes show a card first.
     /// `pay_for_page` is answered by its own payment card first (ADR-736).
     private func handleCloud(_ cloud: CloudToolCall, toolCallID: String) async {
+        let lookupAttempt = startAttempt
         if cloud.name == PaymentToolName.payForPage {
             await handlePayForPage(cloud, toolCallID: toolCallID)
             return
@@ -4114,6 +4135,9 @@ final class VoiceSessionController {
                 // single-use approval is still made for exactly these words and used straight away.
                 let prepared = try await client.prepare(cloud)
                 let result = try await client.run(cloud, timeZone: TimeZone.current.identifier, approvalId: prepared.approvalId)
+                if isLive, startAttempt == lookupAttempt, isCurrent(toolCallID), result.tool == "find_places", result.mode == .live {
+                    requestedWork.foundDestinations((result.callDestinations ?? []).map { CallTaskPlace(name: $0.name, phone: $0.phone) })
+                }
                 await keepMadeDocument(result, from: cloud)
                 keepFlightLinks(result)
                 await reply(toolCallID, madeFileReply(result))
@@ -4591,6 +4615,13 @@ final class VoiceSessionController {
     /// returns, built from the exact payloads it will send. Nothing is dialled here; the card waits
     /// for the tap.
     private func proposeCallTask(_ draft: CallTaskDraft, toolCallID: String) async {
+        let attempt = startAttempt
+        let request = VoiceToolRequest.callPlaces(draft)
+        let direct = requestedWork.grant(for: request, at: Date())
+        if requestedWork.hasConsumed(.inquiryCall, at: Date()) {
+            await reply(toolCallID, "not_done: This call instruction was already handled. Check its earlier result or existing task; do not create a duplicate.")
+            return
+        }
         guard let client = Self.messagingClient() else {
             await reply(toolCallID, VoiceToolReply.callTaskNoServer, isError: true)
             return
@@ -4627,9 +4658,22 @@ final class VoiceSessionController {
         }
         let preview: CallTaskPreview
         do {
-            preview = try await client.createCallTask(draft.body(principalName: callerFirstName))
+            preview = try await client.createCallTask(draft.body(principalName: callerFirstName, source: direct?.destinationSource ?? .places))
         } catch {
             await reply(toolCallID, VoiceToolReply.callTaskRefused(error))
+            return
+        }
+        guard isLive, startAttempt == attempt, isCurrent(toolCallID) else { return }
+        if let direct, RequestedWorkSession.previewMatches(preview, draft: draft, language: direct.language ?? "pl", source: direct.destinationSource ?? .places),
+           preview.places.first?.principal.name == callerFirstName {
+            guard !UserDefaults.standard.bool(forKey: ConnectionPause.preferenceKey),
+                  requestedWork.consume(direct, for: request, at: Date()) else {
+                await reply(toolCallID, "declined: The request changed, expired or was paused before dispatch. Nothing was dialled.")
+                return
+            }
+            let outcome = await approveCallTask(preview)
+            writeResults[toolCallID] = WriteResult(reply: outcome.reply, attempted: outcome.attempted)
+            await reply(toolCallID, outcome.reply)
             return
         }
         propose(.callTask(toolCallID: toolCallID, preview: preview), toolCallID: toolCallID)
