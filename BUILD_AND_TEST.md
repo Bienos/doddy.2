@@ -161,12 +161,14 @@ by the runner's existing Ubuntu archive keyring. Release, updates, security and
 backports stay on Noble; signature/TLS checks and all test commands stay enabled.
 Both attempts are bounded and a failed fallback fails the job. The checks group
 tests primary success, download/install failures, fallback failure and cleanup.
+When the runner image already has every requested package installed, setup skips the mirror entirely.
 
 **Hosted CI (`.github/workflows/ios.yml`, ADR-123, ADR-137, ADR-497, ADR-684)** runs these jobs side by side:
 
 - `changes` (Ubuntu, seconds): `scripts/ci_needs_mac.sh` decides whether the pull request needs the macOS build
   (any changed file that can reach an Xcode target or its tests), and `scripts/ci_groups.sh` decides which Linux
-  groups it needs. An unlisted path, or no list, runs everything.
+  groups it needs. Known Ubuntu-only CI helpers and workflows skip the Mac jobs. Shared entry points such as
+  `ios.yml` and `ci.sh` still run them. An unlisted path, or no list, runs everything.
 - Linux groups, each `scripts/ci.sh --only <group>`: `checks` (Python generators, guards, specs; always),
   `swift` (package tests, app-logic type-check, model tests; SwiftPM `.build` cached), `backend`, `node`
   (gateway, web, site, voice token, secrets tool) and `messaging` (with Postgres). npm downloads are cached.
@@ -210,7 +212,10 @@ tests primary success, download/install failures, fallback failure and cleanup.
 - The Mac job resolves the packages first, and tries again (4 attempts, waiting 30 s, 60 s, 90 s) when a
   download fails, such as the `badResponseStatusCode(504)` that github.com release downloads of the LiveKit
   binary frameworks gave on 8 Nov 2026 (`xcodebuild` exit 74). Any other error is not retried, and the step
-  still fails after the last attempt. `CI_FETCH_TRIES` and `CI_FETCH_WAIT` change the numbers.
+  still fails after the last attempt and compilation does not start. The build uses the generated scheme
+  directly, so CI does not list the project separately. `CI_FETCH_TRIES` and `CI_FETCH_WAIT` change the numbers.
+  Search for `Elapsed:` in the CI script output to see the time for resolution, compilation, simulator
+  restarts and each test pass.
 - The nightly run and runs by hand also compile Release for a generic iOS device, unsigned (pushes to `main` no
   longer do, 18 Nov 2026; Xcode Cloud's archive is the per-merge Release compile). Since 15 Nov 2026 that is its own job, `ios-release`
   (`DODDY_RELEASE_BUILD=only scripts/ci.sh --app-only`: no simulator, no tests), beside `ios-build` instead of

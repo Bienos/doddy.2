@@ -7,6 +7,15 @@ trap 'rm -rf "$test_work"' EXIT
 mkdir "$test_work/bin" "$test_work/tmp"
 export BOOTSTRAP_LOG="$test_work/log" BOOTSTRAP_SOURCES="$test_work/sources"
 export PATH="$test_work/bin:$PATH" TMPDIR="$test_work/tmp"
+cat > "$test_work/bin/dpkg-query" <<'MOCK'
+#!/usr/bin/env bash
+set -eu
+case "$BOOTSTRAP_CASE:$3" in
+  installed:*|partial:libsqlite3-dev) printf 'install ok installed' ;;
+  partial:python3) printf 'deinstall ok config-files' ;;
+  *) exit 1 ;;
+esac
+MOCK
 cat > "$test_work/bin/timeout" <<'MOCK'
 #!/usr/bin/env bash
 set -eu
@@ -37,7 +46,7 @@ case "$BOOTSTRAP_CASE:$fallback:$operation" in
   *) exit 0 ;;
 esac
 MOCK
-chmod +x "$test_work/bin/timeout" "$test_work/bin/apt-get"
+chmod +x "$test_work/bin/dpkg-query" "$test_work/bin/timeout" "$test_work/bin/apt-get"
 
 run_case() {
   export BOOTSTRAP_CASE=$1
@@ -59,6 +68,8 @@ run_case() {
   [ -z "$(ls -A "$test_work/tmp")" ]
   echo "ok: $1 (exit $result)"
 }
+run_case installed 0 0
+run_case partial 0 2
 run_case success 0 2
 [ ! -e "$BOOTSTRAP_SOURCES" ]
 run_case dns 0 3

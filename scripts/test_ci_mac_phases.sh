@@ -38,6 +38,10 @@ EOF
 cat > "$bin/xcodebuild" <<'EOF'
 #!/bin/sh
 echo "xcodebuild $*" >> "$FAKE_CALLS"
+if [ "$1" = -resolvePackageDependencies ] && [ "${FAKE_RESOLVE_FAILS:-0}" = 1 ]; then
+  echo "error: invalid package manifest" >&2
+  exit 74
+fi
 exit 0
 EOF
 cat > "$bin/swift" <<'EOF'
@@ -84,6 +88,15 @@ run_ci "build, then tests" 0 "--only ios"
 before "the unit tests start after the build" "xcodebuild build-for-testing" "test-without-building"
 before "the simulator is first restarted after the build" "xcodebuild build-for-testing" "simctl bootstatus"
 not_called "no Release build on a pull request" "-configuration Release"
+not_called "no separate project listing after resolving packages" "xcodebuild -list"
+has "individual build timing is logged" "— xcodebuild build-for-testing"
+
+# Failed package resolution is already fatal. Avoid starting another Xcode operation.
+run_ci "failed resolve stops before build and tests" 1 "--only ios" FAKE_RESOLVE_FAILS=1
+called "package resolution was attempted" "xcodebuild -resolvePackageDependencies"
+not_called "a failed resolve does not start compilation" "build-for-testing"
+not_called "a failed resolve does not start tests" "test-without-building"
+has "the failed phase is still in the summary" "FAIL     Resolve the app's packages (exit 74)"
 
 # The ios-release job: Release for a device, nothing else, no simulator.
 run_ci "DODDY_RELEASE_BUILD=only" 0 "--only ios" DODDY_RELEASE_BUILD=only
@@ -91,6 +104,7 @@ called "Release is built for a generic device" "-configuration Release -destinat
 not_called "no build for testing" "build-for-testing"
 not_called "no tests" "test-without-building"
 not_called "no simulator is booted" "simctl bootstatus"
+not_called "Release also skips the project listing" "xcodebuild -list"
 has "the skipped tests are in the summary" "SKIPPED  xcodebuild build-for-testing, unit and UI tests (DODDY_RELEASE_BUILD=only: the ios-build job runs them)"
 
 # DODDY_RELEASE_BUILD=1 (a full run) still builds Release after the tests.
