@@ -462,7 +462,7 @@ else
         record "UI tests run again because the app would not start" "NOTE" "$launch_retry_note"
       fi
       if [ "$ui_scope" = "smoke" ]; then
-        record "xcodebuild test: native island test" "SKIPPED" "UI smoke run (DODDY_UI_TESTS=smoke); every push to main runs it"
+        record "xcodebuild test: native island test" "SKIPPED" "UI smoke run (DODDY_UI_TESTS=smoke); the nightly run and runs by hand run it"
       else
         if [ -n "${sim_id:-}" ]; then
           run_step "Restart the simulator before the native island test" restart_simulator "$sim_id"
