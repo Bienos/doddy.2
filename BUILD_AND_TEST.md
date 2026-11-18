@@ -4,6 +4,8 @@ For local iteration, run the smallest check that exercises the change. Documenta
 
 On pull requests, `docs/decisions/*.md` alone no longer starts a heavy Linux test group. The always-on checks still run; other documentation remains conservatively classified because some files are test inputs. A main push still runs all Linux groups.
 
+The Linux Swift group runs the call, messages, price-watch, open-loops and training-log model suites together with `scripts/test_screen_models.sh`. The individual model test scripts remain available for a focused local run.
+
 Memory retrieval diagnostics (10 Nov 2026): see [memory/RAG implementation evidence](docs/architecture/memory-rag/DODDY-MEMORY-RAG-IMPLEMENTATION.md). The opt-in `DODDY_MEMORY_BENCHMARK=1 swift test --package-path Packages/DoddyCore --filter MemoryRetrievalBenchmarkTests` runs synthetic quality and timing fixtures without keys, user data or model calls. Routine tests skip these observational benchmarks. Run on a quiet machine in the same configuration before/after; Mac results do not establish iPhone voice latency. Static checks require a current Python (the existing generator uses Python 3.12+ syntax), PyYAML, ReportLab and Matplotlib.
 
 How to build Doddy, run its tests and checks, and what CI runs. What is live is in [STATUS.md](STATUS.md); each

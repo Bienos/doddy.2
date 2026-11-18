@@ -265,19 +265,11 @@ elif command -v swift >/dev/null 2>&1; then
     # A real compile of the app files that need no Apple UI framework (ADR-200). On a Mac the
     # full xcodebuild below compiles everything, so this step is Linux-only.
     run_step "App logic type-check (non-UI app files)" scripts/typecheck_app_logic.sh
-    # The call screens' state, run with fakes for the server and the store (ADR-500).
-    run_step "Call screens' state tests" scripts/test_call_cases_model.sh
-    # The Messages screen's state, run with fakes for the store and the server (ADR-585).
-    run_step "Messages screen's state tests" scripts/test_messages_model.sh
-    # The price watch's state, run with a fake for Doddy's server (SHOPPING_WATCH.md).
-    run_step "Price watch state tests" scripts/test_watch_model.sh
-    # The "Na oku" page's state, run with a fake provider (ADR-756).
-    run_step "Open loops page state tests" scripts/test_open_loops_model.sh
+    # The five screen models use the same Swift test target, compiled once for all five suites.
+    run_step "Screen model state tests" scripts/test_screen_models.sh
     run_step "Unfinished notes on real files" scripts/check_unfinished_note_store.sh
     # The kept training plan (ADR-625): read back, edited and unreadable files, delete.
     run_step "Training plan on real files" scripts/check_training_plan_store.sh
-    # The training log's state (ADR-642), run with a fake store.
-    run_step "Training log screen's state tests" scripts/test_training_log_model.sh
   else
     run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore
   fi
