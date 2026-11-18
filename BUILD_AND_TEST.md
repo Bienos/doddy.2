@@ -194,8 +194,9 @@ tests primary success, download/install failures, fallback failure and cleanup.
   (`scripts/check_ui_test_waits.sh`, in `checks`; decision `2026-11-15-faster-mac-ci`).
 - UI tests on pull requests are the smoke classes only (`DODDY_UI_TESTS=smoke`: `LaunchSmokeTests`,
   `WelcomeUITests`, `LegalAcceptanceUITests`, `PolishSmokeTests`, about 8 of the suite's 27 minutes on
-  7 Nov 2026); pushes to `main`, runs by hand and pull requests labelled `full-ui-tests` run every UI
-  test and the native island test. Locally `scripts/ci.sh` runs them all unless you set the variable.
+  7 Nov 2026), and so are pushes to `main`; the nightly run (02:17 UTC), runs by hand and pull requests
+  labelled `full-ui-tests` run every UI test and the native island test (decision
+  `2026-11-18-nightly-full-ui-and-release`). Locally `scripts/ci.sh` runs them all unless you set the variable.
 - Package versions: the app's two outside packages are exact in `project.yml` (ElevenLabs 3.3.1, LiveKit
   2.19.0), and `Config/Package.resolved` (committed, #236) locks every package they pull in too. `make project`,
   `scripts/ci.sh` and Xcode Cloud's `ci_post_clone.sh` copy it into the generated project, CI fails when resolution
@@ -210,8 +211,8 @@ tests primary success, download/install failures, fallback failure and cleanup.
   download fails, such as the `badResponseStatusCode(504)` that github.com release downloads of the LiveKit
   binary frameworks gave on 8 Nov 2026 (`xcodebuild` exit 74). Any other error is not retried, and the step
   still fails after the last attempt. `CI_FETCH_TRIES` and `CI_FETCH_WAIT` change the numbers.
-- Pushes to `main` also compile Release for a generic iOS device, unsigned, so a Release-only error shows up
-  before Xcode Cloud archives. Since 15 Nov 2026 that is its own job, `ios-release`
+- The nightly run and runs by hand also compile Release for a generic iOS device, unsigned (pushes to `main` no
+  longer do, 18 Nov 2026; Xcode Cloud's archive is the per-merge Release compile). Since 15 Nov 2026 that is its own job, `ios-release`
   (`DODDY_RELEASE_BUILD=only scripts/ci.sh --app-only`: no simulator, no tests), beside `ios-build` instead of
   its last 18 minutes; it is not a required check. `DODDY_RELEASE_BUILD=1` still adds the Release build after
   the tests in a local run (decision `2026-11-15-faster-mac-ci`).
