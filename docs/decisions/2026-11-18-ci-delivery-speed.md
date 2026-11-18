@@ -4,7 +4,9 @@
 - **Decided by:** owner, request for risk-based testing and faster delivery
 - **Status:** proposed on feature branch
 
-The Node job installed backend dependencies even when `scripts/ci.sh` would skip browser tests because Playwright Chromium was absent. Install them only when that same browser availability condition is met. Existing test selection, required checks and release builds remain in place. Local agent guidance selects checks by risk and avoids unnecessary repeats.
+The Node job installed backend dependencies even when `scripts/ci.sh` would skip browser tests because Playwright Chromium was absent. Install them only when that same browser availability condition is met. Required checks and release builds remain in place. Local agent guidance selects checks by risk and avoids unnecessary repeats.
+
+PRs containing only `docs/decisions/*.md` now skip the heavy Linux groups while retaining always-on checks. Swift tests do read some other documentation, including the device-data inventory and trust configuration, so those paths keep their existing classification. Main pushes continue to run all Linux groups. The AGENTS, CLAUDE and DoddyCore instructions now explicitly replace the older unconditional local full-suite instruction with risk-based targeted checks.
 
 ## Audit and next measurements
 

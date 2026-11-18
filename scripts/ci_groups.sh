@@ -15,6 +15,8 @@ set -euo pipefail
 groups_for() {
   local p=$1
   case "$p" in
+    # Decision records are prose, not test fixtures; other docs can be read by Swift tests.
+    docs/decisions/*.md) echo none; return ;;
     docs/* | design/*) echo swift; return ;;
     # Notes, text sources, archives, agent tooling: no heavy suite reads them (the generators and
     # the pack check, which do, are in the `checks` group that always runs).

@@ -64,3 +64,6 @@ Use only the new design: what the app shows now (Home as the calm "I'm here" scr
 # Current working rules (owner, 7 Nov 2026)
 The binding summary is the last section of `AGENTS.md`, "Current working rules — read this section first", imported here: @AGENTS.md
 Where an older line in this file conflicts with that section, that section wins. Everything above is kept byte for byte (append-only, ADR-178).
+
+## Fast local iteration (owner, 18 Nov 2026)
+Follow the latest fast local iteration section of `AGENTS.md`. Use focused checks for the changed behavior and risk; CI supplies the broader configured checks. Documentation-only edits do not require an app or package build. Read only task-relevant context and proceed with routine coding and testing without asking again. Preserve authorization, production, signing and security controls.
