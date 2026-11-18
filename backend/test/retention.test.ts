@@ -10,7 +10,7 @@ const USER = "00000000-0000-4000-8000-00000000000a";
 const receipt = (n: number) => ({ operationId: `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`, summary: `r${n}` }) as unknown as Receipt;
 
 test("prune keeps live rows and drops expired attempts and approvals, old usage and old or excess receipts", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     (await store.composioUserId(USER, NOW)); // creates the user row
     (await store.createAttempt({ userId: USER, provider: "gmail", authConfigId: "ac", now: NOW - 3 * DAY, ttlSeconds: 600 }));
@@ -41,7 +41,7 @@ test("prune keeps live rows and drops expired attempts and approvals, old usage 
 });
 
 test("prune applies the same retention to payment receipts and the payments ledger", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     const row = (id: string, now: number) => ({ paymentId: id, userId: USER, now, host: "shop.example", amount: 50_000, network: "base-sepolia", urlHash: "h", validBefore: 1 });
     await store.insertPayment(row("old", NOW - 100 * DAY));

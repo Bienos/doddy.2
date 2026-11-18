@@ -30,7 +30,7 @@ function fake(replies: (() => Response | Promise<Response>)[]) {
 }
 
 async function rig(replies: (() => Response | Promise<Response>)[]) {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   const events: LedgerEvent[] = [];
   const f = fake(replies);
   const provider = new AnthropicClaudeProvider(KEY, f.impl, "https://anthropic.test", {
@@ -140,7 +140,7 @@ test("failures write a row each, marked unknown rather than zero: a 429, a 500, 
 });
 
 test("a timeout is a failed row with unknown usage (it may have been billed; nothing is invented)", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     const events: LedgerEvent[] = [];
     const impl = (async () => {
@@ -221,7 +221,7 @@ test("without a scope or a recorder (mock mode, old callers) nothing is written 
 // ------------------------------------------------------------------ the store
 
 test("per-account totals only read that account's rows; erasing an account removes its rows; old rows are pruned", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     const base = { provider: "anthropic", model: "claude-sonnet-5-5", requestId: "r", seq: 0, kind: "initial", outcome: "succeeded", errorCode: null, stopReason: "end_turn", priceVersion: PRICE_VERSION } as const;
     const usage = { inputTokens: 10, outputTokens: 5, cacheCreationTokens: 0, cacheCreation1hTokens: 0, cacheReadTokens: 100 };
@@ -249,7 +249,7 @@ test("per-account totals only read that account's rows; erasing an account remov
 });
 
 test("the table refuses a row that claims known usage without counters, or a cost without known usage", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     const insert = (known: boolean, input: number | null, cost: number | null) =>
       store.db.query(

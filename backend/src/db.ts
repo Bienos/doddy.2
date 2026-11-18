@@ -22,6 +22,8 @@ export interface Queryable {
 
 export interface Database extends Queryable {
   readonly kind: "postgres" | "pglite";
+  /** PGlite only: a copy of the whole database as it is now, to start another one from (`DatabaseOptions.template`). */
+  dump?(): Promise<Blob>;
   /**
    * Runs `fn` in one SERIALIZABLE transaction and commits, or rolls back on any error. A
    * serialization conflict with a concurrent transaction is retried a few times, so callers see the
@@ -38,6 +40,8 @@ export interface DatabaseOptions {
   caCert?: string | undefined;
   /** PGlite only: a data directory to keep data across restarts. Absent or ":memory:": in memory. */
   dataDir?: string | undefined;
+  /** PGlite only, in memory: start from a copy made by `Database.dump()` instead of an empty database. */
+  template?: Blob | undefined;
 }
 
 const SERIALIZATION_FAILURE = new Set(["40001", "40P01"]);
@@ -53,7 +57,7 @@ const INT8_OID = 20;
 pg.types.setTypeParser(INT8_OID, (value: string) => Number(value));
 
 export async function openDatabase(options: DatabaseOptions): Promise<Database> {
-  return options.url ? openPostgres(options.url, options.caCert) : openPglite(options.dataDir);
+  return options.url ? openPostgres(options.url, options.caCert) : openPglite(options.dataDir, options.template);
 }
 
 // ------------------------------------------------------------------ hosted Postgres
@@ -125,9 +129,10 @@ async function openPostgres(url: string, caCert: string | undefined): Promise<Da
 
 // ------------------------------------------------------------------ PGlite (tests, mock, local)
 
-async function openPglite(dataDir: string | undefined): Promise<Database> {
+async function openPglite(dataDir: string | undefined, template?: Blob): Promise<Database> {
   const memory = !dataDir || dataDir === ":memory:";
   const lite = await PGlite.create(memory ? undefined : dataDir, {
+    ...(memory && template ? { loadDataDir: template } : {}),
     parsers: { [INT8_OID]: (value: string) => Number(value) },
   });
   await lite.exec(`CREATE SCHEMA IF NOT EXISTS ${SCHEMA}; SET search_path TO ${SCHEMA};`);
@@ -146,6 +151,9 @@ async function openPglite(dataDir: string | undefined): Promise<Database> {
         await inner.query("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE");
         return fn({ query: <R>(sql: string, params?: readonly unknown[]) => run<R>(inner, sql, params) });
       });
+    },
+    async dump() {
+      return (await lite.dumpDataDir("none")) as Blob;
     },
     async close() {
       await lite.close();

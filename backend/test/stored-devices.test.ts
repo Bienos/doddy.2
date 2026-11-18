@@ -550,7 +550,7 @@ const bearerOf = (token: string) => `Bearer ${token}`;
 
 /** A store as the earlier version left it: no iPhone rows, no cut-offs, joins without a renewal time or a sign-in. */
 async function earlierStore(): Promise<Store> {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   stores.push(store);
   await store.db.query("DROP TABLE devices");
   await store.db.query("DROP TABLE device_cutoffs");

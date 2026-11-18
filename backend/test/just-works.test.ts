@@ -33,7 +33,7 @@ const DEVICE_B = "6f9619ff-8b86-4011-b42d-00c04fc964ff";
 // ------------------------------------------------------------------ device sign-in (ADR-563)
 
 test("first device: the first iPhone gets a token the server accepts, and keeps getting one", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     const issuer = new DeviceSessionIssuer(KEY, { signup: "first-device", inviteCodes: [], store });
     const now = new Date("2026-10-21T00:00:00Z");
@@ -50,7 +50,7 @@ test("first device: the first iPhone gets a token the server accepts, and keeps 
 });
 
 test("first device: any other device is refused, unless it brings a valid invite code", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     const now = new Date("2026-10-21T00:00:00Z");
     const issuer = new DeviceSessionIssuer(KEY, { signup: "first-device", inviteCodes: ["second-phone-code"], store });
@@ -67,7 +67,7 @@ test("first device: any other device is refused, unless it brings a valid invite
 });
 
 test("device sign-in rejects anything but a UUID and an optional code, and two devices never share a user", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     const issuer = new DeviceSessionIssuer(KEY, { signup: "off", inviteCodes: ["only-with-code"], store });
     const now = new Date();
@@ -122,7 +122,7 @@ test("POST /v1/session/device is the one route without a session, and its token 
   const { MockToolsProvider } = await import("../src/tools/mock.js");
   const { CloudToolsService } = await import("../src/tools/service.js");
   const { testLimits } = await import("../src/config.js");
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   const common = { store, limits: testLimits(), publicBaseUrl: "https://api.doddy.test", appReturnUrl: "doddy-dev://connected-apps/return" };
   const handler = createHandler({
     service: new ConnectedAppsService({ ...common, provider: new MockCalendarProvider(), registry: defaultRegistry(), completionMode: "mock" }),

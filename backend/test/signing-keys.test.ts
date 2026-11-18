@@ -490,7 +490,7 @@ test("the real server, rotated: new tokens, earlier tokens and old-key tokens al
   const newFormatBefore = new SignedSessionVerifier(new SigningKeys(EARLIER)).mint(STORED_DEVICE_USER, now, 3_600);
 
   // Before anything is set: today's key alone, as the live server runs it.
-  const database = await Store.memory();
+  const database = await Store.memoryForTests();
   closers.push(() => database.close());
   const today = await app({ DODDY_SESSION_SIGNING_KEY: b64(EARLIER) }, database);
   assert.equal(await today.status(earlier), 200, "a token from before this change");

@@ -141,7 +141,7 @@ const SYNTHETIC_WRITE: CapabilityDefinition = {
 };
 
 test("confirmation: missing, expired, replayed, changed-argument, other-user and other-account approvals are rejected", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   const policy = new ConfirmationPolicy(store, 120);
   const t0 = Date.parse("2026-10-09T10:00:00Z");
   const base = { userId: "u1", capability: SYNTHETIC_WRITE, accountId: "acct1", args: { title: "Dinner" } };

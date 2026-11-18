@@ -62,7 +62,7 @@ class HeldSearch extends MockWebSearchProvider {
 }
 
 async function rig() {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   stores.push(store);
   const clock = new Clock(Date.parse("2026-11-12T10:00:00.400Z"));
   const floors = new TokenFloors(store);
@@ -134,7 +134,7 @@ test("a request let in just before the account is deleted can't write the person
 });
 
 test("each kind of write a request makes for a deleted person is refused, and only for that person and that request", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   stores.push(store);
   // Files are kept only encrypted: with a key, so the documents write below reaches the cut-off check.
   store.sealDocumentsWith(new DocumentSeal(new MemoryCipher(Buffer.alloc(32, 6))));
@@ -176,7 +176,7 @@ test("each kind of write a request makes for a deleted person is refused, and on
 });
 
 test("a removal owed after a deletion with no way to remove it here is reported stuck at once, and the sweep finishes it once there is", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   stores.push(store);
   const clock = new Clock(Date.parse("2026-11-12T10:00:00Z"));
   const logs: Record<string, unknown>[] = [];
@@ -208,7 +208,7 @@ test("a removal owed after a deletion with no way to remove it here is reported 
 });
 
 test("a removal that keeps failing at the provider is retried at the hourly sweeps without end, and reported once", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   stores.push(store);
   const clock = new Clock(Date.parse("2026-11-12T10:00:00Z"));
   const logs: Record<string, unknown>[] = [];
@@ -246,7 +246,7 @@ test("a removal that keeps failing at the provider is retried at the hourly swee
 });
 
 test("the account-link count is kept per hour under a pruned period, and old hour periods are pruned", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   stores.push(store);
   const now = new Date("2026-11-12T10:30:00Z");
   // A stand-in for the Supabase check: the header's own claims (the real check is in account-links.test.ts).

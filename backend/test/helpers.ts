@@ -48,7 +48,7 @@ export async function harness(
     shopify?: HttpDeps["shopify"];
   } = {},
 ): Promise<Harness> {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   const provider = opts.provider ?? new MockCalendarProvider();
   const clock = new Clock(Date.parse(opts.nowIso ?? "2026-10-09T10:00:00Z"));
   const logs: string[] = [];
