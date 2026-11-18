@@ -227,7 +227,7 @@ test("a query string is refused unless the site is listed for one; the card show
 });
 
 test("live mode without a list of sites refuses every payment route and reads nothing", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   const seen: string[] = [];
   const http: SellerHttp = { get: async (url) => { seen.push(url); throw new Error("must not be called"); } };
   const liveWallet = { kind: "coinbase_cdp" as const, mode: "live" as const, address: `0x${"11".repeat(20)}`, signTransferAuthorization: async () => { throw new Error("must not sign"); } };
@@ -693,7 +693,7 @@ test("content Doddy cannot read out is paid for but not forwarded", async () => 
 // ------------------------------------------------------------------ construction guards
 
 test("live mode refuses the demo seller, and a wallet must match the mode", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     const base = { store, policy: defaultPolicy(), limits: testLimits() };
     assert.throws(() => new PaymentsService({ ...base, mode: "live", wallet: null, http: new MockPaymentSeller() }), /demo seller/);
@@ -706,7 +706,7 @@ test("live mode refuses the demo seller, and a wallet must match the mode", asyn
 test("demo scenarios are rejected when they are not valid names, and in a live seller", async () => {
   rig = await startPay();
   assert.equal((await rig.call("GET", "/v1/payments", { scenario: "make_it_free" })).status, 400);
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     const live = new PaymentsService({ store, mode: "live", wallet: null, http: { get: async () => { throw new Error("x"); } }, policy: defaultPolicy(), limits: testLimits() });
     assert.throws(() => live.applyMockScenario("normal"), /only in mock mode/);

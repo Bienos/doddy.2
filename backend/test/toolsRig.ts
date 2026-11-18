@@ -55,7 +55,7 @@ export async function start(
     planTripDeadlineMs?: number;
   } = {},
 ): Promise<Rig> {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   store.sealDocumentsWith(o.documentKey === null ? null : new DocumentSeal(new MemoryCipher(o.documentKey ?? TEST_DOCUMENT_KEY)));
   const clock = new Clock(Date.parse("2026-10-10T10:00:00Z"));
   const provider = new MockToolsProvider();

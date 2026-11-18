@@ -498,7 +498,7 @@ test("a token that names a row the session doesn't own is refused: a device-sess
 test("the exchange is limited per account and per address, counted before the token is trusted", async () => {
   const { AccountSessionIssuer, ACCOUNT_SESSION_LIMITS } = await import("../src/accountSession.js");
   assert.deepEqual({ ...ACCOUNT_SESSION_LIMITS }, { perClientPerHour: 20, perAccountPerHour: 20, maxDevicesPerAccount: 20 }, "the numbers the guest, invite and link routes use, and 20 iPhones");
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     const registry = new DeviceRegistry(store);
     const floors = new TokenFloors(store);
@@ -543,7 +543,7 @@ test("over HTTP a flood of exchanges ends in a 429 with a retry time, and nothin
 
 test("no account holds an unbounded number of iPhones: at the limit a new iPhone is refused, a known one still renews, and revoked ones are freed", async () => {
   const { AccountSessionIssuer } = await import("../src/accountSession.js");
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     const registry = new DeviceRegistry(store);
     const issuer = new AccountSessionIssuer({
@@ -581,7 +581,7 @@ test("no account holds an unbounded number of iPhones: at the limit a new iPhone
 
 test("no token, key, device id or account id in a log line or an answer", async () => {
   const { AccountSessionIssuer } = await import("../src/accountSession.js");
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   const logs: string[] = [];
   const log = (line: Record<string, unknown>) => logs.push(JSON.stringify(line));
   try {

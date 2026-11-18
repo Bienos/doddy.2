@@ -96,7 +96,7 @@ test("a removal that fails stays queued and visible, and the sweep retries it un
 });
 
 test("a removal that keeps failing is never given up: each try waits longer, at most a day, and it is reported stuck once", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     (await store.queueCleanup("ca_stuck", "u1", "google_calendar", 0));
     let now = HOUR;
@@ -131,7 +131,7 @@ test("a removal that keeps failing is never given up: each try waits longer, at 
 });
 
 test("removals that keep failing don't crowd out one that is due: the most overdue go first", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     for (let i = 0; i < 25; i++) {
       (await store.queueCleanup(`ca_old_${i}`, "u1", "gmail", 0));
@@ -146,7 +146,7 @@ test("removals that keep failing don't crowd out one that is due: the most overd
 });
 
 test("a link made for an attempt that was superseded meanwhile is queued for removal, never stored on it", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     (await store.composioUserId("u1", 0));
     const a = (await store.createAttempt({ userId: "u1", provider: "google_calendar", authConfigId: "ac", now: 0, ttlSeconds: 600 }));
