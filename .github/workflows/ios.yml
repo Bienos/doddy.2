@@ -324,7 +324,12 @@ jobs:
             web/package-lock.json
             site/package-lock.json
       - name: Install backend dependencies for web end-to-end tests
-        run: npm ci --prefix backend --no-audit --no-fund
+        run: |
+          if [ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" ] && ls "${PLAYWRIGHT_BROWSERS_PATH}"/chromium-* >/dev/null 2>&1; then
+            npm ci --prefix backend --no-audit --no-fund
+          else
+            echo "No Playwright Chromium: the browser tests will be skipped, so backend dependencies are not needed."
+          fi
       # The voice token server's tests run its Redis scripts (limits, sign-in throttle, refresh reuse) on a
       # real redis-server when there is one (ADR-712); without it they are skipped. If this step fails
       # the tests skip as before, so it can't turn the job red by itself.
