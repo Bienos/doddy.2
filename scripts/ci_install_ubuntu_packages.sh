@@ -16,6 +16,19 @@ for package in "$@"; do
   fi
 done
 
+# The hosted image may already have all the tools. Avoid touching the mirrors in that case.
+all_installed=true
+for package in "$@"; do
+  if [[ "$(dpkg-query -W -f='${Status}' "$package" 2>/dev/null)" != 'install ok installed' ]]; then
+    all_installed=false
+    break
+  fi
+done
+if [ "$all_installed" = true ]; then
+  echo "Ubuntu CI dependencies already installed: $*"
+  exit 0
+fi
+
 apt_options=(-o APT::Update::Error-Mode=any -o Acquire::Retries=1
   -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15)
 if timeout --kill-after=5s 60s apt-get "${apt_options[@]}" update \

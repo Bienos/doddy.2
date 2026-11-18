@@ -31,6 +31,7 @@ expect true "voice tools bundled in the app" voice-agent/tools.json
 expect true "voice session bundled in the app" voice-agent/session.json
 expect true "the workflow itself" .github/workflows/ios.yml
 expect true "the check script the Mac runs" scripts/ci.sh
+expect true "the Mac selector itself" scripts/ci_needs_mac.sh
 expect true "a generator the Mac runs" tools/build_strings_catalog.py
 expect true "a Markdown file inside the app folder" DoddyApp/README.md
 expect true "a folder nobody listed yet" newthing/file.txt
@@ -41,6 +42,9 @@ expect true "no files listed at all"
 
 # Changes that can't reach the app: the Mac is skipped.
 expect false "docs only" docs/implementation/VOICE_SESSION_STARTS.md
+expect false "Ubuntu-only CI helpers" scripts/ci_groups.sh scripts/test_ci_groups.sh scripts/test_screen_models.sh scripts/ci_install_ubuntu_packages.sh scripts/test_ci_install_ubuntu_packages.sh
+expect false "Ubuntu-only workflows" .github/workflows/pr-guard.yml .github/workflows/vercel-blocked-status.yml
+expect true "an app change alongside Ubuntu CI helpers" scripts/test_screen_models.sh DoddyApp/A.swift
 expect false "a change note and a decision file" changes/ui-smoke.md docs/decisions/2026-11-07-x.md
 expect false "top-level notes" STATUS.md DECISIONS.md README.md BUILD_AND_TEST.md
 expect false "agent notes in app folders" DoddyApp/CLAUDE.md Packages/DoddyCore/CLAUDE.md
