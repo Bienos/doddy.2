@@ -96,7 +96,7 @@ afterEach(async () => {
 async function start(
   o: { claude?: ClaudeProvider | null; limits?: Partial<Limits>; signed?: boolean; devices?: (store: Store) => DeviceSessionIssuer; trustProxy?: boolean } = {},
 ): Promise<Rig> {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   const logs: string[] = [];
   const log = (line: Record<string, unknown>) => logs.push(JSON.stringify(line));
   const limits = testLimits(o.limits);

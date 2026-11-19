@@ -18,11 +18,17 @@ name: iOS build and tests
 on:
   # The default branch, `main` (renamed from `claude/loving-dirac-uuxoux` on 7 Nov 2026), is what
   # Render deploys and Xcode Cloud builds. Every push to it runs every Linux group (ADR-811), and the
-  # Mac jobs whenever the push changed a file that can reach the app (decision 2026-11-15-faster-mac-ci;
-  # a skipped ios-build on `main` means "not needed for this push", never "passed").
+  # Mac build with the UI smoke tests whenever the push changed a file that can reach the app (decision
+  # 2026-11-15-faster-mac-ci; a skipped ios-build on `main` means "not needed for this push", never
+  # "passed"). The full UI suite and the Release compile run nightly and by hand.
   push:
     branches: [main]
   pull_request:
+  # Nightly (decision 2026-11-18-nightly-full-ui-and-release): the whole UI suite, the native island
+  # test and the Release compile for devices run here and by hand, no longer on every push to `main`.
+  # A scheduled run uses the default branch, `main`.
+  schedule:
+    - cron: "17 2 * * *"
   workflow_dispatch:
     inputs:
       only:
@@ -83,7 +89,7 @@ jobs:
             # shows as skipped, never as passed. Anything the script can't tell runs the Mac.
             scripts/ci_push_changed_files.sh "$BEFORE" > "$RUNNER_TEMP/mac-changed.txt" || : > "$RUNNER_TEMP/mac-changed.txt"
           elif [ "$EVENT" != "pull_request" ]; then
-            echo "Run by hand: everything runs." >&2
+            echo "Run by hand or nightly: everything runs." >&2
           elif git rev-parse --verify -q 'HEAD^2' >/dev/null \
             && git diff --name-only --no-renames 'HEAD^1' HEAD > "$RUNNER_TEMP/changed.txt.new"; then
             mv "$RUNNER_TEMP/changed.txt.new" "$RUNNER_TEMP/changed.txt"
@@ -112,10 +118,11 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.mac == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: macos-26
-    # A push to main runs the whole UI suite and the native island test: 70 to 75 minutes on 8 Nov 2026
-    # with the Release build (runs 42408593703, 42481741193), against a limit of 75; run 42479036099 was
-    # cancelled after 75 minutes. Since 15 Nov the Release build is the ios-release job, about 18 minutes
-    # less here. Pull requests run the smoke classes and took about 30 (15 Nov, run 43716467848).
+    # The nightly run and a run by hand run the whole UI suite and the native island test: 70 to 75
+    # minutes on 8 Nov 2026 with the Release build (runs 42408593703, 42481741193), against a limit of
+    # 75; run 42479036099 was cancelled after 75 minutes. Since 15 Nov the Release build is the
+    # ios-release job, about 18 minutes less here. Pull requests and pushes to `main` run the smoke
+    # classes and took about 30 (15 Nov, run 43716467848).
     timeout-minutes: 100
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -156,10 +163,11 @@ jobs:
 
       - name: scripts/ci.sh --app-only
         env:
-          # Pull requests run the UI smoke classes, about 8 of the suite's 27 minutes (ADR-811);
-          # pushes to main and runs by hand run every UI test. A pull request labelled
-          # `full-ui-tests` runs them all too (the label is read when the run starts).
-          DODDY_UI_TESTS: ${{ (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ui-tests')) && 'all' || 'smoke' }}
+          # Pull requests and pushes to main run the UI smoke classes, about 8 of the suite's 27 minutes
+          # (ADR-811, decision 2026-11-18-nightly-full-ui-and-release); the nightly run and runs by hand
+          # run every UI test. A pull request labelled `full-ui-tests` runs them all too (the label is
+          # read when the run starts).
+          DODDY_UI_TESTS: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'full-ui-tests'))) && 'all' || 'smoke' }}
           # The Release build for devices runs in its own job, ios-release, beside this one (decision
           # 2026-11-15-faster-mac-ci): it took 18.5 of this job's 70 minutes on 15 Nov 2026 (run 43715540139).
           DODDY_RELEASE_BUILD: "0"
@@ -210,11 +218,12 @@ jobs:
   # Release for a generic iOS device, unsigned, so a Release-only error fails here instead of in Xcode
   # Cloud's archive. Pushes to main and full runs by hand only, like before; since 15 Nov 2026 a job of its
   # own beside ios-build instead of the last 18.5 minutes of it (decision 2026-11-15-faster-mac-ci). Not a
-  # required check: pull requests never run it. Same runner image and Xcode as ios-build (ADR-811).
+  # required check: pull requests and pushes to `main` never run it, the nightly run and runs by hand do
+  # (decision 2026-11-18-nightly-full-ui-and-release). Same runner image and Xcode as ios-build (ADR-811).
   ios-release:
     name: ios-release
     needs: [changes]
-    if: github.event_name != 'pull_request' && needs.changes.outputs.mac == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.changes.outputs.mac == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: macos-26
     timeout-minutes: 45
     steps:
@@ -324,7 +333,12 @@ jobs:
             web/package-lock.json
             site/package-lock.json
       - name: Install backend dependencies for web end-to-end tests
-        run: npm ci --prefix backend --no-audit --no-fund
+        run: |
+          if [ -n "${PLAYWRIGHT_BROWSERS_PATH:-}" ] && ls "${PLAYWRIGHT_BROWSERS_PATH}"/chromium-* >/dev/null 2>&1; then
+            npm ci --prefix backend --no-audit --no-fund
+          else
+            echo "No Playwright Chromium: the browser tests will be skipped, so backend dependencies are not needed."
+          fi
       # The voice token server's tests run its Redis scripts (limits, sign-in throttle, refresh reuse) on a
       # real redis-server when there is one (ADR-712); without it they are skipped. If this step fails
       # the tests skip as before, so it can't turn the job red by itself.

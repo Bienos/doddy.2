@@ -23,6 +23,11 @@ no_mac() {  # 0 when the path can't affect the macOS job
       | .agents/* | .claude/*) return 0 ;;
     # Doddy Studio's skills run in Anthropic's container, never in an Xcode target (ADR-740).
     studio-skills/*) return 0 ;;
+    # These exact files run only on Ubuntu. Keep shared entry points (ios.yml and ci.sh)
+    # and the Mac job selector itself on the conservative build path.
+    scripts/ci_groups.sh | scripts/test_ci_groups.sh | scripts/test_screen_models.sh \
+      | scripts/ci_install_ubuntu_packages.sh | scripts/test_ci_install_ubuntu_packages.sh \
+      | .github/workflows/pr-guard.yml | .github/workflows/vercel-blocked-status.yml) return 0 ;;
     # Agent notes, excluded from every target's sources.
     */CLAUDE.md | */AGENTS.md) return 0 ;;
     # Apple Watch and Mac apps (ADR-572): paused, in no target of project.yml or project-iphone.yml.

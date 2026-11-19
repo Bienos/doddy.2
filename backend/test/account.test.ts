@@ -118,7 +118,7 @@ async function rows(store: Store, userId: string): Promise<Record<string, number
 }
 
 test("eraseUser deletes every row of one person, queues every grant for removal, and keeps the owner and the counters", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     await seed(store, ID_A, "aaaa");
     await seed(store, ID_B, "bbbb");
@@ -163,7 +163,7 @@ test("eraseUser deletes every row of one person, queues every grant for removal,
 });
 
 test("every table with a user_id column is either erased or kept on purpose", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   try {
     const found = (await store.db.query<{ table_name: string }>(
       `SELECT DISTINCT table_name FROM information_schema.columns
@@ -198,7 +198,7 @@ afterEach(async () => {
 });
 
 async function rig() {
-  store = await Store.memory();
+  store = await Store.memoryForTests();
   const clock = new Clock(Date.parse("2026-10-10T10:00:00Z"));
   const logs: string[] = [];
   const toolsProvider = new MockToolsProvider();

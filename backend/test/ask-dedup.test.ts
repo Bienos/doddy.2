@@ -49,7 +49,7 @@ class CountingClaude implements ClaudeProvider {
 }
 
 async function rig(claude: ClaudeProvider, over: { once?: RequestOnce<any>; userDailyAsk?: number } = {}) {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   const limits = testLimits(over.userDailyAsk ? { userDailyAsk: over.userDailyAsk } : {});
   const logs: string[] = [];
   const assist = new AssistService({ store, claude, limits, log: (l) => logs.push(JSON.stringify(l)), now: () => Date.parse("2026-11-09T10:00:00Z"), ...(over.once ? { once: over.once } : {}) });

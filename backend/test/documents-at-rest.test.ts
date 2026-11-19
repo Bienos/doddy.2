@@ -91,7 +91,7 @@ test("without the key no file is made and nothing is written, as with kept memor
 });
 
 test("rows written in plain text before are read as before, and the sweep encrypts each once", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   stores.push(store);
   const insert = (id: string, status: string, body: Buffer | null) =>
     store.db.query("INSERT INTO documents (id, user_id, status, name, mime, body, created_at) VALUES ($1, 'u', $2, $3, 'application/pdf', $4, 1)", [id, status, `${id}.pdf`, body]);

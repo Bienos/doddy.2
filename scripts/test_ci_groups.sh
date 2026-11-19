@@ -14,6 +14,8 @@ expect() {  # expected "swift backend node messaging" as t/f letters, descriptio
 }
 #                                  swift backend node messaging
 expect "t f f f" "recall benchmark fixtures" docs/quality/evals/recall_golden_v1.json
+expect "f f f f" "decision notes need no heavy group" docs/decisions/2026-11-18-example.md
+expect "t f f f" "test-backed docs still run Swift" docs/architecture/DEVICE_DATA_STORES.md
 expect "t f f f" "docs include runtime test fixtures" docs/a.md STATUS.md DECISIONS.md prompts/x.md
 expect "f f f f" "agent notes inside code folders" DoddyApp/CLAUDE.md backend/AGENTS.md
 expect "f f f f" "per-pull-request change notes" changes/ui-smoke.md changes/README.md

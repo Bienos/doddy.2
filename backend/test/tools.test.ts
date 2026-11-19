@@ -384,7 +384,7 @@ test("a failed read names its own account, not Google Calendar", async () => {
 });
 
 test("Connect names the account when Composio refuses the request (e.g. a wrong project key)", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   const refused = Object.assign(new Error("401 Invalid API key"), { status: 401 });
   const fake = { connectedAccounts: { link: async () => { throw refused; } } } as unknown as ComposioToolsLike;
   const provider = new ComposioToolsProvider("key", { gmail: { authConfigId: "ac_1", toolkitVersion: "20260101_00" } }, fake);
@@ -469,7 +469,7 @@ test("receipts and logs keep no email, task or file content", async () => {
 });
 
 test("mock demo scenarios cannot be used against a live provider", async () => {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   const fake = {} as ComposioToolsLike;
   const provider = new ComposioToolsProvider("key", { todoist: { authConfigId: "ac_1", toolkitVersion: "20260101_00" } }, fake);
   const tools = new CloudToolsService({

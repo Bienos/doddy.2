@@ -38,7 +38,7 @@ afterEach(async () => {
 });
 
 async function freshStore(): Promise<Store> {
-  const store = await Store.memory();
+  const store = await Store.memoryForTests();
   stores.push(store);
   return store;
 }

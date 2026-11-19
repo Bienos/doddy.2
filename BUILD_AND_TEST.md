@@ -2,6 +2,12 @@
 
 Agent execution audit (18 Nov 2026): [actual results and scenario coverage](DODDY_AGENT_TEST_RESULTS.md) and [implementation/rollout](DODDY_IMPLEMENTATION_SUMMARY.md). New tests cover exact-user-request authorization, call report evidence, structured call destinations and durable errand progress. Messaging database tests require a **disposable** `TEST_DATABASE_URL` and run serially; they drop its schema. Linux Core/state tests do not compile `VoiceSessionController`, SwiftUI report/progress views or ActivityKit. Those need the normal Mac `ios-build` and device checks before release.
 
+For local iteration, run the smallest check that exercises the change. Documentation-only edits do not need an iOS build; use the relevant Swift test filter or server test for code changes. PR CI already selects affected groups and cancels older PR runs. The Node job installs backend dependencies for browser tests only when Playwright Chromium is available.
+
+On pull requests, `docs/decisions/*.md` alone no longer starts a heavy Linux test group. The always-on checks still run; other documentation remains conservatively classified because some files are test inputs. A main push still runs all Linux groups.
+
+The Linux Swift group runs the call, messages, price-watch, open-loops and training-log model suites together with `scripts/test_screen_models.sh`. The individual model test scripts remain available for a focused local run.
+
 Memory retrieval diagnostics (10 Nov 2026): see [memory/RAG implementation evidence](docs/architecture/memory-rag/DODDY-MEMORY-RAG-IMPLEMENTATION.md). The opt-in `DODDY_MEMORY_BENCHMARK=1 swift test --package-path Packages/DoddyCore --filter MemoryRetrievalBenchmarkTests` runs synthetic quality and timing fixtures without keys, user data or model calls. Routine tests skip these observational benchmarks. Run on a quiet machine in the same configuration before/after; Mac results do not establish iPhone voice latency. Static checks require a current Python (the existing generator uses Python 3.12+ syntax), PyYAML, ReportLab and Matplotlib.
 
 How to build Doddy, run its tests and checks, and what CI runs. What is live is in [STATUS.md](STATUS.md); each
@@ -157,12 +163,14 @@ by the runner's existing Ubuntu archive keyring. Release, updates, security and
 backports stay on Noble; signature/TLS checks and all test commands stay enabled.
 Both attempts are bounded and a failed fallback fails the job. The checks group
 tests primary success, download/install failures, fallback failure and cleanup.
+When the runner image already has every requested package installed, setup skips the mirror entirely.
 
 **Hosted CI (`.github/workflows/ios.yml`, ADR-123, ADR-137, ADR-497, ADR-684)** runs these jobs side by side:
 
 - `changes` (Ubuntu, seconds): `scripts/ci_needs_mac.sh` decides whether the pull request needs the macOS build
   (any changed file that can reach an Xcode target or its tests), and `scripts/ci_groups.sh` decides which Linux
-  groups it needs. An unlisted path, or no list, runs everything.
+  groups it needs. Known Ubuntu-only CI helpers and workflows skip the Mac jobs. Shared entry points such as
+  `ios.yml` and `ci.sh` still run them. An unlisted path, or no list, runs everything.
 - Linux groups, each `scripts/ci.sh --only <group>`: `checks` (Python generators, guards, specs; always),
   `swift` (package tests, app-logic type-check, model tests; SwiftPM `.build` cached), `backend`, `node`
   (gateway, web, site, voice token, secrets tool) and `messaging` (with Postgres). npm downloads are cached.
@@ -190,8 +198,9 @@ tests primary success, download/install failures, fallback failure and cleanup.
   (`scripts/check_ui_test_waits.sh`, in `checks`; decision `2026-11-15-faster-mac-ci`).
 - UI tests on pull requests are the smoke classes only (`DODDY_UI_TESTS=smoke`: `LaunchSmokeTests`,
   `WelcomeUITests`, `LegalAcceptanceUITests`, `PolishSmokeTests`, about 8 of the suite's 27 minutes on
-  7 Nov 2026); pushes to `main`, runs by hand and pull requests labelled `full-ui-tests` run every UI
-  test and the native island test. Locally `scripts/ci.sh` runs them all unless you set the variable.
+  7 Nov 2026), and so are pushes to `main`; the nightly run (02:17 UTC), runs by hand and pull requests
+  labelled `full-ui-tests` run every UI test and the native island test (decision
+  `2026-11-18-nightly-full-ui-and-release`). Locally `scripts/ci.sh` runs them all unless you set the variable.
 - Package versions: the app's two outside packages are exact in `project.yml` (ElevenLabs 3.3.1, LiveKit
   2.19.0), and `Config/Package.resolved` (committed, #236) locks every package they pull in too. `make project`,
   `scripts/ci.sh` and Xcode Cloud's `ci_post_clone.sh` copy it into the generated project, CI fails when resolution
@@ -205,9 +214,12 @@ tests primary success, download/install failures, fallback failure and cleanup.
 - The Mac job resolves the packages first, and tries again (4 attempts, waiting 30 s, 60 s, 90 s) when a
   download fails, such as the `badResponseStatusCode(504)` that github.com release downloads of the LiveKit
   binary frameworks gave on 8 Nov 2026 (`xcodebuild` exit 74). Any other error is not retried, and the step
-  still fails after the last attempt. `CI_FETCH_TRIES` and `CI_FETCH_WAIT` change the numbers.
-- Pushes to `main` also compile Release for a generic iOS device, unsigned, so a Release-only error shows up
-  before Xcode Cloud archives. Since 15 Nov 2026 that is its own job, `ios-release`
+  still fails after the last attempt and compilation does not start. The build uses the generated scheme
+  directly, so CI does not list the project separately. `CI_FETCH_TRIES` and `CI_FETCH_WAIT` change the numbers.
+  Search for `Elapsed:` in the CI script output to see the time for resolution, compilation, simulator
+  restarts and each test pass.
+- The nightly run and runs by hand also compile Release for a generic iOS device, unsigned (pushes to `main` no
+  longer do, 18 Nov 2026; Xcode Cloud's archive is the per-merge Release compile). Since 15 Nov 2026 that is its own job, `ios-release`
   (`DODDY_RELEASE_BUILD=only scripts/ci.sh --app-only`: no simulator, no tests), beside `ios-build` instead of
   its last 18 minutes; it is not a required check. `DODDY_RELEASE_BUILD=1` still adds the Release build after
   the tests in a local run (decision `2026-11-15-faster-mac-ci`).

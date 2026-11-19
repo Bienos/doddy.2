@@ -56,11 +56,36 @@ declare -a results=()
 failed=0 blocked=0
 record() { results+=("$1|$2|$3"); }
 run_step() {  # name, command...
-  local name=$1; shift
+  local name=$1 started=$SECONDS status=0; shift
   echo; echo "=== $name"; echo "\$ $*"
-  if "$@"; then record "$name" PASS ""; else record "$name" FAIL "exit $?"; failed=1; return 1; fi
+  "$@" || status=$?
+  printf 'Elapsed: %ss — %s\n' "$((SECONDS - started))" "$name"
+  if [ "$status" -eq 0 ]; then
+    record "$name" PASS ""
+  else
+    record "$name" FAIL "exit $status"
+    failed=1
+    return 1
+  fi
 }
 not_run() { record "$1" "NOT RUN" "$2"; blocked=1; echo; echo "=== $1"; echo "NOT RUN: $2"; }
+finish() {
+  echo; echo "================ SUMMARY"
+  for r in "${results[@]}"; do IFS='|' read -r n s d <<<"$r"; printf '%-8s %s %s\n' "$s" "$n" "${d:+($d)}"; done
+  if [ "$failed" -ne 0 ]; then echo "RESULT: FAIL"; exit 1; fi
+  if [ "$blocked" -ne 0 ]; then echo "RESULT: BLOCKED (a required step could not run)"; exit 2; fi
+  if [ -n "$only" ]; then
+    case ",$only," in
+      *,ios,*) echo "RESULT: PASS for groups: $only" ;;
+      *) echo "RESULT: PASS for groups: $only; iOS app NOT verified" ;;
+    esac
+    exit 0
+  fi
+  if [ "$core_only" -eq 1 ]; then echo "RESULT: PASS for core-only scope; iOS app NOT verified"; exit 0; fi
+  if [ "$app_only" -eq 1 ]; then echo "RESULT: PASS for app-only scope; the Linux job (core) runs the other checks"; exit 0; fi
+  echo "RESULT: PASS"
+}
+
 # The app's package pins (Config/Package.resolved, 7 Nov 2026 audit). Xcode writes this file when it
 # resolves packages; `xcodebuild -list` does not (run 42409624440: "wrote no Package.resolved", and the
 # step logged NOT RUN, which blocked an otherwise green job). After `-resolvePackageDependencies` it
@@ -265,19 +290,11 @@ elif command -v swift >/dev/null 2>&1; then
     # A real compile of the app files that need no Apple UI framework (ADR-200). On a Mac the
     # full xcodebuild below compiles everything, so this step is Linux-only.
     run_step "App logic type-check (non-UI app files)" scripts/typecheck_app_logic.sh
-    # The call screens' state, run with fakes for the server and the store (ADR-500).
-    run_step "Call screens' state tests" scripts/test_call_cases_model.sh
-    # The Messages screen's state, run with fakes for the store and the server (ADR-585).
-    run_step "Messages screen's state tests" scripts/test_messages_model.sh
-    # The price watch's state, run with a fake for Doddy's server (SHOPPING_WATCH.md).
-    run_step "Price watch state tests" scripts/test_watch_model.sh
-    # The "Na oku" page's state, run with a fake provider (ADR-756).
-    run_step "Open loops page state tests" scripts/test_open_loops_model.sh
+    # The five screen models use the same Swift test target, compiled once for all five suites.
+    run_step "Screen model state tests" scripts/test_screen_models.sh
     run_step "Unfinished notes on real files" scripts/check_unfinished_note_store.sh
     # The kept training plan (ADR-625): read back, edited and unreadable files, delete.
     run_step "Training plan on real files" scripts/check_training_plan_store.sh
-    # The training log's state (ADR-642), run with a fake store.
-    run_step "Training log screen's state tests" scripts/test_training_log_model.sh
   else
     run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore
   fi
@@ -378,10 +395,10 @@ elif ! command -v xcodebuild >/dev/null 2>&1; then
 elif ! command -v xcodegen >/dev/null 2>&1; then
   not_run "iOS app build + tests" "xcodegen not found (brew install xcodegen)"
 else
-  run_step "Generate Xcode project" xcodegen generate --spec project.yml
+  run_step "Generate Xcode project" xcodegen generate --spec project.yml || finish
   # The app's pinned package versions (Config/Package.resolved, 7 Nov 2026 audit): installed into the
   # generated project before anything resolves, and checked once Xcode has resolved (check_package_pins).
-  run_step "Install the pinned package versions" scripts/install_package_resolved.sh Doddy.xcodeproj
+  run_step "Install the pinned package versions" scripts/install_package_resolved.sh Doddy.xcodeproj || finish
   pins_checked=0
   # DODDY_RELEASE_BUILD=only (the ios-release job, decision 2026-11-15-faster-mac-ci): only the Release
   # build for a device below, beside the ios-build job instead of after its tests; no simulator.
@@ -400,16 +417,12 @@ else
     not_run "iOS app build + tests" "no available iPhone simulator; install one or set DODDY_DESTINATION"
   else
     echo "Destination: $dest"
-    # Resolve the packages first, and again when a download fails (with_fetch_retries): `-list` also
-    # resolves, so before this a single failed download failed all three steps. A failure to fetch
-    # a package still stops the run before the long build, and the pins can be checked now. If Xcode
-    # still wrote no file, the check is tried again after the build, which resolves too.
+    # Resolve packages with bounded download retries. A successful resolve is required before
+    # compiling. The build uses the scheme directly, so listing the project adds no validation.
     # build/packages-ok: every package resolved and downloaded, so hosted CI may save them as its cache.
     mkdir -p build; rm -f build/packages-ok
-    if run_step "Resolve the app's packages" with_fetch_retries xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy; then
-      touch build/packages-ok
-    fi
-    run_step "xcodebuild -list" xcodebuild -list -project Doddy.xcodeproj
+    run_step "Resolve the app's packages" with_fetch_retries xcodebuild -resolvePackageDependencies -project Doddy.xcodeproj -scheme Doddy || finish
+    touch build/packages-ok
     if check_package_pins; then pins_checked=1; fi
     # Build once, then run the unit tests and the UI tests as two passes, with the simulator
     # restarted in between (ADR-561). The unit tests run inside the app on the simulator; right
@@ -470,7 +483,7 @@ else
         record "UI tests run again because the app would not start" "NOTE" "$launch_retry_note"
       fi
       if [ "$ui_scope" = "smoke" ]; then
-        record "xcodebuild test: native island test" "SKIPPED" "UI smoke run (DODDY_UI_TESTS=smoke); every push to main runs it"
+        record "xcodebuild test: native island test" "SKIPPED" "UI smoke run (DODDY_UI_TESTS=smoke); the nightly run and runs by hand run it"
       else
         if [ -n "${sim_id:-}" ]; then
           run_step "Restart the simulator before the native island test" restart_simulator "$sim_id"
@@ -498,17 +511,4 @@ else
   fi
 fi
 
-echo; echo "================ SUMMARY"
-for r in "${results[@]}"; do IFS='|' read -r n s d <<<"$r"; printf '%-8s %s %s\n' "$s" "$n" "${d:+($d)}"; done
-if [ "$failed" -ne 0 ]; then echo "RESULT: FAIL"; exit 1; fi
-if [ "$blocked" -ne 0 ]; then echo "RESULT: BLOCKED (a required step could not run)"; exit 2; fi
-if [ -n "$only" ]; then
-  case ",$only," in
-    *,ios,*) echo "RESULT: PASS for groups: $only" ;;
-    *) echo "RESULT: PASS for groups: $only; iOS app NOT verified" ;;
-  esac
-  exit 0
-fi
-if [ "$core_only" -eq 1 ]; then echo "RESULT: PASS for core-only scope; iOS app NOT verified"; exit 0; fi
-if [ "$app_only" -eq 1 ]; then echo "RESULT: PASS for app-only scope; the Linux job (core) runs the other checks"; exit 0; fi
-echo "RESULT: PASS"
+finish
