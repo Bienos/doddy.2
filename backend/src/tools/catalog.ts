@@ -213,6 +213,8 @@ export interface ConfirmationPreview {
 
 /** What the agent hears. `text` states only what the provider returned. */
 export interface ToolOutcome {
+  /** Structured listing data for the app's scoped call authorization; never parsed from generated prose. */
+  callDestinations?: { name: string; phone: string }[];
   text: string;
   count: number;
   truncated: boolean;

@@ -6,7 +6,7 @@ import { canPush, enqueue } from "../outbox.js";
 import { hmacSha256 } from "../crypto.js";
 import type { TaskCallContext } from "./context.js";
 import { purgePayload, receipt } from "./cases.js";
-import { buildCallResult, isRetryableOutcome, type CallResult, type Line, type WriterOutput } from "./result.js";
+import { buildCallResult, isRetryableOutcome, normalizedTranscript, type CallResult, type Line, type WriterOutput } from "./result.js";
 import { decryptPayload, dialAttempt, endCall, inputAad, liveAad, resultAad, STALE_DIALING_MS } from "./service.js";
 import { endHalfJoined } from "./takeover.js";
 import { onStatus, queueConversationDeletion } from "./webhooks.js";
@@ -168,6 +168,8 @@ async function buildAndStore(ctx: TaskCallContext, r: ResultRow) {
     if (transcript.length) source = "twilio_live";
   }
   const takenOverAtSecs = r.taken_over_at && r.answered_at ? Math.round((r.taken_over_at.getTime() - r.answered_at.getTime()) / 1000) : null;
+  // The model's line numbers must refer to exactly the lines later verified and stored.
+  transcript = normalizedTranscript(transcript);
   let writer: WriterOutput | undefined;
   if (ctx.writer && payload && transcript.some((l) => l.speaker === "callee") && r.voice_connected_at) {
     try {

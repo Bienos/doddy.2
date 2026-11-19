@@ -22,7 +22,7 @@ import { purgePayload } from "./cases.js";
 import type { TaskCallContext } from "./context.js";
 import { callFits } from "./hours.js";
 import { canonicalJson, previewOf, type CallPayload } from "./payload.js";
-import type { CallResult, WriterOutput } from "./result.js";
+import { findSpan, type CallResult, type WriterOutput } from "./result.js";
 import {
   compileCase, decryptPayload, DIAL_WINDOW_MINUTES, dialAttempt, insertCase, MAX_OPEN_CASES, openCaseCount, type CompiledCase, type Refusal,
 } from "./service.js";
@@ -110,6 +110,7 @@ export async function createTask(ctx: TaskCallContext, accountId: string, body: 
   return {
     preview: {
       taskId, digest: digest.toString("hex"), approvableUntil: approvableUntil.toISOString(), kind: t.kind, textResult: t.textResult,
+      language: first.payload.language,
       places: compiled.map((cc) => previewOf(cc.payload, cc.digest, approvableUntil)),
       callableNow: callFits(now, first.brief.maxDurationSecs),
     },
@@ -198,10 +199,15 @@ export function answerOf(result: CallResult, writer: WriterOutput | undefined, k
   // Doddy may have agreed to another time or price there: the person reads it; never "no", never the next place.
   if (result.warnings.some((w) => w.kind === "possible_other_booking")) return "unclear";
   const confirmed = kind === "ask" || result.bookingConfirmed === true;
-  if (writer?.answer === "yes" && result.quote && result.confidence !== "low" && result.warnings.length === 0 && confirmed) return "yes";
+  const quoted = result.quote && writer?.answerQuote && writer.answerLine === result.quote.line
+    && findSpan(result.quote.text, writer.answerQuote) !== undefined;
+  const uncertain = result.confidenceReasons.includes("hedged_answer")
+    || result.confidenceReasons.includes("model_quote_rejected")
+    || result.report?.facts.some((f) => ["condition", "commitment"].includes(f.kind) && f.certainty === "uncertain");
+  if (writer?.answer === "yes" && quoted && !uncertain && result.confidence !== "low" && result.warnings.length === 0 && confirmed) return "yes";
   // Doddy said yes to a booking or order the model can't confirm: the person must read it, never "no" and never the next place.
   if (kind !== "ask" && result.bookingConfirmed) return "unclear";
-  if (writer?.answer === "no") return "no";
+  if (writer?.answer === "no" && quoted && !uncertain) return "no";
   return "unclear";
 }
 

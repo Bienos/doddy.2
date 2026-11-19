@@ -32,7 +32,7 @@ const result = (over: Partial<CallResult>): CallResult => ({
   quote: { text: "Tak, mamy stolik.", line: 1 }, transcript: [], nextStep: { kind: "none", text: "" }, warnings: [], callbackPromised: false,
   takenOverAtSecs: null, durationSecs: 30, ...over,
 });
-const said = (answer: WriterOutput["answer"]): WriterOutput => ({ kind: "answered", answerLine: 1, answerQuote: "x", summary: "", nextStep: "", answer });
+const said = (answer: WriterOutput["answer"]): WriterOutput => ({ kind: "answered", answerLine: 1, answerQuote: answer === "no" ? "Nie, nie mamy stolika." : "Tak, mamy stolik.", summary: "", nextStep: "", answer });
 
 test("what a place's call means for the task: a yes needs the model's yes and a quote; anything less is unclear", () => {
   assert.equal(answerOf(result({}), said("yes")), "yes");
@@ -41,7 +41,8 @@ test("what a place's call means for the task: a yes needs the model's yes and a 
   assert.equal(answerOf(result({ warnings: [{ kind: "possible_commitment", line: 2 }] }), said("yes")), "unclear");
   assert.equal(answerOf(result({}), undefined), "unclear", "no model step: Doddy doesn't guess");
   assert.equal(answerOf(result({}), said("unclear")), "unclear");
-  assert.equal(answerOf(result({ quote: null }), said("no")), "no");
+  assert.equal(answerOf(result({ quote: null }), said("no")), "unclear", "a model's no without evidence cannot trigger another call");
+  assert.equal(answerOf(result({ quote: { text: "Nie, nie mamy stolika.", line: 1 } }), said("no")), "no");
   for (const outcome of ["no_answer", "busy", "voicemail", "ivr", "wrong_number", "failed"] as const) {
     assert.equal(answerOf(result({ outcome, quote: null }), undefined), "none", outcome);
   }

@@ -1,5 +1,7 @@
 # Build and test
 
+Agent execution audit (18 Nov 2026): [actual results and scenario coverage](DODDY_AGENT_TEST_RESULTS.md) and [implementation/rollout](DODDY_IMPLEMENTATION_SUMMARY.md). New tests cover exact-user-request authorization, call report evidence, structured call destinations and durable errand progress. Messaging database tests require a **disposable** `TEST_DATABASE_URL` and run serially; they drop its schema. Linux Core/state tests do not compile `VoiceSessionController`, SwiftUI report/progress views or ActivityKit. Those need the normal Mac `ios-build` and device checks before release.
+
 For local iteration, run the smallest check that exercises the change. Documentation-only edits do not need an iOS build; use the relevant Swift test filter or server test for code changes. PR CI already selects affected groups and cancels older PR runs. The Node job installs backend dependencies for browser tests only when Playwright Chromium is available.
 
 On pull requests, `docs/decisions/*.md` alone no longer starts a heavy Linux test group. The always-on checks still run; other documentation remains conservatively classified because some files are test inputs. A main push still runs all Linux groups.

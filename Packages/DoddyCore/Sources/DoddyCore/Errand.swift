@@ -484,6 +484,7 @@ public struct ErrandSummary: Decodable, Equatable, Sendable, Identifiable {
 
 /// `GET /v1/errands/:id`. After `ack` only the id, state and times are left, so the rest is optional.
 public struct ErrandSnapshot: Decodable, Equatable, Sendable {
+    public let progress: ErrandProgress?
     public let id: UUID
     public let title: String?
     public let words: String?
@@ -511,7 +512,7 @@ public struct ErrandSnapshot: Decodable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case id, title, words, brief, language, kind, priorities, state, createdAt, approvedAt, startedAt, finishedAt, acknowledgedAt
-        case cancelRequested, searches, fetches, result, resultDigest, failure
+        case cancelRequested, searches, fetches, result, resultDigest, failure, progress
     }
 
     public init(from decoder: any Decoder) throws {
@@ -530,6 +531,7 @@ public struct ErrandSnapshot: Decodable, Equatable, Sendable {
         finishedAt = try c.serverDateIfPresent(.finishedAt)
         acknowledgedAt = try c.serverDateIfPresent(.acknowledgedAt)
         cancelRequested = try c.decodeIfPresent(Bool.self, forKey: .cancelRequested)
+        progress = try c.decodeIfPresent(ErrandProgress.self, forKey: .progress)
         searches = try c.decodeIfPresent(Int.self, forKey: .searches)
         fetches = try c.decodeIfPresent(Int.self, forKey: .fetches)
         result = try c.decodeIfPresent(ErrandResult.self, forKey: .result)
@@ -680,6 +682,7 @@ public struct ErrandResult: Codable, Equatable, Sendable {
 /// One errand as kept on the iPhone (DoddyPersistence, `v15_errands`). The result lives only here
 /// once the server's copy is deleted after `ack`.
 public struct StoredErrand: Codable, Equatable, Sendable, Identifiable {
+    public var progress: ErrandProgress? = nil
     public let id: UUID
     public var createdAt: Date
     public var updatedAt: Date
@@ -723,6 +726,7 @@ public struct StoredErrand: Codable, Equatable, Sendable, Identifiable {
     public func applying(_ snapshot: ErrandSnapshot, at now: Date) -> StoredErrand {
         guard snapshot.id == id else { return self }
         var next = self
+        if let progress = snapshot.progress { next.progress = progress }
         if snapshot.state != .unknown { next.state = snapshot.state }
         if next.result == nil, let ready = snapshot.readyResult {
             next.result = ready.result

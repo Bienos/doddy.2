@@ -85,6 +85,9 @@ public struct AskCard: Equatable, Sendable {
 }
 
 public enum AskFirst {
+    // Baseline cards remain conservative. Since 18 Nov 2026 the voice controller may consume a
+    // RequestedWorkSession grant for the user's exact research request or one verified inquiry call.
+    // That scoped path never grants a booking, payment, order or arbitrary external write.
     public enum Need: Equatable, Sendable {
         /// Nothing runs and nothing is read (an unclear, unknown or incomplete call).
         case nothingRuns

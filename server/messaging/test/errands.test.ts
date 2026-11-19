@@ -11,6 +11,7 @@ import { claimNext, newErrandLoopState, researchNext, runErrandPasses, stopErran
 import type { Db } from "../src/db.js";
 import { dispatchDue } from "../src/outbox.js";
 import { dbSkip, freshDb, testApp, testCipher } from "./helpers.js";
+import { recordProgress } from "../src/errands/progress.js";
 
 const stats = { usage: { inputTokens: 12000, cacheWriteTokens: 3000, cacheReadTokens: 40000, outputTokens: 2500 }, searches: 7, fetches: 4, model: "claude-opus-5-5" };
 
@@ -81,6 +82,60 @@ describe("errands against real Postgres", { skip: dbSkip }, () => {
   }
   const row = async (id: string) => (await db.query("SELECT * FROM errands WHERE id = $1", [id])).rows[0];
   const pushToken = (w: World) => w.api("PUT", "/v1/device/push-token", { token: "ab".repeat(32), environment: "sandbox" });
+
+  test("progress survives independent API reads; cancellation fences late progress and a late successful result", async () => {
+    const w = await world();
+    const other = await world();
+    let release!: () => void;
+    let announced!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const started = new Promise<void>((resolve) => { announced = resolve; });
+    w.researcher!.steps.push(async (_task, control) => {
+      await control.progress?.({ stage: "waiting_for_service", requests: 0, searches: 0, fetches: 0 });
+      announced();
+      await gate;
+      await control.progress?.({ stage: "writing_report", requests: 1, searches: 7, fetches: 4 });
+      return { kind: "done", result: sampleResult(), ...stats };
+    });
+    const task = await handOver(w);
+    const loop = newErrandLoopState();
+    await runErrandPasses(w.ctx, loop);
+    await started;
+    const working = (await w.api("GET", `/v1/errands/${task.id}`)).json();
+    assert.equal(working.state, "running");
+    assert.equal(working.progress.stage, "waiting_for_service");
+    assert.equal(working.progress.searches, 0, "a request in flight has no invented completed searches");
+    assert.equal(JSON.stringify(working.progress).includes(words), false);
+    assert.equal((await other.api("GET", `/v1/errands/${task.id}`)).statusCode, 404);
+    await recordProgress(db, other.accountId, task.id, { stage: "completed", requests: 99, searches: 99, fetches: 99 }, w.clock.now);
+    assert.equal((await row(task.id)).progress.stage, "waiting_for_service");
+    assert.equal((await w.api("POST", `/v1/errands/${task.id}/cancel`)).statusCode, 204);
+    release();
+    await Promise.all([...loop.runs.values()]);
+    const cancelled = (await w.api("GET", `/v1/errands/${task.id}`)).json();
+    assert.equal(cancelled.state, "cancelled");
+    assert.equal(cancelled.progress.stage, "cancelled");
+    assert.equal(cancelled.result, undefined);
+    assert.equal(cancelled.progress.events.some((e: { stage: string }) => e.stage === "writing_report" || e.stage === "completed"), false);
+    await w.app.close(); await other.app.close();
+  });
+
+  test("progress history is bounded, monotonic, content-free and cannot change a terminal task", async () => {
+    const w = await world();
+    const task = await handOver(w);
+    await claimNext(w.ctx);
+    for (let i = 0; i < 30; i++) await recordProgress(db, w.accountId, task.id,
+      { stage: "researching", requests: i, searches: i, fetches: i }, w.clock.now);
+    await recordProgress(db, w.accountId, task.id, { stage: "writing_report", requests: 0, searches: 0, fetches: 0 }, w.clock.now);
+    const before = (await row(task.id)).progress;
+    assert.equal(before.events.length, 24);
+    assert.equal(before.requests, 29);
+    assert.equal(before.searches, 29);
+    await db.query("UPDATE errands SET state = 'failed', failure = 'interrupted', finished_at = $2 WHERE id = $1", [task.id, w.clock.now]);
+    await recordProgress(db, w.accountId, task.id, { stage: "completed", requests: 30, searches: 30, fetches: 30 }, w.clock.now);
+    assert.deepEqual((await row(task.id)).progress, before);
+    await w.app.close();
+  });
 
   test("hand over → approve → research → result → ack: the server's copy is gone, with receipts", async () => {
     const w = await world();

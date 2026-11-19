@@ -10,6 +10,7 @@ import type { ErrandEffort } from "../config.js";
 import { budgetLeft, DEFAULT_RESEARCH_BUDGET, requestTokens, WEB_FETCH_MAX_CONTENT_TOKENS, withMaxUses, type BudgetLeft, type ResearchBudget } from "./budget.js";
 import { buildResult } from "./card.js";
 import { CardOutput, type ErrandResult, type FailureCode } from "./schema.js";
+import type { ProgressUpdate } from "./progress.js";
 
 type Block = { type: string; [key: string]: unknown };
 /** One assistant message of the research phase (the SDK's beta message, as far as this code reads it). */
@@ -54,6 +55,7 @@ export interface ErrandTask {
 }
 
 export interface ResearchControl {
+  progress?: (update: ProgressUpdate) => Promise<void>;
   /** The time limit: no research request runs past it. */
   deadline: Date;
   /** True once the user cancelled, or the errand is gone. Checked between requests and polled during one. */
@@ -264,6 +266,8 @@ export async function runResearch(
       log("errand research budget reached; using its notes", { errandId: task.id, limit: room.reached, requests });
       break;
     }
+    await control.progress?.({ stage: "waiting_for_service", requests,
+      searches: Math.max(searches, reportedSearches), fetches: Math.max(fetches, reportedFetches) });
     const r = await guarded(control.deadline, (signal) => api.research(messages, signal, room.left));
     if ("stop" in r) return stopped(r.stop);
     if ("error" in r) {
@@ -279,6 +283,8 @@ export async function runResearch(
     searches += counted.searches;
     fetches += counted.fetches;
     collectSources(m.content, seen);
+    await control.progress?.({ stage: "researching", requests,
+      searches: Math.max(searches, reportedSearches), fetches: Math.max(fetches, reportedFetches) });
     notes.push(...textOf(m.content));
     if (m.stop_reason === "pause_turn") {
       // Resume the same turn: the paused assistant content goes back as it is, no extra user message.
@@ -305,6 +311,8 @@ export async function runResearch(
     today, language: languageName(task.language), words: task.words, brief: task.brief,
     notes: allNotes, sources: seen.list(MAX_LISTED_SOURCES),
   });
+  await control.progress?.({ stage: "writing_report", requests,
+    searches: Math.max(searches, reportedSearches), fetches: Math.max(fetches, reportedFetches) });
   const c = await guarded(new Date(Math.max(now().getTime(), control.deadline.getTime()) + CARD_GRACE_MS), (signal) => api.card(input, signal));
   if ("stop" in c) return stopped(c.stop);
   if ("error" in c) {

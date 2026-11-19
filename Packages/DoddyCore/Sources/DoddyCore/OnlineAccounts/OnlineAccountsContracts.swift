@@ -107,6 +107,10 @@ public struct EarlierWrite: Codable, Equatable, Sendable {
 }
 
 public struct RunResult: Codable, Equatable, Sendable {
+    public struct CallDestination: Codable, Equatable, Sendable {
+        public let name: String
+        public let phone: String
+    }
     public let mode: ConnectedAppsMode
     public let tool: String
     /// Written for the voice agent: states only what the provider returned.
@@ -125,6 +129,8 @@ public struct RunResult: Codable, Equatable, Sendable {
     /// wakacje.pl for a package); the voice screen shows only the Kiwi.com ones (`RunLink.isKiwi`). The voice agent
     /// never gets them.
     public var links: [RunLink]? = nil
+    /// Structured listing fields, never extracted from the voice model's prose. Only live find_places may supply these.
+    public var callDestinations: [CallDestination]? = nil
     public let receipt: OnlineToolReceipt
 }
 

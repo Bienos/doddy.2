@@ -22,11 +22,13 @@ final class CallTaskTests: XCTestCase {
 
     // MARK: Parsing
 
-    func testPlacesComeInOrderWithTheirNumbersAndTheTextChoiceDefaultsToOn() throws {
+    func testPlacesComeInOrderWithTheirNumbersAndTextNeedsAnExplicitChoice() throws {
         guard case .callPlaces(let draft) = try parse(args()) else { return XCTFail("parsed") }
         XCTAssertEqual(draft.places, [CallTaskPlace(name: "Trattoria Uno", phone: "22 123 45 67"), CallTaskPlace(name: "Osteria Due", phone: "+48 600 100 200")])
         XCTAssertEqual(draft.question, "Czy mają Państwo wolny stolik dla dwóch osób dziś o 19:00")
-        XCTAssertTrue(draft.textResult)
+        XCTAssertFalse(draft.textResult)
+        guard case .callPlaces(let withText) = try parse(args(extra: ["text_result": true])) else { return XCTFail("parsed") }
+        XCTAssertTrue(withText.textResult)
         guard case .callPlaces(let quiet) = try parse(args(extra: ["text_result": false])) else { return XCTFail("parsed") }
         XCTAssertFalse(quiet.textResult)
     }

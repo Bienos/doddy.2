@@ -684,6 +684,9 @@ enum CallCaseText {
         case "time_limit": NSLocalizedString("The call reached its time limit.", comment: "")
         case "doddy_line_warnings": NSLocalizedString("Something Doddy said needs a look (below).", comment: "")
         case "model_quote_rejected": NSLocalizedString("The suggested quote wasn't word for word in the transcript, so it was dropped.", comment: "")
+        case "model_summary_unverified": NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish
+            ? "Nie udało się sprawdzić proponowanego podsumowania. Pokazano cytat z rozmowy."
+            : "The proposed summary couldn't be verified. A call excerpt is shown instead."
         case "several_replies": NSLocalizedString("The answer is spread over several replies.", comment: "")
         case "no_answer_found": NSLocalizedString("No answer to the question was found.", comment: "")
         default: reason

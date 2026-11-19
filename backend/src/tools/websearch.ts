@@ -205,7 +205,8 @@ export function normalizeMonidTool(tool: MonidToolName, output: unknown, args: R
   }
   if (shown.some((p) => p.booking)) lines.push(BOOKING_PAGE_NOTE);
   if (shown.some((p) => p.food)) lines.push(FOOD_PAGE_NOTE);
-  return { text: lines.join("\n"), count: shown.length, truncated: places.length > shown.length, summary: `Found places: ${shown.length}.` };
+  return { text: lines.join("\n"), count: shown.length, truncated: places.length > shown.length, summary: `Found places: ${shown.length}.`,
+    callDestinations: shown.flatMap((p) => p.phone ? [{ name: p.name, phone: p.phone }] : []) };
 }
 
 // ------------------------------------------------------------------ web search answers

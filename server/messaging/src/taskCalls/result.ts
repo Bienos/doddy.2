@@ -2,6 +2,7 @@
 // point at which reply holds the answer and write the summary and next step. The quote shown on the
 // card is always cut from the transcript itself, so it can't say anything the person didn't say.
 import { fold } from "./brief.js";
+import { buildCallReport, groundedNarrative, type CallReport, type CandidateFact } from "./report.js";
 
 export type Speaker = "doddy" | "callee";
 export interface Line { speaker: Speaker; text: string; atSecs: number | null }
@@ -35,6 +36,7 @@ export interface NextStep {
 }
 
 export interface CallResult {
+  report?: CallReport;
   format: 1;
   outcome: Outcome;
   source: TranscriptSource;
@@ -67,6 +69,7 @@ export interface WriterInput {
   order?: string;
 }
 export interface WriterOutput {
+  facts?: CandidateFact[];
   answerLine: number | null;
   answerQuote: string | null;
   summary: string;
@@ -104,7 +107,8 @@ export interface ResultFacts {
 const IVR = ["nacisnij", "wcisnij", "wybierz", "aby polaczyc", "witamy w", "infolinia", "prosimy czekac", "prosze czekac",
   "polaczenie jest dla nas wazne", "nastepny wolny konsultant", "menu", "wewnetrzny"];
 const WRONG = ["pomylka", "zly numer", "to nie jest", "nie ma tu", "nie znam", "nie wiem o co chodzi", "zle pan", "zle pani"];
-const HEDGES = ["chyba", "nie wiem", "moze", "prawdopodobnie", "nie jestem pewn", "trudno powiedziec", "nie mam pewnosci", "sprawdze"];
+const HEDGES = ["chyba", "nie wiem", "moze", "prawdopodobnie", "nie jestem pewn", "trudno powiedziec", "nie mam pewnosci", "sprawdze",
+  "maybe", "perhaps", "not sure", "might", "only if", "provided that", "need to check", "pod warunkiem", "jezeli"];
 const GREETINGS = new Set(["halo", "tak", "slucham", "dzien dobry", "prosze", "tak slucham", "slucham pana", "slucham pania", "no", "aha"]);
 /** Agreement on any call, whatever was said before it (the approved booking sentence aside). */
 const COMMIT_WORDS = ["potwierdzam", "zgadzam", "akceptuje", "rezerwuje", "zarezerwuje", "zamawiam", "zamowie", "zaplace",
@@ -124,8 +128,12 @@ const has = (text: string, needles: string[]) => { const f = fold(text); return 
 const isGreeting = (text: string) => GREETINGS.has(fold(text).replace(/[^a-z ]+/g, " ").replace(/\s+/g, " ").trim());
 const norm = (s: string) => s.normalize("NFC").replace(/\s+/g, " ").trim();
 
+export function normalizedTranscript(lines: readonly Line[]): Line[] {
+  return lines.map((l) => ({ ...l, text: norm(l.text) })).filter((l) => l.text.length > 0);
+}
+
 export function buildCallResult(f: ResultFacts): CallResult {
-  const transcript = f.transcript.map((l) => ({ ...l, text: norm(l.text) })).filter((l) => l.text.length > 0);
+  const transcript = normalizedTranscript(f.transcript);
   const callee = transcript.map((l, i) => ({ ...l, i })).filter((l) => l.speaker === "callee");
   const warnings = audit(transcript, f.allowedTexts, f.bookingConfirmLine, f.callbackLine, f.maxTotalPln);
   const bookingConfirmed = f.bookingConfirmLine === undefined ? undefined
@@ -145,16 +153,18 @@ export function buildCallResult(f: ResultFacts): CallResult {
     if (!quote) reasons.push("no_answer_found");
     const cap = (c: Confidence) => { if (rank(confidence) > rank(c)) confidence = c; };
     if (f.source === "twilio_live") { cap("medium"); reasons.push("live_transcript_only"); }
-    if (quote && has(quote.text, HEDGES)) { cap("medium"); reasons.push("hedged_answer"); }
+    if (quote && has(transcript[quote.line]!.text, HEDGES)) { cap("medium"); reasons.push("hedged_answer"); }
     if (callbackPromised) { cap("medium"); reasons.push("asked_outside_brief"); }
     if (outcome === "taken_over") { cap("medium"); reasons.push("taken_over"); }
     if (f.endReason === "time_limit") { cap("medium"); reasons.push("time_limit"); }
     if (warnings.length) { cap("low"); reasons.push("doddy_line_warnings"); }
     if (reasons.includes("model_quote_rejected")) cap("low");
-    if (f.writer && outcome === "answered" && f.writer.summary.trim()) {
-      summary = clip(f.writer.summary, 300);
+    const grounded = groundedNarrative(f.writer?.summary, transcript);
+    if (outcome === "answered" && grounded && grounded === quote?.text) {
+      summary = grounded;
       summaryBy = "doddy_model";
     } else {
+      if (f.writer?.summary.trim()) reasons.push("model_summary_unverified");
       summary = quote ? `Odpowiedź: „${clip(quote.text, 240)}”` : "Rozmowa się odbyła, ale nie udało się wskazać odpowiedzi. Przeczytaj zapis.";
     }
   } else {
@@ -162,6 +172,10 @@ export function buildCallResult(f: ResultFacts): CallResult {
   }
 
   return {
+    report: buildCallReport(f.question, outcome, transcript, [
+      ...(quote ? [{ kind: "answer" as const, value: quote.text.slice(0, 200), line: quote.line, quote: quote.text.slice(0, 300), uncertain: confidence !== "high" }] : []),
+      ...(f.writer?.facts ?? []),
+    ]),
     format: 1, outcome, source: f.source, confidence, confidenceReasons: reasons, summary, summaryBy, quote, transcript,
     nextStep: nextStepFor(outcome, quote, callbackPromised, f.writer, warnings), warnings, callbackPromised,
     takenOverAtSecs: f.takenOverAtSecs, durationSecs: f.durationSecs,
@@ -379,7 +393,8 @@ function nextStepFor(outcome: Outcome, quote: CallResult["quote"], callbackPromi
   switch (outcome) {
     case "answered":
       if (callbackPromised) return { kind: "follow_up", text: "Rozmówca pytał o coś spoza karty, a Doddy obiecał oddzwonić. Sprawdź zapis i zdecyduj." };
-      if (writer?.nextStep.trim()) return { kind: "follow_up", text: clip(writer.nextStep, 200) };
+      // A free-form model next step may invent a date or commitment. Suggestions below are generated
+      // from verified call state; detailed reported follow-ups live in the evidence-checked report.
       if (quote && /\b(jutro|dzis|dzisiaj|pojutrze|poniedzialek|wtorek|sroda|czwartek|piatek|sobota|niedziela)\b|\d{1,2}[:.]\d{2}/.test(fold(quote.text))) {
         return { kind: "set_reminder", text: "W odpowiedzi jest termin: dodaj przypomnienie." };
       }

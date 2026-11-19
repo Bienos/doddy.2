@@ -7,8 +7,13 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import type { ResultWriter } from "./context.js";
 import type { WriterInput, WriterOutput } from "./result.js";
+import { FACT_KINDS } from "./report.js";
 
 const Output = z.object({
+  facts: z.array(z.object({
+    kind: z.enum(FACT_KINDS), value: z.string().max(200), line: z.number().int().min(0),
+    quote: z.string().max(300), uncertain: z.boolean(),
+  })).max(15).optional().describe("All objective-relevant findings. Each value is copied from its quote, itself copied exactly from the cited callee line. Preserve dates, prices, names and conditions as spoken. Never cite Doddy's own statements as the other person's agreement."),
   kind: z.enum(["answered", "ivr", "voicemail", "wrong_number", "no_answer_given"])
     .describe("What happened: a person answered the question, an automated phone menu, voicemail, a wrong number, or a person who gave no answer."),
   answer_line: z.number().int().nullable()
@@ -24,6 +29,7 @@ const Output = z.object({
 const SYSTEM = `You read the transcript of a short phone call that an AI assistant (Doddy) made in Polish for a user, to ask one question.
 You get the question, the goal and the transcript lines (line number, speaker "doddy" or "callee", text).
 Find the callee line that answers the question, and copy the answering words exactly as they appear in that line.
+Extract all relevant facts into facts, with a line number and an exact excerpt for each. Separate the answer, dates, times, prices, people, conditions, unresolved questions and requested follow-ups. Use only sections that fit this call. A possibility is uncertain, never an agreement. A commitment is only something the callee actually stated, not something Doddy proposed. Code checks every value against that evidence. Do not infer absolute dates from relative days or convert prices. For the summary, copy a concise answering excerpt; code does not accept an unverified paraphrase.
 Write a short summary in Polish of what the callee said about the question, and one short next step in Polish.
 Use only what the callee actually said. Do not add facts, dates, prices or promises that are not in the transcript. If the callee gave no clear answer, say so.
 Say whether the callee's answer to the question means yes or no. Answer "unclear" unless the callee clearly said one or the other; a hedge, a condition or a different offer is "unclear".
@@ -46,7 +52,7 @@ export class ClaudeResultWriter implements ResultWriter {
     try {
       response = await this.client.messages.parse({
         model: this.model,
-        max_tokens: 2000,
+        max_tokens: 4000,
         // Pointing at one line and writing two sentences is a simple task.
         output_config: { effort: "low", format: zodOutputFormat(Output) },
         system: SYSTEM,
@@ -70,6 +76,7 @@ export class ClaudeResultWriter implements ResultWriter {
     const out = response.parsed_output;
     if (!out) throw new Error("writer_unparsed");
     return {
+      ...(out.facts ? { facts: out.facts } : {}),
       kind: out.kind,
       answerLine: out.answer_line,
       answerQuote: out.answer_quote,

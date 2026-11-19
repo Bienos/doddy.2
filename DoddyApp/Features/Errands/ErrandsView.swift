@@ -373,6 +373,12 @@ struct ErrandCardRow: View {
                 }
                 Text(verbatim: errand.title).font(.headline).foregroundStyle(Theme.ink)
                     .multilineTextAlignment(.leading)
+                if errand.state == .running, let progress = errand.progress {
+                    Text(verbatim: progress.message(for: errand.state,
+                        polish: NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish))
+                        .font(.subheadline).foregroundStyle(Theme.secondaryText)
+                        .accessibilityIdentifier("errand.progress")
+                }
                 Text(verbatim: String(format: NSLocalizedString("“%@”", comment: ""), errand.draft.words))
                     .font(.subheadline).foregroundStyle(Theme.secondaryText).lineLimit(2)
                     .multilineTextAlignment(.leading)
@@ -659,6 +665,15 @@ struct ErrandDetailView: View {
             }
         } else if errand.state.isOpen || errand.state == .draft {
             Section {
+                if errand.state == .running, let progress = errand.progress {
+                    Text(verbatim: progress.message(for: errand.state,
+                        polish: NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish))
+                    ForEach(Array(progress.events.suffix(8).enumerated()), id: \.offset) { _, event in
+                        Text(verbatim: ErrandProgress.message(stage: event.stage,
+                            polish: NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish))
+                            .font(.caption).foregroundStyle(Theme.secondaryText)
+                    }
+                }
                 Text("You can close the app. When it's done, the result waits here and in Messages.")
                     .font(.footnote).foregroundStyle(Theme.secondaryText)
             }
