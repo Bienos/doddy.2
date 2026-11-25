@@ -1,0 +1,7 @@
+# Python packages for CI's `checks` and `messaging` jobs (25 Nov 2026): PyYAML for the platform-spec check,
+# reportlab and matplotlib for Doddy Studio's renderers (ADR-740). Installed with pip from wheels, cached by
+# actions/setup-python, instead of Ubuntu's apt packages, which took 94-97 s a job (run 45575743664).
+# Checked with Python 3.13: scripts/ci.sh --only checks (71 PASS, renderers included) and --only messaging.
+PyYAML==6.0.4
+reportlab==5.1.1
+matplotlib==3.11.2

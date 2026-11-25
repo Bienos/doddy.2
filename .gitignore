@@ -51,3 +51,6 @@ __pycache__/
 web/dist/
 web/test-results/
 web/playwright-report/
+
+# The screen-model test folder hosted CI prepares (scripts/test_screen_models.sh --prepare).
+Packages/DoddyCore/Tests/DoddyCoreTests/_ScreenModels.ci/

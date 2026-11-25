@@ -261,6 +261,7 @@ run_step "No-download-into-a-shell check (tests)" scripts/test_check_no_pipe_to_
 run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci_groups.sh
 run_step "The hosted backend job runs every share of the backend's test files (25 Nov 2026)" scripts/test_ci_backend_shards.sh
 run_step "Ubuntu CI dependency mirror fallback" scripts/test_ci_install_ubuntu_packages.sh
+run_step "Swift CI files get times from their content, so the cached build stays valid (25 Nov 2026)" scripts/test_ci_content_mtimes.sh
 run_step "Which pull requests need the owner's label (ADR-811)" scripts/test_check_sensitive_paths.sh
 run_step "Vercel builds a project whenever it can't tell nothing changed (9 Nov 2026)" scripts/test_vercel_ignore_command.sh
 run_step "Which Vercel statuses are replaced on pull requests (decision 2026-11-09-vercel-blocked-status)" scripts/test_vercel_blocked_status.sh
@@ -288,12 +289,24 @@ elif command -v swift >/dev/null 2>&1; then
   if [ "$(uname)" = "Linux" ]; then
     # --allow-shlib-undefined: once swift-crypto's C code is in the test link (ADR-222), the Swift
     # 6.2 Linux linker checks libswiftObservation.so's own undefined symbols and fails; Linux only.
+    # DODDY_SCREEN_MODELS_PREPARED=1 (hosted CI, 25 Nov 2026): the five screen models go into a fixed test
+    # folder before the package tests, which compile and run them with everything else; their own step then
+    # runs just their suites without building. A temporary folder of a new name each run made the cached
+    # test build stale twice per run (57 + 32 s of compiling on run 45619583040). Unset: as before.
+    screen_models_prepared=0
+    if [ "${DODDY_SCREEN_MODELS_PREPARED:-0}" = "1" ] && scripts/test_screen_models.sh --prepare; then
+      screen_models_prepared=1
+    fi
     run_step "Swift package tests (DoddyCore)" swift test --package-path Packages/DoddyCore -Xswiftc -DSQLITE_DISABLE_SNAPSHOT -Xlinker --allow-shlib-undefined
     # A real compile of the app files that need no Apple UI framework (ADR-200). On a Mac the
     # full xcodebuild below compiles everything, so this step is Linux-only.
     run_step "App logic type-check (non-UI app files)" scripts/typecheck_app_logic.sh
     # The five screen models use the same Swift test target, compiled once for all five suites.
-    run_step "Screen model state tests" scripts/test_screen_models.sh
+    if [ "$screen_models_prepared" -eq 1 ]; then
+      run_step "Screen model state tests (compiled with the package tests)" scripts/test_screen_models.sh --run-prepared
+    else
+      run_step "Screen model state tests" scripts/test_screen_models.sh
+    fi
     run_step "Unfinished notes on real files" scripts/check_unfinished_note_store.sh
     # The kept training plan (ADR-625): read back, edited and unreadable files, delete.
     run_step "Training plan on real files" scripts/check_training_plan_store.sh

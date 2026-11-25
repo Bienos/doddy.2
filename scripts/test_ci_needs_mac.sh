@@ -42,7 +42,7 @@ expect true "no files listed at all"
 
 # Changes that can't reach the app: the Mac is skipped.
 expect false "docs only" docs/implementation/VOICE_SESSION_STARTS.md
-expect false "Ubuntu-only CI helpers" scripts/ci_groups.sh scripts/test_ci_groups.sh scripts/test_screen_models.sh scripts/ci_install_ubuntu_packages.sh scripts/test_ci_install_ubuntu_packages.sh
+expect false "Ubuntu-only CI helpers" scripts/ci_groups.sh scripts/test_ci_groups.sh scripts/test_screen_models.sh scripts/ci_install_ubuntu_packages.sh scripts/test_ci_install_ubuntu_packages.sh scripts/ci_content_mtimes.sh scripts/test_ci_content_mtimes.sh scripts/ci-python-requirements.txt
 expect false "Ubuntu-only workflows" .github/workflows/pr-guard.yml .github/workflows/vercel-blocked-status.yml
 expect true "an app change alongside Ubuntu CI helpers" scripts/test_screen_models.sh DoddyApp/A.swift
 expect false "a change note and a decision file" changes/ui-smoke.md docs/decisions/2026-11-07-x.md
