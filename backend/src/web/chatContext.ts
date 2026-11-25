@@ -13,7 +13,7 @@ import { DOCUMENT_KEPT_DAYS, documentView } from "./routes.js";
  *  - `logbook`: Logbook's days added up (counts only, ADR-602), when the iPhone has it on;
  *  - `talk`: counts over the conversations kept on the server (ADR-603), from plain columns;
  *  - `apps`: the online accounts, their status and how many of Doddy's tools are on;
- *  - `documents`: the documents Doddy made (name, kind, status, date), kept 7 days;
+ *  - `documents`: the documents Doddy made (name, kind, status, date), kept `DOCUMENT_KEPT_DAYS` (30) days;
  *  - `activity`: Doddy's latest receipts (the server's own short summaries).
  * Nothing here is new data: every part is what a page of Doddy Web already shows the person.
  * It is sent to the chat model as JSON data, never as instructions, and never logged.
@@ -73,7 +73,7 @@ export class AccountContext {
       documents: {
         keptDays: DOCUMENT_KEPT_DAYS,
         ...(documents.length === 0
-          ? { state: "none in the last 7 days" }
+          ? { state: `none in the last ${DOCUMENT_KEPT_DAYS} days` }
           : {
               documents: documents.map((row) => {
                 const view = documentView(row, now);

@@ -18,7 +18,7 @@ export function DocumentsPage() {
     <>
       <PageHeader
         title={t("documents.title")}
-        lead={t("documents.lead", { days: list?.keptDays ?? 7 })}
+        lead={t("documents.lead", { days: list?.keptDays ?? 30 })}
         actions={
           <button type="button" className="button button-quiet" onClick={reload}>
             {t("common.refresh")}

@@ -90,7 +90,7 @@ struct FilesSheet: View {
         } header: {
             Text("Made by Doddy")
         } footer: {
-            Text("Doddy keeps the files he makes for a week. To keep one, open it and save it with Share.")
+            Text("Doddy keeps the files he makes for 30 days. To keep one longer, open it and save it with Share.")
         }
     }
 }

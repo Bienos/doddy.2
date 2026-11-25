@@ -11,7 +11,7 @@ final class ThreadLocalFilesTests: XCTestCase {
     func testShownDropsExpiredAndReadsOldestFirst() {
         let fresh = file("Fresh", ageDays: 1)
         let older = file("Older", ageDays: 5)
-        let old = file("Old", ageDays: 8)
+        let old = file("Old", ageDays: 31)
         XCTAssertEqual(LocalMadeFiles.shown([fresh, old, older], now: now).map(\.title), ["Older", "Fresh"])
         XCTAssertEqual(LocalMadeFiles.expired([fresh, old, older], now: now).map(\.title), ["Old"])
     }
@@ -24,9 +24,11 @@ final class ThreadLocalFilesTests: XCTestCase {
         XCTAssertEqual(shown.last?.title, "File 0")
     }
 
-    func testAWeekExactlyIsStillKept() {
-        XCTAssertFalse(LocalMadeFiles.isExpired(file("Edge", ageDays: 7), now: now))
-        XCTAssertTrue(LocalMadeFiles.isExpired(file("Past", ageDays: 7.01), now: now))
+    func testThirtyDaysExactlyIsStillKept() {
+        // 30 days since 25 Nov 2026 (a week before): the owner's files kept expiring.
+        XCTAssertFalse(LocalMadeFiles.isExpired(file("Edge", ageDays: 30), now: now))
+        XCTAssertFalse(LocalMadeFiles.isExpired(file("Last week", ageDays: 8), now: now))
+        XCTAssertTrue(LocalMadeFiles.isExpired(file("Past", ageDays: 30.01), now: now))
     }
 
     func testRoundTripsThroughJSON() throws {

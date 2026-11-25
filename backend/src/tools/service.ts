@@ -1481,7 +1481,7 @@ export class CloudToolsService {
    * known tool -> valid arguments -> set up -> the user's yes (ASK-01) -> daily caps -> Claude.
    * ask_claude answers now (under 18 s). make_document starts a background job and answers at once
    * with a link that says "still making" until the file is ready. Requests aren't stored; the
-   * document is, for a week, so its link works.
+   * document is, for 30 days, so its link works.
    */
   private async runClaude(userId: string, tool: ClaudeToolName, request: { arguments: Record<string, unknown>; approvalId?: string | undefined }): Promise<RunResult> {
     const args = this.claudeArgs(tool, request.arguments);

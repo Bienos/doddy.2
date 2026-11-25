@@ -13,7 +13,7 @@ import type { Store } from "./store.js";
  * file up again: a deleted file, or one that isn't that account's, doesn't open. The link is shown only in
  * the app, never sent to the voice agent.
  *
- * A link works for a day (decision 2026-11-12-documents-at-rest), the file is kept a week: after a day
+ * A link works for a day (decision 2026-11-12-documents-at-rest), the file is kept 30 days (`DOCUMENT_KEPT_DAYS`): after a day
  * the app's own Share and Files download it with the app's sign-in (`GET /v1/web/documents/:id/file`).
  * The day covers the app's Messages card and the file-ready push (`server/messaging`, which asks the
  * link for 15 minutes at most).
@@ -164,9 +164,9 @@ export async function serveDocument(req: IncomingMessage, res: ServerResponse, u
   if (row && check === "ok" && row.status === "working" && status === "failed") void store.failDocument(row.id).catch(() => {});
   if (statusOnly) return documentStatus(res, status);
   if (check === "expired") {
-    return page(res, 404, "This link has expired", "Links to Doddy's files work for a day. In the Doddy app, tap Share on the file: Doddy keeps it for a week.", false);
+    return page(res, 404, "This link has expired", "Links to Doddy's files work for a day. In the Doddy app, tap Share on the file: Doddy keeps it for 30 days.", false);
   }
-  if (!row || status === null) return page(res, 404, "This link doesn't work any more", "Doddy keeps files for a week. Ask him to make it again.", false);
+  if (!row || status === null) return page(res, 404, "This link doesn't work any more", "Doddy keeps files for 30 days. Ask him to make it again.", false);
   if (status === "working") return page(res, 200, "Doddy is still making this", "Claude is working on it. This page opens the file by itself when it is ready.", true);
   if (status === "failed" || !row.body) return page(res, 200, "This one didn't work", "Claude couldn't finish the file. Ask Doddy to try again.", false);
   const ascii = row.name.replace(/[^\x20-\x7e]/g, "_").replace(/["\\]/g, "_");

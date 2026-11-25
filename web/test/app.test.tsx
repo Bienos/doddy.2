@@ -128,7 +128,7 @@ describe("the workspace", () => {
       "Download: Barcelona trip notes.md",
       "Download: Laptops for university.pptx",
     ]);
-    expect(screen.getByText(/keeps each one for 7 days/)).toBeInTheDocument();
+    expect(screen.getByText(/keeps each one for 30 days/)).toBeInTheDocument();
   });
 
   test("while something is being made, the list asks the server again every ten seconds", async () => {

@@ -310,7 +310,7 @@
         }
       }
     },
-    "%@ · kept on this iPhone for a week": {
+    "%@ · kept on this iPhone for 30 days": {
       "extractionState": "manual",
       "localizations": {
         "en": {
@@ -319,13 +319,13 @@
               "ipad": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%@ · kept on this iPad for a week"
+                  "value": "%@ · kept on this iPad for 30 days"
                 }
               },
               "other": {
                 "stringUnit": {
                   "state": "translated",
-                  "value": "%@ · kept on this iPhone for a week"
+                  "value": "%@ · kept on this iPhone for 30 days"
                 }
               }
             }
@@ -23981,13 +23981,13 @@
         }
       }
     },
-    "Doddy keeps the files he makes for a week. To keep one, open it and save it with Share.": {
+    "Doddy keeps the files he makes for 30 days. To keep one longer, open it and save it with Share.": {
       "extractionState": "manual",
       "localizations": {
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doddy trzyma zrobione pliki przez tydzień. Żeby zachować plik, otwórz go i zapisz przez Udostępnij."
+            "value": "Doddy trzyma zrobione pliki przez 30 dni. Żeby zachować któryś dłużej, otwórz go i zapisz przez Udostępnij."
           }
         }
       }

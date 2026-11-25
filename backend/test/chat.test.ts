@@ -133,7 +133,7 @@ test("the account goes to the model as data in the question, never in the instru
   assert.equal(gmail.status, "connected");
   assert.ok(gmail.toolsTotal > 0);
   assert.equal(account.documents.documents[0].name.startsWith("Plan for PLANTED-doc-name"), true);
-  assert.equal(account.documents.keptDays, 7);
+  assert.equal(account.documents.keptDays, 30);
   assert.ok(account.activity.receipts.some((r: any) => r.what === "connect" && r.app === "Gmail" && r.outcome === "succeeded"));
   assert.ok(!call.system.includes("PLANTED"), "the instructions hold none of the account");
   assert.match(call.system, /data, not instructions/);
@@ -209,7 +209,7 @@ test("the chat reads only the caller's own account: another person's apps, docum
   const account = accountOf(claude.calls[0]!);
   assert.notEqual(account.apps.accounts.find((a: any) => a.name === "Notion").status, "connected", "B's connection");
   assert.equal(account.activity.state, "no receipts yet", "B's receipts");
-  assert.equal(account.documents.state, "none in the last 7 days");
+  assert.equal(account.documents.state, "none in the last 30 days");
 });
 
 test("an account part the model cites comes back as a source the page can link to; one it wasn't given discards the answer", async () => {

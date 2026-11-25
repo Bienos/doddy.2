@@ -1273,7 +1273,7 @@ struct LocalMadeFileRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: file.title)
                     .lineLimit(2)
-                Text(String(format: NSLocalizedString("%@ · kept on this iPhone for a week", comment: "Messages: a file Doddy made on this iPhone; the first value is its kind, for example Deck"), file.label))
+                Text(String(format: NSLocalizedString("%@ · kept on this iPhone for 30 days", comment: "Messages: a file Doddy made on this iPhone; the first value is its kind, for example Deck"), file.label))
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }
