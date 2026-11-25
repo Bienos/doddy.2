@@ -8,7 +8,7 @@ failures=0
 expect() {  # expected (true|false), description, changed paths...
   local want=$1 what=$2; shift 2
   local got
-  got=$(printf '%s\n' "$@" | scripts/ci_needs_mac.sh 2>/dev/null | sed -n 1p)
+  got=$(printf '%s\n' "$@" | scripts/ci_needs_mac.sh 2>/dev/null)
   if [ "$got" = "mac=$want" ]; then
     echo "ok    mac=$want  $what"
   else
@@ -62,29 +62,6 @@ expect false "deploy and pack files" render.yaml MANIFEST.json PACKAGE_MANIFEST.
 expect false "agent tooling" .claude/settings.json .agents/skills/x.md
 expect false "blank lines are ignored" "" docs/a.md ""
 expect false "Studio skills (Anthropic's container, not the app)" studio-skills/doddy-docs/render_brief.py studio-skills/doddy-brand/SKILL.md
-
-# The second line (25 Nov 2026): does a pull request run the UI smoke classes, or the launch check?
-expect_ui() {  # expected (true|false), description, changed paths...
-  local want=$1 what=$2; shift 2
-  local got
-  got=$(printf '%s\n' "$@" | scripts/ci_needs_mac.sh 2>/dev/null | sed -n 2p)
-  if [ "$got" = "ui_smoke=$want" ]; then
-    echo "ok    ui_smoke=$want  $what"
-  else
-    echo "FAIL  wanted ui_smoke=$want, got '${got}': $what"
-    failures=$((failures + 1))
-  fi
-}
-expect_ui true "a UI test" DoddyUITests/LaunchSmokeTests.swift
-expect_ui true "the UI tests' own helpers among app files" DoddyApp/A.swift DoddyUITests/UITestLaunch.swift
-expect_ui true "no files listed at all"
-expect_ui false "app source only" DoddyApp/Features/Voice/VoiceView.swift Shared/x.swift
-expect_ui false "unit tests and the shared package" DoddyTests/X.swift Packages/DoddyCore/Sources/DoddyCore/A.swift
-expect_ui false "docs only" docs/a.md STATUS.md
-expect_ui false "the Xcode specs" project.yml project-iphone.yml
-expect_ui false "the scripts and workflow that run the tests (they must run the launch check itself)" scripts/ci.sh scripts/ci_launch_failures.sh .github/workflows/ios.yml
-[ "$(printf 'DoddyApp/A.swift\n' | scripts/ci_needs_mac.sh 2>/dev/null | wc -l | tr -d ' ')" -eq 2 ] \
-  && echo "ok    exactly two output lines" || { echo "FAIL  the output is not exactly two lines"; failures=$((failures + 1)); }
 
 if [ "$failures" -ne 0 ]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all cases pass"

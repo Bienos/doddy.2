@@ -15,9 +15,11 @@ set -euo pipefail
 groups_for() {
   local p=$1
   case "$p" in
-    # Decision records are prose, not test fixtures; other docs can be read by Swift tests.
-    docs/decisions/*.md) echo none; return ;;
-    docs/* | design/*) echo swift; return ;;
+    # The only docs and design files a Swift test reads (25 Nov 2026, by searching the tests for paths);
+    # every other doc is prose, which the `checks` group's generators and guards cover.
+    docs/trust/config/* | docs/architecture/DEVICE_DATA_STORES.md | docs/quality/evals/* \
+      | docs/implementation/TRANSLATOR_LANGUAGE_REVIEW.md | design/motion-v2/*) echo swift; return ;;
+    docs/* | design/*) echo none; return ;;
     # Notes, text sources, archives, agent tooling: no heavy suite reads them (the generators and
     # the pack check, which do, are in the `checks` group that always runs).
     # changes/: per-pull-request notes (decision 2026-11-07-agent-rules-and-records).

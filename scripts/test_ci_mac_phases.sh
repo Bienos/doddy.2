@@ -117,28 +117,14 @@ not_called "swift test is not run" "swift test"
 has "the summary says why" "SKIPPED  Swift package tests (DoddyCore) (DODDY_SKIP_PACKAGE_TESTS=1: the Linux swift job runs them; pushes to main run them here too)"
 called "the app is still built" "xcodebuild build-for-testing"
 
-# Hosted pull requests since 25 Nov 2026 (decision 2026-11-25-pull-request-launch-check): the unit tests and
-# the two launch tests in one pass, no simulator restart, no smoke classes, no island test.
-run_ci "DODDY_UI_TESTS=launch: one test pass" 0 "--only ios" DODDY_UI_TESTS=launch
-[ "$(grep -c 'test-without-building' "$calls")" -eq 1 ] && echo "ok    exactly one test pass" \
-  || { echo "FAIL  wanted exactly one test-without-building call"; failures=$((failures + 1)); }
-called "the unit tests are in it" "-only-testing:DoddyTests"
-called "Home's launch test is in it" "-only-testing:DoddyUITests/LaunchSmokeTests/testFirstLaunchGoesStraightHomeAndNeverStartsVoice"
-called "the welcome's launch test is in it" "-only-testing:DoddyUITests/WelcomeUITests/testSkipGoesToTheLastChapter"
-not_called "no whole smoke class" "-only-testing:DoddyUITests/LaunchSmokeTests "
-not_called "no Polish smoke class" "PolishSmokeTests"
-not_called "the simulator is not restarted" "simctl bootstatus"
-not_called "the native island test is not run" "testNativeIslandOfflineFixtureCanStartMuteAndEnd"
-has "the summary says the smoke classes were not run" "SKIPPED  xcodebuild test: UI smoke tests (launch-check run (DODDY_UI_TESTS=launch)"
-has "the summary says the island test was not run" "SKIPPED  xcodebuild test: native island test (launch-check run"
-has "the one pass is in the summary" "PASS     xcodebuild test: unit tests and the launch check (one pass)"
-
-# The smoke run (pushes to main, pull requests that change the UI tests) is as before: two passes, a restart between.
-run_ci "DODDY_UI_TESTS=smoke: two passes" 0 "--only ios" DODDY_UI_TESTS=smoke
-[ "$(grep -c 'test-without-building' "$calls")" -eq 2 ] && echo "ok    the unit tests and the smoke classes are two passes" \
-  || { echo "FAIL  wanted two test-without-building calls for the smoke run"; failures=$((failures + 1)); }
-called "the whole smoke classes run" "-only-testing:DoddyUITests/LaunchSmokeTests -only-testing:DoddyUITests/WelcomeUITests"
-called "the simulator is restarted between them" "simctl bootstatus"
+# Hosted pull requests since 25 Nov 2026 (decision 2026-11-25-minimum-checks): build the app and both test
+# targets, run no test, boot no simulator.
+run_ci "DODDY_MAC_TESTS=none: build only" 0 "--only ios" DODDY_MAC_TESTS=none
+called "the app and its test targets are built" "xcodebuild build-for-testing"
+not_called "no test is run" "test-without-building"
+not_called "no simulator is booted" "simctl bootstatus"
+has "the summary says the tests were built, not run" "SKIPPED  xcodebuild test: unit and UI tests (DODDY_MAC_TESTS=none (pull requests): built, not run"
+has "the build is in the summary" "PASS     xcodebuild build-for-testing"
 
 if [ "$failures" -ne 0 ]; then echo "$failures check(s) failed"; exit 1; fi
 echo "all Mac phase cases passed"

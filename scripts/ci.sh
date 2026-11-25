@@ -8,8 +8,8 @@
 #                              the iOS app build and tests are reported NOT RUN (exit 0
 #                              only if everything that was requested passed)
 #   scripts/ci.sh --app-only   Swift package and iOS build/unit/UI tests; Linux checks SKIPPED (ADR-680)
-#                              DODDY_UI_TESTS=launch runs the unit tests and two launch UI tests in one pass
-#                              (hosted pull requests), =smoke the smoke classes, anything else every UI test
+#                              DODDY_MAC_TESTS=none builds the app and its test targets and runs no test
+#                              (hosted pull requests since 25 Nov 2026; the nightly run runs them all)
 #                              DODDY_SKIP_PACKAGE_TESTS=1 leaves out the Swift package tests (hosted pull
 #                              requests: the Linux swift job runs them); DODDY_RELEASE_BUILD=only builds
 #                              only Release for a device, no simulator (the ios-release job)
@@ -248,7 +248,6 @@ run_step "Web app tokens and brand files match the app (ADR-600)" python3 -I too
 run_step "Site colour tokens match the app" python3 -I tools/gen_site_tokens.py --check
 run_step "One scripts/regen.sh run brings every generated file up to date" scripts/test_regen.sh
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
-run_step "Which pushes to main need the macOS build (decision 2026-11-15-faster-mac-ci)" scripts/test_ci_push_changed_files.sh
 run_step "UI tests wait without XCTest's one-second first look (decision 2026-11-15-faster-mac-ci)" scripts/check_ui_test_waits.sh
 run_step "UI-test wait check (tests)" scripts/test_check_ui_test_waits.sh
 run_step "UI tests that failed only because the app would not start are named for one more run (2026-11-13)" scripts/test_ci_launch_failures.sh
@@ -447,29 +446,20 @@ else
     # error instead of stopping at the first target that fails (owner request, 2026-10-12).
     if [ "$release_only" -eq 1 ]; then
       record "xcodebuild build-for-testing, unit and UI tests" "SKIPPED" "DODDY_RELEASE_BUILD=only: the ios-build job runs them"
+    elif [ "${DODDY_MAC_TESTS:-all}" = "none" ]; then
+      # Hosted pull requests (decision 2026-11-25-minimum-checks): compile the app, its extensions and both
+      # test targets, run nothing. On run 44473265852 the tests were 20 of the Mac job's 26 minutes, and in
+      # the 150 runs before 25 Nov no unit or UI test failure was traced to a fault in the app. The nightly
+      # run and runs by hand still run every test. No simulator is booted.
+      run_step "xcodebuild build-for-testing" xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy \
+        -destination "$dest" -IDEBuildingContinueBuildingAfterErrors=YES
+      record "xcodebuild test: unit and UI tests" "SKIPPED" "DODDY_MAC_TESTS=none (pull requests): built, not run; the nightly run and runs by hand run them"
     elif run_step "xcodebuild build-for-testing" xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy \
       -destination "$dest" -IDEBuildingContinueBuildingAfterErrors=YES; then
       # A per-test time limit (ADR-680): a test that hangs fails after 10 minutes instead of using
       # up the job (on 2 Nov one waited 49 minutes for the app to close, run 41368047283). The
       # longest UI test takes about 290 s, so 600 s only ends a test that is stuck.
       test_limits="-test-timeouts-enabled YES -default-test-execution-time-allowance 600"
-      # DODDY_UI_TESTS=launch (hosted pull requests since 25 Nov 2026, decision 2026-11-25-pull-request-launch-check):
-      # the unit tests and two UI tests that prove the app starts (Home with nothing started, and the first-run
-      # welcome) in ONE xcodebuild pass, with no simulator restart and no second test session. Measured on run
-      # 44473265852: of the Mac job's 26 minutes, 13.9 were the simulator restart and the UI smoke pass (10.7 of
-      # tests; the rest the restart, a 66 s wait for xcodebuild after it, and a second set-up and tear-down). None
-      # of the UI-test failures in the 150 runs before 25 Nov 2026 was traced to a fault in the app: two were the
-      # tests' own wait helper being changed (#524), the others passed again with nothing fixed. Pushes to main
-      # still run the smoke classes; the nightly run and runs by hand run every UI test. If the first UI launch
-      # after the unit tests is slow (ADR-561), the launch retry runs just those tests once more on a restarted
-      # simulator. Not yet run on a hosted Mac (no job has started since 20 Nov 2026).
-      launch_check="-only-testing:DoddyUITests/LaunchSmokeTests/testFirstLaunchGoesStraightHomeAndNeverStartsVoice"
-      launch_check="$launch_check -only-testing:DoddyUITests/WelcomeUITests/testSkipGoesToTheLastChapter"
-      if [ "${DODDY_UI_TESTS:-all}" = "launch" ]; then
-        # shellcheck disable=SC2086
-        run_step "xcodebuild test: unit tests and the launch check (one pass)" with_launch_retry xcodebuild test-without-building \
-          -project Doddy.xcodeproj -scheme Doddy -destination "$dest" -only-testing:DoddyTests $launch_check $test_limits
-      else
       # shellcheck disable=SC2086
       run_step "xcodebuild test: unit tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
         -destination "$dest" -only-testing:DoddyTests $test_limits
@@ -477,23 +467,17 @@ else
       if [ -n "${sim_id:-}" ]; then
         run_step "Restart the simulator before the UI tests" restart_simulator "$sim_id"
       fi
-      fi
       # The native island test runs on its own, last (ADR-764). Twice (2 Nov, run 41368047283; 7 Nov,
       # run 42381695855) the hosted simulator's drawing froze right after it tapped a button on the
       # system's island: backboardd waited on a GPU command that never finished, SpringBoard waited
       # on backboardd, the tap never reached the app, and every later test failed to launch the app
       # until the job's 75 minutes ran out. On its own, a freeze costs only this test.
       island_test="DoddyUITests/MemoryBaselineTests/testNativeIslandOfflineFixtureCanStartMuteAndEnd"
-      # DODDY_UI_TESTS=smoke (ADR-811; hosted CI sets it on pushes to main and on pull requests that change
-      # DoddyUITests/): only the smoke classes, about 8 of the full suite's 27 minutes on
-      # 7 Nov 2026 (run 42370455942: the motion, art and memory-journey classes took about 20).
-      # DODDY_UI_TESTS=launch: nothing more here, the two launch tests ran with the unit tests above.
-      # Anything else, or unset: all.
-      if [ "${DODDY_UI_TESTS:-all}" = "launch" ]; then
-        ui_scope="launch"
-        ui_tests=""
-        ui_label="UI smoke tests"
-      elif [ "${DODDY_UI_TESTS:-all}" = "smoke" ]; then
+      # DODDY_UI_TESTS=smoke (ADR-811; hosted CI sets it on pull requests): only the smoke classes,
+      # about 8 of the full suite's 27 minutes on 7 Nov 2026 (run 42370455942: the motion, art and
+      # memory-journey classes took about 20). Every push to main runs the whole suite and the native
+      # island test, so a pull request learns of those a merge later. Anything else, or unset: all.
+      if [ "${DODDY_UI_TESTS:-all}" = "smoke" ]; then
         ui_scope="smoke"
         ui_tests="-only-testing:DoddyUITests/LaunchSmokeTests -only-testing:DoddyUITests/WelcomeUITests"
         ui_tests="$ui_tests -only-testing:DoddyUITests/LegalAcceptanceUITests -only-testing:DoddyUITests/PolishSmokeTests"
@@ -507,9 +491,7 @@ else
       # whole test classes, so the UI tests run side by side. Each clone starts fresh, as ADR-561
       # wants. Every test still runs once. Not used in CI: the hosted Mac was too small for two.
       ui_workers=${DODDY_UI_TEST_WORKERS:-1}
-      if [ "$ui_scope" = "launch" ]; then
-        record "xcodebuild test: UI smoke tests" "SKIPPED" "launch-check run (DODDY_UI_TESTS=launch): two UI tests ran with the unit tests; pushes to main run the smoke classes, the nightly run and runs by hand every UI test"
-      elif [ "$ui_workers" -gt 1 ] 2>/dev/null; then
+      if [ "$ui_workers" -gt 1 ] 2>/dev/null; then
         # shellcheck disable=SC2086
         run_step "xcodebuild test: $ui_label ($ui_workers simulators)" with_launch_retry xcodebuild test-without-building \
           -project Doddy.xcodeproj -scheme Doddy -destination "$dest" $ui_tests \
@@ -522,9 +504,7 @@ else
       if [ -n "$launch_retry_note" ]; then
         record "UI tests run again because the app would not start" "NOTE" "$launch_retry_note"
       fi
-      if [ "$ui_scope" = "launch" ]; then
-        record "xcodebuild test: native island test" "SKIPPED" "launch-check run (DODDY_UI_TESTS=launch); the nightly run and runs by hand run it"
-      elif [ "$ui_scope" = "smoke" ]; then
+      if [ "$ui_scope" = "smoke" ]; then
         record "xcodebuild test: native island test" "SKIPPED" "UI smoke run (DODDY_UI_TESTS=smoke); the nightly run and runs by hand run it"
       else
         if [ -n "${sim_id:-}" ]; then
