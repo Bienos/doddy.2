@@ -49,7 +49,7 @@ final class MadeDocumentsClientTests: XCTestCase {
     func testTheListIsReadWithThePhonesSessionFromTheWebRoute() async throws {
         let transport = OneReplyTransport(body: try fixture("documents-ready"))
         let list = try await client(transport).documents()
-        XCTAssertEqual(list.keptDays, 7)
+        XCTAssertEqual(list.keptDays, 30)
         XCTAssertFalse(list.documents.isEmpty)
         let request = try XCTUnwrap(transport.requests.first)
         XCTAssertEqual(request.method, "GET")
@@ -69,7 +69,7 @@ final class MadeDocumentsClientTests: XCTestCase {
     func testAnEmptyListIsEmptyNotAnError() async throws {
         let list = try await client(OneReplyTransport(body: try fixture("documents-empty"))).documents()
         XCTAssertEqual(list.documents, [])
-        XCTAssertEqual(list.keptDays, 7)
+        XCTAssertEqual(list.keptDays, 30)
     }
 
     func testAnUnknownKindOrBadIDIsUnreadableRatherThanGuessed() async {

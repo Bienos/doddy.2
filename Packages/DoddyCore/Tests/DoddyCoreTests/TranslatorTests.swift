@@ -15,17 +15,22 @@ final class TranslatorTests: XCTestCase {
     // MARK: Languages
 
     func testEveryAgentLanguageHasTheTranslatorLines() throws {
-        // The same 89 codes the agent speaks (voice-agent/session.json), each with all four lines:
-        // 37 European (ADR-212) and, since 12 Nov 2026, every other language ElevenLabs accepts as a preset.
+        // The 89 codes the translator agent speaks (voice-agent/translator/session.json), each with all four lines:
+        // 37 European (ADR-212) and, since 12 Nov 2026, every other language ElevenLabs accepts as a preset. Since 25 Nov
+        // 2026 the main agent keeps only seven of them (voice-agent/session.json); translating runs on the translator.
+        let translator = try JSONSerialization.jsonObject(
+            with: Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/translator/session.json"))) as? [String: Any]
+        let codes = try XCTUnwrap(translator?["languages"] as? [String])
         let session = try JSONSerialization.jsonObject(with: Data(contentsOf: repoRoot.appendingPathComponent("voice-agent/session.json"))) as? [String: Any]
-        let codes = try XCTUnwrap(session?["languages"] as? [String])
+        let mainCodes = try XCTUnwrap(session?["languages"] as? [String])
+        XCTAssertTrue(Set(mainCodes).isSubset(of: Set(codes)), "every language of the main agent can be translated")
         XCTAssertEqual(codes.count, 89)
         XCTAssertEqual(Set(TranslatorLanguages.all.map(\.code)), Set(codes))
         XCTAssertEqual(TranslatorLanguages.all.count, 89)
         XCTAssertEqual(TranslatorLanguages.count, 89)
         // Each agent language greets with the app's opening line or its own first message.
         let firstMessages = try XCTUnwrap(session?["first_message"] as? [String: String])
-        XCTAssertEqual(Set(firstMessages.keys), Set(codes))
+        XCTAssertEqual(Set(firstMessages.keys), Set(mainCodes))
         for language in TranslatorLanguages.all {
             for line in [language.nativeName, language.englishName, language.aiLabel, language.hello, language.holdToTalk, language.careful] {
                 XCTAssertFalse(line.trimmingCharacters(in: .whitespaces).isEmpty, language.code)

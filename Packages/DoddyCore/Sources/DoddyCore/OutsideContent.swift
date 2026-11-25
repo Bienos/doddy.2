@@ -122,25 +122,22 @@ extension AskFirst {
         }
         guard baseline == .runsNow else { return baseline }
         switch request {
+        // Owner, 25 Nov 2026 (decision 2026-11-25-doddy-acts-without-asking): text from outside no longer makes Doddy ask
+        // before his own things. A file, Claude's writing and the user's own list run as asked; the text itself is still
+        // data, never an instruction (the agent's prompt and `ToolData`). A text message still asks: it goes out from
+        // Doddy's own number, so words from an email (a payment link, a code) must never reach the phone that way unseen.
         case .textMe(let body):
             guard session.outsideContentSeen else { return baseline }
             return .yesFirst(OutsideContentAsk.textMeCard(body, polish: polish))
-        case .cloudTool(let call) where call.name == CloudToolName.makeDocument:
-            guard session.outsideContentSeen else { return baseline }
-            return .yesFirst(OutsideContentAsk.makeDocumentCard(call, polish: polish))
-        case .cloudTool(let call) where call.name == CloudToolName.askClaude:
-            guard session.outsideContentSeen, OutsideContentAsk.material(of: call) != nil else { return baseline }
-            return .yesFirst(OutsideContentAsk.askClaudeCard(call, polish: polish))
         case .lookAtScreen:
             guard !session.screenLookApproved || session.otherContentSeen else { return baseline }
             return .yesFirst(ScreenLookSpeech.askCard(polish: polish))
         case .addToList(let list), .checkOff(let list):
-            guard listIsShared || session.outsideContentSeen, !session.userSaidAll(list.items) else { return baseline }
+            // A shared list reaches other people, so it still shows the exact items unless the user just said them all.
+            guard listIsShared, !session.userSaidAll(list.items) else { return baseline }
             let adding: Bool
             if case .addToList = request { adding = true } else { adding = false }
-            return .yesFirst(listIsShared
-                ? OutsideContentAsk.sharedListCard(list, adding: adding, polish: polish)
-                : OutsideContentAsk.listAfterOutsideTextCard(list, adding: adding, polish: polish))
+            return .yesFirst(OutsideContentAsk.sharedListCard(list, adding: adding, polish: polish))
         default:
             return baseline
         }

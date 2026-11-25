@@ -189,6 +189,7 @@ final class AskFirstTests: XCTestCase {
         XCTAssertEqual(
             specRunsNow,
             AskFirst.publicLookups.union(AskFirst.ownLooks).union(AskFirst.ownSmallActions).union(AskFirst.ownChangesAtOnce)
+                .union(AskFirst.ownPhoneCallsAtOnce)
                 .union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe])
                 .union(CloudToolName.all.subtracting(CloudToolName.writes)))
         // The catalog knows the same tools, so "every other tool" is every other tool the app has.

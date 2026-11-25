@@ -2193,7 +2193,7 @@
   "Kept until %@": "Zostaje do %@",
   "This iPhone": "Ten iPhone",
   "Export, backup and delete": "Eksport, kopia zapasowa i usuwanie",
-  "Doddy keeps the files he makes for a week. To keep one, open it and save it with Share.": "Doddy trzyma zrobione pliki przez tydzień. Żeby zachować plik, otwórz go i zapisz przez Udostępnij.",
+  "Doddy keeps the files he makes for 30 days. To keep one longer, open it and save it with Share.": "Doddy trzyma zrobione pliki przez 30 dni. Żeby zachować któryś dłużej, otwórz go i zapisz przez Udostępnij.",
   "Nothing yet. When you ask Doddy to make a document, a deck or a spreadsheet, it shows up here.": "Na razie nic. Gdy poprosisz Doddy'ego o dokument, prezentację albo arkusz, pojawi się tutaj.",
   "Doddy is still making this": "Doddy jeszcze nad tym pracuje",
   "Stopped before it was finished. Ask Doddy to try again.": "Przerwane przed końcem. Poproś Doddy'ego, żeby spróbował jeszcze raz.",
@@ -2657,7 +2657,6 @@
   "Dictation couldn't start. If you're talking to Doddy or on a call, finish that first.": "Nie udało się zacząć dyktowania. Jeśli rozmawiasz z Doddym albo przez telefon, najpierw to zakończ.",
   "Dictate": "Dyktuj",
   "Stop dictating": "Przestań dyktować",
-  "Tasks Doddy finished": "Zadania, które Doddy skończył",
   "Couldn't finish. See why.": "Nie udało się skończyć. Zobacz dlaczego.",
   "Photo": "Zdjęcie",
   "No answer. The photo wasn't kept, so add it again to ask.": "Brak odpowiedzi. Zdjęcie nie zostało zachowane, więc dodaj je jeszcze raz, żeby zapytać.",
@@ -3755,5 +3754,7 @@
   "Morning call set up: %@. Each day is checked again before it rings.": "Poranny telefon ustawiony: %@. Każdy dzień jest sprawdzany jeszcze raz przed telefonem.",
   "The morning call wasn't set up. %@": "Poranny telefon nie został ustawiony. %@",
   "Couldn't confirm Doddy's server set up the morning call. The switch shows what the server says now. If it's off, setting up the same time and days again is safe: the server sets it up at most once.": "Nie udało się potwierdzić, że serwer Doddy’ego ustawił poranny telefon. Przełącznik pokazuje to, co serwer mówi teraz. Jeśli jest wyłączony, ponowne ustawienie tej samej godziny i dni jest bezpieczne: serwer ustawi go najwyżej raz.",
-  "Off. Turn it on to choose the time and days, or ask Doddy, for example “Call me every day at 8 with the plan of the day.”": "Wyłączony. Włącz go, żeby wybrać godzinę i dni, albo poproś Doddy’ego, na przykład „Dzwoń do mnie codziennie o 8 z planem dnia”."
+  "Off. Turn it on to choose the time and days, or ask Doddy, for example “Call me every day at 8 with the plan of the day.”": "Wyłączony. Włącz go, żeby wybrać godzinę i dni, albo poproś Doddy’ego, na przykład „Dzwoń do mnie codziennie o 8 z planem dnia”.",
+  "Doddy couldn't reach %@.": "Doddy nie dodzwonił się: %@.",
+  "See what happened.": "Zobacz, co się stało."
 }

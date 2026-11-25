@@ -46,7 +46,7 @@ public enum ConnectionPause {
             // The rounded position goes to Apple's geocoder for the area's name (decision 2026-11-14-approximate-location-by-voice).
             true
         case .readCalendar, .findFreeTime, .leaveBy, .createCalendarEvent, .createReminder, .lookupContact, .upcomingBirthdays, .setTimer,
-             .openMap, .openFoodApp, .runShortcut, .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .controlHome, .cloudTool, .changeCalendarEvent, .changeReminder,
+             .openMap, .openFoodApp, .runShortcut, .draftMessage, .callContact, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .openCamera, .controlHome, .cloudTool, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .setAlarm, .undoLast,
              .deleteCalendarEvents, .moveReminders, .listAlarms, .cancelAlarm,
              .convertCurrency, .textMe, .callMeLater, .callMeNow, .callMeEveryMorning, .callPlaces:

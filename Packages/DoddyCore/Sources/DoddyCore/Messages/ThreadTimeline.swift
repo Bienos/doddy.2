@@ -14,12 +14,19 @@ public enum ThreadTimeline {
         /// A file on Doddy's server that has no bubble in this thread (made from Doddy Web, a private conversation,
         /// an older app build, or a thread that was cleared).
         case serverFile(MadeDocument)
+        /// A task Doddy finished in the background (`ThreadTaskResults`), at the time it finished (25 Nov 2026: until then
+        /// these cards sat under the newest message, whatever their time).
+        case task(StoredErrand)
+        /// A call Doddy made for the person (`ThreadCallResults`), at the time its answer came, reached or not.
+        case call(StoredCallCase)
 
         public var id: String {
             switch self {
             case .message(_, let message): "m-\(message.id.uuidString)"
             case .localFile(let file): "l-\(file.id.uuidString)"
             case .serverFile(let document): "s-\(document.id)"
+            case .task(let errand): "t-\(errand.id.uuidString)"
+            case .call(let record): "c-\(record.id.uuidString)"
             }
         }
 
@@ -28,6 +35,8 @@ public enum ThreadTimeline {
             case .message(_, let message): message.createdAt
             case .localFile(let file): file.createdAt
             case .serverFile(let document): document.createdAt
+            case .task(let errand): errand.updatedAt
+            case .call(let record): record.updatedAt
             }
         }
 
@@ -37,15 +46,22 @@ public enum ThreadTimeline {
             case .message: 0
             case .localFile: 1
             case .serverFile: 2
+            case .task: 3
+            case .call: 4
             }
         }
     }
 
-    /// The thread with the files placed by time. `local` and `server` are what `LocalMadeFiles.shown` and
-    /// `ThreadAttachments.shown`/`inProgress` already chose (not expired, not already a bubble).
-    public static func items(messages: [ThreadMessage], local: [LocalMadeFile], server: [MadeDocument]) -> [Item] {
+    /// The thread with the files, finished tasks and calls placed by time. `local` and `server` are what
+    /// `LocalMadeFiles.shown` and `ThreadAttachments.shown`/`inProgress` already chose (not expired, not already a
+    /// bubble); `tasks` and `calls` what `ThreadTaskResults.shown` and `ThreadCallResults.shown` chose. Nothing is pinned
+    /// to the bottom: a call from yesterday sits before today's messages (owner, 25 Nov 2026).
+    public static func items(
+        messages: [ThreadMessage], local: [LocalMadeFile], server: [MadeDocument],
+        tasks: [StoredErrand] = [], calls: [StoredCallCase] = []
+    ) -> [Item] {
         let all: [Item] = messages.enumerated().map { Item.message(index: $0.offset, $0.element) }
-            + local.map(Item.localFile) + server.map(Item.serverFile)
+            + local.map(Item.localFile) + server.map(Item.serverFile) + tasks.map(Item.task) + calls.map(Item.call)
         // Stable: messages keep their saved order among themselves even when two have the same time.
         return all.enumerated().sorted { a, b in
             if a.element.date != b.element.date { return a.element.date < b.element.date }

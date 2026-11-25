@@ -78,7 +78,7 @@ export const DocumentViewSchema = z
     kind: DocumentKind,
     status: DocumentStatus,
     createdAt: z.string(),
-    /** When the server deletes it (documents are kept a week, ADR-564). */
+    /** When the server deletes it (documents are kept 30 days since 25 Nov 2026; a week before, ADR-564). */
     deleteAfter: z.string(),
     sizeBytes: z.number().int().nonnegative().nullable(),
   })

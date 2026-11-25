@@ -281,7 +281,7 @@ public struct ReleaseScope: Equatable, Sendable {
         // starts them, so in every scope a conversation is their way in.
         VoiceToolName.startFocus, VoiceToolName.stopFocus, VoiceToolName.checkFocus,
         VoiceToolName.startWindDown, VoiceToolName.stopWindDown,
-        VoiceToolName.lookupContact, VoiceToolName.draftMessage,
+        VoiceToolName.lookupContact, VoiceToolName.draftMessage, VoiceToolName.callContact,
         VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency,
         VoiceToolName.openMap, VoiceToolName.runShortcut,
         // The rough area for places, searches and the weather near the person (decision 2026-11-14-approximate-location-by-voice).

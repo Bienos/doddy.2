@@ -24,7 +24,7 @@ struct VoiceStyleSections: View {
                     ForEach(Expressiveness.allCases, id: \.self) { Text(PersonalitySections.label($0)).tag($0.rawValue) }
                 }
                 Picker("Starts in", selection: $languageRaw) {
-                    ForEach(ConversationLanguage.allCases, id: \.self) { Text(PersonalitySections.label($0)).tag($0.rawValue) }
+                    ForEach(ConversationLanguage.offered, id: \.self) { Text(PersonalitySections.label($0)).tag($0.rawValue) }
                 }
                 .accessibilityIdentifier("settings.voice.language")
                 Text("Doddy follows you if you switch language while you talk.")

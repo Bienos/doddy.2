@@ -334,12 +334,12 @@ test("documents Doddy made on the iPhone are listed and downloadable in the brow
   const cookie = await rig.signIn(await rig.code());
 
   const working = DocumentListSchema.parse((await rig.call("GET", "/v1/web/documents", { cookie })).body);
-  assert.equal(working.keptDays, 7);
+  assert.equal(working.keptDays, 30);
   assert.equal(working.documents.length, 1);
   const doc = working.documents[0]!;
   assert.deepEqual(
     { name: doc.name, kind: doc.kind, status: doc.status, sizeBytes: doc.sizeBytes, deleteAfter: doc.deleteAfter },
-    { name: "Laptops for uni.pdf", kind: "pdf", status: "working", sizeBytes: null, deleteAfter: "2026-10-29T10:00:00.000Z" },
+    { name: "Laptops for uni.pdf", kind: "pdf", status: "working", sizeBytes: null, deleteAfter: "2026-11-21T10:00:00.000Z" },
   );
   assert.equal(new URL(made.document.url).pathname, `/v1/documents/${doc.id}`);
   assert.equal((await rig.call("GET", `/v1/web/documents/${doc.id}/file`, { cookie })).status, 404, "no file while it's being made");

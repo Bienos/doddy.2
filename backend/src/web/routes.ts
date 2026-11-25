@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { type AuthenticatedUser, requireFullAccess, type SessionVerifier } from "../auth.js";
 import { AppError } from "../errors.js";
-import type { DocumentRow, DocumentSummaryRow, Store } from "../store.js";
+import { DOCUMENT_KEPT_DAYS, type DocumentRow, type DocumentSummaryRow, type Store } from "../store.js";
 import type { DocumentView } from "./contracts.js";
 import { isoDay, LOGBOOK_MAX_BODY_BYTES, type LogbookView, LogbookStateSchema, parseDaySummary, readLogbookView } from "./logbook.js";
 import type { MemoryChat } from "../memory/chat.js";
@@ -55,8 +55,11 @@ export interface Route {
   run(input: { caller: WebCaller | null; params: string[]; query: URLSearchParams; body: unknown; req: IncomingMessage; now: Date }): Promise<Reply>;
 }
 
-/** Documents are kept a week (ADR-564); the list says so instead of implying they stay. */
-export const DOCUMENT_KEPT_DAYS = 7;
+/**
+ * Documents are kept 30 days (a week until 25 Nov 2026, ADR-564; owner: files "are expired right now, they are not stored
+ * properly"); the list says so instead of implying they stay. `Store.pruneDocuments` deletes them after the same time.
+ */
+export { DOCUMENT_KEPT_DAYS };
 /**
  * A document still `working` after this long is not being made any more: the job runs in the
  * server's memory with an 8-minute limit, so a restart in between leaves the row behind.
@@ -180,7 +183,7 @@ export class WebRoutes {
         run: async ({ caller, params }) => {
           const id = params[0]!;
           const row = DOCUMENT_ID.test(id) ? await this.store.getOwnDocument(caller!.userId, id) : null;
-          if (!row) throw new AppError("not_found", { message: "Doddy has no such document for you. Documents are kept for a week." });
+          if (!row) throw new AppError("not_found", { message: "Doddy has no such document for you. Documents are kept for 30 days." });
           if (row.status !== "ready" || !row.body) throw new AppError("not_found", { message: "This document has no file yet." });
           return { status: 200, file: { name: row.name, mime: row.mime, bytes: row.body } };
         },

@@ -73,7 +73,7 @@ final class ReplyDataMarkingTests: XCTestCase {
     // MARK: The agent's own arguments
 
     func testTheAgentsWordsComeBackAsData() throws {
-        assertMarked("The app does not support the tool below.") { VoiceToolReply.unsupported($0) }
+        assertMarked("The app does not support the tool below, so nothing ran.") { VoiceToolReply.unsupported($0) }
         assertMarked("refused: translator mode is on") { VoiceToolReply.translatorRefused($0) }
         assertMarked("added: an event on 2026-10-12 15:00 to 2026-10-12 16:00.") {
             VoiceToolReply.eventAdded(CalendarEventDraft(title: $0, start: at(day: 12, 15), end: at(day: 12, 16), allDay: false, location: nil, notes: nil), calendar: calendar)

@@ -357,7 +357,9 @@ final class ScheduledCallTests: XCTestCase {
     func testItNeedsACardIsNeverAPlanStepAndWaitsWhileDrivingOrPaused() throws {
         let tool = try XCTUnwrap(ToolCatalog.descriptor(VoiceToolName.callMeLater))
         XCTAssertEqual(tool.effect, .placeCall)
-        XCTAssertEqual(tool.approval, .card)
+        // Runs as asked since 25 Nov 2026 (owner); a time in quiet hours keeps its card (`waitsForAChoice` in the app).
+        XCTAssertEqual(tool.approval, .runsNow)
+        XCTAssertFalse(AskFirst.runsWithoutItsCard(VoiceToolName.callMeLater, appIsActive: true, waitsForAChoice: true))
         XCTAssertEqual(tool.runsOn, .phone)
         XCTAssertFalse(tool.planEligible, "a plan card doesn't show the time, reason and quiet-hours choice with their own approval")
         // call_places places calls too, to places on its own card (decision 2026-11-09-restaurant-calls-one-tap); the

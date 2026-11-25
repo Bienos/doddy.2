@@ -44,7 +44,7 @@ export const chatEn = {
   "chat.sees.off": "Off in the Doddy app",
   "chat.sees.notSetUp": "Not set up on this server",
   "chat.sees.appsNone": "Nothing connected",
-  "chat.sees.documentsCount": "{n} from the last 7 days",
+  "chat.sees.documentsCount": "{n} from the last 30 days",
   "chat.sees.activityCount": "{n} latest receipts",
   "chat.sees.none": "None yet",
 
@@ -126,7 +126,7 @@ export const chatPl: Record<keyof typeof chatEn, string> = {
   "chat.sees.off": "Wyłączone w aplikacji Doddy",
   "chat.sees.notSetUp": "Nieustawione na tym serwerze",
   "chat.sees.appsNone": "Nic nie jest połączone",
-  "chat.sees.documentsCount": "{n} z ostatnich 7 dni",
+  "chat.sees.documentsCount": "{n} z ostatnich 30 dni",
   "chat.sees.activityCount": "{n} ostatnich wpisów",
   "chat.sees.none": "Jeszcze nic",
 

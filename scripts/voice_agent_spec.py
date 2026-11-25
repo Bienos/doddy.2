@@ -23,7 +23,7 @@ server embeds (server/messaging/src/taskCalls/agentSpec.ts, payload.ts) match th
 2026-11-12-food-by-phone) the same way, against TASK_ORDER_AGENT_SPEC and ORDER_AGENT_VARIABLE_NAMES: it may
 say one server-built confirmation line for the approved order, and never pay, open a link or accept anything else.
 `--agent translator` checks the translator-only agent (voice-agent/translator/, decision 2026-11-12-translator-agent): no
-function tools, only the language_detection system tool, the same languages as the app's agent, and one agent id in step with
+function tools, only the language_detection system tool, at least the languages of the app's agent, and one agent id in step with
 the token server (server/voice-token/src/conversations.js) and the app (VoiceConfig.translatorDirectAgentID).
 `--agent task-call-book` checks the booking agent (voice-agent/task-call-book/, decision
 2026-11-12-book-agent) the same way, against TASK_BOOK_AGENT_SPEC and BOOK_AGENT_VARIABLE_NAMES: it may say
@@ -96,10 +96,13 @@ RUNS_NOW_SERVER_READS = {"check_email", "read_email", "find_drive_file", "search
 # while Doddy isn't on screen.
 # Step 2c added set_timer and set_alarm, once they had Undo in What Doddy did.
 RUNS_NOW_OWN_CHANGES = {"save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app",
-                        "lost_wallet", "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation",
+                        "lost_wallet", "draft_message", "call_contact", "draft_blik_transfer", "draft_invoice", "make_presentation",
                         "set_timer", "set_alarm"}
+# Calls to the user's own verified number run as asked (owner, 25 Nov 2026, decision 2026-11-25-doddy-acts-without-asking;
+# AskFirst.ownPhoneCallsAtOnce in DoddyCore). The server checks consent, the number and its limits again.
+RUNS_NOW_OWN_PHONE_CALLS = {"call_me_now", "call_me_later"}
 RUNS_NOW = (PUBLIC_LOOKUPS | RUNS_NOW_MODES | RUNS_NOW_OWN_TEXT | RUNS_NOW_OWN_LOOKS | RUNS_NOW_SMALL_ACTIONS
-            | RUNS_NOW_SERVER_READS | RUNS_NOW_OWN_CHANGES)
+            | RUNS_NOW_SERVER_READS | RUNS_NOW_OWN_CHANGES | RUNS_NOW_OWN_PHONE_CALLS)
 APP_INSTRUCTIONS = SPEC / "instructions.md"
 
 
@@ -224,8 +227,9 @@ def check_translator(tools, session, instructions):
         if banned in instructions:
             errors.append(f"instructions: must not mention {banned!r}: the translator agent has no tools")
     app_languages = json.loads((SPEC / "session.json").read_text(encoding="utf-8")).get("languages", [])
-    if session.get("languages") != app_languages:
-        errors.append("session.json: languages must equal voice-agent/session.json's (the translator offers the same ones)")
+    missing = [code for code in app_languages if code not in (session.get("languages") or [])]
+    if missing:
+        errors.append(f"session.json: the translator must offer every language of voice-agent/session.json (missing: {missing})")
     el = session.get("elevenlabs", {})
     if el.get("tools") != "none" or el.get("built_in_tools") != ["language_detection"]:
         errors.append("session.json: elevenlabs.tools must be 'none' and built_in_tools ['language_detection']")
@@ -359,7 +363,7 @@ def check_app(tools, sources=APP_SOURCES):
         if (x.get("ask") == "tap") != (name in TAP_ONLY):
             errors.append(f"tool {name}: only money and bookings ({', '.join(sorted(TAP_ONLY))}) are 'tap'; every other card is 'yes_or_tap' (decision 2026-11-14-spoken-yes-and-fewer-cards)")
         if runs_now and name not in RUNS_NOW:
-            errors.append(f"tool {name}: only the public lookups, translator start/stop, text_me, looks at the user's own things and Doddy's own small actions may run without asking (ADR-575, ADR-619, decisions 2026-11-09-restaurant-calls-one-tap and 2026-11-11-asked-for-runs-at-once); a tool that changes, sends, deletes, calls or pays keeps its card")
+            errors.append(f"tool {name}: only the public lookups, translator start/stop, text_me, calls to the user's own phone, looks at the user's own things and Doddy's own small actions may run without asking (ADR-575, ADR-619, decisions 2026-11-09-restaurant-calls-one-tap and 2026-11-11-asked-for-runs-at-once); a tool that changes, sends, deletes, calls or pays keeps its card")
         if not runs_now and name in RUNS_NOW:
             errors.append(f"tool {name}: runs at once in the app (decision 2026-11-11-asked-for-runs-at-once), so x_doddy.ask must be 'runs_now'")
         if runs_now and name in RUNS_NOW_OWN_TEXT and x.get("runs_on") != "phone":
@@ -557,7 +561,7 @@ def main(argv):
         return 1
     cmd = argv[1]
     if cmd == "check" and agent == "translator":
-        print(f"PASS voice agent spec ({where}): no function tools; system tool language_detection only; same languages as the app's agent; agent id equals the token server's and the app's")
+        print(f"PASS voice agent spec ({where}): no function tools; system tool language_detection only; every language of the app's agent; agent id equals the token server's and the app's")
     elif cmd == "check" and agent in ("task-call", "task-call-book", "task-call-order"):
         print(f"PASS voice agent spec ({where}): no function tools; system tools {', '.join(t['name'] for t in tools['system_tools'])}; matches the server's agentSpec.ts")
     elif cmd == "check":

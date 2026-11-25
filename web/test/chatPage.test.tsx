@@ -71,7 +71,7 @@ describe("an empty chat", () => {
     expect(row("Conversations")).toHaveTextContent("1 on Doddy's server");
     expect(row("Logbook")).toHaveTextContent("On, no days sent yet");
     expect(row("Connected apps")).toHaveTextContent("Gmail, Notion");
-    expect(row("Documents")).toHaveTextContent("2 from the last 7 days");
+    expect(row("Documents")).toHaveTextContent("2 from the last 30 days");
     expect(row("Activity")).toHaveTextContent("None yet");
     expect(panel).toHaveTextContent("he changes and sends nothing");
     await userEvent.keyboard("{Escape}");

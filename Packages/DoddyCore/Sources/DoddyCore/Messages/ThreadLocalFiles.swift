@@ -35,8 +35,9 @@ public struct LocalMadeFile: Equatable, Sendable, Identifiable, Codable {
 }
 
 public enum LocalMadeFiles {
-    /// How long a file stays in the list, like the files Doddy's server keeps (ADR-564).
-    public static let keepFor: TimeInterval = 7 * 24 * 3600
+    /// How long a file stays in the list, like the files Doddy's server keeps: 30 days since 25 Nov 2026 (a week before,
+    /// ADR-564; owner: files "are expired right now, they are not stored properly").
+    public static let keepFor: TimeInterval = 30 * 24 * 3600
     /// At most this many cards, the newest ones.
     public static let limit = 6
 
@@ -60,5 +61,5 @@ public enum LocalMadeFiles {
 
     /// What Doddy hears after a file was kept for Messages, so he can say where it is. Said only when the copy was
     /// read back as complete.
-    public static let inMessagesNote = "It is also under \"Files Doddy made for you\" in Messages for a week."
+    public static let inMessagesNote = "It is also under \"Files Doddy made for you\" in Messages for 30 days."
 }

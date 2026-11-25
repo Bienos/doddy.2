@@ -148,17 +148,34 @@ public enum AskFirst {
     /// card until it has an Undo (step 2c).
     public static let ownChangesAtOnce: Set<String> = [
         VoiceToolName.saveMemory, VoiceToolName.createReminder, VoiceToolName.addIngredients, VoiceToolName.openMap,
-        VoiceToolName.openCamera, VoiceToolName.openFoodApp, VoiceToolName.lostWallet, VoiceToolName.draftMessage,
+        VoiceToolName.openCamera, VoiceToolName.openFoodApp, VoiceToolName.lostWallet, VoiceToolName.draftMessage, VoiceToolName.callContact,
         VoiceToolName.draftBlikTransfer, VoiceToolName.draftInvoice, VoiceToolName.makePresentation,
         // Step 2c: Undo stops the timer while it counts down, and turns the alarm off while the iPhone has it.
         VoiceToolName.setTimer, VoiceToolName.setAlarm,
     ]
 
+    /// Calls to the user's own verified number (owner, 25 Nov 2026: "zadzwoń do mnie" is the yes). Each can reach only
+    /// that one number, the server checks consent, the verified number and its limits again, a later call can be
+    /// cancelled in Phone calls, and Doddy says what happened. They run as asked, with no card.
+    public static let ownPhoneCallsAtOnce: Set<String> = [VoiceToolName.callMeNow, VoiceToolName.callMeLater]
+
+    /// The voice controller's rule for a tool whose own flow makes a payload card: run it as the card's button would,
+    /// with no card, when it is one of Doddy's own changes or a call to the user's own phone. One that opens another app
+    /// or the camera does so only while Doddy is on screen (iOS opens nothing from the background, and "opened" is never
+    /// said of what didn't open); otherwise its card stays for a tap or a yes. Text from outside in the conversation no
+    /// longer keeps the card (owner, 25 Nov 2026): it is data, never an instruction.
+    /// `waitsForAChoice`: the card asks the person to pick something first (several places, or a later call that falls
+    /// in quiet hours and needs its "call anyway" switch), so it stays.
+    public static func runsWithoutItsCard(_ tool: String, appIsActive: Bool, waitsForAChoice: Bool = false) -> Bool {
+        guard !waitsForAChoice, ownChangesAtOnce.contains(tool) || ownPhoneCallsAtOnce.contains(tool) else { return false }
+        return opensSomethingElse.contains(tool) ? appIsActive : true
+    }
+
     /// Of those, the ones that open another app or the camera. The voice controller runs them at once only while Doddy
     /// is on screen: iOS opens nothing from the background, and "opened" is never said of what didn't open. Otherwise
     /// their card stays, answered by a tap or a spoken yes.
     public static let opensSomethingElse: Set<String> = [
-        VoiceToolName.openMap, VoiceToolName.openCamera, VoiceToolName.draftMessage, VoiceToolName.openFoodApp,
+        VoiceToolName.openMap, VoiceToolName.openCamera, VoiceToolName.draftMessage, VoiceToolName.callContact, VoiceToolName.openFoodApp,
     ]
 
     /// Doddy's own small things that run at once since 11 Nov 2026: each is undone in one step (stop, untick,
@@ -176,7 +193,8 @@ public enum AskFirst {
     /// to the user's own number. `voice-agent/tools.json` says `ask: runs_now` for exactly these. This is the baseline:
     /// `OutsideContentRule.guardedTools` among them can still ask in a conversation (`need(for:in:)`).
     public static func runsAtOnce(_ name: String) -> Bool {
-        if publicLookups.contains(name) || ownLooks.contains(name) || ownSmallActions.contains(name) || ownChangesAtOnce.contains(name) {
+        if publicLookups.contains(name) || ownLooks.contains(name) || ownSmallActions.contains(name) || ownChangesAtOnce.contains(name)
+            || ownPhoneCallsAtOnce.contains(name) {
             return true
         }
         if [VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe].contains(name) { return true }
@@ -255,20 +273,24 @@ public enum AskFirst {
             return .ownPayloadCard
         // Doddy's own changes with Undo, and the drafts and hand-overs that change nothing (`ownChangesAtOnce`, step 2b):
         // no card. The tool's own flow still makes its payload; the controller runs it as the card's button would.
-        case .saveMemory, .createReminder, .addIngredients, .openMap, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera,
+        case .saveMemory, .createReminder, .addIngredients, .openMap, .draftMessage, .callContact, .draftBlikTransfer, .makePresentation, .openCamera,
              .setTimer, .setAlarm:
             return .runsNow
         case .createCalendarEvent, .remindAboutNote, .undoLast, .cancelAlarm,
              .runShortcut, .controlHome, .createList, .changeCalendarEvent, .changeReminder,
              .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .parkingSpot(.save),
-             // The card shows the time and the exact reason; the tap approves exactly that (ADR-754).
              // call_places: the card shows every place, its number and where it came from, the exact
              // opening line and question; the one tap approves exactly that task's digest.
-             .callMeLater, .callMeNow, .callPlaces,
+             .callPlaces,
              // The card shows the exact schedule, number and switch; a yes or a tap approves exactly that
              // (decision 2026-11-14-morning-call).
              .callMeEveryMorning:
             return .ownPayloadCard
+        case .callMeNow, .callMeLater:
+            // A call to the user's own verified number runs as asked (owner, 25 Nov 2026, `ownPhoneCallsAtOnce`). The
+            // tool's own flow still builds the exact call (number, time, reason) and the controller runs it as the
+            // card's button would; the server checks consent, the number and its limits again.
+            return .runsNow
         case .textMe:
             // A text to the user's own verified number goes at once while Texts from Doddy is on (owner, 9 Nov 2026,
             // decision 2026-11-09-restaurant-calls-one-tap). It can reach no one else (contact_policy.text_recipients).

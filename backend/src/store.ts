@@ -7,6 +7,9 @@ import { SEAL_OVERHEAD } from "./memory/crypto.js";
 import { requestCredential } from "./requestCredential.js";
 import type { LedgerEvent } from "./usageLedger.js";
 
+/** How long a document Doddy made is kept: 30 days since 25 Nov 2026 (a week before, ADR-564). The web list says so. */
+export const DOCUMENT_KEPT_DAYS = 30;
+
 /**
  * Small durable store (Postgres, ADR-525). Holds only what the backend needs: the internal-user →
  * Composio-user mapping, connection attempts, one connection per user, sanitized receipts, usage
@@ -1632,9 +1635,9 @@ export class Store {
     }
   }
 
-  /** Documents older than a week go. Separate from `prune` so its counts stay as they were. */
+  /** Documents older than `DOCUMENT_KEPT_DAYS` go. Separate from `prune` so its counts stay as they were. */
   async pruneDocuments(now: number): Promise<number> {
-    return (await this.db.query("DELETE FROM documents WHERE created_at < $1", [now - 7 * 86_400_000])).rowCount;
+    return (await this.db.query("DELETE FROM documents WHERE created_at < $1", [now - DOCUMENT_KEPT_DAYS * 86_400_000])).rowCount;
   }
 
   // ------------------------------------------------------------ Logbook (ADR-602)

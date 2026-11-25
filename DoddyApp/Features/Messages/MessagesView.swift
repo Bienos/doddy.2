@@ -224,10 +224,12 @@ struct MessagesView: View {
                             localFileCard(file)
                         case .serverFile(let document):
                             serverFileCard(document)
+                        case .task(let errand):
+                            taskCard(errand)
+                        case .call(let record):
+                            callCard(record)
                         }
                     }
-                    taskResults
-                    callResults
                     if let problem = files.downloadProblem ?? LocalMadeFilesStore.shared.problem {
                         Label(problem, systemImage: "exclamationmark.triangle")
                             .font(.footnote)
@@ -304,91 +306,72 @@ struct MessagesView: View {
             problem: model.error != nil || files.downloadProblem != nil)
     }
 
-    /// Tasks Doddy finished in the background this week (ADR-570), read from this iPhone's own copy of them. A tap
-    /// opens the task's result; nothing is added to the saved thread and nothing is sent.
-    @ViewBuilder
-    private var taskResults: some View {
-        let shown = ThreadTaskResults.shown(ErrandsModel.shared.errands, now: Date(), thread: model.messages)
-        if !shown.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Tasks Doddy finished")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
-                    .accessibilityAddTraits(.isHeader)
-                ForEach(shown) { errand in
-                    Button { openedTask = OpenedTask(id: errand.id) } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: errand.state == .done ? "checkmark.circle" : "exclamationmark.circle")
-                                .font(.title3)
-                                .foregroundStyle(errand.state == .done ? Theme.accentText : Theme.error)
-                                .accessibilityHidden(true)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(verbatim: errand.title)
-                                    .font(.body.bold())
-                                    .multilineTextAlignment(.leading)
-                                if errand.state == .done { Text("See what Doddy found.") } else { Text("Couldn't finish. See why.") }
-                            }
-                            .font(.footnote)
-                            .foregroundStyle(Theme.ink)
-                            Spacer(minLength: 0)
-                        }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityElement(children: .combine)
-                    .accessibilityIdentifier("messages.taskResult")
+    /// A task Doddy finished in the background this week (ADR-570), read from this iPhone's own copy of it, at the
+    /// time it finished (owner, 25 Nov 2026: cards no longer stick under the newest message). A tap opens the task's
+    /// result; nothing is added to the saved thread and nothing is sent.
+    private func taskCard(_ errand: StoredErrand) -> some View {
+        Button { openedTask = OpenedTask(id: errand.id) } label: {
+            HStack(spacing: 12) {
+                Image(systemName: errand.state == .done ? "checkmark.circle" : "exclamationmark.circle")
+                    .font(.title3)
+                    .foregroundStyle(errand.state == .done ? Theme.accentText : Theme.error)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(verbatim: errand.title)
+                        .font(.body.bold())
+                        .multilineTextAlignment(.leading)
+                    if errand.state == .done { Text("See what Doddy found.") } else { Text("Couldn't finish. See why.") }
                 }
+                .font(.footnote)
+                .foregroundStyle(Theme.ink)
+                Spacer(minLength: 0)
             }
-            .padding(.top, 14)
-            .padding(.trailing, 40)
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("messages.taskResult")
+        .padding(.top, 8)
+        .padding(.trailing, 40)
     }
 
-    /// Calls Doddy made for the person this week (ADR-730): "Doddy called Anna", and a tap opens that call's page in
-    /// Settings, where the recap is (and, for the owner's account only, the words). Read from this iPhone's own copy;
-    /// nothing is added to the saved thread, so nothing about a call is copied to Doddy Web or sent to the model.
-    @ViewBuilder
-    private var callResults: some View {
-        let shown = ThreadCallResults.shown(calls, now: Date())
-        if !shown.isEmpty {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Calls Doddy made")
-                    .font(.footnote)
-                    .foregroundStyle(Theme.secondaryText)
-                    .accessibilityAddTraits(.isHeader)
-                ForEach(shown) { record in
-                    Button { openedCall = OpenedCall(id: record.id) } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: "phone.fill")
-                                .font(.title3)
-                                .foregroundStyle(Theme.accentText)
-                                .accessibilityHidden(true)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(verbatim: String(format: NSLocalizedString("Doddy called %@.", comment: "Messages: a call Doddy made; the name of the person he called"), record.brief.calleeName))
-                                    .font(.body.bold())
-                                    .multilineTextAlignment(.leading)
-                                Text("See the recap.")
-                            }
-                            .font(.footnote)
-                            .foregroundStyle(Theme.ink)
-                            Spacer(minLength: 0)
-                        }
-                        .padding(12)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityElement(children: .combine)
-                    .accessibilityIdentifier("messages.callResult")
+    /// A call Doddy made for the person this week (ADR-730), at the time its answer came: "Doddy called Anna" when
+    /// someone talked to him, "Doddy couldn't reach Anna" when nobody did (owner, 25 Nov 2026: missed calls looked
+    /// like finished ones and stuck to the bottom). A tap opens that call's page in Settings, where the recap is. Read
+    /// from this iPhone's own copy; nothing is added to the saved thread, copied to Doddy Web or sent to the model.
+    private func callCard(_ record: StoredCallCase) -> some View {
+        let reached = ThreadCallResults.reach(of: record) == .talked
+        return Button { openedCall = OpenedCall(id: record.id) } label: {
+            HStack(spacing: 12) {
+                Image(systemName: reached ? "phone.fill" : "phone.down.fill")
+                    .font(.title3)
+                    .foregroundStyle(reached ? Theme.accentText : Theme.secondaryText)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(verbatim: reached
+                         ? String(format: NSLocalizedString("Doddy called %@.", comment: "Messages: a call Doddy made; the name of the person he called"), record.brief.calleeName)
+                         : String(format: NSLocalizedString("Doddy couldn't reach %@.", comment: "Messages: a call nobody answered; the name of the person or place"), record.brief.calleeName))
+                        .font(.body.bold())
+                        .multilineTextAlignment(.leading)
+                    if reached { Text("See the recap.") } else { Text("See what happened.") }
                 }
+                .font(.footnote)
+                .foregroundStyle(Theme.ink)
+                Spacer(minLength: 0)
             }
-            .padding(.top, 14)
-            .padding(.trailing, 40)
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.quietSurface, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("messages.callResult")
+        .padding(.top, 8)
+        .padding(.trailing, 40)
     }
 
     /// The server's ready files that are not already bubbles above (the person's own list, read with their session).
@@ -423,7 +406,10 @@ struct MessagesView: View {
 
     /// The thread with the files Doddy made that have no bubble of their own, each at the time it was made.
     private var timeline: [ThreadTimeline.Item] {
-        ThreadTimeline.items(messages: model.messages, local: localFiles, server: madeDocuments + makingDocuments)
+        ThreadTimeline.items(
+            messages: model.messages, local: localFiles, server: madeDocuments + makingDocuments,
+            tasks: ThreadTaskResults.shown(ErrandsModel.shared.errands, now: Date(), thread: model.messages),
+            calls: ThreadCallResults.shown(calls, now: Date()))
     }
 
     /// A file made on this iPhone in a voice conversation (kept a week). A tap opens it in Quick Look, whose Share
@@ -1287,7 +1273,7 @@ struct LocalMadeFileRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(verbatim: file.title)
                     .lineLimit(2)
-                Text(String(format: NSLocalizedString("%@ · kept on this iPhone for a week", comment: "Messages: a file Doddy made on this iPhone; the first value is its kind, for example Deck"), file.label))
+                Text(String(format: NSLocalizedString("%@ · kept on this iPhone for 30 days", comment: "Messages: a file Doddy made on this iPhone; the first value is its kind, for example Deck"), file.label))
                     .font(.footnote)
                     .foregroundStyle(Theme.secondaryText)
             }

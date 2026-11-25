@@ -8,7 +8,7 @@ import XCTest
 final class AtOnceOwnChangesTests: XCTestCase {
     private let atOnce: Set<String> = [
         "save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app", "lost_wallet",
-        "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation", "set_timer", "set_alarm",
+        "draft_message", "call_contact", "draft_blik_transfer", "draft_invoice", "make_presentation", "set_timer", "set_alarm",
     ]
     private let waitingForUndo: Set<String> = [
         "create_list", "remind_me_about_note", "remind_when_to_leave", "parking_spot",
@@ -29,6 +29,7 @@ final class AtOnceOwnChangesTests: XCTestCase {
          ("draft_message", request("draft_message", #"{"to":"Marta","body":"Będę o 18"}"#)),
          ("draft_blik_transfer", request("draft_blik_transfer", #"{"to":"Marta","amount":50}"#)),
          ("draft_invoice", request("draft_invoice", #"{"start_new":true}"#)),
+         ("call_contact", request("call_contact", #"{"name":"Marek"}"#)),
          ("make_presentation", request("make_presentation", #"{"title":"Plan","slides":[{"title":"Jeden","bullets":["a"]}]}"#)),
          ("set_timer", request("set_timer", #"{"minutes":5,"label":"Makaron"}"#)),
          ("set_alarm", .setAlarm(AlarmDraft(
@@ -54,24 +55,40 @@ final class AtOnceOwnChangesTests: XCTestCase {
         }
     }
 
-    func testAfterTextFromOutsideTheirOwnCardComesBackByTheirTierNotAnAskFirstCard() {
-        // Owner, 15 Nov 2026, option 2: after outside text none of them runs at once. AskFirst adds no card of its own
-        // for them; the voice controller keeps the tool's own payload card by its tier, and Doddy asks once.
+    func testAfterTextFromOutsideTheyStillRunAtOnce() {
+        // Owner, 25 Nov 2026 (decision 2026-11-25-doddy-acts-without-asking), replacing option 2 of 15 Nov: an email or a
+        // page read in the conversation no longer brings their card back. The text stays data, never an instruction.
         var afterEmail = OutsideContentSession()
         afterEmail.noteRun(of: "read_email")
         for (name, request) in requests {
             XCTAssertEqual(AskFirst.need(for: request, in: afterEmail), .runsNow, name)
-            let tier = ConfirmationTiers.tier(for: request, toolName: name, outsideContentSeen: true)
-            XCTAssertTrue(tier.showsCard, "\(name): the card shows what will happen")
-            XCTAssertTrue(tier.acceptsSpokenYes, "\(name): the person's own yes or a tap runs it")
+            XCTAssertFalse(ConfirmationTiers.tier(for: request, toolName: name, outsideContentSeen: true).showsCard, name)
             XCTAssertFalse(ConfirmationTiers.tier(for: request, toolName: name).showsCard, "\(name): no card without outside text")
+        }
+    }
+
+    func testTheVoiceControllersNoCardRule() {
+        // Doddy's own changes and calls to the user's own phone run without their card; one that opens another app only
+        // while Doddy is on screen; a card that waits for a choice (several places, a call in quiet hours) always stays.
+        for name in AskFirst.ownChangesAtOnce.union(AskFirst.ownPhoneCallsAtOnce) {
+            let opens = AskFirst.opensSomethingElse.contains(name)
+            XCTAssertTrue(AskFirst.runsWithoutItsCard(name, appIsActive: true), name)
+            XCTAssertEqual(AskFirst.runsWithoutItsCard(name, appIsActive: false), !opens, name)
+            XCTAssertFalse(AskFirst.runsWithoutItsCard(name, appIsActive: true, waitsForAChoice: true), name)
+        }
+        for name in ["call_me_now", "call_me_later"] {
+            XCTAssertTrue(AskFirst.runsWithoutItsCard(name, appIsActive: false), "\(name): rings only the user's own phone")
+        }
+        for name in ["send_email", "call_places", "call_me_every_morning", "create_calendar_event", "hand_over_errand",
+                     "remove_from_list", "made_up_tool", ""] {
+            XCTAssertFalse(AskFirst.runsWithoutItsCard(name, appIsActive: true), name)
         }
     }
 
     func testTheFourThatOpenAnotherAppOrTheCameraAreNamedForTheOnScreenRule() {
         // The app runs these at once only while Doddy is on screen: iOS opens nothing from the background, and
         // "opened" must never be said of something that didn't open. Otherwise their card stays.
-        XCTAssertEqual(AskFirst.opensSomethingElse, ["open_map", "open_camera", "draft_message", "open_food_app"])
+        XCTAssertEqual(AskFirst.opensSomethingElse, ["open_map", "open_camera", "draft_message", "open_food_app", "call_contact"])
         XCTAssertTrue(AskFirst.opensSomethingElse.isSubset(of: AskFirst.ownChangesAtOnce))
     }
 
