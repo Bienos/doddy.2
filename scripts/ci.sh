@@ -8,6 +8,8 @@
 #                              the iOS app build and tests are reported NOT RUN (exit 0
 #                              only if everything that was requested passed)
 #   scripts/ci.sh --app-only   Swift package and iOS build/unit/UI tests; Linux checks SKIPPED (ADR-680)
+#                              DODDY_MAC_TESTS=none builds the app and its test targets and runs no test
+#                              (hosted pull requests since 25 Nov 2026; the nightly run runs them all)
 #                              DODDY_SKIP_PACKAGE_TESTS=1 leaves out the Swift package tests (hosted pull
 #                              requests: the Linux swift job runs them); DODDY_RELEASE_BUILD=only builds
 #                              only Release for a device, no simulator (the ios-release job)
@@ -246,7 +248,6 @@ run_step "Web app tokens and brand files match the app (ADR-600)" python3 -I too
 run_step "Site colour tokens match the app" python3 -I tools/gen_site_tokens.py --check
 run_step "One scripts/regen.sh run brings every generated file up to date" scripts/test_regen.sh
 run_step "Which pull requests need the macOS build (ADR-497)" scripts/test_ci_needs_mac.sh
-run_step "Which pushes to main need the macOS build (decision 2026-11-15-faster-mac-ci)" scripts/test_ci_push_changed_files.sh
 run_step "UI tests wait without XCTest's one-second first look (decision 2026-11-15-faster-mac-ci)" scripts/check_ui_test_waits.sh
 run_step "UI-test wait check (tests)" scripts/test_check_ui_test_waits.sh
 run_step "UI tests that failed only because the app would not start are named for one more run (2026-11-13)" scripts/test_ci_launch_failures.sh
@@ -258,6 +259,7 @@ run_step "Render install-script check (tests)" scripts/test_check_render_install
 run_step "No download is piped into a shell" python3 -I scripts/check_no_pipe_to_shell.py
 run_step "No-download-into-a-shell check (tests)" scripts/test_check_no_pipe_to_shell.sh
 run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci_groups.sh
+run_step "The hosted backend job runs every share of the backend's test files (25 Nov 2026)" scripts/test_ci_backend_shards.sh
 run_step "Ubuntu CI dependency mirror fallback" scripts/test_ci_install_ubuntu_packages.sh
 run_step "Which pull requests need the owner's label (ADR-811)" scripts/test_check_sensitive_paths.sh
 run_step "Vercel builds a project whenever it can't tell nothing changed (9 Nov 2026)" scripts/test_vercel_ignore_command.sh
@@ -319,7 +321,19 @@ elif command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
   node --version
   if [ ! -d backend/node_modules ]; then run_step "Backend install (npm ci)" npm ci --prefix backend; fi
   run_step "Backend type-check" npm run --prefix backend typecheck
-  run_step "Backend tests (offline, mock + fake Composio)" npm test --prefix backend
+  # DODDY_BACKEND_TEST_SHARD=i/n (hosted CI, 25 Nov 2026): only the i-th of n shares of the test files,
+  # which Node's own --test-shard picks; the hosted `backend` job runs every share side by side. The
+  # whole suite was 868 s of tests in 303 s on one runner (run 44473265852). Unset: every test, as before.
+  # scripts/test_ci_backend_shards.sh checks that the workflow runs every share.
+  backend_shard=${DODDY_BACKEND_TEST_SHARD:-}
+  if [ -z "$backend_shard" ]; then
+    run_step "Backend tests (offline, mock + fake Composio)" npm test --prefix backend
+  elif [[ "$backend_shard" =~ ^[1-9]/[1-9]$ ]] && [ "${backend_shard%/*}" -le "${backend_shard#*/}" ]; then
+    run_step "Backend tests, share $backend_shard of the test files (offline, mock + fake Composio)" \
+      env NODE_OPTIONS="${NODE_OPTIONS:+$NODE_OPTIONS }--test-shard=$backend_shard" npm test --prefix backend
+  else
+    not_run "Backend tests (offline, mock + fake Composio)" "DODDY_BACKEND_TEST_SHARD must be i/n with i no more than n, not '$backend_shard'"
+  fi
 else
   not_run "Backend type-check + tests" "node/npm not found on PATH"
 fi
@@ -432,6 +446,14 @@ else
     # error instead of stopping at the first target that fails (owner request, 2026-10-12).
     if [ "$release_only" -eq 1 ]; then
       record "xcodebuild build-for-testing, unit and UI tests" "SKIPPED" "DODDY_RELEASE_BUILD=only: the ios-build job runs them"
+    elif [ "${DODDY_MAC_TESTS:-all}" = "none" ]; then
+      # Hosted pull requests (decision 2026-11-25-minimum-checks): compile the app, its extensions and both
+      # test targets, run nothing. On run 44473265852 the tests were 20 of the Mac job's 26 minutes, and in
+      # the 150 runs before 25 Nov no unit or UI test failure was traced to a fault in the app. The nightly
+      # run and runs by hand still run every test. No simulator is booted.
+      run_step "xcodebuild build-for-testing" xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy \
+        -destination "$dest" -IDEBuildingContinueBuildingAfterErrors=YES
+      record "xcodebuild test: unit and UI tests" "SKIPPED" "DODDY_MAC_TESTS=none (pull requests): built, not run; the nightly run and runs by hand run them"
     elif run_step "xcodebuild build-for-testing" xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy \
       -destination "$dest" -IDEBuildingContinueBuildingAfterErrors=YES; then
       # A per-test time limit (ADR-680): a test that hangs fails after 10 minutes instead of using

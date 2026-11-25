@@ -16,11 +16,14 @@ expect() {  # expected "swift backend node messaging" as t/f letters, descriptio
 expect "t f f f" "recall benchmark fixtures" docs/quality/evals/recall_golden_v1.json
 expect "f f f f" "decision notes need no heavy group" docs/decisions/2026-11-18-example.md
 expect "t f f f" "test-backed docs still run Swift" docs/architecture/DEVICE_DATA_STORES.md
-expect "t f f f" "docs include runtime test fixtures" docs/a.md STATUS.md DECISIONS.md prompts/x.md
+expect "f f f f" "prose docs need no heavy group" docs/a.md STATUS.md DECISIONS.md prompts/x.md
+expect "t f f f" "the constitution's rules file, which Swift tests read" docs/trust/config/doddy_rules.yaml
+expect "t f f f" "the translator review, which a Swift test reads" docs/implementation/TRANSLATOR_LANGUAGE_REVIEW.md
 expect "f f f f" "agent notes inside code folders" DoddyApp/CLAUDE.md backend/AGENTS.md
 expect "f f f f" "per-pull-request change notes" changes/ui-smoke.md changes/README.md
 expect "f f f f" "paused Watch and Mac apps" DoddyWatch/A.swift DoddyMac/B.swift project-mac.yml
-expect "t f f f" "design includes motion test fixtures" design/a.svg l10n/pl.json blog/p.md
+expect "f f f f" "design sources need no heavy group" design/a.svg l10n/pl.json blog/p.md
+expect "t f f f" "motion telemetry fixtures, which Swift tests read" design/motion-v2/telemetry/a.json
 expect "t f f f" "app source" DoddyApp/Features/Voice/VoiceView.swift
 expect "t f f f" "the shared package" Packages/DoddyCore/Sources/DoddyCore/A.swift
 expect "t t t f" "backend source (Swift tool-catalog and Node secrets checks read it too)" backend/src/a.ts
@@ -40,7 +43,7 @@ expect "t t t t" "a top-level file nobody listed" Makefile
 expect "t t t t" "one unknown path among many docs" docs/a.md STATUS.md weird/x.bin
 expect "t t t t" "a server folder nobody listed" server/other/a.ts
 expect "t t t t" "no files listed at all"
-expect "t f f f" "blank lines are ignored" "" docs/a.md ""
+expect "f f f f" "blank lines are ignored" "" docs/a.md ""
 
 if [ "$failures" -ne 0 ]; then echo "$failures case(s) failed"; exit 1; fi
 echo "all cases pass"

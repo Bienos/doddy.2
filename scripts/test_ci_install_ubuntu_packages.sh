@@ -41,8 +41,9 @@ for arg in "$@"; do
 done
 case "$BOOTSTRAP_CASE:$fallback:$operation" in
   success:*) exit 0 ;;
-  dns:false:*|install:false:install|both:*|fallback-install:true:install) exit 100 ;;
-  fallback-install:false:*) exit 100 ;;
+  # `fallback` here means the call names the HTTPS mirror's own source list (tried first).
+  mirror-update:true:update|mirror-install:true:install|both:*) exit 100 ;;
+  default-install:true:*|default-install:false:install) exit 100 ;;
   *) exit 0 ;;
 esac
 MOCK
@@ -70,9 +71,9 @@ run_case() {
 }
 run_case installed 0 0
 run_case partial 0 2
+# The HTTPS mirror is tried first: its update and install are the only two calls when it works.
 run_case success 0 2
-[ ! -e "$BOOTSTRAP_SOURCES" ]
-run_case dns 0 3
+[ "$(grep -c 'Dir::Etc::sourcelist=' "$BOOTSTRAP_LOG")" -eq 2 ]
 [ "$(wc -l < "$BOOTSTRAP_SOURCES" | tr -d ' ')" -eq 4 ]
 for suite in noble noble-updates noble-security noble-backports; do
   grep -qx "deb \[signed-by=/usr/share/keyrings/ubuntu-archive-keyring.gpg\] https://mirrors.edge.kernel.org/ubuntu $suite main restricted universe multiverse" "$BOOTSTRAP_SOURCES"
@@ -80,9 +81,15 @@ done
 ! grep -E 'trusted=yes|allow-unauthenticated|AllowInsecure|Verify-Peer=false' "$BOOTSTRAP_LOG" "$BOOTSTRAP_SOURCES"
 grep -q 'Dir::Etc::sourceparts=-' "$BOOTSTRAP_LOG"
 grep -q 'Dir::State::lists=' "$BOOTSTRAP_LOG"
-run_case install 0 4
+# The mirror's update fails: the image's own sources update and install (no mirror list on those calls).
+run_case mirror-update 0 3
+[ "$(grep -c 'Dir::Etc::sourcelist=' "$BOOTSTRAP_LOG")" -eq 1 ]
+[ "$(tail -n 2 "$BOOTSTRAP_LOG" | grep -c 'Dir::Etc::sourcelist=')" -eq 0 ]
+# The mirror's install fails after its update worked: the image's own sources do both again.
+run_case mirror-install 0 4
+[ "$(tail -n 2 "$BOOTSTRAP_LOG" | grep -c 'Dir::Etc::sourcelist=')" -eq 0 ]
 run_case both 100 2
-run_case fallback-install 100 3
+run_case default-install 100 3
 # Neither empty input nor an option masquerading as a package may invoke apt.
 invalid_input() {
   : > "$BOOTSTRAP_LOG"

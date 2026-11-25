@@ -1,25 +1,29 @@
 #!/usr/bin/env bash
-# Tests for scripts/check_sensitive_paths.sh (ADR-811): which pull requests need the owner's label.
-# The costly mistake is letting a signing, deploy, secret, agent-spec or migration change through
-# unlabelled, so most cases are those; the rest keep ordinary work label-free.
+# Tests for scripts/check_sensitive_paths.sh (ADR-811): which files a pull request lists as sensitive.
+# Since 25 Nov 2026 (decision 2026-11-25-minimum-checks) the script never fails; `1` below means
+# "listed as sensitive", `0` "not listed", and every case also checks that it exited 0.
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
 failures=0
-expect() {  # expected exit (0|1), approved (true|false), description, changed paths...
+expect() {  # expected (1 listed | 0 not listed), approved (ignored since 25 Nov), description, changed paths...
   local want=$1 approved=$2 what=$3; shift 3
-  local got
-  printf '%s\n' "$@" | OWNER_APPROVED=$approved GITHUB_ACTIONS= scripts/check_sensitive_paths.sh >/dev/null 2>&1
-  got=$?
-  if [ "$got" = "$want" ]; then
-    echo "ok    exit=$want  approved=$approved  $what"
+  local out rc got=0
+  out=$(printf '%s\n' "$@" | OWNER_APPROVED=$approved GITHUB_ACTIONS= scripts/check_sensitive_paths.sh 2>&1)
+  rc=$?
+  if grep -q '^Sensitive paths in this change:' <<<"$out"; then got=1; fi
+  if [ "$rc" -ne 0 ]; then
+    echo "FAIL  exited $rc, it must never fail: $what"
+    failures=$((failures + 1))
+  elif [ "$got" = "$want" ]; then
+    echo "ok    listed=$want  $what"
   else
-    echo "FAIL  wanted exit $want, got $got (approved=$approved): $what"
+    echo "FAIL  wanted listed=$want, got $got: $what"
     failures=$((failures + 1))
   fi
 }
 
-# Sensitive, no label: fails.
+# Sensitive: listed.
 expect 1 false "app entitlements" Config/Doddy-Push-AppGroup.entitlements
 expect 1 false "an entitlements file anywhere" DoddyApp/Doddy.entitlements
 expect 1 false "the app's Info.plist" Config/Doddy-Info.plist
@@ -68,11 +72,11 @@ expect 1 false "code owners" .github/CODEOWNERS
 expect 1 false "one sensitive file among ordinary ones" DoddyApp/Features/Home/HomeView.swift Config/Doddy-Info.plist docs/a.md
 expect 1 false "a renamed entitlements file (both paths are listed)" Config/Old.entitlements Config/New.entitlements
 
-# Sensitive, with the label: passes.
-expect 0 true "entitlements, approved" Config/Doddy-AppGroup.entitlements
-expect 0 true "many sensitive files, approved" project.yml render.yaml voice-agent/tools.json .github/workflows/ios.yml
+# Sensitive with the old label: still only listed.
+expect 1 true "entitlements, labelled" Config/Doddy-AppGroup.entitlements
+expect 1 true "many sensitive files, labelled" project.yml render.yaml voice-agent/tools.json .github/workflows/ios.yml
 
-# Ordinary work: passes with or without the label.
+# Ordinary work: not listed.
 expect 0 false "app source" DoddyApp/Features/Voice/VoiceView.swift
 expect 0 false "package source other than migrations" Packages/DoddyCore/Sources/DoddyCore/VoiceTools.swift
 expect 0 false "persistence code that isn't the migrations" Packages/DoddyCore/Sources/DoddyPersistence/SQLiteMemoryRepository.swift

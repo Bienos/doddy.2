@@ -1,24 +1,14 @@
 #!/usr/bin/env bash
-# Does a pull request change something only the owner should approve (ADR-811)?
+# Which files in a pull request change how Doddy is signed, configured, deployed or governed (ADR-811)?
 #
-# Reads the changed paths on stdin, one per line (the same list ci_needs_mac.sh reads). Lists every
-# path that changes how Doddy is signed, configured, deployed or governed, with the reason. Exits 1
-# when there is one and OWNER_APPROVED isn't `true` (the workflow sets it from the pull request's
-# `owner-approved` label), otherwise 0.
-#
-# This is a speed bump, not a lock: anyone who can label pull requests can add the label. It makes
-# such a change visible and deliberate. An agent adds the label to its own pull request once the
-# description says why each listed file changes (AGENTS.md, "Merging (owner, 8 Nov 2026)"); the
-# owner can add it too.
+# Reads the changed paths on stdin, one per line (the same list ci_needs_mac.sh reads), and lists every
+# such path with the reason. Since 25 Nov 2026 it never fails (decision 2026-11-25-minimum-checks): the
+# owner asked for the least process between a push and a merge, so the `owner-approved` label is no
+# longer needed and the `sensitive-paths` check is a list to read, not a gate. The check keeps its name
+# because the `main` ruleset requires it; removing the job would leave every pull request waiting.
 #
 # The workflow (.github/workflows/pr-guard.yml) runs this script from the default branch, never from
-# the pull request, so an edit to this list takes effect from the pull request after the one that
-# merges it. .github/CODEOWNERS names the owner for the same paths: keep the two in step.
-#
-# Keep the list short. A label asked for on every pull request gets added without reading.
-# docs/decisions/ is left out on purpose: more than half of all pull requests add a decision file
-# (68 of the latest 120 commits on main, 13 Nov 2026), and a decision that changes agent rules also changes
-# AGENTS.md, CLAUDE.md or docs/trust/, which are listed.
+# the pull request. .github/CODEOWNERS names the owner for the same paths: keep the two in step.
 set -euo pipefail
 
 # Prints why a path is sensitive, or nothing.
@@ -67,16 +57,8 @@ while IFS= read -r path || [ -n "$path" ]; do
 done
 
 if [ "$found" -eq 0 ]; then
-  echo "No sensitive paths: no owner label needed."
-  exit 0
+  echo "No sensitive paths."
+else
+  echo "$found sensitive path(s): say in the pull request why each changes. This check does not block."
 fi
-if [ "${OWNER_APPROVED:-false}" = "true" ]; then
-  echo "$found sensitive path(s), and the pull request has the owner-approved label: OK."
-  exit 0
-fi
-echo "$found sensitive path(s) and no owner-approved label. The owner reviews these files and adds the" \
-  "label to the pull request; this check then runs again by itself." >&2
-if [ -n "${GITHUB_ACTIONS:-}" ]; then
-  echo "::error title=Owner approval needed::$found sensitive path(s) changed; add the owner-approved label after review."
-fi
-exit 1
+exit 0

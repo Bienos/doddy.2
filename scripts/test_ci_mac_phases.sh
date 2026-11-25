@@ -117,5 +117,14 @@ not_called "swift test is not run" "swift test"
 has "the summary says why" "SKIPPED  Swift package tests (DoddyCore) (DODDY_SKIP_PACKAGE_TESTS=1: the Linux swift job runs them; pushes to main run them here too)"
 called "the app is still built" "xcodebuild build-for-testing"
 
+# Hosted pull requests since 25 Nov 2026 (decision 2026-11-25-minimum-checks): build the app and both test
+# targets, run no test, boot no simulator.
+run_ci "DODDY_MAC_TESTS=none: build only" 0 "--only ios" DODDY_MAC_TESTS=none
+called "the app and its test targets are built" "xcodebuild build-for-testing"
+not_called "no test is run" "test-without-building"
+not_called "no simulator is booted" "simctl bootstatus"
+has "the summary says the tests were built, not run" "SKIPPED  xcodebuild test: unit and UI tests (DODDY_MAC_TESTS=none (pull requests): built, not run"
+has "the build is in the summary" "PASS     xcodebuild build-for-testing"
+
 if [ "$failures" -ne 0 ]; then echo "$failures check(s) failed"; exit 1; fi
 echo "all Mac phase cases passed"

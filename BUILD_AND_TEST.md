@@ -157,12 +157,14 @@ file downloads something and hands it straight to a shell (`scripts/check_no_pip
 check its SHA-256, then run it, as `scripts/install_xcodegen.sh` does. `web/` tests run on Vitest 4.1.12.
 
 The Ubuntu 24.04 checks/Swift/Node/messaging jobs install the same dependency packages through
-`scripts/ci_install_ubuntu_packages.sh`. If the default apt sources fail, it retries
-with isolated package lists from the HTTPS kernel.org Ubuntu mirror, authenticated
-by the runner's existing Ubuntu archive keyring. Release, updates, security and
-backports stay on Noble; signature/TLS checks and all test commands stay enabled.
-Both attempts are bounded and a failed fallback fails the job. The checks group
-tests primary success, download/install failures, fallback failure and cleanup.
+`scripts/ci_install_ubuntu_packages.sh`. It tries the HTTPS kernel.org Ubuntu mirror first, with
+isolated package lists and authenticated by the runner's existing Ubuntu archive keyring; if that
+fails, it falls back to the image's own apt sources (the order was the other way round until
+25 Nov 2026, when the plain-http sources had stalled for 60 to 121 s in three jobs of one run
+before the mirror worked). Release, updates, security and backports stay on Noble; signature/TLS
+checks and all test commands stay enabled. Both attempts are bounded and a failed fallback fails
+the job. The checks group tests mirror success, mirror update/install failures, fallback failure
+and cleanup.
 When the runner image already has every requested package installed, setup skips the mirror entirely.
 
 **Hosted CI (`.github/workflows/ios.yml`, ADR-123, ADR-137, ADR-497, ADR-684)** runs these jobs side by side:
@@ -172,7 +174,10 @@ When the runner image already has every requested package installed, setup skips
   groups it needs. Known Ubuntu-only CI helpers and workflows skip the Mac jobs. Shared entry points such as
   `ios.yml` and `ci.sh` still run them. An unlisted path, or no list, runs everything.
 - Linux groups, each `scripts/ci.sh --only <group>`: `checks` (Python generators, guards, specs; always),
-  `swift` (package tests, app-logic type-check, model tests; SwiftPM `.build` cached), `backend`, `node`
+  `swift` (package tests, app-logic type-check, model tests; SwiftPM `.build` restored on every run and
+  saved only by pushes to `main` and the nightly run), `backend` (three jobs, each with the type-check and
+  one third of the test files: `DODDY_BACKEND_TEST_SHARD=i/3`, Node's `--test-shard`;
+  `scripts/test_ci_backend_shards.sh` in the checks group fails if a share is missing), `node`
   (gateway, web, site, voice token, secrets tool) and `messaging` (with Postgres). npm downloads are cached.
 - `core`: one result for all the Linux groups, green when every group that ran passed (a skipped group is fine).
 - `ios-build` (macOS; named `ci` until ADR-811; runner image `macos-26` and Xcode 26.6 pinned):
@@ -185,22 +190,23 @@ When the runner image already has every requested package installed, setup skips
   simulator sometimes freezes during it: ADR-764). A UI test that failed only because the app would not start
   ("Failed to launch", "Failed to get launch progress") is run once more on a restarted simulator; any other
   failure fails the step as before (`scripts/ci_launch_failures.sh`, decision `2026-11-13-ui-launch-retry`).
+  On a pull request (decision `2026-11-25-minimum-checks`) the job only builds: `DODDY_MAC_TESTS=none` compiles
+  the app, its extensions and both test targets, runs no test and boots no simulator. The nightly run, a run by
+  hand and a pull request labelled `full-ui-tests` run every unit and UI test as above. The `.xcresult` is kept
+  as an artifact only when the job failed or was cancelled, and on nightly and by-hand runs.
   It no longer
   waits for `core`, and no longer repeats the Node suites. Run the workflow by hand (Actions → iOS build and
   tests → Run workflow) and it always runs.
-- Pushes to `main` (ADR-811) run every Linux group, each commit in its own run that nothing cancels; the Mac
-  jobs run when the push changed a file that can reach the app (`scripts/ci_push_changed_files.sh` lists the
-  push's files for `scripts/ci_needs_mac.sh`; decision `2026-11-15-faster-mac-ci`), so a skipped `ios-build`
-  on `main` means "not needed", never "passed". Pull requests keep the path selection above, and a newer push
-  to a pull request cancels its older run.
+- A push to `main` runs nothing (since 25 Nov 2026, decision `2026-11-25-minimum-checks`): a squash merge is
+  the code its pull request just checked, Xcode Cloud builds `main` for TestFlight, and the nightly run (02:17
+  UTC) runs every group and every test on `main`. A newer push to a pull request cancels its older run.
 - UI tests wait with `appears(timeout:)` and `pollUntil` (`DoddyUITests/UITestLaunch.swift`), never XCTest's
   `waitForExistence(timeout:)`, whose first look comes only after about a second even when the element is there
   (`scripts/check_ui_test_waits.sh`, in `checks`; decision `2026-11-15-faster-mac-ci`).
-- UI tests on pull requests are the smoke classes only (`DODDY_UI_TESTS=smoke`: `LaunchSmokeTests`,
-  `WelcomeUITests`, `LegalAcceptanceUITests`, `PolishSmokeTests`, about 8 of the suite's 27 minutes on
-  7 Nov 2026), and so are pushes to `main`; the nightly run (02:17 UTC), runs by hand and pull requests
-  labelled `full-ui-tests` run every UI test and the native island test (decision
-  `2026-11-18-nightly-full-ui-and-release`). Locally `scripts/ci.sh` runs them all unless you set the variable.
+- UI tests run in the nightly run, in runs by hand and on pull requests labelled `full-ui-tests`: every UI test
+  and the native island test (decision `2026-11-18-nightly-full-ui-and-release`). `DODDY_UI_TESTS=smoke`
+  (`LaunchSmokeTests`, `WelcomeUITests`, `LegalAcceptanceUITests`, `PolishSmokeTests`) is still there for a run by
+  hand or a local one. Locally `scripts/ci.sh` runs them all unless you set a variable.
 - Package versions: the app's two outside packages are exact in `project.yml` (ElevenLabs 3.3.1, LiveKit
   2.19.0), and `Config/Package.resolved` (committed, #236) locks every package they pull in too. `make project`,
   `scripts/ci.sh` and Xcode Cloud's `ci_post_clone.sh` copy it into the generated project, CI fails when resolution
@@ -223,14 +229,12 @@ When the runner image already has every requested package installed, setup skips
   (`DODDY_RELEASE_BUILD=only scripts/ci.sh --app-only`: no simulator, no tests), beside `ios-build` instead of
   its last 18 minutes; it is not a required check. `DODDY_RELEASE_BUILD=1` still adds the Release build after
   the tests in a local run (decision `2026-11-15-faster-mac-ci`).
-- `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): fails when a pull request changes how Doddy
-  is signed, configured, deployed or governed (`scripts/check_sensitive_paths.sh` lists the paths: also
-  dependency manifests and lockfiles, CI scripts and the `Makefile`, agent settings, skills and prompts,
-  nested `CLAUDE.md`/`AGENTS.md`, `site/api/`, `server/voice-token/` and `.env.op` files) and doesn't carry
-  the `owner-approved` label. Adding the label reruns it. The guard script runs from the default branch,
-  never from the pull request, so a change to the list applies from the next pull request after it merges;
-  the job has a read-only token and no secrets, and only fetches the pull request's merge commit to list its
-  files. `.github/CODEOWNERS` names the owner for the same paths. To try the list locally:
+- `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): lists the files of a pull request that change how
+  Doddy is signed, configured, deployed or governed (`scripts/check_sensitive_paths.sh` has the list). Since
+  25 Nov 2026 it never fails and no label is needed (decision `2026-11-25-minimum-checks`); it keeps its name
+  because the `main` ruleset requires it. The script runs from the default branch, never from the pull request;
+  the job has a read-only token and no secrets. `.github/CODEOWNERS` names the owner for the same paths. To try
+  the list locally:
   `git diff --name-only origin/main... | scripts/check_sensitive_paths.sh`.
 - `Vercel blocked status` (`.github/workflows/vercel-blocked-status.yml`, decision
   `2026-11-09-vercel-blocked-status`): an old Vercel account still connected to the repository marks every push

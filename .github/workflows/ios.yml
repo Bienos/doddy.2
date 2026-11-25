@@ -16,13 +16,10 @@
 name: iOS build and tests
 
 on:
-  # The default branch, `main` (renamed from `claude/loving-dirac-uuxoux` on 7 Nov 2026), is what
-  # Render deploys and Xcode Cloud builds. Every push to it runs every Linux group (ADR-811), and the
-  # Mac build with the UI smoke tests whenever the push changed a file that can reach the app (decision
-  # 2026-11-15-faster-mac-ci; a skipped ios-build on `main` means "not needed for this push", never
-  # "passed"). The full UI suite and the Release compile run nightly and by hand.
-  push:
-    branches: [main]
+  # Pull requests: the Linux groups the change can reach, and a Mac build of the app with no tests
+  # (decision 2026-11-25-minimum-checks). A push to `main` runs nothing here since 25 Nov 2026: a squash
+  # merge is the code its pull request just checked, Xcode Cloud builds `main` for TestFlight, and the
+  # nightly run below runs every test on `main`.
   pull_request:
   # Nightly (decision 2026-11-18-nightly-full-ui-and-release): the whole UI suite, the native island
   # test and the Release compile for devices run here and by hand, no longer on every push to `main`.
@@ -38,12 +35,9 @@ on:
         default: all
 
 concurrency:
-  # Pull requests: a newer push to the branch cancels the older run. Pushes to `main` (ADR-811): the
-  # commit is in the group, so each one gets its own run that is never cancelled, and never replaced
-  # while it waits (GitHub drops a pending run when a newer one joins the same group). Before this, a
-  # docs merge right after an app merge cancelled the app merge's run (7 Nov 2026, run 42376928312).
-  # The quick island run (ADR-618) and the screens run (ADR-820) have their own groups, so they don't cancel a full run of the same branch.
-  group: ios-${{ github.event_name == 'push' && github.sha || github.ref }}-${{ inputs.only || 'all' }}
+  # Pull requests: a newer push to the branch cancels the older run. The quick island run (ADR-618) and
+  # the screens run (ADR-820) have their own groups, so they don't cancel a full run of the same branch.
+  group: ios-${{ github.ref }}-${{ inputs.only || 'all' }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
@@ -71,36 +65,21 @@ jobs:
         id: files
         env:
           EVENT: ${{ github.event_name }}
-          BEFORE: ${{ github.event.before }}
         run: |
-          # An empty list makes both scripts run everything: the safe answer. changed.txt is for the
-          # Linux groups, mac-changed.txt for the Mac jobs.
+          # An empty list makes both scripts run everything: the safe answer (nightly and by-hand runs).
           : > "$RUNNER_TEMP/changed.txt"
-          : > "$RUNNER_TEMP/mac-changed.txt"
-          if [ "$EVENT" = "push" ]; then
-            # A push to `main` runs every Linux group (ADR-811). Testing only what the push changed
-            # (ADR-675) left `main` green on a docs commit whose app or servers were never tested (7 Nov
-            # 2026, run 42379647254 after #195's messaging failure and #198's cancelled run); since then
-            # each push to main has its own run that nothing cancels.
-            echo "Push to main: every Linux group runs." >&2
-            # The Mac jobs read what the push changed, with the list pull requests use (decision
-            # 2026-11-15-faster-mac-ci): a push of documents, change notes or server code takes no Mac
-            # (on 15 Nov a docs-only merge took one for 75 minutes, run 43715540139). Its ios-build then
-            # shows as skipped, never as passed. Anything the script can't tell runs the Mac.
-            scripts/ci_push_changed_files.sh "$BEFORE" > "$RUNNER_TEMP/mac-changed.txt" || : > "$RUNNER_TEMP/mac-changed.txt"
-          elif [ "$EVENT" != "pull_request" ]; then
+          if [ "$EVENT" != "pull_request" ]; then
             echo "Run by hand or nightly: everything runs." >&2
           elif git rev-parse --verify -q 'HEAD^2' >/dev/null \
             && git diff --name-only --no-renames 'HEAD^1' HEAD > "$RUNNER_TEMP/changed.txt.new"; then
             mv "$RUNNER_TEMP/changed.txt.new" "$RUNNER_TEMP/changed.txt"
-            cp "$RUNNER_TEMP/changed.txt" "$RUNNER_TEMP/mac-changed.txt"
           else
             echo "Couldn't list what the pull request changes: everything runs." >&2
           fi
 
       - name: Does this change need the macOS build?
         id: decide
-        run: scripts/ci_needs_mac.sh < "$RUNNER_TEMP/mac-changed.txt" >> "$GITHUB_OUTPUT"
+        run: scripts/ci_needs_mac.sh < "$RUNNER_TEMP/changed.txt" >> "$GITHUB_OUTPUT"
 
       - name: Which Linux groups does this change need?
         id: groups
@@ -121,8 +100,8 @@ jobs:
     # The nightly run and a run by hand run the whole UI suite and the native island test: 70 to 75
     # minutes on 8 Nov 2026 with the Release build (runs 42408593703, 42481741193), against a limit of
     # 75; run 42479036099 was cancelled after 75 minutes. Since 15 Nov the Release build is the
-    # ios-release job, about 18 minutes less here. Pull requests and pushes to `main` run the smoke
-    # classes and took about 30 (15 Nov, run 43716467848).
+    # ios-release job, about 18 minutes less here. Pull requests only build since 25 Nov 2026: the
+    # build step took 5.8 of the 26 minutes of pull request run 44473265852 (not yet measured alone).
     timeout-minutes: 100
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -163,16 +142,16 @@ jobs:
 
       - name: scripts/ci.sh --app-only
         env:
-          # Pull requests and pushes to main run the UI smoke classes, about 8 of the suite's 27 minutes
-          # (ADR-811, decision 2026-11-18-nightly-full-ui-and-release); the nightly run and runs by hand
-          # run every UI test. A pull request labelled `full-ui-tests` runs them all too (the label is
-          # read when the run starts).
-          DODDY_UI_TESTS: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'full-ui-tests'))) && 'all' || 'smoke' }}
+          # Pull requests build the app and both test targets and run no test (DODDY_MAC_TESTS=none,
+          # decision 2026-11-25-minimum-checks); one labelled `full-ui-tests` (read when the run starts)
+          # runs every test. The nightly run and runs by hand run every unit and UI test.
+          DODDY_MAC_TESTS: ${{ (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'full-ui-tests')) && 'none' || 'all' }}
+          DODDY_UI_TESTS: all
           # The Release build for devices runs in its own job, ios-release, beside this one (decision
           # 2026-11-15-faster-mac-ci): it took 18.5 of this job's 70 minutes on 15 Nov 2026 (run 43715540139).
           DODDY_RELEASE_BUILD: "0"
           # Pull requests leave the Swift package tests to the Linux `swift` job, which runs them at the
-          # same time (about 3 minutes saved here); pushes to main and runs by hand still run them on
+          # same time (about 3 minutes saved here); the nightly run and runs by hand still run them on
           # Apple's Foundation (ADR-680).
           DODDY_SKIP_PACKAGE_TESTS: ${{ github.event_name == 'pull_request' && '1' || '0' }}
         run: scripts/ci.sh --app-only
@@ -195,8 +174,11 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+      # Kept when something went wrong (failure or cancel) and on the nightly and by-hand runs; a green
+      # pull request or push never reads it, and uploading it took about 24 s of the job's last minute
+      # (job 135387721323, 07:02:19 to 07:02:43).
       - name: Keep the test results
-        if: always()
+        if: failure() || cancelled() || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: xcode-test-results
@@ -281,7 +263,10 @@ jobs:
 
       # Cache SwiftPM's checkouts and build products (GRDB, swift-crypto and the rest compile once).
       # Our own sources get fresh timestamps on checkout and rebuild; the dependencies' don't.
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # Restored on every run, saved only by the nightly run and runs by hand (the save step after
+      # the tests): the key has the commit in it, so a pull request's save never matched again and cost
+      # about 55 s of every run (job 135387721209: 06:41:32 to 06:42:29 after 3 min 54 s of tests).
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: Packages/DoddyCore/.build
           key: swiftpm-6.1-${{ hashFiles('Packages/DoddyCore/Package.swift') }}-${{ github.sha }}
@@ -300,12 +285,30 @@ jobs:
       - name: scripts/ci.sh --only swift
         run: scripts/ci.sh --only swift
 
-  # The backend's type-check and tests: the longest Linux group (about 7 minutes), so it has a job to itself.
+      - name: Save SwiftPM's build products
+        if: success() && github.event_name != 'pull_request'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: Packages/DoddyCore/.build
+          key: swiftpm-6.1-${{ hashFiles('Packages/DoddyCore/Package.swift') }}-${{ github.sha }}
+
+  # The backend's type-check and tests. The longest Linux group (868 s of tests in 303 s on one runner,
+  # run 44473265852), so its test files run as three shares side by side (25 Nov 2026): each job runs
+  # the type-check and one third of the files. `core` needs all three; fail-fast is off so a red share
+  # never hides another's result. scripts/test_ci_backend_shards.sh (in `checks`) fails if a share is
+  # missing here.
   backend:
     needs: [changes]
     if: needs.changes.outputs.backend == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    name: backend (${{ matrix.shard }}/3)
+    env:
+      DODDY_BACKEND_TEST_SHARD: ${{ matrix.shard }}/3
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0

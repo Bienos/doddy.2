@@ -386,7 +386,9 @@ describe("Apple or Google in a small window (auth/popup.ts)", () => {
     fakeServer({ ...signedInRoutes });
     renderApp();
     expect(await screen.findByRole("heading", { name: "You're signed in." })).toBeInTheDocument();
-    expect(close).toHaveBeenCalled();
+    // The window closes itself in an effect after the heading is drawn; looking at once failed hosted
+    // runs #1656, #1728 and #1731 on unrelated changes (Nov 2026), so wait for it.
+    await waitFor(() => expect(close).toHaveBeenCalled());
     expect(screen.queryByRole("heading", { name: "I'm here." })).toBeNull();
   });
 
@@ -395,7 +397,7 @@ describe("Apple or Google in a small window (auth/popup.ts)", () => {
     const { seen } = fakeServer({ "GET /v1/web/session": signedOut, ...offered });
     renderApp("/sign-in?signin=new_account&provider=apple", "pl");
     expect(await screen.findByText(/Możesz zamknąć to okno\. Odpowiedź czeka/)).toBeInTheDocument();
-    expect(close).toHaveBeenCalled();
+    await waitFor(() => expect(close).toHaveBeenCalled()); // as above (hosted run #1714)
     expect(screen.queryByRole("button", { name: "Załóż moje konto Doddy" })).toBeNull();
     expect(seen.some((s) => s.path === "/v1/web/signup")).toBe(false);
   });
