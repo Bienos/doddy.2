@@ -27,6 +27,7 @@ no_mac() {  # 0 when the path can't affect the macOS job
     # and the Mac job selector itself on the conservative build path.
     scripts/ci_groups.sh | scripts/test_ci_groups.sh | scripts/test_screen_models.sh \
       | scripts/ci_install_ubuntu_packages.sh | scripts/test_ci_install_ubuntu_packages.sh \
+      | scripts/ci_content_mtimes.sh | scripts/test_ci_content_mtimes.sh | scripts/ci-python-requirements.txt \
       | .github/workflows/pr-guard.yml | .github/workflows/vercel-blocked-status.yml) return 0 ;;
     # Agent notes, excluded from every target's sources.
     */CLAUDE.md | */AGENTS.md) return 0 ;;

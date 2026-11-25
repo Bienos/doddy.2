@@ -261,6 +261,7 @@ run_step "No-download-into-a-shell check (tests)" scripts/test_check_no_pipe_to_
 run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci_groups.sh
 run_step "The hosted backend job runs every share of the backend's test files (25 Nov 2026)" scripts/test_ci_backend_shards.sh
 run_step "Ubuntu CI dependency mirror fallback" scripts/test_ci_install_ubuntu_packages.sh
+run_step "Swift CI files get times from their content, so the cached build stays valid (25 Nov 2026)" scripts/test_ci_content_mtimes.sh
 run_step "Which pull requests need the owner's label (ADR-811)" scripts/test_check_sensitive_paths.sh
 run_step "Vercel builds a project whenever it can't tell nothing changed (9 Nov 2026)" scripts/test_vercel_ignore_command.sh
 run_step "Which Vercel statuses are replaced on pull requests (decision 2026-11-09-vercel-blocked-status)" scripts/test_vercel_blocked_status.sh

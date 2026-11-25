@@ -156,8 +156,10 @@ while `web/`, whose build tool esbuild has an install script, installs as before
 file downloads something and hands it straight to a shell (`scripts/check_no_pipe_to_shell.py`): download to a file,
 check its SHA-256, then run it, as `scripts/install_xcodegen.sh` does. `web/` tests run on Vitest 4.1.12.
 
-The Ubuntu 24.04 checks/Swift/Node/messaging jobs install the same dependency packages through
-`scripts/ci_install_ubuntu_packages.sh`. It tries the HTTPS kernel.org Ubuntu mirror first, with
+The `checks` and `messaging` jobs install PyYAML, reportlab and matplotlib with pip from
+`scripts/ci-python-requirements.txt` (exact versions; Python 3.13 from `actions/setup-python`, pip cache on),
+not from apt (25 Nov 2026: the apt packages took 94-97 s a job). The Ubuntu 24.04 Swift and Node jobs
+install their few system packages through `scripts/ci_install_ubuntu_packages.sh`. It tries the HTTPS kernel.org Ubuntu mirror first, with
 isolated package lists and authenticated by the runner's existing Ubuntu archive keyring; if that
 fails, it falls back to the image's own apt sources (the order was the other way round until
 25 Nov 2026, when the plain-http sources had stalled for 60 to 121 s in three jobs of one run
@@ -174,8 +176,9 @@ When the runner image already has every requested package installed, setup skips
   groups it needs. Known Ubuntu-only CI helpers and workflows skip the Mac jobs. Shared entry points such as
   `ios.yml` and `ci.sh` still run them. An unlisted path, or no list, runs everything.
 - Linux groups, each `scripts/ci.sh --only <group>`: `checks` (Python generators, guards, specs; always),
-  `swift` (package tests, app-logic type-check, model tests; SwiftPM `.build` restored on every run and
-  saved only by pushes to `main` and the nightly run), `backend` (three jobs, each with the type-check and
+  `swift` (package tests, app-logic type-check, model tests; SwiftPM `.build` restored on every run, saved
+  by the nightly run and runs by hand, and by a pull request only when it found none; DoddyCore's files get
+  times from their content first, `scripts/ci_content_mtimes.sh`, so unchanged files don't recompile), `backend` (three jobs, each with the type-check and
   one third of the test files: `DODDY_BACKEND_TEST_SHARD=i/3`, Node's `--test-shard`;
   `scripts/test_ci_backend_shards.sh` in the checks group fails if a share is missing), `node`
   (gateway, web, site, voice token, secrets tool) and `messaging` (with Postgres). npm downloads are cached.
