@@ -194,7 +194,12 @@ export const twilioVoiceRoutes = (deps: Deps): FastifyPluginAsync => async (app)
     const { rows: [row] } = await db.query<{ account_id: string; e164: string }>(
       `UPDATE calls c SET status = 'answered', call_sid = $2
        FROM phone_numbers p, call_settings s
-       WHERE c.id = $1 AND c.direction = 'outbound' AND c.status IN ('requested', 'ringing')
+       WHERE c.id = $1 AND c.direction = 'outbound'
+         AND (c.status IN ('requested', 'ringing')
+           -- Twilio's "in-progress" callback can beat this request by milliseconds; the same call may
+           -- still open its session once.
+           OR (c.status = 'answered' AND c.call_sid = $2
+               AND NOT EXISTS (SELECT 1 FROM call_sessions cs WHERE cs.call_id = c.id)))
          AND (c.call_sid IS NULL OR c.call_sid = $2)
          AND p.account_id = c.account_id AND s.account_id = c.account_id AND s.outbound_consent_at IS NOT NULL
        RETURNING c.account_id, p.e164`, [params.data.callId, callSid]);
