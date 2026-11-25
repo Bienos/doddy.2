@@ -17,6 +17,9 @@ public enum VoiceToolName {
     public static let openFoodApp = "open_food_app"
     public static let runShortcut = "run_shortcut"
     public static let draftMessage = "draft_message"
+    /// Opens the iPhone's own call screen for one contact; the person taps Call (owner, 25 Nov 2026: "jesteś w stanie
+    /// zadzwonić do mojego kolegi?" got "Nie zadzwonię"). Doddy's voice never phones a private person.
+    public static let callContact = "call_contact"
     /// Several changes on one card (`PlanProposal`, ADR-204).
     public static let proposePlan = "propose_plan"
     /// The user asked for something no tool covers: a category, kept on the iPhone (ADR-440).
@@ -97,7 +100,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
              VoiceToolName.deleteCalendarEvent, VoiceToolName.deleteCalendarEvents: .calendar
         case VoiceToolName.createReminder, VoiceToolName.changeReminder, VoiceToolName.deleteReminder,
              VoiceToolName.moveReminders: .reminders
-        case VoiceToolName.lookupContact, VoiceToolName.upcomingBirthdays: .contacts
+        case VoiceToolName.lookupContact, VoiceToolName.upcomingBirthdays, VoiceToolName.callContact: .contacts
         case VoiceToolName.setTimer, VoiceToolName.setAlarm, VoiceToolName.listAlarms, VoiceToolName.cancelAlarm: .timers
         case VoiceToolName.openMap, VoiceToolName.remindWhenToLeave: .maps
         case VoiceToolName.runShortcut: .shortcuts
@@ -261,6 +264,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case openMap(place: String, from: String? = nil, mode: MapTravelMode? = nil)
     case runShortcut(name: String)
     case draftMessage(MessageDraft)
+    /// The iPhone's call screen for one contact, found by name; the person taps Call there (25 Nov 2026).
+    case callContact(name: String)
     /// A BLIK phone transfer on a card for the user to send in their bank app (ADR-510). Doddy
     /// never sends money.
     case draftBlikTransfer(BlikTransferDraft)
@@ -448,6 +453,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return .runShortcut(name: shortcut)
         case VoiceToolName.draftMessage:
             return parseMessage(args, name: name)
+        case VoiceToolName.callContact:
+            guard let person = args.text("name") else { return .invalid(name: name, reason: "missing name") }
+            return .callContact(name: person)
         case VoiceToolName.draftBlikTransfer:
             return parseBlikTransfer(args, name: name)
         case VoiceToolName.textMe:
@@ -1045,6 +1053,18 @@ public enum VoiceToolReply {
         return "opened: \(app) opened with the draft for the contact below. Nothing was sent by Doddy; the user sends it there.\n"
             + ToolData.block([quoted("Contact", recipient)])
     }
+
+    /// The call screen opened for the contact below; iOS asks the person to tap Call. Doddy dialled nothing and said
+    /// nothing to anyone. The name is from Contacts, so it follows as data (ToolData).
+    public static func callScreenOpened(_ recipient: String) -> String {
+        "opened: the iPhone's call screen opened for the contact below. Doddy dialled nothing; the user taps Call there. "
+            + "Say one short line, e.g. 'Masz na ekranie, stuknij Zadzwoń.'\n"
+            + ToolData.block([quoted("Contact", recipient)])
+    }
+
+    /// iOS opens another app only while Doddy is on the screen.
+    public static let callNeedsTheScreen = "failed: the call screen can open only while Doddy is on the iPhone's screen. Nothing was opened. "
+        + "Ask the user to open Doddy, then call call_contact again; or offer a message with draft_message."
 
     /// The contact has no phone number or email for the channel the agent asked for. The name
     /// is from Contacts, so it follows as data.

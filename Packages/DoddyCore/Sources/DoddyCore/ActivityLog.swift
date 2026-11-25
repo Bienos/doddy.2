@@ -241,6 +241,8 @@ public struct ActivityRequest: Equatable, Sendable {
                 detail: [from.map { "“\($0)” → " }, "“\(place)”"].compactMap { $0 }.joined(), isLookup: false)
         case .runShortcut(let name):
             return ActivityRequest(app: .shortcuts, title: "Run shortcut", detail: "“\(name)”", isLookup: false)
+        case .callContact(let name):
+            return ActivityRequest(app: .contacts, title: "Opened a call", detail: "to \(name)", isLookup: false)
         case .draftMessage(let draft):
             return ActivityRequest(
                 app: .messages, title: draft.channel == .text ? "Draft a text" : "Draft an email",

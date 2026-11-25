@@ -96,7 +96,7 @@ RUNS_NOW_SERVER_READS = {"check_email", "read_email", "find_drive_file", "search
 # while Doddy isn't on screen.
 # Step 2c added set_timer and set_alarm, once they had Undo in What Doddy did.
 RUNS_NOW_OWN_CHANGES = {"save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app",
-                        "lost_wallet", "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation",
+                        "lost_wallet", "draft_message", "call_contact", "draft_blik_transfer", "draft_invoice", "make_presentation",
                         "set_timer", "set_alarm"}
 # Calls to the user's own verified number run as asked (owner, 25 Nov 2026, decision 2026-11-25-doddy-acts-without-asking;
 # AskFirst.ownPhoneCallsAtOnce in DoddyCore). The server checks consent, the number and its limits again.

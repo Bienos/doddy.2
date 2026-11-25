@@ -8,7 +8,7 @@ import XCTest
 final class AtOnceOwnChangesTests: XCTestCase {
     private let atOnce: Set<String> = [
         "save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app", "lost_wallet",
-        "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation", "set_timer", "set_alarm",
+        "draft_message", "call_contact", "draft_blik_transfer", "draft_invoice", "make_presentation", "set_timer", "set_alarm",
     ]
     private let waitingForUndo: Set<String> = [
         "create_list", "remind_me_about_note", "remind_when_to_leave", "parking_spot",
@@ -29,6 +29,7 @@ final class AtOnceOwnChangesTests: XCTestCase {
          ("draft_message", request("draft_message", #"{"to":"Marta","body":"Będę o 18"}"#)),
          ("draft_blik_transfer", request("draft_blik_transfer", #"{"to":"Marta","amount":50}"#)),
          ("draft_invoice", request("draft_invoice", #"{"start_new":true}"#)),
+         ("call_contact", request("call_contact", #"{"name":"Marek"}"#)),
          ("make_presentation", request("make_presentation", #"{"title":"Plan","slides":[{"title":"Jeden","bullets":["a"]}]}"#)),
          ("set_timer", request("set_timer", #"{"minutes":5,"label":"Makaron"}"#)),
          ("set_alarm", .setAlarm(AlarmDraft(
@@ -87,7 +88,7 @@ final class AtOnceOwnChangesTests: XCTestCase {
     func testTheFourThatOpenAnotherAppOrTheCameraAreNamedForTheOnScreenRule() {
         // The app runs these at once only while Doddy is on screen: iOS opens nothing from the background, and
         // "opened" must never be said of something that didn't open. Otherwise their card stays.
-        XCTAssertEqual(AskFirst.opensSomethingElse, ["open_map", "open_camera", "draft_message", "open_food_app"])
+        XCTAssertEqual(AskFirst.opensSomethingElse, ["open_map", "open_camera", "draft_message", "open_food_app", "call_contact"])
         XCTAssertTrue(AskFirst.opensSomethingElse.isSubset(of: AskFirst.ownChangesAtOnce))
     }
 

@@ -148,7 +148,7 @@ public enum AskFirst {
     /// card until it has an Undo (step 2c).
     public static let ownChangesAtOnce: Set<String> = [
         VoiceToolName.saveMemory, VoiceToolName.createReminder, VoiceToolName.addIngredients, VoiceToolName.openMap,
-        VoiceToolName.openCamera, VoiceToolName.openFoodApp, VoiceToolName.lostWallet, VoiceToolName.draftMessage,
+        VoiceToolName.openCamera, VoiceToolName.openFoodApp, VoiceToolName.lostWallet, VoiceToolName.draftMessage, VoiceToolName.callContact,
         VoiceToolName.draftBlikTransfer, VoiceToolName.draftInvoice, VoiceToolName.makePresentation,
         // Step 2c: Undo stops the timer while it counts down, and turns the alarm off while the iPhone has it.
         VoiceToolName.setTimer, VoiceToolName.setAlarm,
@@ -175,7 +175,7 @@ public enum AskFirst {
     /// is on screen: iOS opens nothing from the background, and "opened" is never said of what didn't open. Otherwise
     /// their card stays, answered by a tap or a spoken yes.
     public static let opensSomethingElse: Set<String> = [
-        VoiceToolName.openMap, VoiceToolName.openCamera, VoiceToolName.draftMessage, VoiceToolName.openFoodApp,
+        VoiceToolName.openMap, VoiceToolName.openCamera, VoiceToolName.draftMessage, VoiceToolName.callContact, VoiceToolName.openFoodApp,
     ]
 
     /// Doddy's own small things that run at once since 11 Nov 2026: each is undone in one step (stop, untick,
@@ -273,7 +273,7 @@ public enum AskFirst {
             return .ownPayloadCard
         // Doddy's own changes with Undo, and the drafts and hand-overs that change nothing (`ownChangesAtOnce`, step 2b):
         // no card. The tool's own flow still makes its payload; the controller runs it as the card's button would.
-        case .saveMemory, .createReminder, .addIngredients, .openMap, .draftMessage, .draftBlikTransfer, .makePresentation, .openCamera,
+        case .saveMemory, .createReminder, .addIngredients, .openMap, .draftMessage, .callContact, .draftBlikTransfer, .makePresentation, .openCamera,
              .setTimer, .setAlarm:
             return .runsNow
         case .createCalendarEvent, .remindAboutNote, .undoLast, .cancelAlarm,

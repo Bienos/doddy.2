@@ -25,6 +25,7 @@ final class ActivityTextTests: XCTestCase {
             .openMap(place: "Old Town"), .runShortcut(name: "Home"),
             .draftMessage(MessageDraft(recipientName: "Marta", channel: .text, body: "Hi")),
             .draftMessage(MessageDraft(recipientName: "Marta", channel: .email, body: "Hi")),
+            .callContact(name: "Marek"),
             .addToList(list), .readList(name: "Shopping"), .checkOff(list), .removeFromList(list), .createList(list),
             .changeCalendarEvent(EventChangeDraft(title: "Dentist", currentStart: now, currentIsDayOnly: false, newStart: nil, newEnd: nil, newTitle: "Doctor")),
             .changeReminder(ReminderChangeDraft(title: "Buy milk", newDue: nil, markDone: true)),
@@ -90,7 +91,7 @@ final class ActivityTextTests: XCTestCase {
         switch request {
         case .searchMemories, .saveMemory, .readCalendar, .createCalendarEvent, .createReminder, .remindAboutNote,
              .lookupContact, .upcomingBirthdays, .setTimer, .setAlarm, .listAlarms, .cancelAlarm, .openMap, .runShortcut,
-             .draftMessage, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .lookAtScreen, .openCamera, .openFoodApp, .controlHome, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
+             .draftMessage, .callContact, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .lookAtScreen, .openCamera, .openFoodApp, .controlHome, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
              .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .makeSomething, .findDeals,
              .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews, .textMe, .callMeLater, .callMeNow, .callPlaces,
@@ -109,7 +110,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 62, "call_me_every_morning and stop_morning_calls (decision 2026-11-14-morning-call); where_am_i (decision 2026-11-14-approximate-location-by-voice); open_food_app (decision 2026-11-12-food-by-voice); the focus timer and the wind-down, five tools (decision 2026-11-10-timers-by-voice); look_at_screen (decision 2026-11-09-doddy-looks-at-the-screen); follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); plus the BLIK draft (ADR-510, restored 7 Nov 2026), make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754), call_places (decision 2026-11-09-restaurant-calls-one-tap), call_me_now (decision 2026-11-10-call-me-now-by-voice)")
+        XCTAssertEqual(kinds.count, 63, "call_contact (25 Nov 2026); call_me_every_morning and stop_morning_calls (decision 2026-11-14-morning-call); where_am_i (decision 2026-11-14-approximate-location-by-voice); open_food_app (decision 2026-11-12-food-by-voice); the focus timer and the wind-down, five tools (decision 2026-11-10-timers-by-voice); look_at_screen (decision 2026-11-09-doddy-looks-at-the-screen); follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); plus the BLIK draft (ADR-510, restored 7 Nov 2026), make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754), call_places (decision 2026-11-09-restaurant-calls-one-tap), call_me_now (decision 2026-11-10-call-me-now-by-voice)")
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }

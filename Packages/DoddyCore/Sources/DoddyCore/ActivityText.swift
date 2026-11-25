@@ -70,6 +70,7 @@ public enum ActivityText {
         "Open in Maps": "Otwórz w Mapach",
         "Run shortcut": "Uruchom skrót",
         "Draft a text": "Szkic SMS-a",
+        "Opened a call": "Otwarte połączenie",
         "Prepare a BLIK transfer": "Przygotuj przelew BLIK",
         "Make a presentation": "Przygotuj prezentację",
         "Read steps": "Odczytano kroki",

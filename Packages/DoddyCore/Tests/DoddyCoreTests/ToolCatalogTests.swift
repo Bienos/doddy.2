@@ -85,7 +85,8 @@ final class ToolCatalogTests: XCTestCase {
             VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe,
             "save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app", "lost_wallet",
             "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation", "set_timer", "set_alarm",
-            // Calls to the user's own verified number (owner, 25 Nov 2026).
+            // Calls to the user's own verified number, and the call screen for a contact (owner, 25 Nov 2026).
+            "call_contact",
             "call_me_now", "call_me_later",
         ])
         XCTAssertEqual(withoutCard, AskFirst.ownSmallActions.union(AskFirst.ownChangesAtOnce).union(AskFirst.ownPhoneCallsAtOnce)
@@ -165,7 +166,7 @@ final class ToolCatalogTests: XCTestCase {
         }
         XCTAssertEqual(Set(handoffs.filter { $0.approval == .runsNow }.map(\.name)),
                        [VoiceToolName.openTrainingPlan, "open_map", "open_food_app", "draft_message", "draft_blik_transfer",
-                        "make_presentation", "open_camera", "lost_wallet"])
+                        "make_presentation", "open_camera", "lost_wallet", "call_contact"])
         for name in [VoiceToolName.handOverErrand, VoiceToolName.makeSomething] {
             XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .handoff, name)
             XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .card, name)

@@ -3509,6 +3509,48 @@ final class VoiceSessionController {
             } catch {
                 await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
             }
+        case .callContact(let name):
+            // 25 Nov 2026 (owner): "call my friend" opens the iPhone's own call screen for that contact and the person
+            // taps Call; Doddy's voice never phones a private person. Contacts is read as for draft_message (ADR-717):
+            // Doddy's switch and iOS's permission, a search budget, and several matches never guessed between.
+            switch ContactRead.decide(
+                switchOn: isOn(.contacts), iosAllows: devices.access(for: .contacts) == .granted, budget: &contactSearches) {
+            case .switchOff, .notAllowedByIOS:
+                await notConnected(call.toolCallId, .contacts)
+                return
+            case .budgetSpent:
+                await reply(call.toolCallId, VoiceToolReply.contactSearchesSpent, isError: true)
+                return
+            case .search:
+                break
+            }
+            do {
+                let found = try devices.findContacts(named: name)
+                switch MessageRecipient.resolve(
+                    found.map { (name: $0.name, phoneNumbers: $0.phoneNumbers, emailAddresses: $0.emailAddresses) },
+                    query: name) {
+                case .nobody:
+                    await reply(call.toolCallId, VoiceToolReply.contactMatches([], query: name))
+                case .several(let names):
+                    await reply(call.toolCallId, VoiceToolReply.callSeveralContacts(names, query: name))
+                case .contact(let contactName, let phoneNumbers, _):
+                    guard let number = phoneNumbers.first, let url = OpenLinks.call(number: number) else {
+                        await reply(call.toolCallId, VoiceToolReply.noAddress(contactName, channel: .text), isError: true)
+                        return
+                    }
+                    // iOS opens another app only from the screen; "opened" is never said of what didn't open.
+                    guard UIApplication.shared.applicationState == .active else {
+                        await reply(call.toolCallId, VoiceToolReply.callNeedsTheScreen)
+                        return
+                    }
+                    let opened = await open(url)
+                    await reply(call.toolCallId, opened
+                        ? VoiceToolReply.callScreenOpened(contactName)
+                        : VoiceToolReply.notOpened("The call screen didn't open."))
+                }
+            } catch {
+                await reply(call.toolCallId, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            }
         case .draftBlikTransfer(let draft):
             // ADR-510: a card with the details, for the user to send in their bank app. Doddy never
             // sends money. Contacts only adds the number, when Doddy's Contacts switch is on, iOS allows

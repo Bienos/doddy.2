@@ -162,6 +162,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.openFoodApp, .handoff, .runsNow),
         .init(VoiceToolName.runShortcut, .handoff, .card),
         .init(VoiceToolName.draftMessage, .handoff, .runsNow),
+        // The iPhone's call screen for one contact; the person taps Call (25 Nov 2026).
+        .init(VoiceToolName.callContact, .handoff, .runsNow),
         // A BLIK transfer on a card; the user sends it in their bank app, never Doddy (ADR-510).
         .init(VoiceToolName.draftBlikTransfer, .handoff, .runsNow),
         // Sent by Doddy, so the card shows the exact text and the tap approves exactly that

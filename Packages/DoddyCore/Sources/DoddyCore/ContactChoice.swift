@@ -94,6 +94,12 @@ extension VoiceToolReply {
     }
 
     /// More than one contact has the name the agent sent for a text or email draft.
+    public static func callSeveralContacts(_ names: [String], query: String) -> String {
+        "failed: \(names.count) contacts match the name below, so no call screen was opened. Ask the user for the person's full "
+            + "name, then call \(VoiceToolName.callContact) again with it. Never read out a number. Nothing was dialled.\n"
+            + severalContactsData(names, query: query)
+    }
+
     public static func messageSeveralContacts(_ names: [String], query: String) -> String {
         "failed: \(names.count) contacts match the name below, so no draft was opened. Ask the user for the person's full name, then call "
             + "\(VoiceToolName.draftMessage) again with it. Never read out a number or an address. Nothing was sent.\n"

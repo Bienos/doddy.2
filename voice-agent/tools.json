@@ -560,6 +560,19 @@
     },
     {
       "type": "function",
+      "name": "call_contact",
+      "description": "Open the iPhone's own call screen for one of the user's contacts, found by name in Contacts, so the user can tap Call. Use it when the user asks to call or phone a person: 'zadzwoń do Marka', 'call my mum', 'jesteś w stanie zadzwonić do mojego kolegi?'. Doddy's voice never phones a private person; this hands the call to the user. Runs at once: don't ask first. If the user didn't say who, ask once for the name. The result starts with 'opened' (the call screen is on the iPhone; say one short line such as 'Masz na ekranie, stuknij Zadzwoń.'; never say the call connected), 'failed' (nothing opened; the reason follows: several contacts match, so ask for the full name and call this again; no phone number; or Doddy isn't on screen, so ask the user to open Doddy) or 'not allowed' (Contacts is off). If no contact matches, say so and offer to try another name. Never read out a phone number. For restaurants, shops or offices use call_places instead.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {"type": "string", "description": "The person's name as the user said it, for example 'Marek' or 'Kasia Nowak'; a nickname like 'mama' is fine if that is how they are saved."}
+        },
+        "required": ["name"]
+      },
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+    },
+    {
+      "type": "function",
       "name": "draft_blik_transfer",
       "description": "Prepare a BLIK phone transfer (przelew na telefon) for the user to send themselves in their bank app. Use it when the user asks to send, transfer or give someone money in złoty with BLIK or to their phone number. Doddy cannot send or pay money: the app shows the person (and their number from Contacts when it can read them), the amount and the title on screen at once; the user sends it in their bank app. The amount is in złoty only: a number with a dot and at most two decimals, exactly as the user said it. Never round, convert or guess an amount; if it is unclear, ask. The result starts with 'shown' (the details are on the user's screen; nothing was sent), 'declined' or 'failed' (for example several contacts have that name: ask which one). Before this tool runs, say only one short line, for example 'Check the transfer on screen.' Never say the money was sent, paid or transferred; say the user sends it in their bank app.",
       "parameters": {
