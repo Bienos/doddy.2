@@ -194,6 +194,10 @@ When the runner image already has every requested package installed, setup skips
   the app, its extensions and both test targets, runs no test and boots no simulator. The nightly run, a run by
   hand and a pull request labelled `full-ui-tests` run every unit and UI test as above. The `.xcresult` is kept
   as an artifact only when the job failed or was cancelled, and on nightly and by-hand runs.
+  Simulator builds pass `COMPILER_INDEX_STORE_ENABLE=NO`, and hosted CI turns on Xcode 26's compilation cache
+  (`DODDY_COMPILATION_CACHE=1`, `COMPILATION_CACHE_ENABLE_CACHING=YES`), saving and restoring
+  `DerivedData/CompilationCache.noindex` (the nightly run saves it for everyone; a pull request saves it only
+  when it found none). Release builds and Xcode Cloud don't use either.
   It no longer
   waits for `core`, and no longer repeats the Node suites. Run the workflow by hand (Actions → iOS build and
   tests → Run workflow) and it always runs.

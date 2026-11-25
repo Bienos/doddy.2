@@ -126,5 +126,16 @@ not_called "no simulator is booted" "simctl bootstatus"
 has "the summary says the tests were built, not run" "SKIPPED  xcodebuild test: unit and UI tests (DODDY_MAC_TESTS=none (pull requests): built, not run"
 has "the build is in the summary" "PASS     xcodebuild build-for-testing"
 
+# Simulator builds skip the index store; DODDY_COMPILATION_CACHE=1 adds Xcode's compilation cache (25 Nov 2026).
+run_ci "build settings: no index store, no cache by default" 0 "--only ios" DODDY_MAC_TESTS=none
+called "the build skips the index store" "COMPILER_INDEX_STORE_ENABLE=NO"
+not_called "no compilation cache unless asked" "COMPILATION_CACHE_ENABLE_CACHING"
+run_ci "DODDY_COMPILATION_CACHE=1" 0 "--only ios" DODDY_MAC_TESTS=none DODDY_COMPILATION_CACHE=1
+called "the build uses the compilation cache" "COMPILATION_CACHE_ENABLE_CACHING=YES"
+run_ci "DODDY_COMPILATION_CACHE=1 with the tests" 0 "--only ios" DODDY_COMPILATION_CACHE=1
+called "the full run's build uses it too" "COMPILATION_CACHE_ENABLE_CACHING=YES"
+run_ci "the Release build is left alone" 0 "--only ios" DODDY_RELEASE_BUILD=only DODDY_COMPILATION_CACHE=1
+not_called "Release has no compilation cache setting" "COMPILATION_CACHE_ENABLE_CACHING"
+
 if [ "$failures" -ne 0 ]; then echo "$failures check(s) failed"; exit 1; fi
 echo "all Mac phase cases passed"
