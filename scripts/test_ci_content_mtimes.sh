@@ -43,5 +43,20 @@ sleep 1; touch "$tmp/two/Pkg/Sources/A.swift"
 
 "$tmp/one/scripts/ci_content_mtimes.sh" >/dev/null 2>&1 && bad "no path given, yet it ran" || ok "no path given: a usage error"
 
+# scripts/test_screen_models.sh --prepare: the fixed folder, the same content-based times on every run.
+prepared="$repo/Packages/DoddyCore/Tests/DoddyCoreTests/_ScreenModels.ci"
+if [ -e "$prepared" ]; then
+  bad "$prepared exists before the test; remove it first"
+else
+  "$repo/scripts/test_screen_models.sh" --prepare >/dev/null 2>&1 || bad "--prepare failed"
+  first=$(cd "$prepared" && for f in *.swift; do printf '%s %s\n' "$f" "$(mtime "$f")"; done)
+  [ "$(printf '%s\n' "$first" | wc -l | tr -d ' ')" -eq 12 ] && ok "--prepare writes the 12 screen-model files" || bad "--prepare wrote: $first"
+  sleep 1
+  "$repo/scripts/test_screen_models.sh" --prepare >/dev/null 2>&1
+  second=$(cd "$prepared" && for f in *.swift; do printf '%s %s\n' "$f" "$(mtime "$f")"; done)
+  [ "$first" = "$second" ] && ok "--prepare gives the same times on every run" || bad "--prepare's times changed between runs"
+  rm -rf "$prepared"
+fi
+
 if [ "$failures" -ne 0 ]; then echo "$failures check(s) failed"; exit 1; fi
 echo "all content-time checks pass"
