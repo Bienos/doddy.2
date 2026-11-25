@@ -56,6 +56,11 @@ jobs:
           echo "$(wc -l < "$RUNNER_TEMP/changed.txt") changed file(s)."
 
       - name: Sensitive paths (a list; never blocks)
+        env:
+          # Read only by the guard script of before 25 Nov 2026. The script always comes from the default
+          # branch, so the pull request that changed it was still checked by the old one, which wants the
+          # label; the new script ignores this.
+          OWNER_APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'owner-approved') }}
         run: |
           set -eu
           echo "Guard script from the default branch at $(git rev-parse --short HEAD)."
