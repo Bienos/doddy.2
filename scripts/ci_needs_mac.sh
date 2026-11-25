@@ -3,6 +3,10 @@
 #
 # Reads the changed paths on stdin, one per line. Prints `mac=true` or `mac=false` on stdout (the
 # workflow appends it to $GITHUB_OUTPUT), and on stderr the first path that needs the Mac.
+# A second line, `ui_smoke=true` or `ui_smoke=false` (25 Nov 2026, decision
+# 2026-11-25-pull-request-launch-check): does the change touch the UI tests' own code (DoddyUITests/)?
+# Such a pull request runs the UI smoke classes; any other runs the unit tests and the two launch tests.
+# No input says true: when the list can't be read, the larger run is the safe one.
 #
 # The macOS job takes about 52 minutes at $0.062 a minute, about $3.20 a run. It is worth it only
 # when a change can reach the Xcode build or its tests, or is code that the full scripts/ci.sh runs
@@ -42,12 +46,22 @@ no_mac() {  # 0 when the path can't affect the macOS job
   esac
 }
 
-count=0 first=""
+# 0 when the path is UI test code. Only that: a change to scripts/ci.sh or the workflow must run the
+# launch check, the path every other pull request takes, and the smoke path then runs on the push to main.
+ui_smoke_path() {
+  case "$1" in
+    DoddyUITests/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+count=0 first="" first_ui=""
 # Read everything (no early exit), so the writer of a long list never hits a closed pipe.
 while IFS= read -r path || [ -n "$path" ]; do
   [ -n "$path" ] || continue
   count=$((count + 1))
   if [ -z "$first" ] && ! no_mac "$path"; then first=$path; fi
+  if [ -z "$first_ui" ] && ui_smoke_path "$path"; then first_ui=$path; fi
 done
 
 if [ "$count" -eq 0 ]; then
@@ -59,4 +73,13 @@ elif [ -n "$first" ]; then
 else
   echo "The macOS build is skipped: none of the $count changed files can reach the app build." >&2
   echo "mac=false"
+fi
+
+if [ "$count" -eq 0 ]; then
+  echo "ui_smoke=true"
+elif [ -n "$first_ui" ]; then
+  echo "The UI smoke classes run on a pull request: $first_ui is UI test code." >&2
+  echo "ui_smoke=true"
+else
+  echo "ui_smoke=false"
 fi

@@ -29,7 +29,8 @@ expect() {
   rm -rf "$work"
   git_q clone -q --no-local --depth=2 --branch main "file://$origin" "$work"
   git_q -C "$work" checkout -q "$pushed"
-  got=$(cd "$work" && "$repo/scripts/ci_push_changed_files.sh" "$before" 2>/dev/null | "$repo/scripts/ci_needs_mac.sh" 2>/dev/null)
+  # The first line is the Mac decision; the second (ui_smoke) is read on pull requests only.
+  got=$(cd "$work" && "$repo/scripts/ci_push_changed_files.sh" "$before" 2>/dev/null | "$repo/scripts/ci_needs_mac.sh" 2>/dev/null | sed -n 1p)
   if [ "$got" = "mac=$want" ]; then echo "ok    mac=$want  $what"; else echo "FAIL  wanted mac=$want, got '$got': $what"; failures=$((failures + 1)); fi
 }
 git_q -C "$origin" checkout -q -B main "$docs"

@@ -56,6 +56,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       mac: ${{ steps.decide.outputs.mac }}
+      ui_smoke: ${{ steps.decide.outputs.ui_smoke }}
       swift: ${{ steps.groups.outputs.swift }}
       backend: ${{ steps.groups.outputs.backend }}
       node: ${{ steps.groups.outputs.node }}
@@ -121,8 +122,9 @@ jobs:
     # The nightly run and a run by hand run the whole UI suite and the native island test: 70 to 75
     # minutes on 8 Nov 2026 with the Release build (runs 42408593703, 42481741193), against a limit of
     # 75; run 42479036099 was cancelled after 75 minutes. Since 15 Nov the Release build is the
-    # ios-release job, about 18 minutes less here. Pull requests and pushes to `main` run the smoke
-    # classes and took about 30 (15 Nov, run 43716467848).
+    # ios-release job, about 18 minutes less here. Pushes to `main` run the smoke classes and took
+    # about 29 (19 Nov, run 44477033532); pull requests run the launch check since 25 Nov (not yet
+    # measured on a hosted Mac; the smoke pull request of 19 Nov, run 44473265852, took 26).
     timeout-minutes: 100
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -163,11 +165,15 @@ jobs:
 
       - name: scripts/ci.sh --app-only
         env:
-          # Pull requests and pushes to main run the UI smoke classes, about 8 of the suite's 27 minutes
-          # (ADR-811, decision 2026-11-18-nightly-full-ui-and-release); the nightly run and runs by hand
-          # run every UI test. A pull request labelled `full-ui-tests` runs them all too (the label is
-          # read when the run starts).
-          DODDY_UI_TESTS: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'full-ui-tests'))) && 'all' || 'smoke' }}
+          # Which UI tests (decision 2026-11-25-pull-request-launch-check):
+          #   all     the nightly run, runs by hand, and a pull request labelled `full-ui-tests` (the label
+          #           is read when the run starts): every UI test and the native island test.
+          #   smoke   pushes to main, and pull requests that change the UI tests' own code, DoddyUITests/
+          #           (`ui_smoke` from scripts/ci_needs_mac.sh): the smoke classes, after the unit tests.
+          #   launch  every other pull request: the unit tests and two launch tests in one pass. The smoke
+          #           pass was 13.4 of a pull request's 26 Mac minutes (run 44473265852), and in the 150
+          #           runs before 25 Nov 2026 none of its failures was traced to a fault in the app.
+          DODDY_UI_TESTS: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'full-ui-tests'))) && 'all' || ((github.event_name != 'pull_request' || needs.changes.outputs.ui_smoke != 'false') && 'smoke' || 'launch') }}
           # The Release build for devices runs in its own job, ios-release, beside this one (decision
           # 2026-11-15-faster-mac-ci): it took 18.5 of this job's 70 minutes on 15 Nov 2026 (run 43715540139).
           DODDY_RELEASE_BUILD: "0"
@@ -313,12 +319,23 @@ jobs:
           path: Packages/DoddyCore/.build
           key: swiftpm-6.1-${{ hashFiles('Packages/DoddyCore/Package.swift') }}-${{ github.sha }}
 
-  # The backend's type-check and tests: the longest Linux group (about 7 minutes), so it has a job to itself.
+  # The backend's type-check and tests. The longest Linux group (868 s of tests in 303 s on one runner,
+  # run 44473265852), so its test files run as three shares side by side (25 Nov 2026): each job runs
+  # the type-check and one third of the files. `core` needs all three; fail-fast is off so a red share
+  # never hides another's result. scripts/test_ci_backend_shards.sh (in `checks`) fails if a share is
+  # missing here.
   backend:
     needs: [changes]
     if: needs.changes.outputs.backend == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    name: backend (${{ matrix.shard }}/3)
+    env:
+      DODDY_BACKEND_TEST_SHARD: ${{ matrix.shard }}/3
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0

@@ -157,12 +157,14 @@ file downloads something and hands it straight to a shell (`scripts/check_no_pip
 check its SHA-256, then run it, as `scripts/install_xcodegen.sh` does. `web/` tests run on Vitest 4.1.12.
 
 The Ubuntu 24.04 checks/Swift/Node/messaging jobs install the same dependency packages through
-`scripts/ci_install_ubuntu_packages.sh`. If the default apt sources fail, it retries
-with isolated package lists from the HTTPS kernel.org Ubuntu mirror, authenticated
-by the runner's existing Ubuntu archive keyring. Release, updates, security and
-backports stay on Noble; signature/TLS checks and all test commands stay enabled.
-Both attempts are bounded and a failed fallback fails the job. The checks group
-tests primary success, download/install failures, fallback failure and cleanup.
+`scripts/ci_install_ubuntu_packages.sh`. It tries the HTTPS kernel.org Ubuntu mirror first, with
+isolated package lists and authenticated by the runner's existing Ubuntu archive keyring; if that
+fails, it falls back to the image's own apt sources (the order was the other way round until
+25 Nov 2026, when the plain-http sources had stalled for 60 to 121 s in three jobs of one run
+before the mirror worked). Release, updates, security and backports stay on Noble; signature/TLS
+checks and all test commands stay enabled. Both attempts are bounded and a failed fallback fails
+the job. The checks group tests mirror success, mirror update/install failures, fallback failure
+and cleanup.
 When the runner image already has every requested package installed, setup skips the mirror entirely.
 
 **Hosted CI (`.github/workflows/ios.yml`, ADR-123, ADR-137, ADR-497, ADR-684)** runs these jobs side by side:
@@ -172,7 +174,10 @@ When the runner image already has every requested package installed, setup skips
   groups it needs. Known Ubuntu-only CI helpers and workflows skip the Mac jobs. Shared entry points such as
   `ios.yml` and `ci.sh` still run them. An unlisted path, or no list, runs everything.
 - Linux groups, each `scripts/ci.sh --only <group>`: `checks` (Python generators, guards, specs; always),
-  `swift` (package tests, app-logic type-check, model tests; SwiftPM `.build` cached), `backend`, `node`
+  `swift` (package tests, app-logic type-check, model tests; SwiftPM `.build` restored on every run and
+  saved only by pushes to `main` and the nightly run), `backend` (three jobs, each with the type-check and
+  one third of the test files: `DODDY_BACKEND_TEST_SHARD=i/3`, Node's `--test-shard`;
+  `scripts/test_ci_backend_shards.sh` in the checks group fails if a share is missing), `node`
   (gateway, web, site, voice token, secrets tool) and `messaging` (with Postgres). npm downloads are cached.
 - `core`: one result for all the Linux groups, green when every group that ran passed (a skipped group is fine).
 - `ios-build` (macOS; named `ci` until ADR-811; runner image `macos-26` and Xcode 26.6 pinned):
@@ -185,6 +190,12 @@ When the runner image already has every requested package installed, setup skips
   simulator sometimes freezes during it: ADR-764). A UI test that failed only because the app would not start
   ("Failed to launch", "Failed to get launch progress") is run once more on a restarted simulator; any other
   failure fails the step as before (`scripts/ci_launch_failures.sh`, decision `2026-11-13-ui-launch-retry`).
+  Which UI tests run (`DODDY_UI_TESTS`, decision `2026-11-25-pull-request-launch-check`): a pull request
+  runs `launch`, the unit tests and two launch UI tests (Home appears and nothing starts; the first-run
+  welcome appears) in one `xcodebuild` pass with no simulator restart; a pull request that changes
+  `DoddyUITests/` and every push to `main` run `smoke`, the smoke classes after the unit tests as described
+  above; the nightly run, a run by hand and a pull request labelled `full-ui-tests` run every UI test. The
+  `.xcresult` is kept as an artifact only when the job failed or was cancelled, and on nightly and by-hand runs.
   It no longer
   waits for `core`, and no longer repeats the Node suites. Run the workflow by hand (Actions → iOS build and
   tests → Run workflow) and it always runs.
