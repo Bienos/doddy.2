@@ -140,8 +140,25 @@ jobs:
           restore-keys: |
             app-packages-${{ runner.os }}-
 
+      # Xcode 26's compilation cache (25 Nov 2026): compiler outputs keyed on their inputs, so a fresh
+      # checkout doesn't recompile what hasn't changed. Pull requests restore it; a pull request saves it
+      # only when it found none, and the nightly run and runs by hand save a fresh one for everyone (a
+      # cache saved by a pull request is visible only to that pull request). The key's last part is the
+      # commit, so a save never collides; restore takes the newest cache with the same Xcode and pins.
+      - name: Restore Xcode's compilation cache
+        id: compile-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex
+          key: xcode-cas-26.6-${{ hashFiles('project.yml', 'Config/Package.resolved') }}-${{ github.sha }}
+          restore-keys: |
+            xcode-cas-26.6-${{ hashFiles('project.yml', 'Config/Package.resolved') }}-
+            xcode-cas-26.6-
+
       - name: scripts/ci.sh --app-only
+        id: ci
         env:
+          DODDY_COMPILATION_CACHE: "1"
           # Pull requests build the app and both test targets and run no test (DODDY_MAC_TESTS=none,
           # decision 2026-11-25-minimum-checks); one labelled `full-ui-tests` (read when the run starts)
           # runs every test. The nightly run and runs by hand run every unit and UI test.
@@ -155,6 +172,17 @@ jobs:
           # Apple's Foundation (ADR-680).
           DODDY_SKIP_PACKAGE_TESTS: ${{ github.event_name == 'pull_request' && '1' || '0' }}
         run: scripts/ci.sh --app-only
+
+      - name: Save Xcode's compilation cache
+        if: always() && steps.ci.outcome != 'cancelled' && (github.event_name != 'pull_request' || steps.compile-cache.outputs.cache-matched-key == '') && hashFiles('build/packages-ok') != ''
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex
+          key: xcode-cas-26.6-${{ hashFiles('project.yml', 'Config/Package.resolved') }}-${{ github.sha }}
+
+      - name: How big is the compilation cache?
+        if: always()
+        run: du -sh ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex 2>/dev/null || echo "No compilation cache folder (Xcode wrote none)."
 
       - name: Save the app's Swift packages
         if: always() && steps.packages-cache.outputs.cache-hit != 'true' && hashFiles('build/packages-ok') != ''

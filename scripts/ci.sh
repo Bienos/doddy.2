@@ -444,6 +444,15 @@ else
     # hold of the app for three minutes, so the first 12 UI tests failed before any test code ran.
     # Keep compiling the other targets after the first error, so one run lists every compile
     # error instead of stopping at the first target that fails (owner request, 2026-10-12).
+    # Build settings for the simulator builds only (25 Nov 2026): no index store (nothing on a CI Mac reads
+    # Xcode's code index), and with DODDY_COMPILATION_CACHE=1 Xcode 26's compilation cache, which keeps
+    # compiler outputs keyed on their inputs in DerivedData/CompilationCache.noindex; hosted CI saves and
+    # restores that folder, so a fresh checkout's new file times don't force a full compile. Release and
+    # Xcode Cloud builds don't use these. On run 45572765890 the compile was 441 of the job's 521 s.
+    sim_build_settings="COMPILER_INDEX_STORE_ENABLE=NO"
+    if [ "${DODDY_COMPILATION_CACHE:-0}" = "1" ]; then
+      sim_build_settings="$sim_build_settings COMPILATION_CACHE_ENABLE_CACHING=YES"
+    fi
     if [ "$release_only" -eq 1 ]; then
       record "xcodebuild build-for-testing, unit and UI tests" "SKIPPED" "DODDY_RELEASE_BUILD=only: the ios-build job runs them"
     elif [ "${DODDY_MAC_TESTS:-all}" = "none" ]; then
@@ -451,11 +460,13 @@ else
       # test targets, run nothing. On run 44473265852 the tests were 20 of the Mac job's 26 minutes, and in
       # the 150 runs before 25 Nov no unit or UI test failure was traced to a fault in the app. The nightly
       # run and runs by hand still run every test. No simulator is booted.
+      # shellcheck disable=SC2086
       run_step "xcodebuild build-for-testing" xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy \
-        -destination "$dest" -IDEBuildingContinueBuildingAfterErrors=YES
+        -destination "$dest" -IDEBuildingContinueBuildingAfterErrors=YES $sim_build_settings
       record "xcodebuild test: unit and UI tests" "SKIPPED" "DODDY_MAC_TESTS=none (pull requests): built, not run; the nightly run and runs by hand run them"
+    # shellcheck disable=SC2086
     elif run_step "xcodebuild build-for-testing" xcodebuild build-for-testing -project Doddy.xcodeproj -scheme Doddy \
-      -destination "$dest" -IDEBuildingContinueBuildingAfterErrors=YES; then
+      -destination "$dest" -IDEBuildingContinueBuildingAfterErrors=YES $sim_build_settings; then
       # A per-test time limit (ADR-680): a test that hangs fails after 10 minutes instead of using
       # up the job (on 2 Nov one waited 49 minutes for the app to close, run 41368047283). The
       # longest UI test takes about 290 s, so 600 s only ends a test that is stuck.
