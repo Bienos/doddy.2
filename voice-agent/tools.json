@@ -565,11 +565,11 @@
       "parameters": {
         "type": "object",
         "properties": {
-          "name": {"type": "string", "description": "The person's name as the user said it, for example 'Marek' or 'Kasia Nowak'; a nickname like 'mama' is fine if that is how they are saved."}
+          "name": {"type": "string", "description": "The person's name in its basic form, as it would be saved in Contacts: 'zadzwoń do Marka' is 'Marek', 'do Kasi Nowak' is 'Kasia Nowak', 'do mamy' is 'Mama'. Never the form from the sentence ('Marka', 'Kasi')."}
         },
         "required": ["name"]
       },
-      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "not_synced"}
+      "x_doddy": {"runs_on": "phone", "confirm_on_screen": false, "ask": "runs_now", "speak_before": "auto", "timeout_secs": 60, "elevenlabs_tool_id": "tool_4401m88wfvk8fkz8bxc1d9f52rs2"}
     },
     {
       "type": "function",
