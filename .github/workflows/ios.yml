@@ -195,8 +195,11 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
+      # Kept when something went wrong (failure or cancel) and on the nightly and by-hand runs; a green
+      # pull request or push never reads it, and uploading it took about 24 s of the job's last minute
+      # (job 135387721323, 07:02:19 to 07:02:43).
       - name: Keep the test results
-        if: always()
+        if: failure() || cancelled() || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: xcode-test-results
@@ -281,7 +284,10 @@ jobs:
 
       # Cache SwiftPM's checkouts and build products (GRDB, swift-crypto and the rest compile once).
       # Our own sources get fresh timestamps on checkout and rebuild; the dependencies' don't.
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      # Restored on every run, saved only on pushes to `main` and the nightly run (the save step after
+      # the tests): the key has the commit in it, so a pull request's save never matched again and cost
+      # about 55 s of every run (job 135387721209: 06:41:32 to 06:42:29 after 3 min 54 s of tests).
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: Packages/DoddyCore/.build
           key: swiftpm-6.1-${{ hashFiles('Packages/DoddyCore/Package.swift') }}-${{ github.sha }}
@@ -299,6 +305,13 @@ jobs:
 
       - name: scripts/ci.sh --only swift
         run: scripts/ci.sh --only swift
+
+      - name: Save SwiftPM's build products
+        if: success() && github.event_name != 'pull_request'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: Packages/DoddyCore/.build
+          key: swiftpm-6.1-${{ hashFiles('Packages/DoddyCore/Package.swift') }}-${{ github.sha }}
 
   # The backend's type-check and tests: the longest Linux group (about 7 minutes), so it has a job to itself.
   backend:
