@@ -51,10 +51,16 @@ final class NicknameTests: XCTestCase {
         for language in fixed {
             let code = try XCTUnwrap(language.overrideCode)
             XCTAssertEqual(code.count, 2)
-            XCTAssertTrue(agentLanguages.contains(code), "\(code) needs a language preset on the agent")
+            // Only a language the agent has a preset for is sent to it (25 Nov 2026); the rest start automatically.
+            XCTAssertEqual(language.agentOverrideCode, agentLanguages.contains(code) ? code : nil, code)
             XCTAssertNotNil(language.nativeName)
             XCTAssertNotNil(language.englishName)
         }
+        XCTAssertEqual(Set(ConversationLanguage.offered.compactMap(\.overrideCode)), agentLanguages, "Settings offers exactly the agent's languages")
+        XCTAssertEqual(ConversationLanguage.agentLanguageCodes, agentLanguages)
+        XCTAssertEqual(ConversationLanguage.offered.first, .auto)
+        XCTAssertEqual(ConversationLanguage.offered.dropFirst().first, .polish, "Polish first")
+        XCTAssertNil(ConversationLanguage.italian.agentOverrideCode, "an older choice the agent no longer has starts automatically")
         XCTAssertEqual(Set(fixed.compactMap(\.overrideCode)).count, fixed.count, "no duplicate codes")
     }
 }

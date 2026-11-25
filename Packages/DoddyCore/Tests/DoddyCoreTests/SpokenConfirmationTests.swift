@@ -117,10 +117,10 @@ final class SpokenConfirmationTests: XCTestCase {
         XCTAssertEqual(ConfirmationTiers.tier(for: .parkingSpot(.clear), toolName: "parking_spot", outsideContentSeen: true), .spokenYes)
         XCTAssertEqual(ConfirmationTiers.tier(for: .parkingSpot(.save(note: nil)), toolName: "parking_spot"),
                        ConfirmationTiers.tier(for: "parking_spot"))
-        // After outside text saving follows parking_spot and asks once; finding the car is a look and runs at once.
+        // After outside text saving follows parking_spot and still runs at once (owner, 25 Nov 2026); finding the car too.
         XCTAssertEqual(ConfirmationTiers.tier(for: .parkingSpot(.save(note: nil)), toolName: "parking_spot", outsideContentSeen: true),
                        ConfirmationTiers.tier(for: "parking_spot", outsideContentSeen: true))
-        XCTAssertEqual(ConfirmationTiers.tier(for: .parkingSpot(.save(note: nil)), toolName: "parking_spot", outsideContentSeen: true), .spokenYes)
+        XCTAssertEqual(ConfirmationTiers.tier(for: .parkingSpot(.save(note: nil)), toolName: "parking_spot", outsideContentSeen: true), .atOnce)
         XCTAssertEqual(ConfirmationTiers.tier(for: .parkingSpot(.find), toolName: "parking_spot", outsideContentSeen: true), .atOnce)
     }
 
@@ -165,14 +165,13 @@ final class SpokenConfirmationTests: XCTestCase {
             XCTAssertEqual(ConfirmationTiers.tier(for: request, toolName: tool, outsideContentSeen: true), .spokenYes, tool)
             XCTAssertEqual(AskFirst.ownCardTier(request, outsideContentSeen: true), .spokenYes, tool)
         }
-        // Opening a food app has no card of AskFirst's: it opens when asked. After outside text its own card stays
-        // (the voice controller follows its tier), Doddy asks once, and a yes or a tap opens it. Nothing is ordered.
+        // Opening a food app has no card of AskFirst's: it opens when asked, also after outside text (owner, 25 Nov 2026).
+        // Nothing is ordered.
         let food = VoiceToolRequest.openFoodApp(try! FoodHandoff.parse(app: "Wolt", search: "pizza").get())
         XCTAssertEqual(AskFirst.need(for: food, in: session), .runsNow)
         XCTAssertEqual(ConfirmationTiers.tier(for: food, toolName: "open_food_app"), .atOnce)
-        XCTAssertEqual(ConfirmationTiers.tier(for: food, toolName: "open_food_app", outsideContentSeen: true), .spokenYes)
-        XCTAssertEqual(AskFirst.ownCardTier(food, outsideContentSeen: true), .spokenYes)
-        XCTAssertTrue(runs("tak", ConfirmationTiers.tier(for: food, toolName: "open_food_app", outsideContentSeen: true)))
+        XCTAssertEqual(ConfirmationTiers.tier(for: food, toolName: "open_food_app", outsideContentSeen: true), .atOnce)
+        XCTAssertEqual(AskFirst.ownCardTier(food, outsideContentSeen: true), .atOnce)
     }
 
     func testEveryCardMadeHereHasATierAndAnUnnamedOneIsTapOnly() {

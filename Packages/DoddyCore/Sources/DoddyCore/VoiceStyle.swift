@@ -87,6 +87,20 @@ public enum ConversationLanguage: String, CaseIterable, Sendable, Codable {
     case auto
     case english, polish, german, french, spanish, italian, portuguese, dutch, swedish, danish, norwegian, finnish, czech, slovak, hungarian, romanian, bulgarian, greek, croatian, slovenian, latvian, lithuanian, ukrainian, russian, turkish
 
+    /// The languages the main voice agent has presets for since 25 Nov 2026 (owner: Polish first, then English, Spanish,
+    /// German, French, Russian and Ukrainian; the translator agent keeps its own long list). `voice-agent/session.json`.
+    public static let agentLanguageCodes: Set<String> = ["pl", "en", "es", "de", "fr", "ru", "uk"]
+
+    /// What Settings offers for the voice conversation: automatic, then those languages, Polish first.
+    public static let offered: [ConversationLanguage] = [.auto, .polish, .english, .spanish, .german, .french, .russian, .ukrainian]
+
+    /// The `agent.language` override sent to the main agent: only a language it has a preset for. A choice stored before
+    /// 25 Nov 2026 that it no longer has (Italian, say) starts automatically instead, so the conversation still opens.
+    public var agentOverrideCode: String? {
+        guard let code = overrideCode, Self.agentLanguageCodes.contains(code) else { return nil }
+        return code
+    }
+
     /// ISO 639-1 code for the override, or nil to send nothing.
     public var overrideCode: String? {
         switch self {

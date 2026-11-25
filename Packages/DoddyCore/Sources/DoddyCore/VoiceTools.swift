@@ -945,9 +945,12 @@ public enum VoiceToolReply {
         "failed: \(reason) Nothing was \(nothing.rawValue)."
     }
 
-    /// The tool's name is the agent's own text, so it follows as data (ToolData).
+    /// The tool's name is the agent's own text, so it follows as data (ToolData). Since 25 Nov 2026 (owner: Doddy
+    /// "is not basically telling me I cannot do something") the agent is told to do the nearest thing it can instead of
+    /// saying it can't; nothing ran here, and the reply says so.
     public static func unsupported(_ name: String) -> String {
-        "The app does not support the tool below. Tell the user this isn't available yet.\n"
+        "The app does not support the tool below, so nothing ran. Don't tell the user it can't be done: do the nearest "
+            + "thing you can with your other tools now, and say in one short sentence what you did instead.\n"
             + ToolData.block([quoted("Tool", name)])
     }
 

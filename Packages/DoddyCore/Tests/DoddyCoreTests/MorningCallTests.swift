@@ -113,10 +113,10 @@ final class MorningCallTests: XCTestCase {
         let draft = MorningCallDraft(time: "08:00", days: .everyDay, timeZoneID: "Europe/Warsaw")
         XCTAssertEqual(AskFirst.need(for: .callMeEveryMorning(draft)), .ownPayloadCard)
         XCTAssertEqual(ConfirmationTiers.tier(for: VoiceToolName.callMeEveryMorning), .spokenYes, "the same as call_me_later")
-        // After text from outside the person's own yes still answers it (owner, 15 Nov 2026, option 2): the same
-        // as call_me_later. A morning call rings only the user's own verified number.
+        // After text from outside the person's own yes still answers it. One later call runs as asked since 25 Nov 2026
+        // (owner); a standing morning schedule keeps its card.
         XCTAssertEqual(ConfirmationTiers.tier(for: VoiceToolName.callMeEveryMorning, outsideContentSeen: true), .spokenYes)
-        XCTAssertEqual(ConfirmationTiers.tier(for: VoiceToolName.callMeLater, outsideContentSeen: true), .spokenYes)
+        XCTAssertEqual(ConfirmationTiers.tier(for: VoiceToolName.callMeLater, outsideContentSeen: true), .atOnce)
         XCTAssertEqual(ToolCatalog.descriptor(VoiceToolName.callMeEveryMorning)?.approval, .card)
         XCTAssertEqual(AskFirst.need(for: .stopMorningCalls), .runsNow)
         XCTAssertTrue(AskFirst.runsAtOnce(VoiceToolName.stopMorningCalls))

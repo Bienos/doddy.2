@@ -18,10 +18,12 @@ final class CallMeNowTests: XCTestCase {
     func testItNeedsACardIsNeverAPlanStepAndWaitsWhileDrivingOrPaused() throws {
         let tool = try XCTUnwrap(ToolCatalog.descriptor(VoiceToolName.callMeNow))
         XCTAssertEqual(tool.effect, .placeCall)
-        XCTAssertEqual(tool.approval, .card)
+        // Runs as asked since 25 Nov 2026 (owner): it rings only the user's own verified number.
+        XCTAssertEqual(tool.approval, .runsNow)
         XCTAssertEqual(tool.runsOn, .phone)
         XCTAssertFalse(tool.planEligible)
-        XCTAssertEqual(AskFirst.need(for: .callMeNow, polish: false), .ownPayloadCard)
+        XCTAssertEqual(AskFirst.need(for: .callMeNow, polish: false), .runsNow)
+        XCTAssertTrue(AskFirst.runsWithoutItsCard(VoiceToolName.callMeNow, appIsActive: false))
         guard case .refuse(let reason) = CarProfile.decision(for: .callMeNow) else { return XCTFail("car") }
         XCTAssertTrue(reason.contains("driving"))
         XCTAssertTrue(ConnectionPause.applies(to: .callMeNow), "it leaves the iPhone through Doddy's server and Twilio")
@@ -144,9 +146,9 @@ final class CallMeNowTests: XCTestCase {
         let parameters = try XCTUnwrap(tool["parameters"] as? [String: Any])
         XCTAssertEqual((parameters["properties"] as? [String: Any])?.count, 0)
         let x = try XCTUnwrap(tool["x_doddy"] as? [String: Any])
-        // A card the person's own spoken yes or a tap answers (decision 2026-11-14-spoken-yes-and-fewer-cards).
-        XCTAssertEqual(x["ask"] as? String, "yes_or_tap")
-        XCTAssertEqual(x["confirm_on_screen"] as? Bool, true)
+        // Runs at once since 25 Nov 2026 (owner, decision 2026-11-25-doddy-acts-without-asking).
+        XCTAssertEqual(x["ask"] as? String, "runs_now")
+        XCTAssertEqual(x["confirm_on_screen"] as? Bool, false)
         let later = try XCTUnwrap(tools.first { $0["name"] as? String == VoiceToolName.callMeLater })
         XCTAssertTrue((later["description"] as? String ?? "").contains("use call_me_now"))
     }

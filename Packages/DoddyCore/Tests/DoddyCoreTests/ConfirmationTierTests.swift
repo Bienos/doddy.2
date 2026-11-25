@@ -33,7 +33,7 @@ final class ConfirmationTierTests: XCTestCase {
         for tool in ["create_calendar_event", "change_calendar_event", "delete_calendar_event", "delete_calendar_events",
                      "change_reminder", "delete_reminder", "move_reminders", "cancel_alarm", "remove_from_list",
                      "send_email", "reply_to_email", "forward_email", "trash_email", "send_outlook_email",
-                     "call_me_now", "call_me_later", "call_me_every_morning", "control_home", "run_shortcut", "propose_plan",
+                     "call_me_every_morning", "control_home", "run_shortcut", "propose_plan",
                      "hand_over_errand", "make_something", "add_todoist_task", "create_google_event"] {
             XCTAssertEqual(ConfirmationTiers.tier(for: tool), .spokenYes, tool)
         }
@@ -57,19 +57,31 @@ final class ConfirmationTierTests: XCTestCase {
         XCTAssertEqual(ConfirmationTiers.tier(forParking: .clear), .spokenYes, "nothing brings a forgotten spot back")
     }
 
-    func testOnceOutsideTextIsInTheConversationEveryChangeAsksOneSpokenQuestion() {
-        // Owner, 15 Nov 2026, option 2: after an email, a page or a document Doddy asks once and "tak" is enough.
-        // A change that asks keeps taking a spoken yes (it needed a tap until then).
-        XCTAssertEqual(ConfirmationTiers.tier(for: "send_email", outsideContentSeen: true), .spokenYes)
-        XCTAssertEqual(ConfirmationTiers.tier(for: "call_me_now", outsideContentSeen: true), .spokenYes)
-        XCTAssertEqual(ConfirmationTiers.tier(forParking: .clear, outsideContentSeen: true), .spokenYes)
-        // Doddy's own things stop running at once: words from outside never change anything without the person's yes.
+    func testCallsToTheUsersOwnPhoneRunAtOnce() {
+        // Owner, 25 Nov 2026: "zadzwoń do mnie" is the yes. Only the user's own verified number can be rung; the server
+        // checks consent, the number and its limits again. A standing morning call still shows its card.
+        for tool in ["call_me_now", "call_me_later"] {
+            XCTAssertEqual(ConfirmationTiers.tier(for: tool), .atOnce, tool)
+            XCTAssertEqual(ConfirmationTiers.tier(for: tool, outsideContentSeen: true), .atOnce, tool)
+            XCTAssertEqual(ConfirmationTiers.specAsk(for: tool), .runsNow, tool)
+        }
+        XCTAssertEqual(ConfirmationTiers.tier(for: "call_me_every_morning"), .spokenYes)
+        XCTAssertEqual(ConfirmationTiers.tier(for: "call_places"), .tapOnly, "calling other people for a booking stays a tap")
+    }
+
+    func testOutsideTextNoLongerMakesDoddysOwnThingsAsk() {
+        // Owner, 25 Nov 2026 (decision 2026-11-25-doddy-acts-without-asking), replacing option 2 of 15 Nov: after an email,
+        // a page or a document, Doddy's own things keep running at once. The text stays data, never an instruction.
         for own in ConfirmationTiers.ownUndoableAtOnce {
-            XCTAssertEqual(ConfirmationTiers.tier(for: own, outsideContentSeen: true), .spokenYes, own)
+            XCTAssertEqual(ConfirmationTiers.tier(for: own, outsideContentSeen: true), .atOnce, own)
             XCTAssertEqual(ConfirmationTiers.tier(for: own, outsideContentSeen: false), .atOnce, own)
         }
-        XCTAssertEqual(ConfirmationTiers.tier(forParking: .save(note: nil), outsideContentSeen: true), .spokenYes)
-        // Looks and reads still run at once; money and bookings stay a tap.
+        XCTAssertEqual(ConfirmationTiers.tier(forParking: .save(note: nil), outsideContentSeen: true), .atOnce)
+        // A change that already asks keeps asking; forgetting the parking spot still asks.
+        XCTAssertEqual(ConfirmationTiers.tier(for: "send_email", outsideContentSeen: true), .spokenYes)
+        XCTAssertEqual(ConfirmationTiers.tier(for: "send_email", outsideContentSeen: false), .spokenYes)
+        XCTAssertEqual(ConfirmationTiers.tier(forParking: .clear, outsideContentSeen: true), .spokenYes)
+        // Looks and reads run at once; money and bookings stay a tap, and an unknown tool fails safe.
         XCTAssertEqual(ConfirmationTiers.tier(forParking: .find, outsideContentSeen: true), .atOnce, "finding the car is a look")
         XCTAssertEqual(ConfirmationTiers.tier(for: "web_search", outsideContentSeen: true), .atOnce)
         XCTAssertEqual(ConfirmationTiers.tier(for: "read_email", outsideContentSeen: true), .atOnce)
@@ -77,7 +89,6 @@ final class ConfirmationTierTests: XCTestCase {
             XCTAssertEqual(ConfirmationTiers.tier(for: money, outsideContentSeen: true), .tapOnly, money)
         }
         XCTAssertEqual(ConfirmationTiers.tier(for: "wire_money_somewhere", outsideContentSeen: true), .tapOnly)
-        XCTAssertEqual(ConfirmationTiers.tier(for: "send_email", outsideContentSeen: false), .spokenYes)
     }
 
     func testTheTierSaysWhetherASpokenYesMayRunIt() {

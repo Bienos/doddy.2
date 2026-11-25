@@ -171,9 +171,11 @@ public enum ToolCatalog {
         .init(VoiceToolName.textMe, .sendText, .runsNow),
         // The card shows the time and the exact reason Doddy will say; the server checks the same
         // approval hash when it books the call and again when it places it (ADR-754).
-        .init(VoiceToolName.callMeLater, .placeCall, .card),
+        // Rings only the user's own verified number, as asked (owner, 25 Nov 2026, `AskFirst.ownPhoneCallsAtOnce`).
+        .init(VoiceToolName.callMeLater, .placeCall, .runsNow),
         // The same call as Settings, Phone calls, Call me now; the card shows the number's last digits.
-        .init(VoiceToolName.callMeNow, .placeCall, .card),
+        // Rings only the user's own verified number, as asked (owner, 25 Nov 2026, `AskFirst.ownPhoneCallsAtOnce`).
+        .init(VoiceToolName.callMeNow, .placeCall, .runsNow),
         // A standing permission: the card shows the exact schedule, the number and the switch; the server checks the
         // same approval hash when it sets it up and again before each day's call (decision 2026-11-14-morning-call).
         .init(VoiceToolName.callMeEveryMorning, .placeCall, .card),

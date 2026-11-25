@@ -949,7 +949,8 @@ final class VoiceSessionController {
         }
         // Starting language (ADR-132): only sent when the user picked one; needs the agent to
         // allow the `agent.language` override. Auto keeps the agent's own language detection.
-        if let code = ConversationLanguage.stored().overrideCode, let language = Language(rawValue: code) {
+        // Only a language the agent has a preset for (`agentOverrideCode`, 25 Nov 2026).
+        if let code = ConversationLanguage.stored().agentOverrideCode, let language = Language(rawValue: code) {
             config.agentOverrides = AgentOverrides(language: language)
         }
         // Doddy speaking and thinking (ADR-604). The SDK calls `onAgentStateChange` only in its
@@ -4929,18 +4930,15 @@ final class VoiceSessionController {
         !AlarmScheduler.permissionAsked && UIApplication.shared.applicationState != .active
     }
 
-    /// Doddy's own changes with Undo and the drafts and hand-overs that change nothing run as asked, with no card
-    /// (`AskFirst.ownChangesAtOnce`, decision 2026-11-14-spoken-yes-and-fewer-cards, step 2b), by the tool the agent
-    /// called. The ones that open another app or the camera do so only while Doddy is on screen: iOS opens nothing from
-    /// the background, and "opened" is never said of what didn't open, so otherwise their card stays for a tap or a yes.
-    /// After text from outside (an email, a page, a document, the screen) none of them runs at once: the card shows
-    /// what will happen, Doddy asks once, and the person's own "tak" or a tap runs it (owner, 15 Nov 2026, option 2;
-    /// decision 2026-11-15-after-outside-text-one-question; `ConfirmationTiers.afterOutsideContent`).
+    /// Doddy's own changes with Undo, the drafts and hand-overs that change nothing, and calls to the user's own phone
+    /// run as asked, with no card (decision 2026-11-14-spoken-yes-and-fewer-cards, step 2b; owner, 25 Nov 2026, decision
+    /// 2026-11-25-doddy-acts-without-asking), by the tool the agent called. The rule is `AskFirst.runsWithoutItsCard`:
+    /// the ones that open another app or the camera do so only while Doddy is on screen. Text from outside in the
+    /// conversation no longer keeps the card; it is data, never an instruction.
     private func runsWithoutItsCard(_ action: PendingAction) -> Bool {
-        guard let tool = callsAsReceived[action.toolCallID]?.toolName, AskFirst.ownChangesAtOnce.contains(tool) else { return false }
-        if outsideContent.outsideContentSeen { return false }
-        if AskFirst.opensSomethingElse.contains(tool) { return UIApplication.shared.applicationState == .active }
-        return true
+        guard let tool = callsAsReceived[action.toolCallID]?.toolName else { return false }
+        return AskFirst.runsWithoutItsCard(
+            tool, appIsActive: UIApplication.shared.applicationState == .active, waitsForAChoice: action.waitsForAChoice)
     }
 
     /// Looks in Calendar first, so asking again after an unconfirmed try never adds a second copy;
@@ -5834,6 +5832,8 @@ private extension VoiceSessionController.PendingAction {
     /// a note's reminder. A spoken yes leaves it up for a tap (`SpokenConfirmation`).
     var waitsForAChoice: Bool {
         if case .noteReminder(_, _, _, _, .place(let results, _)) = self { return results.count > 1 }
+        // A later call in quiet hours waits for the card's "call anyway" switch (25 Nov 2026: otherwise it runs at once).
+        if case .callLater(_, let draft, _, let quietHours) = self { return draft.inQuietHours(quietHours) }
         return false
     }
 

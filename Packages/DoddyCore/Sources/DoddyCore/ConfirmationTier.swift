@@ -82,8 +82,11 @@ public enum ConfirmationTiers {
     /// - Doddy's session things that touch nothing outside it and stop in one step (the stopwatch, focus, wind-down,
     ///   the translator, following a news topic, the training plan screen, noting a missing capability) also still
     ///   start at once; items for a list ask through the session rule (`AskFirst.need(for:in:listIsShared:)`).
+    /// Since 25 Nov 2026 (owner: "he should not be really asking anything", decision 2026-11-25-doddy-acts-without-asking)
+    /// outside text no longer changes a tier: Doddy's own things keep running at once. The text stays data, never an
+    /// instruction, and every change that already asked keeps its card. Kept as the one place a future rule would go.
     static func afterOutsideContent(_ tier: ConfirmationTier, _ outsideContentSeen: Bool, asksOnce: Bool) -> ConfirmationTier {
-        outsideContentSeen && tier == .atOnce && asksOnce ? .spokenYes : tier
+        tier
     }
 }
 
