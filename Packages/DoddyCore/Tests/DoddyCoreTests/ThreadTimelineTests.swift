@@ -37,6 +37,27 @@ final class ThreadTimelineTests: XCTestCase {
         XCTAssertEqual(ThreadTimeline.items(messages: [], local: [], server: []), [])
     }
 
+    func testFinishedTasksAndCallsTakeTheirPlaceByTimeInsteadOfStickingToTheBottom() {
+        // Owner, 25 Nov 2026: call cards (missed ones too) stuck under the newest message whatever their time.
+        let messages = [message(0, "hej"), message(120, "co nowego?")]
+        var brief = CallBriefDraft()
+        brief.calleeName = "Pizzeria Roma"
+        var call = StoredCallCase(id: UUID(), createdAt: t0.addingTimeInterval(10 * 60), state: "finished", brief: brief)
+        call.updatedAt = t0.addingTimeInterval(30 * 60)
+        let draft = ErrandDraft(words: "Compare headphones", brief: "Compare headphones", title: "Headphones")
+        var errand = StoredErrand(id: UUID(), createdAt: t0, state: .done, draft: draft)
+        errand.updatedAt = t0.addingTimeInterval(60 * 60)
+        let items = ThreadTimeline.items(messages: messages, local: [], server: [], tasks: [errand], calls: [call])
+        XCTAssertEqual(items.map(\.id), [
+            "m-\(messages[0].id.uuidString)", "c-\(call.id.uuidString)", "t-\(errand.id.uuidString)", "m-\(messages[1].id.uuidString)",
+        ])
+        XCTAssertEqual(items.last?.id, "m-\(messages[1].id.uuidString)", "the newest message stays last")
+        // A call and a task at the same moment as a message come after it.
+        call.updatedAt = t0
+        let same = ThreadTimeline.items(messages: [messages[0]], local: [], server: [], tasks: [], calls: [call])
+        XCTAssertEqual(same.map(\.id), ["m-\(messages[0].id.uuidString)", "c-\(call.id.uuidString)"])
+    }
+
     func testTheBubbleFollowsWhatTheServerSays() throws {
         let url = try XCTUnwrap(URL(string: "https://doddy.example/v1/documents/\(docID)?exp=1&sig=x"))
         let file = ThreadDocument(url: url, name: "Marsz Niepodległości.pptx", kind: "deck")

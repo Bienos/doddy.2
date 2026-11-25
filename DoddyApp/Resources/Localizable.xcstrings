@@ -22333,6 +22333,17 @@
         }
       }
     },
+    "Doddy couldn't reach %@.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy nie dodzwonił się: %@."
+          }
+        }
+      }
+    },
     "Doddy couldn't reach the sign-in service. Check your connection and try again.": {
       "extractionState": "manual",
       "localizations": {
@@ -73734,6 +73745,17 @@
         }
       }
     },
+    "See what happened.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zobacz, co się stało."
+          }
+        }
+      }
+    },
     "See why": {
       "extractionState": "manual",
       "localizations": {
@@ -82470,65 +82492,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sprawy"
-          }
-        }
-      }
-    },
-    "Tasks Doddy finished": {
-      "extractionState": "manual",
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufgaben, die Doddy erledigt hat"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tareas que Doddy terminó"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tâches terminées par Doddy"
-          }
-        },
-        "hr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadaci koje je Doddy završio"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Attività completate da Doddy"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddyが終えたタスク"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zadania, które Doddy skończył"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tarefas que o Doddy terminou"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Doddy 完成的任务"
           }
         }
       }

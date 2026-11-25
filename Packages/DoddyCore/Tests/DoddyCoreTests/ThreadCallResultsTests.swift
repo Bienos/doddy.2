@@ -5,9 +5,9 @@ import XCTest
 final class ThreadCallResultsTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_793_000_000)
 
-    private func card() throws -> CallResultCard {
+    private func card(_ outcome: String = "answered") throws -> CallResultCard {
         try JSONDecoder().decode(CallResultCard.self, from: Data("""
-        {"outcome":"answered","source":"elevenlabs","confidence":"high","confidenceReasons":[],"summary":"s","summaryBy":"rules",
+        {"outcome":"\(outcome)","source":"elevenlabs","confidence":"high","confidenceReasons":[],"summary":"s","summaryBy":"rules",
          "quote":null,"transcript":[],"nextStep":{"kind":"none","text":""},"warnings":[],"callbackPromised":false}
         """.utf8))
     }
@@ -30,5 +30,18 @@ final class ThreadCallResultsTests: XCTestCase {
     func testNothingToShowWhenNoCallHasAnAnswer() throws {
         XCTAssertTrue(ThreadCallResults.shown([try record("x", daysAgo: 1, answered: false)], now: now).isEmpty)
         XCTAssertTrue(ThreadCallResults.shown([], now: now).isEmpty)
+    }
+
+    func testACallNobodyAnsweredSaysSoInsteadOfARecap() throws {
+        // Owner, 25 Nov 2026: a missed call looked like a finished one ("Doddy called Anna. See the recap.").
+        var talked = try record("Anna", daysAgo: 0.2)
+        XCTAssertEqual(ThreadCallResults.reach(of: talked), .talked)
+        for outcome in ["no_answer", "busy", "voicemail", "failed", "not_placed", "wrong_number", "ivr", "stopped", "unknown", "something_new"] {
+            talked.result = try card(outcome)
+            XCTAssertEqual(ThreadCallResults.reach(of: talked), .notReached, outcome)
+        }
+        talked.result = try card("taken_over")
+        XCTAssertEqual(ThreadCallResults.reach(of: talked), .talked, "the person took the call over and talked")
+        XCTAssertEqual(ThreadCallResults.reach(of: try record("x", daysAgo: 0, answered: false)), .notReached)
     }
 }
