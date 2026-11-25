@@ -191,6 +191,20 @@ describe("scheduled calls against real Postgres", { skip: dbSkip }, () => {
     assert.equal((await list(o.h)).find((c) => c.id === id)?.reason, null);
   });
 
+  test("the answer still connects when Twilio's in-progress callback arrives first, and only once", async () => {
+    const o = await owner("+48500200012");
+    const at = inMinutes(97);
+    const { id } = (await book(o, { at, reason: "Race" })).json() as { id: string };
+    assert.equal(await worker(at), true);
+    const r = await row(id);
+    const callSid = `CAout${outbound.calls.length}`;
+    await app.inject(twilioRequest("/webhooks/twilio/call-status", { CallSid: callSid, CallStatus: "in-progress" }));
+    const answered = await app.inject(twilioRequest(`/webhooks/twilio/voice/outbound/${r.call_id}`, { CallSid: callSid }));
+    assert.equal(answered.body, CONNECT_TWIML);
+    const again = await app.inject(twilioRequest(`/webhooks/twilio/voice/outbound/${r.call_id}`, { CallSid: callSid }));
+    assert.notEqual(again.body, CONNECT_TWIML, "a second answer does not open a second session");
+  });
+
   test("a Polish call opens in Polish", async () => {
     const o = await owner("+48500200011");
     const at = inMinutes(95);
