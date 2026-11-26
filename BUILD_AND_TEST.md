@@ -214,6 +214,14 @@ When the runner image already has every requested package installed, setup skips
   and the native island test (decision `2026-11-18-nightly-full-ui-and-release`). `DODDY_UI_TESTS=smoke`
   (`LaunchSmokeTests`, `WelcomeUITests`, `LegalAcceptanceUITests`, `PolishSmokeTests`) is still there for a run by
   hand or a local one. Locally `scripts/ci.sh` runs them all unless you set a variable.
+- A full run (the nightly run, a run by hand, a `full-ui-tests` pull request) splits the Mac's tests over two Macs
+  side by side (since 26 Nov 2026, `DODDY_MAC_SHARD` in `scripts/ci.sh`): `ios-build` runs most UI classes and the
+  native island test; `ios-build (2 of 2)` runs the DoddyCore package tests, the unit tests and the UI classes
+  listed in `ui_shard2_classes`. A new UI class runs in `ios-build` until it is listed. One Mac took 54 minutes
+  for all of it (run 45645801212). A pull request still uses one Mac, `ios-build`, which only builds.
+- When the nightly run is red, the `nightly-alert` job opens a GitHub issue "Nightly run on main failed" (GitHub
+  emails the repository's watchers), comments on it on each further red night, and closes it on the next green
+  one (`scripts/ci_nightly_alert.sh`, since 26 Nov 2026). An open issue of that name means `main` is red now.
 - Package versions: the app's two outside packages are exact in `project.yml` (ElevenLabs 3.3.1, LiveKit
   2.19.0), and `Config/Package.resolved` (committed, #236) locks every package they pull in too. `make project`,
   `scripts/ci.sh` and Xcode Cloud's `ci_post_clone.sh` copy it into the generated project, CI fails when resolution

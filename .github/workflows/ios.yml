@@ -93,10 +93,19 @@ jobs:
   # macos-26-arm64 20261102, Xcode 26.6 17F113) and match project.yml's `xcodeVersion`. Move all three
   # together, in a pull request of their own.
   ios-build:
-    name: ios-build
+    # Pull requests: one Mac, named `ios-build` (the required check). The nightly run, runs by hand and a pull
+    # request labelled `full-ui-tests` split the tests over two Macs side by side (26 Nov 2026, DODDY_MAC_SHARD in
+    # scripts/ci.sh): `ios-build` runs most UI classes and the native island test, `ios-build (2 of 2)` the
+    # Swift package tests, the unit tests and the other UI classes. On run 45645801212 one Mac took 54 minutes
+    # for all of it; the two halves are about 27 minutes of tests each, plus a build each.
+    name: ${{ matrix.shard == 2 && 'ios-build (2 of 2)' || 'ios-build' }}
     needs: [changes]
     if: needs.changes.outputs.mac == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON((github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'full-ui-tests')) && '[0]' || '[1, 2]') }}
     # The nightly run and a run by hand run the whole UI suite and the native island test: 70 to 75
     # minutes on 8 Nov 2026 with the Release build (runs 42408593703, 42481741193), against a limit of
     # 75; run 42479036099 was cancelled after 75 minutes. Since 15 Nov the Release build is the
@@ -159,6 +168,8 @@ jobs:
         id: ci
         env:
           DODDY_COMPILATION_CACHE: "1"
+          # Unset on pull requests (one Mac, no tests); 1 and 2 on the two Macs of a full run.
+          DODDY_MAC_SHARD: ${{ matrix.shard != 0 && matrix.shard || '' }}
           # Pull requests build the app and both test targets and run no test (DODDY_MAC_TESTS=none,
           # decision 2026-11-25-minimum-checks); one labelled `full-ui-tests` (read when the run starts)
           # runs every test. The nightly run and runs by hand run every unit and UI test.
@@ -170,11 +181,13 @@ jobs:
           # Pull requests leave the Swift package tests to the Linux `swift` job, which runs them at the
           # same time (about 3 minutes saved here); the nightly run and runs by hand still run them on
           # Apple's Foundation (ADR-680).
-          DODDY_SKIP_PACKAGE_TESTS: ${{ github.event_name == 'pull_request' && '1' || '0' }}
+          # In a full run the second Mac runs them; the first leaves them out.
+          DODDY_SKIP_PACKAGE_TESTS: ${{ (github.event_name == 'pull_request' || matrix.shard == 1) && '1' || '0' }}
         run: scripts/ci.sh --app-only
 
+      # Saved by one Mac only: both would save the same key, and a key can't be saved twice.
       - name: Save Xcode's compilation cache
-        if: always() && steps.ci.outcome != 'cancelled' && (github.event_name != 'pull_request' || steps.compile-cache.outputs.cache-matched-key == '') && hashFiles('build/packages-ok') != ''
+        if: always() && matrix.shard != 2 && steps.ci.outcome != 'cancelled' && (github.event_name != 'pull_request' || steps.compile-cache.outputs.cache-matched-key == '') && hashFiles('build/packages-ok') != ''
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex
@@ -185,7 +198,7 @@ jobs:
         run: du -sh ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex 2>/dev/null || echo "No compilation cache folder (Xcode wrote none)."
 
       - name: Save the app's Swift packages
-        if: always() && steps.packages-cache.outputs.cache-hit != 'true' && hashFiles('build/packages-ok') != ''
+        if: always() && matrix.shard != 2 && steps.packages-cache.outputs.cache-hit != 'true' && hashFiles('build/packages-ok') != ''
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/Library/Developer/Xcode/DerivedData/Doddy-*/SourcePackages
@@ -194,7 +207,7 @@ jobs:
       # What this run resolved for the app's packages: the file to commit as Config/Package.resolved
       # when pinning or moving versions (`make update-packages` does the same on a Mac).
       - name: Keep the resolved package versions
-        if: always()
+        if: always() && matrix.shard != 2
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: app-package-resolved
@@ -209,7 +222,7 @@ jobs:
         if: failure() || cancelled() || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: xcode-test-results
+          name: xcode-test-results${{ matrix.shard == 2 && '-2' || '' }}
           path: ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
           if-no-files-found: ignore
           retention-days: 7
@@ -220,7 +233,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: island-screenshots
+          name: island-screenshots${{ matrix.shard == 2 && '-2' || '' }}
           path: build/island-screenshots/
           if-no-files-found: ignore
           retention-days: 14
@@ -387,9 +400,29 @@ jobs:
       # The voice token server's tests run its Redis scripts (limits, sign-in throttle, refresh reuse) on a
       # real redis-server when there is one (ADR-712); without it they are skipped. If this step fails
       # the tests skip as before, so it can't turn the job red by itself.
+      # Since 26 Nov 2026 its .deb files are cached (DODDY_APT_DEB_DIR in scripts/ci_install_ubuntu_packages.sh):
+      # installed with dpkg in a few seconds instead of 47 s of apt (run 45645801212). The key changes each month,
+      # so Ubuntu's updates arrive within a month.
+      - name: This month, for the redis-server cache key
+        id: month
+        run: echo "month=$(date -u +%Y-%m)" >> "$GITHUB_OUTPUT"
+      - name: Restore redis-server's packages
+        id: redis-debs
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .ci-cache/apt-redis-server
+          key: apt-redis-server-noble-${{ steps.month.outputs.month }}
       - name: Install redis-server for the voice token server's script tests
+        id: redis
         continue-on-error: true
-        run: sudo scripts/ci_install_ubuntu_packages.sh redis-server
+        run: sudo DODDY_APT_DEB_DIR="$PWD/.ci-cache/apt-redis-server" scripts/ci_install_ubuntu_packages.sh redis-server
+      - name: Save redis-server's packages
+        if: steps.redis-debs.outputs.cache-hit != 'true' && steps.redis.outcome == 'success' && hashFiles('.ci-cache/apt-redis-server/*.deb') != ''
+        continue-on-error: true
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .ci-cache/apt-redis-server
+          key: apt-redis-server-noble-${{ steps.month.outputs.month }}
       - name: scripts/ci.sh --only node
         run: scripts/ci.sh --only node
 
@@ -452,6 +485,27 @@ jobs:
           case " $RESULTS " in
             *" failure "* | *" cancelled "*) echo "A Linux group failed or was cancelled." >&2; exit 1 ;;
           esac
+
+  # The nightly run's alert (26 Nov 2026): tests run only once a night now, so a red nightly run opens a GitHub
+  # issue ("Nightly run on main failed"; GitHub emails the repository's watchers), a further red night comments
+  # on it, and the next green night closes it. Scheduled runs only. scripts/ci_nightly_alert.sh.
+  nightly-alert:
+    needs: [core, ios-build, ios-release]
+    if: always() && github.event_name == 'schedule'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Open, update or close the alert issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: scripts/ci_nightly_alert.sh
 
   # The quick island-only check (ADR-618), run by hand with only=island: no wait for the Linux
   # checks, one build, then only the Dynamic Island's unit and UI tests. Its pictures and the

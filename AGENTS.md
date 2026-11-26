@@ -153,3 +153,9 @@ The owner: "remove as many checks as possible … the process of pushing the cod
 - **Before pushing,** run only the test closest to what you changed, or nothing for docs. Don't repeat in a session what CI will run anyway.
 - **Records:** no change note in `changes/`, no decision file, no `STATUS.md` edit, unless the owner asks or makes a product decision that would otherwise be lost. Update a doc only when your change makes it wrong. The pull request description is two parts: what changed, and what you ran (or "not compiled").
 - **Still binding:** never merge on red; never skip, disable or loosen a test to get green; no keys, tokens or passwords in files, logs or pull requests; the "Live systems and data" rules; the constitution's rules for Doddy's behaviour (`docs/trust/`), including the evidence log for AI, memory, tool, voice or UX changes; never call unbuilt or untested work tested.
+
+## Auto-merge (owner, 26 Nov 2026)
+The owner asked for everything that cut the wait from push to merge ("Do all"). Added to the section above:
+- Right after opening your pull request, turn on GitHub's auto-merge for it (squash). GitHub merges it the moment `core`, `ios-build` and `sensitive-paths` are green, so nobody waits to press the button. A red check, or a newer push that turns a check red, stops it; fix it and it merges when green. Turn it off (or don't turn it on) when the owner asked to look first.
+- An open issue "Nightly run on main failed" means `main` is red: fix that first. The `nightly-alert` job opens and closes it.
+- Every rule of the section above still holds: auto-merge never merges on red, and it never applies to another person's or agent's pull request.
