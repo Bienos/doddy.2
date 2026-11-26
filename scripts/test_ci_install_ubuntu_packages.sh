@@ -12,6 +12,7 @@ cat > "$test_work/bin/dpkg-query" <<'MOCK'
 set -eu
 case "$BOOTSTRAP_CASE:$3" in
   installed:*|partial:libsqlite3-dev) printf 'install ok installed' ;;
+  debs-ok:*) [ -e "$BOOTSTRAP_DPKG_RAN" ] && printf 'install ok installed' || exit 1 ;;
   partial:python3) printf 'deinstall ok config-files' ;;
   *) exit 1 ;;
 esac
@@ -47,7 +48,15 @@ case "$BOOTSTRAP_CASE:$fallback:$operation" in
   *) exit 0 ;;
 esac
 MOCK
-chmod +x "$test_work/bin/dpkg-query" "$test_work/bin/timeout" "$test_work/bin/apt-get"
+# dpkg -i: works in the debs-ok case, fails in debs-bad.
+cat > "$test_work/bin/dpkg" <<'MOCK'
+#!/usr/bin/env bash
+printf 'dpkg %s\n' "$*" >> "$BOOTSTRAP_LOG.dpkg"
+[ "$BOOTSTRAP_CASE" = debs-ok ] && touch "$BOOTSTRAP_DPKG_RAN" && exit 0
+exit 1
+MOCK
+export BOOTSTRAP_DPKG_RAN="$test_work/dpkg-ran"
+chmod +x "$test_work/bin/dpkg-query" "$test_work/bin/timeout" "$test_work/bin/apt-get" "$test_work/bin/dpkg"
 
 run_case() {
   export BOOTSTRAP_CASE=$1
@@ -90,6 +99,23 @@ run_case mirror-install 0 4
 [ "$(tail -n 2 "$BOOTSTRAP_LOG" | grep -c 'Dir::Etc::sourcelist=')" -eq 0 ]
 run_case both 100 2
 run_case default-install 100 3
+# DODDY_APT_DEB_DIR: cached .deb files install with dpkg and no apt call at all.
+debs="$test_work/debs"
+mkdir -p "$debs"; touch "$debs/redis-server.deb"; rm -f "$BOOTSTRAP_DPKG_RAN" "$BOOTSTRAP_LOG.dpkg"
+DODDY_APT_DEB_DIR=$debs run_case debs-ok 0 0
+grep -q "dpkg -i $debs/redis-server.deb" "$BOOTSTRAP_LOG.dpkg"
+# Cached files that don't install are removed and apt runs as usual, downloading into the folder again.
+rm -f "$BOOTSTRAP_DPKG_RAN"
+DODDY_APT_DEB_DIR=$debs run_case debs-bad 0 2
+[ ! -e "$debs/redis-server.deb" ]
+grep -q "Dir::Cache::archives=$debs" "$BOOTSTRAP_LOG"
+# An empty folder: apt downloads into it, and leaves no partial or lock behind.
+rm -rf "$debs"; mkdir "$debs"; : > "$BOOTSTRAP_LOG.dpkg"
+DODDY_APT_DEB_DIR=$debs run_case success 0 2
+[ ! -s "$BOOTSTRAP_LOG.dpkg" ]
+grep -q "Dir::Cache::archives=$debs" "$BOOTSTRAP_LOG"
+[ ! -e "$debs/partial" ]
+echo "ok: the .deb cache folder"
 # Neither empty input nor an option masquerading as a package may invoke apt.
 invalid_input() {
   : > "$BOOTSTRAP_LOG"

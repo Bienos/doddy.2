@@ -33,11 +33,33 @@ if [ "$all_installed" = true ]; then
   exit 0
 fi
 
+# DODDY_APT_DEB_DIR (26 Nov 2026, the node job's redis-server): a folder CI keeps in its cache. When it holds
+# the packages' .deb files they are installed from it with dpkg, without `apt-get update` (which was most of
+# the step's 47 s, run 45645801212); when it is empty, apt downloads into it, so the workflow can save it.
+# The files come from the same signed Ubuntu archive; dpkg checks their dependencies, and if it can't install
+# them the usual apt path below runs instead.
+deb_dir=${DODDY_APT_DEB_DIR:-}
+if [ -n "$deb_dir" ] && compgen -G "$deb_dir/*.deb" >/dev/null; then
+  if dpkg -i "$deb_dir"/*.deb; then
+    ok=true
+    for package in "$@"; do
+      [[ "$(dpkg-query -W -f='${Status}' "$package" 2>/dev/null)" == 'install ok installed' ]] || ok=false
+    done
+    if [ "$ok" = true ]; then echo "Installed from the cached packages in $deb_dir: $*"; exit 0; fi
+  fi
+  echo "The cached packages in $deb_dir did not install; using apt." >&2
+  rm -f "$deb_dir"/*.deb
+fi
+
 apt_options=(-o APT::Update::Error-Mode=any -o Acquire::Retries=1
   -o Acquire::http::Timeout=15 -o Acquire::https::Timeout=15)
+if [ -n "$deb_dir" ]; then
+  mkdir -p "$deb_dir/partial"
+  apt_options+=(-o "Dir::Cache::archives=$deb_dir")
+fi
 
 apt_work=$(mktemp -d)
-trap 'rm -rf "$apt_work"' EXIT
+trap 'rm -rf "$apt_work"; if [ -n "$deb_dir" ]; then rm -rf "$deb_dir/partial" "$deb_dir/lock"; fi' EXIT
 chmod 755 "$apt_work"  # apt's unprivileged downloader must be able to read the source list.
 mkdir "$apt_work/lists"
 cat > "$apt_work/sources.list" <<'SOURCES'

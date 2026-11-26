@@ -12,7 +12,8 @@
 #                              (hosted pull requests since 25 Nov 2026; the nightly run runs them all)
 #                              DODDY_SKIP_PACKAGE_TESTS=1 leaves out the Swift package tests (hosted pull
 #                              requests: the Linux swift job runs them); DODDY_RELEASE_BUILD=only builds
-#                              only Release for a device, no simulator (the ios-release job)
+#                              only Release for a device, no simulator (the ios-release job);
+#                              DODDY_MAC_SHARD=1|2 splits the unit and UI tests over two Macs (nightly)
 #   scripts/ci.sh --only a,b   only these groups (hosted Linux jobs run one group each, in parallel):
 #                              checks swift backend node messaging ios
 #                              `ios` is the Xcode build and tests; --only never includes it unless listed.
@@ -262,6 +263,7 @@ run_step "Which pull requests need which Linux groups (ADR-684)" scripts/test_ci
 run_step "The hosted backend job runs every share of the backend's test files (25 Nov 2026)" scripts/test_ci_backend_shards.sh
 run_step "Ubuntu CI dependency mirror fallback" scripts/test_ci_install_ubuntu_packages.sh
 run_step "Swift CI files get times from their content, so the cached build stays valid (25 Nov 2026)" scripts/test_ci_content_mtimes.sh
+run_step "A red nightly run opens an issue, a green one closes it (26 Nov 2026)" scripts/test_ci_nightly_alert.sh
 run_step "Which pull requests need the owner's label (ADR-811)" scripts/test_check_sensitive_paths.sh
 run_step "Vercel builds a project whenever it can't tell nothing changed (9 Nov 2026)" scripts/test_vercel_ignore_command.sh
 run_step "Which Vercel statuses are replaced on pull requests (decision 2026-11-09-vercel-blocked-status)" scripts/test_vercel_blocked_status.sh
@@ -484,12 +486,29 @@ else
       # up the job (on 2 Nov one waited 49 minutes for the app to close, run 41368047283). The
       # longest UI test takes about 290 s, so 600 s only ends a test that is stuck.
       test_limits="-test-timeouts-enabled YES -default-test-execution-time-allowance 600"
-      # shellcheck disable=SC2086
-      run_step "xcodebuild test: unit tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
-        -destination "$dest" -only-testing:DoddyTests $test_limits
-      # Only when this script picked the simulator: a DODDY_DESTINATION may name one by name.
-      if [ -n "${sim_id:-}" ]; then
-        run_step "Restart the simulator before the UI tests" restart_simulator "$sim_id"
+      # DODDY_MAC_SHARD=1 or 2 (the nightly run and runs by hand, 26 Nov 2026): the tests are split over two
+      # Macs that run side by side, each with its own build. Shard 2 runs the unit tests and the UI classes
+      # in ui_shard2_classes; shard 1 runs every other UI class and the native island test, so a new UI
+      # class lands in shard 1 and nothing is left out. Unset: one Mac runs everything, as before. On run
+      # 45645801212 the one Mac took 54 minutes (unit tests 275 s, UI tests 2305 s, island test 205 s).
+      mac_shard=${DODDY_MAC_SHARD:-}
+      case "$mac_shard" in
+        ""|1|2) ;;
+        *) record "DODDY_MAC_SHARD is 1, 2 or unset" FAIL "got $mac_shard; every test runs instead"; failed=1; mac_shard="" ;;
+      esac
+      ui_shard2_classes="LegalAcceptanceUITests MemoryBaselineTests MotionBehaviourUITests MotionEvidenceTests
+        MotionHopTests MotionRideTests MotionSurfaceTests PolishSmokeTests ScreenAtlasTests ScreenFixtureTests
+        TrainingPlanUITests WelcomeUITests"
+      if [ "$mac_shard" = "1" ]; then
+        record "xcodebuild test: unit tests" "SKIPPED" "DODDY_MAC_SHARD=1: the second Mac (shard 2) runs them"
+      else
+        # shellcheck disable=SC2086
+        run_step "xcodebuild test: unit tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
+          -destination "$dest" -only-testing:DoddyTests $test_limits
+        # Only when this script picked the simulator: a DODDY_DESTINATION may name one by name.
+        if [ -n "${sim_id:-}" ]; then
+          run_step "Restart the simulator before the UI tests" restart_simulator "$sim_id"
+        fi
       fi
       # The native island test runs on its own, last (ADR-764). Twice (2 Nov, run 41368047283; 7 Nov,
       # run 42381695855) the hosted simulator's drawing froze right after it tapped a button on the
@@ -510,6 +529,15 @@ else
         ui_scope="all"
         ui_tests="-only-testing:DoddyUITests -skip-testing:$island_test"
         ui_label="UI tests"
+        if [ "$mac_shard" = "1" ]; then
+          for c in $ui_shard2_classes; do ui_tests="$ui_tests -skip-testing:DoddyUITests/$c"; done
+          ui_label="UI tests, shard 1 of 2"
+        elif [ "$mac_shard" = "2" ]; then
+          ui_tests=""
+          for c in $ui_shard2_classes; do ui_tests="$ui_tests -only-testing:DoddyUITests/$c"; done
+          ui_tests="$ui_tests -skip-testing:$island_test"
+          ui_label="UI tests, shard 2 of 2"
+        fi
       fi
       # DODDY_UI_TEST_WORKERS > 1 (ADR-680): xcodebuild clones the simulator and hands each clone
       # whole test classes, so the UI tests run side by side. Each clone starts fresh, as ADR-561
@@ -530,6 +558,8 @@ else
       fi
       if [ "$ui_scope" = "smoke" ]; then
         record "xcodebuild test: native island test" "SKIPPED" "UI smoke run (DODDY_UI_TESTS=smoke); the nightly run and runs by hand run it"
+      elif [ "$mac_shard" = "2" ]; then
+        record "xcodebuild test: native island test" "SKIPPED" "DODDY_MAC_SHARD=2: the first Mac (shard 1) runs it"
       else
         if [ -n "${sim_id:-}" ]; then
           run_step "Restart the simulator before the native island test" restart_simulator "$sim_id"

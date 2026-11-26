@@ -137,5 +137,30 @@ called "the full run's build uses it too" "COMPILATION_CACHE_ENABLE_CACHING=YES"
 run_ci "the Release build is left alone" 0 "--only ios" DODDY_RELEASE_BUILD=only DODDY_COMPILATION_CACHE=1
 not_called "Release has no compilation cache setting" "COMPILATION_CACHE_ENABLE_CACHING"
 
+# The nightly run splits the tests over two Macs (DODDY_MAC_SHARD, 26 Nov 2026). Shard 1: no unit tests, every UI
+# class but shard 2's, and the native island test. Shard 2: the unit tests and its UI classes, no island test.
+island='DoddyUITests/MemoryBaselineTests/testNativeIslandOfflineFixtureCanStartMuteAndEnd'
+run_ci "DODDY_MAC_SHARD=1" 0 "--only ios" DODDY_UI_TESTS=all DODDY_MAC_SHARD=1
+not_called "shard 1 runs no unit tests" "-only-testing:DoddyTests"
+called "shard 1 runs the UI tests" "-only-testing:DoddyUITests -skip-testing:$island"
+called "shard 1 leaves out shard 2's classes" "-skip-testing:DoddyUITests/MotionHopTests"
+called "shard 1 runs the native island test" "-only-testing:$island"
+has "the summary says shard 2 runs the unit tests" "SKIPPED  xcodebuild test: unit tests (DODDY_MAC_SHARD=1: the second Mac (shard 2) runs them)"
+run_ci "DODDY_MAC_SHARD=2" 0 "--only ios" DODDY_UI_TESTS=all DODDY_MAC_SHARD=2
+called "shard 2 runs the unit tests" "-only-testing:DoddyTests"
+called "shard 2 runs its UI classes" "-only-testing:DoddyUITests/MotionHopTests"
+not_called "shard 2 runs no other UI class" "-only-testing:DoddyUITests -skip"
+not_called "shard 2 doesn't run the island test" "-only-testing:$island"
+has "the summary says shard 1 runs the island test" "SKIPPED  xcodebuild test: native island test (DODDY_MAC_SHARD=2: the first Mac (shard 1) runs it)"
+run_ci "a bad DODDY_MAC_SHARD fails" 1 "--only ios" DODDY_UI_TESTS=all DODDY_MAC_SHARD=3
+has "the summary names it" "FAIL     DODDY_MAC_SHARD is 1, 2 or unset (got 3; every test runs instead)"
+# Every class named for shard 2 is a UI test class: a renamed one would otherwise run in shard 1 and look moved.
+shard2=$(sed -n '/ui_shard2_classes="/,/"$/p' "$ci_script" | sed 's/.*ui_shard2_classes="//; s/"//g')
+[ "$(wc -w <<<"$shard2" | tr -d ' ')" -ge 10 ] || { echo "FAIL  found no shard-2 class list in ci.sh"; failures=$((failures + 1)); }
+for c in $shard2; do
+  grep -qE "class $c\b" "$repo"/DoddyUITests/*.swift || { echo "FAIL  shard 2 names $c, which is no class in DoddyUITests"; failures=$((failures + 1)); }
+done
+echo "ok    every shard-2 class is in DoddyUITests"
+
 if [ "$failures" -ne 0 ]; then echo "$failures check(s) failed"; exit 1; fi
 echo "all Mac phase cases passed"
