@@ -32,6 +32,16 @@ final class IslandPolishTests: XCTestCase {
         stop.tap()
         app.activate()
         XCTAssertTrue(app.buttons["island.fixture.start"].appears(timeout: 10))
+        // The island's Stop reaches the app's handler a few seconds after the tap (as in
+        // `MemoryBaselineTests`, 20 s). This test used to end before it did, and the next test then closed the
+        // app while the Stop was still on its way: iOS opened the app again by itself, without that test's launch
+        // arguments, to run it, and `LaunchSmokeTests.testBackTapCard…` (the first test after this one, in
+        // alphabetical order) found the Polish first-run welcome instead of Home and failed its first check
+        // (run 45630608674, and the same check in runs 1741 and 1748; the screen recording shows it).
+        let status = app.staticTexts["island.fixture.status"]
+        XCTAssertTrue(
+            pollUntil(timeout: 20) { status.exists && status.label == "Fixture ended" },
+            "System Stop must reach the app handler before the test ends.")
     }
 
     @MainActor
