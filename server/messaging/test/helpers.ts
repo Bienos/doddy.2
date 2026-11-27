@@ -146,6 +146,8 @@ export const TASK_AGENT_ID = "agent_task_test";
 export const TASK_BOOK_AGENT_ID = "agent_task_book_test";
 /** The order agent's id in tests (decision 2026-11-12-food-by-phone). */
 export const TASK_ORDER_AGENT_ID = "agent_task_order_test";
+/** The message agent's id in tests (decision 2026-11-27-voice-first-doddy, step 4). */
+export const TASK_TELL_AGENT_ID = "agent_task_tell_test";
 export const EL_WEBHOOK_SECRET = "el-webhook-secret-0123456789";
 export const DODDY_FROM = "+48221112233";
 export const sidFor = (n: number) => "CA" + n.toString(16).padStart(32, "0");
@@ -180,6 +182,7 @@ export const EL_TWIML = '<?xml version="1.0" encoding="UTF-8"?><Response><Connec
 
 export const TASK_PROMPT = readFileSync(new URL("../../../../voice-agent/task-call/instructions.md", import.meta.url), "utf8").trim();
 export const ORDER_PROMPT = readFileSync(new URL("../../../../voice-agent/task-call-order/instructions.md", import.meta.url), "utf8").trim();
+export const TELL_PROMPT = readFileSync(new URL("../../../../voice-agent/task-call-tell/instructions.md", import.meta.url), "utf8").trim();
 export const BOOK_PROMPT = readFileSync(new URL("../../../../voice-agent/task-call-book/instructions.md", import.meta.url), "utf8").trim();
 
 /** The live agent as the spec says it must be (shape read from a real agent on 2026-10-18). */
@@ -253,6 +256,8 @@ export interface TaskTestOptions {
   bookAgentPrompt?: string;
   /** Sets up the order agent too, answering with this prompt (decision 2026-11-12-food-by-phone). */
   orderAgentPrompt?: string;
+  /** Sets up the message agent too, answering with this prompt (decision 2026-11-27-voice-first-doddy, step 4). */
+  tellAgentPrompt?: string;
 }
 
 /** The real app with task calls on, fake providers and a clock the test moves. */
@@ -261,6 +266,7 @@ export async function taskTestApp(db: Db, opts: TaskTestOptions = {}) {
   const voice = new FakeVoice();
   if (opts.bookAgentPrompt !== undefined) voice.agentsById.set(TASK_BOOK_AGENT_ID, compliantAgent(opts.bookAgentPrompt, TASK_BOOK_AGENT_ID));
   if (opts.orderAgentPrompt !== undefined) voice.agentsById.set(TASK_ORDER_AGENT_ID, compliantAgent(opts.orderAgentPrompt, TASK_ORDER_AGENT_ID));
+  if (opts.tellAgentPrompt !== undefined) voice.agentsById.set(TASK_TELL_AGENT_ID, compliantAgent(opts.tellAgentPrompt, TASK_TELL_AGENT_ID));
   // Monday 19 Oct 2026, 11:00 in Warsaw.
   const clock = { now: new Date(opts.start ?? "2026-10-19T09:00:00Z") };
   const settings: TaskCallSettings = {
@@ -277,6 +283,7 @@ export async function taskTestApp(db: Db, opts: TaskTestOptions = {}) {
         elevenLabsApiKey: "test", agentId: TASK_AGENT_ID, webhookSecret: EL_WEBHOOK_SECRET,
         ...(opts.bookAgentPrompt !== undefined ? { bookAgentId: TASK_BOOK_AGENT_ID } : {}),
         ...(opts.orderAgentPrompt !== undefined ? { orderAgentId: TASK_ORDER_AGENT_ID } : {}),
+        ...(opts.tellAgentPrompt !== undefined ? { tellAgentId: TASK_TELL_AGENT_ID } : {}),
       },
     },
     taskCallLog: (msg, extra) => logs.push({ msg, extra }),

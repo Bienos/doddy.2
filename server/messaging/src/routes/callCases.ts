@@ -49,6 +49,9 @@ export const callCaseRoutes = (deps: Deps, ctx: TaskCallContext | undefined): Fa
     // The order agent (decision 2026-11-12-food-by-phone), the same way.
     const orderAgentConfigured = !!ctx?.agentIdFor("order");
     const orderAgentProblems = ctx && orderAgentConfigured ? await ctx.driftFor("order").problems() : [];
+    // The message agent (decision 2026-11-27-voice-first-doddy, step 4), the same way.
+    const tellAgentConfigured = !!ctx?.agentIdFor("tell");
+    const tellAgentProblems = ctx && tellAgentConfigured ? await ctx.driftFor("tell").problems() : [];
     return {
       available: !!ctx && !ctx.settings.killSwitch && agentProblems.length === 0,
       configured: !!ctx,
@@ -69,6 +72,10 @@ export const callCaseRoutes = (deps: Deps, ctx: TaskCallContext | undefined): Fa
       order: !!ctx && !ctx.settings.killSwitch && orderAgentConfigured && orderAgentProblems.length === 0,
       orderAgentConfigured,
       orderAgentProblems,
+      // Calls that pass on a message: the message agent is set up and matches its spec.
+      tell: !!ctx && !ctx.settings.killSwitch && tellAgentConfigured && tellAgentProblems.length === 0,
+      tellAgentConfigured,
+      tellAgentProblems,
     };
   });
 

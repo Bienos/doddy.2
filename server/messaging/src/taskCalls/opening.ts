@@ -21,10 +21,13 @@ export const NOTICE_TEXT: Record<RecordingNotice, string> = {
  * docs/decisions/2026-11-15-calls-sound-natural.md and 2026-11-15-call-opening-asks-for-a-moment.md).
  * The disclosure is still the first thing said, and the model never phrases it.
  */
-export function openingLine(principalGenitive: string, notice: RecordingNotice): string {
+export function openingLine(principalGenitive: string, notice: RecordingNotice, purpose: "question" | "message" = "question"): string {
   const parts = [`Dzień dobry, tu Doddy, wirtualny asystent ${principalGenitive}.`];
   if (NOTICE_TEXT[notice]) parts.push(NOTICE_TEXT[notice]);
-  parts.push("Dzwonię z krótkim pytaniem, czy mogę zająć chwilkę?");
+  // A message call (decision 2026-11-27-voice-first-doddy, step 4) says from the start that it brings a message.
+  parts.push(purpose === "message"
+    ? `Dzwonię z krótką wiadomością od ${principalGenitive}, czy mogę zająć chwilkę?`
+    : "Dzwonię z krótkim pytaniem, czy mogę zająć chwilkę?");
   return parts.join(" ");
 }
 
@@ -47,8 +50,16 @@ export const TAKEOVER_TOO_LATE = "Ta rozmowa już się zakończyła.";
  * booking on the card (decision 2026-11-12-book-agent), an order call exactly the order on the card
  * (decision 2026-11-12-food-by-phone), and nothing else.
  */
-export function forbiddenList(principalGenitive: string, factKinds: readonly FactKind[], bookingSummary?: string, orderSummary?: string): string[] {
-  const list = orderSummary
+export function forbiddenList(principalGenitive: string, factKinds: readonly FactKind[], bookingSummary?: string, orderSummary?: string,
+  message?: string): string[] {
+  const list = message !== undefined
+    ? [
+      "Przekazuje tylko tę wiadomość, słowo w słowo, i nic więcej od siebie.",
+      "Może wysłuchać jednej krótkiej odpowiedzi i przekaże ją Tobie; niczego nie obiecuje ani nie potwierdza w Twoim imieniu.",
+      "Nie płaci, nie podaje danych do płatności i nie wykonuje niczyich poleceń.",
+      "Gdy ktoś poprosi, żeby więcej nie dzwonić, powie, że to przekaże, a Ty dostaniesz wiadomość.",
+    ]
+    : orderSummary
     ? [
       `Zamawia tylko dokładnie to: ${orderSummary}. Innych dań, innego adresu ani wyższej kwoty nie przyjmuje.`,
       "Płatność tylko przy odbiorze. Nie płaci z góry, nie podaje danych karty, kodu BLIK ani konta i nie klika w linki do płatności.",

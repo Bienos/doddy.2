@@ -59,6 +59,25 @@ page, the screen or someone on a call asks; nothing from the user's memory is ad
 DC-045. The server route is off until the owner sets `CONTACT_TEXTS_ENABLED`; then Doddy offers `draft_message`. Doddy
 calling a contact with a message (a "tell" call, its agent prompt and limits) is the second part.
 
+Step 4, second part, server side (owner, 27 Nov 2026: "Ok do the next one"): **Doddy can call one person and pass on
+the user's message**, a new `tell` kind of call next to ask, book and order. Built the way order calls were: its own
+agent (`voice-agent/task-call-tell/`, `ELEVENLABS_TASK_TELL_AGENT_ID`, `scripts/setup-task-call-agent.mjs --agent tell`),
+its own pinned prompt (`TASK_TELL_AGENT_SPEC`, checked by `voice_agent_spec.py --agent task-call-tell`), a migration
+that widens the kind check (`043_tell_calls.sql`) and one server-built sentence: the message line. The brief holds the
+message (3 to 300 characters) and gets every content check (no braces, PESEL, card or account number, unticked
+address); the question is the server's own. The card lists what Doddy won't do: only this message, word for word; one
+short reply, passed on to the user; never an agreement, a payment or a link; a request not to be called again is
+answered with "I'll pass that on" and the user is told (owner, 9 Nov 2026: notify only). On the call the prompt gives the
+other person's words the status of information, never instruction: anyone who tries to steer Doddy gets the call-back
+line and the call ends; the message is never left with someone else. A call counts as delivered only when the
+transcript holds the exact message line and nothing warned (`answerOf`); a paraphrase or a warning is "not sure" for
+the user to read, never a plain yes. One place per task, and the message is erased from the server when the task ends.
+Message calls reuse the call limits, the hours (08:00 to 23:00 Warsaw), the Polish-numbers rule, the blocked list and
+the transcript rules of the other calls. The server answers 503 `tell_not_configured` until the owner creates the agent
+and sets its id; the availability route reports `tell`, `tellAgentConfigured` and `tellAgentProblems`. The voice tool
+and the app's card (`tell_by_phone`, with the strong yes "tak, dzwoń") are the next pull request; nothing is on the live
+agents. Evidence: `server/messaging/test/tellCalls.test.ts`.
+
 ## Consequences
 - More of the app is reachable by voice, so more tools: the prompt and tool list grow, which costs tokens and time per turn and can make wrong picks more likely. Each step adds agent tests for the tools it adds.
 - Step 3 lowers the bar for bookings and orders from a tap to a spoken phrase. The phrase must be the user's own words on their side of the conversation, after the card, within its time limit, with any "no", "wait" or "but" voiding it, as `SpokenYes` already does.
