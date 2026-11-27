@@ -16,7 +16,7 @@ public enum ProtectedDataPolicy {
     public static let openTools: Set<String> = [
         VoiceToolName.calculate, VoiceToolName.convertUnits, VoiceToolName.convertCurrency, VoiceToolName.lostWallet,
         VoiceToolName.setTimer,
-        VoiceToolName.startStopwatch, VoiceToolName.stopStopwatch, VoiceToolName.checkStopwatch,
+        VoiceToolName.startStopwatch, VoiceToolName.stopStopwatch, VoiceToolName.checkStopwatch, VoiceToolName.pauseResume,
         VoiceToolName.startFocus, VoiceToolName.stopFocus, VoiceToolName.checkFocus,
         VoiceToolName.startWindDown, VoiceToolName.stopWindDown,
         VoiceToolName.startTranslator, VoiceToolName.stopTranslator,

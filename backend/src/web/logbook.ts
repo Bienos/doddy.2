@@ -47,6 +47,7 @@ export const LOGBOOK_TOOL_IDS = [
   "remove_from_list", "create_list", "hand_over_errand", "check_errands", "make_something", "find_deals", "pay_for_page", "note_capability_gap", "ask_claude",
   "make_document", "research_now", "plan_trip",
   "change_note", "delete_note", "cancel_note_reminder", "rename_list", "delete_list", "clear_ticked", "cancel_task", "unfollow_news",
+  "pause_resume", "untick_all", "delete_task",
   "open_screen", "change_setting",
 ] as const;
 

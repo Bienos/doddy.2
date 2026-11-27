@@ -91,16 +91,16 @@ public enum CarProfile {
         // they still wait, because each shows something on the iPhone's screen or starts something there. Whether
         // some of them should run while driving is an owner decision; the reason the agent hears says only what is true.
         case .lookupContact, .followNews, .unfollowNews, .startStopwatch, .stopStopwatch, .startFocus, .stopFocus, .startWindDown, .stopWindDown,
-             .openTrainingPlan, .checkOff:
+             .pauseResume, .openTrainingPlan, .checkOff:
             return .refuse(reason: "This shows on the iPhone's screen, so it waits until the user isn't driving.")
         case .leaveBy, .createCalendarEvent, .createReminder, .remindAboutNote, .addIngredients, .undoLast,
              .setTimer, .setAlarm, .cancelAlarm, .openMap, .openFoodApp, .runShortcut, .draftMessage, .callContact, .makePresentation, .openCamera, .controlHome, .startTranslator,
              .stopTranslator, .removeFromList, .createList, .changeCalendarEvent, .changeReminder,
-             .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .cancelNoteReminder:
+             .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders, .cancelNoteReminder, .deleteTask:
             return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")
         // Decision 2026-11-27-voice-first-doddy: these run at once outside the car; whether they should while driving
         // (read back aloud first, like saving a note) is for when the car profile is built.
-        case .changeNote, .deleteNote, .renameList, .deleteList, .clearTicked, .cancelTask, .openScreen, .changeSetting:
+        case .changeNote, .deleteNote, .renameList, .deleteList, .clearTicked, .untickAll, .cancelTask, .openScreen, .changeSetting:
             return .refuse(reason: "This changes the user's notes, lists or tasks, so it waits until the user isn't driving.")
         }
     }

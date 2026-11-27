@@ -15,7 +15,7 @@ public enum ConnectionPause {
              .calculate, .convertUnits, .parkingSpot, .addIngredients,
              .addToList, .readList, .checkOff, .removeFromList, .createList, .noteCapabilityGap,
              .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews,
-             .startFocus, .stopFocus, .checkFocus, .startWindDown, .stopWindDown:
+             .startFocus, .stopFocus, .checkFocus, .startWindDown, .stopWindDown, .pauseResume:
             // The stopwatch is Doddy's own tool on this iPhone (ADR-652), and so are the plan screen
             // (ADR-626), the follow list of Following (ADR-657), and the focus timer and wind-down
             // (decision 2026-11-10-timers-by-voice): no other app or account.
@@ -24,6 +24,7 @@ public enum ConnectionPause {
             // Reads the tasks Doddy keeps for the user (ADR-570); no other app or account.
             false
         case .changeNote, .deleteNote, .cancelNoteReminder, .renameList, .deleteList, .clearTicked, .unfollowNews, .cancelTask,
+             .untickAll, .deleteTask,
              .openScreen, .changeSetting:
             // Doddy's own notes, lists and follows on this iPhone, and stopping one of Doddy's own tasks (decision
             // 2026-11-27-voice-first-doddy): no other app or account, and a stop is never held back.

@@ -86,6 +86,8 @@ final class ToolCatalogTests: XCTestCase {
             // Decision 2026-11-27-voice-first-doddy: following less is undone by following again; the owner's own
             // things with Undo and a stop the user asked for run as asked too.
             "unfollow_news", "change_note", "delete_note", "rename_list", "delete_list", "clear_ticked", "cancel_task",
+            // The next batch: untick all has Undo on the list; pausing a clock is undone by resuming it.
+            "untick_all", "pause_resume",
             "open_screen", "change_setting",
             VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe,
             "save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app", "lost_wallet",

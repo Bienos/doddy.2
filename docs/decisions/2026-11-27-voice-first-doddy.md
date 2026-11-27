@@ -108,6 +108,17 @@ plain "tak" after an email that asked for approval) are written in `docs/trust/e
 because they need the live agents. The new translator line went on the live translator agent on 27 Nov 2026 on the owner's word ("Push live"; version
 `agtvrsn_7101m8eghkzfe7m9hz70t3gne5e9`, `voice-agent/README.md`); the cases have not been run against it.
 
+Next batch of own things, in the repo (owner, 27 Nov 2026: "Ok do the next one", then "Small own things" chosen from the
+17 rows of `docs/product/VOICE_COVERAGE.md` still marked "next"). Three tools, nothing else: **`pause_resume`** (the
+stopwatch or the focus timer, "wstrzymaj stoper", "wznów skupienie": it runs at once, the app reads the clock's real state
+first because the controllers only toggle, a clock that is over or missing is a failure, and "paused" is said only when the
+clock reads back paused), **`untick_all`** (every tick off one list, at once, Undo on the list, like `clear_ticked`) and
+**`delete_task`** (one finished task, by its words, after a card: the task and its result are deleted on the server and the
+phone and nothing brings them back, so it keeps a card like `cancel_note_reminder`; words that match nothing never fall back
+to the one task there is, and a task still running is stopped first). A Studio job still can't be deleted by voice. The
+other rows stay "next". Compiled and tested in DoddyCore only; the app half compiles in CI. The tools are in
+`voice-agent/tools.json` as `not_synced`: they are not on the live agent, which changes only on the owner's word.
+
 ## Consequences
 - More of the app is reachable by voice, so more tools: the prompt and tool list grow, which costs tokens and time per turn and can make wrong picks more likely. Each step adds agent tests for the tools it adds.
 - Step 3 lowers the bar for bookings and orders from a tap to a spoken phrase. The phrase must be the user's own words on their side of the conversation, after the card, within its time limit, with any "no", "wait" or "but" voiding it, as `SpokenYes` already does.

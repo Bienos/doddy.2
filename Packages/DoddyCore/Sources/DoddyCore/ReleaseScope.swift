@@ -133,7 +133,7 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .flights: CloudToolName.flightTools
         case .claudeDocuments: [CloudToolName.askClaude, CloudToolName.makeDocument, CloudToolName.researchNow]
         case .deals: [VoiceToolName.findDeals]
-        case .errands: [VoiceToolName.handOverErrand, VoiceToolName.checkErrands, VoiceToolName.cancelTask]
+        case .errands: [VoiceToolName.handOverErrand, VoiceToolName.checkErrands, VoiceToolName.cancelTask, VoiceToolName.deleteTask]
         case .following: [VoiceToolName.followNews, VoiceToolName.unfollowNews]
         case .health: [VoiceToolName.readHealthWeek]
         case .trainingPlan: [VoiceToolName.openTrainingPlan]
@@ -273,7 +273,7 @@ public struct ReleaseScope: Equatable, Sendable {
         VoiceToolName.createList, VoiceToolName.addIngredients,
         // Notes and lists by voice (decision 2026-11-27-voice-first-doddy).
         VoiceToolName.changeNote, VoiceToolName.deleteNote, VoiceToolName.cancelNoteReminder,
-        VoiceToolName.renameList, VoiceToolName.deleteList, VoiceToolName.clearTicked,
+        VoiceToolName.renameList, VoiceToolName.deleteList, VoiceToolName.clearTicked, VoiceToolName.untickAll,
         // Steering the app by voice (`AppControlVoice`); a screen this build hides doesn't open.
         VoiceToolName.openScreen, VoiceToolName.changeSetting,
         VoiceToolName.readCalendar, VoiceToolName.findFreeTime, VoiceToolName.createCalendarEvent,
@@ -281,7 +281,7 @@ public struct ReleaseScope: Equatable, Sendable {
         VoiceToolName.createReminder, VoiceToolName.changeReminder, VoiceToolName.deleteReminder,
         VoiceToolName.moveReminders, VoiceToolName.undoLast,
         VoiceToolName.setTimer, VoiceToolName.setAlarm, VoiceToolName.listAlarms, VoiceToolName.cancelAlarm,
-        VoiceToolName.startStopwatch, VoiceToolName.stopStopwatch, VoiceToolName.checkStopwatch,
+        VoiceToolName.startStopwatch, VoiceToolName.stopStopwatch, VoiceToolName.checkStopwatch, VoiceToolName.pauseResume,
         // The focus timer and the wind-down by voice (decision 2026-11-10-timers-by-voice): Home's menu no longer
         // starts them, so in every scope a conversation is their way in.
         VoiceToolName.startFocus, VoiceToolName.stopFocus, VoiceToolName.checkFocus,

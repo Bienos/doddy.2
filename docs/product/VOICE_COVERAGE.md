@@ -22,16 +22,17 @@ iPhone app, and whether a voice tool covers it. Built on 27 Nov 2026 from `Doddy
 | Note reminders | done or snooze a due reminder | next | |
 | Lists | create, add, tick, remove, read | voice | `create_list`, `add_to_list`, `check_off`, `remove_from_list`, `read_list` |
 | Lists | rename, delete, clear ticked | new | `rename_list`, `delete_list`, `clear_ticked`, at once (Undo) |
-| Lists | untick all, templates, shopping mode, undo a change | next | |
+| Lists | untick all | new | `untick_all`, at once (Undo) |
+| Lists | templates, shopping mode, undo a change | next | |
 | Sharing | share a list, stop, join, leave | tap | iCloud's own sharing sheet |
 | Today | reminders: add, finish, change, delete | voice | `create_reminder`, `change_reminder`, `delete_reminder` |
 | Alarms, timers | set, list, turn off an alarm | voice | `set_alarm`, `set_timer`, `list_alarms`, `cancel_alarm` |
 | Alarms, timers | stop or pause a timer | next | needs AlarmKit's timers listed (draft #497) |
 | Focus, stopwatch | start, stop, check | voice | `start_focus`, `stop_focus`, `check_focus`, `start_stopwatch`, `stop_stopwatch`, `check_stopwatch` |
-| Focus, stopwatch | pause and resume | next | |
+| Focus, stopwatch | pause and resume | new | `pause_resume`, at once (the opposite undoes it) |
 | Tasks | hand over, read results | voice | `hand_over_errand`, `check_errands` |
 | Tasks | stop a task | new | `cancel_task`, at once ("stop the research") |
-| Tasks | delete a task | next | |
+| Tasks | delete a task | new | `delete_task`, after a card (it can't be brought back) |
 | Studio | make a brief | voice | `make_something` |
 | Studio | stop one | new | `cancel_task`, at once |
 | Studio | delete one | next | |

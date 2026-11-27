@@ -87,7 +87,10 @@ action_policy:
     # change_setting (AppControlVoice) run at once too: a screen only opens, and a setting comes from a fixed list of
     # Doddy's own (style, voice, appearance, his pictures, the island note, listening on open, remembering conversations,
     # suggesting notes); privacy, the Face ID lock, accounts, connections and payments stay in Settings, by hand.
-    own_small_actions_run_at_once: [start_stopwatch, stop_stopwatch, start_focus, stop_focus, start_wind_down, stop_wind_down, add_to_list, check_off, follow_news, open_training_plan, note_capability_gap, stop_morning_calls, unfollow_news]
+    # Next batch (same decision): pause_resume (the stopwatch or the focus timer, undone by the opposite) is in this list;
+    # untick_all (Undo on the list) runs at once through OwnThingsVoice.atOnceTools; delete_task keeps a card with the task
+    # it found, because a deleted task and its result are gone on the phone and on the server (OwnThingsVoice.cardTools).
+    own_small_actions_run_at_once: [start_stopwatch, stop_stopwatch, start_focus, stop_focus, start_wind_down, stop_wind_down, add_to_list, check_off, follow_news, open_training_plan, note_capability_gap, stop_morning_calls, unfollow_news, pause_resume]
     # Change (owner, 2026-11-14; decision docs/decisions/2026-11-14-spoken-yes-and-fewer-cards.md, step 2b): Doddy's own changes
     # that have Undo in "What Doddy did", and the drafts and hand-overs that change nothing anywhere, run when asked with no
     # card (AskFirst.ownChangesAtOnce). Those that open another app or the camera do so only while Doddy is on screen;

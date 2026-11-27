@@ -433,6 +433,13 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .memories, title: "Clear ticked items", detail: "“\(list)”", logDetail: nil, isLookup: false)
         case .cancelTask(let about):
             return ActivityRequest(app: .web, title: "Stop a task", detail: about.map { "“\($0)”" }, logDetail: nil, isLookup: false)
+        case .pauseResume(let clock, let resume):
+            let title = "\(resume ? "Resume" : "Pause") \(clock == .stopwatch ? "stopwatch" : "focus timer")"
+            return ActivityRequest(app: .memories, title: title, detail: nil, isLookup: false)
+        case .untickAll(let list):
+            return ActivityRequest(app: .memories, title: "Untick all items", detail: "“\(list)”", logDetail: nil, isLookup: false)
+        case .deleteTask(let about):
+            return ActivityRequest(app: .web, title: "Delete a task", detail: about.map { "“\($0)”" }, logDetail: nil, isLookup: false)
         case .unfollowNews(let name):
             return ActivityRequest(app: .news, title: "Stop following", detail: "“\(name)”", isLookup: false)
         case .openScreen:

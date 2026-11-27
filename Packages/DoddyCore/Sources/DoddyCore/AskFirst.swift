@@ -182,6 +182,8 @@ public enum AskFirst {
     /// unfollow, close the screen) and none reaches another app, an account or another person.
     public static let ownSmallActions: Set<String> = [
         VoiceToolName.startStopwatch, VoiceToolName.stopStopwatch, VoiceToolName.startFocus, VoiceToolName.stopFocus,
+        // Pausing and resuming those clocks (decision 2026-11-27-voice-first-doddy): undone by the opposite.
+        VoiceToolName.pauseResume,
         VoiceToolName.startWindDown, VoiceToolName.stopWindDown, VoiceToolName.addToList, VoiceToolName.checkOff,
         VoiceToolName.followNews, VoiceToolName.openTrainingPlan, VoiceToolName.noteCapabilityGap,
         // Following less (decision 2026-11-27-voice-first-doddy): undone by following it again, like follow_news.
@@ -230,20 +232,21 @@ public enum AskFirst {
         case .calculate, .convertUnits, .convertCurrency:
             return .runsNow
         // Doddy's own timers, lists and follows: started, ticked or added at once; each is undone in one step.
-        case .startStopwatch, .stopStopwatch, .startFocus, .stopFocus, .startWindDown, .stopWindDown,
+        case .startStopwatch, .stopStopwatch, .startFocus, .stopFocus, .startWindDown, .stopWindDown, .pauseResume,
              .addToList, .checkOff, .followNews, .unfollowNews, .openTrainingPlan, .noteCapabilityGap:
             return .runsNow
         // Doddy's own things by voice (decision 2026-11-27-voice-first-doddy; owner, 27 Nov 2026): the app finds exactly
         // one note, list, task or Studio job and changes or stops it at once, with Undo where there is one; Doddy says
         // what he did, read back from the store.
-        case .changeNote, .deleteNote, .renameList, .deleteList, .clearTicked, .cancelTask:
+        case .changeNote, .deleteNote, .renameList, .deleteList, .clearTicked, .cancelTask, .untickAll:
             return .runsNow
         // A screen only opens, and a setting from the fixed list is changed back the same way (`AppControlVoice`).
         case .openScreen, .changeSetting:
             return .runsNow
         // Turning off a note's reminder can't be undone in one step: the tool's own flow shows a card with the note and
         // its reminder, and a tap or the user's own spoken yes runs exactly that (`OwnThingPin`).
-        case .cancelNoteReminder:
+        // Deleting a finished task takes its result with it, on the phone and on the server: its own card too.
+        case .cancelNoteReminder, .deleteTask:
             return .ownPayloadCard
         // A text to one of the user's contacts (decision 2026-11-27-voice-first-doddy, step 4): the tool's own flow finds
         // the contact, reads the number from Contacts and shows a card with it and exactly the text; a tap or the user's

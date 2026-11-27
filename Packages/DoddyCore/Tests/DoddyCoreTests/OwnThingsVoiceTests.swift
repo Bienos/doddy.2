@@ -59,7 +59,7 @@ final class OwnThingsVoiceTests: XCTestCase {
         XCTAssertEqual(AskFirst.need(for: .deleteNote(quote: "x")), .runsNow)
         XCTAssertEqual(AskFirst.need(for: .cancelTask(about: nil)), .runsNow)
         XCTAssertEqual(AskFirst.need(for: .unfollowNews(name: "CPK")), .runsNow)
-        XCTAssertEqual(OwnThingsVoice.cardTools, [VoiceToolName.cancelNoteReminder])
+        XCTAssertEqual(OwnThingsVoice.cardTools, [VoiceToolName.cancelNoteReminder, VoiceToolName.deleteTask])
         XCTAssertEqual(AskFirst.need(for: .cancelNoteReminder(quote: "Leki")), .ownPayloadCard)
         XCTAssertEqual(ConfirmationTiers.tier(for: VoiceToolName.cancelNoteReminder), .spokenYes)
     }
