@@ -74,9 +74,22 @@ transcript holds the exact message line and nothing warned (`answerOf`); a parap
 the user to read, never a plain yes. One place per task, and the message is erased from the server when the task ends.
 Message calls reuse the call limits, the hours (08:00 to 23:00 Warsaw), the Polish-numbers rule, the blocked list and
 the transcript rules of the other calls. The server answers 503 `tell_not_configured` until the owner creates the agent
-and sets its id; the availability route reports `tell`, `tellAgentConfigured` and `tellAgentProblems`. The voice tool
-and the app's card (`tell_by_phone`, with the strong yes "tak, dzwoń") are the next pull request; nothing is on the live
-agents. Evidence: `server/messaging/test/tellCalls.test.ts`.
+and sets its id; the availability route reports `tell`, `tellAgentConfigured` and `tellAgentProblems`. Evidence:
+`server/messaging/test/tellCalls.test.ts`.
+
+Step 4, second part, app half (owner, 27 Nov 2026: "Ok do the next one"): the voice tool **`tell_by_phone`** ("zadzwoń do
+Marka i powiedz, że spóźnię się o godzinę"). The model gives the contact's name in its basic form and the message
+(3 to 300 characters), never a number. The app finds the person in Contacts (Doddy's switch, iOS's permission, the search
+budget; several matches are asked about), takes the first Polish number Doddy may call from the card, and sends the task
+to the server, which builds the `tell` call and the card: the name and number, where the number came from, exactly what
+Doddy passes on, the one sentence that says it, what he won't do, and how the answer comes back. A tap, or the user's own
+"tak, dzwoń" after the card appeared, starts it (a new `strongYes` tool: a plain "tak" is not enough, and after outside
+text only a tap works); the approval is the server's task digest, so a changed message is a new card. Without the
+message agent on the server (`tell` false in the availability answer) nobody is called and Doddy offers `text_contact`.
+Attack cases DC-046 to DC-052 cover the call itself (a callee who tries to steer, asks for an address, asks him to agree to
+something, asks to leave the message with someone else, or asks not to be called again) and an email asking for a call.
+They are written, not run: they need the live message agent. Nothing is on the live agents: the tool and the agent need
+the owner's word ("push it live") and the setup of `docs/OWNER_QUEUE.md` 126.
 
 ## Consequences
 - More of the app is reachable by voice, so more tools: the prompt and tool list grow, which costs tokens and time per turn and can make wrong picks more likely. Each step adds agent tests for the tools it adds.

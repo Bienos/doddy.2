@@ -2154,7 +2154,7 @@ final class VoiceSessionController {
         case .callTask(let id, let preview):
             // Nothing was dialled; the server deletes the places' briefs now instead of when they lapse.
             if let client = Self.messagingClient() { try? await client.cancelCallTask(preview.taskId) }
-            await answer(id, VoiceToolReply.callTaskDeclined)
+            await answer(id, preview.isMessage ? TellByPhoneVoice.declined : VoiceToolReply.callTaskDeclined)
         case .callLater(let id, _, _, _):
             if !replaced { callLaterAllowQuiet = false }
             await answer(id, VoiceToolReply.callDeclined)
@@ -3739,6 +3739,8 @@ final class VoiceSessionController {
             await proposeText(body, toolCallID: call.toolCallId)
         case .textContact(let name, let body):
             await textContact(request, name: name, body: body, call: call)
+        case .tellByPhone(let name, let message):
+            await tellByPhone(name: name, message: message, call: call)
         case .callMeLater(let draft):
             await proposeCallLater(draft, toolCallID: call.toolCallId)
         case .callMeNow:
@@ -5045,6 +5047,91 @@ final class VoiceSessionController {
         await reply(id, result.reply)
     }
 
+    // MARK: Calls to contacts with a message (decision 2026-11-27-voice-first-doddy, step 4)
+
+    /// The model named the person and wrote the message; the app finds the contact in Contacts (Doddy's switch, iOS's
+    /// permission and the search budget, as for text_contact), asks when several match, and takes the first Polish number
+    /// Doddy may call from the contact card. The server checks it again, builds the `tell` call and its card (the number,
+    /// exactly what Doddy says, what he won't do), and nothing is dialled until the person's tap or own "tak, dzwoń".
+    private func tellByPhone(name: String, message: String, call: ClientToolCallEvent) async {
+        let id = call.toolCallId
+        let attempt = startAttempt
+        guard let client = Self.messagingClient() else {
+            await reply(id, VoiceToolReply.callTaskNoServer, isError: true)
+            return
+        }
+        // No account yet means no verified number; asking the server would create an account.
+        guard await client.hasAccount() else {
+            await reply(id, VoiceToolReply.callTaskNoPhone)
+            return
+        }
+        let availability: CallCaseAvailability
+        do {
+            availability = try await client.callCaseAvailability()
+        } catch {
+            await reply(id, VoiceToolReply.callTaskRefused(error), isError: true)
+            return
+        }
+        guard availability.available, availability.phoneVerified else {
+            await reply(id, VoiceToolReply.callTaskNotReady(availability))
+            return
+        }
+        // Messages by phone need their own agent on the server; without it nobody is called.
+        guard availability.tell == true else {
+            await reply(id, TellByPhoneVoice.off)
+            return
+        }
+        guard !callerFirstName.isEmpty else {
+            await reply(id, VoiceToolReply.callTaskNoName)
+            return
+        }
+        switch ContactRead.decide(
+            switchOn: isOn(.contacts), iosAllows: devices.access(for: .contacts) == .granted, budget: &contactSearches) {
+        case .switchOff, .notAllowedByIOS:
+            await notConnected(id, .contacts)
+            return
+        case .budgetSpent:
+            await reply(id, VoiceToolReply.contactSearchesSpent, isError: true)
+            return
+        case .search:
+            break
+        }
+        let found: [DeviceConnections.ContactMatch]
+        do {
+            found = try devices.findContacts(named: name)
+        } catch {
+            await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            return
+        }
+        // Several matches are never guessed between: unless one is exactly the name asked for, the user is asked.
+        let place: CallTaskPlace
+        switch MessageRecipient.resolve(
+            found.map { (name: $0.name, phoneNumbers: $0.phoneNumbers, emailAddresses: $0.emailAddresses) }, query: name) {
+        case .nobody:
+            await reply(id, TellByPhoneVoice.notFound(name))
+            return
+        case .several(let names):
+            await reply(id, TellByPhoneVoice.severalContacts(names, query: name))
+            return
+        case .contact(let contactName, let phoneNumbers, _):
+            guard let chosen = TellByPhoneVoice.place(name: contactName, phoneNumbers: phoneNumbers) else {
+                await reply(id, TellByPhoneVoice.noNumber(contactName))
+                return
+            }
+            place = chosen
+        }
+        let draft = TellByPhoneVoice.draft(place: place, message: message)
+        let preview: CallTaskPreview
+        do {
+            preview = try await client.createCallTask(draft.body(principalName: callerFirstName))
+        } catch {
+            await reply(id, VoiceToolReply.callTaskRefused(error))
+            return
+        }
+        guard isLive, startAttempt == attempt, isCurrent(id) else { return }
+        propose(.callTask(toolCallID: id, preview: preview), toolCallID: id)
+    }
+
     // MARK: Calls to places (decision 2026-11-09-restaurant-calls-one-tap)
 
     /// Checks that calls can be made, sends the places to Doddy's server and shows the one card it
@@ -5128,7 +5215,7 @@ final class VoiceSessionController {
         guard approval.state != "unknown" else { return (VoiceToolReply.callTaskUnknown, true) }
         let first = preview.places.first?.callee.name ?? ""
         return (VoiceToolReply.callTaskStarted(first: first, count: preview.places.count, textResult: preview.textResult,
-                                               booking: preview.isBooking, order: preview.isOrder), true)
+                                               booking: preview.isBooking, order: preview.isOrder, message: preview.isMessage), true)
     }
 
     // MARK: Calls from Doddy's number later (ADR-754)

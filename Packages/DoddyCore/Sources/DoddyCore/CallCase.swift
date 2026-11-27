@@ -339,6 +339,10 @@ public struct CallPreview: Codable, Equatable, Sendable {
     /// A call that orders food (decision 2026-11-12-food-by-phone): exactly what may be ordered; `confirmLine`
     /// is then the one sentence that accepts it. Nil otherwise, and from older servers.
     public let order: CallTaskOrder?
+    /// A call that passes on the user's message (decision 2026-11-27-voice-first-doddy, step 4): exactly what Doddy
+    /// says, word for word, and the one sentence that says it. Nil otherwise, and from older servers.
+    public var message: String?
+    public var messageLine: String?
 }
 
 public struct CallCaseAvailability: Decodable, Equatable, Sendable {
@@ -354,6 +358,8 @@ public struct CallCaseAvailability: Decodable, Equatable, Sendable {
     public let booking: Bool?
     /// Whether calls that order food can be made (the order agent is set up and matches its spec). Nil from older servers.
     public let order: Bool?
+    /// Whether calls that pass on a message can be made (the message agent is set up and matches its spec). Nil from older servers.
+    public let tell: Bool?
 }
 
 public struct CallApproval: Equatable, Sendable {

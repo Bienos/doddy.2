@@ -20,6 +20,8 @@ public enum CallCaseError: Error, Equatable, Sendable {
     case bookingNotConfigured
     /// The order agent isn't set up on the server (decision 2026-11-12-food-by-phone).
     case orderNotConfigured
+    /// Messages by phone aren't set up on the server (decision 2026-11-27-voice-first-doddy, step 4).
+    case tellNotConfigured
 }
 
 extension DoddyServerClient {
@@ -163,6 +165,7 @@ extension DoddyServerClient {
         case (503, "calls_disabled"): return .callsDisabled
         case (503, "booking_not_configured"): return .bookingNotConfigured
         case (503, "order_not_configured"): return .orderNotConfigured
+        case (503, "tell_not_configured"): return .tellNotConfigured
         default: return .server(error(from: response))
         }
     }

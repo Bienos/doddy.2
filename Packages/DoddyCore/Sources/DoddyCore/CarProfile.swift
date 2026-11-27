@@ -62,6 +62,9 @@ public enum CarProfile {
         case .textContact:
             // A text to someone else, from Doddy's number: its card shows the number and the exact text to check.
             return .refuse(reason: "A text to a contact is shown on a card on the iPhone to check, so it waits until the user isn't driving.")
+        case .tellByPhone:
+            // A call to someone else with the user's message: its card shows the number and the exact words to check.
+            return .refuse(reason: "A call that passes on a message is shown on a card on the iPhone to check, so it waits until the user isn't driving.")
         case .callPlaces:
             // Calls to places in the user's name, approved on a card (decision 2026-11-09-restaurant-calls-one-tap).
             return .refuse(reason: "Calling places for the user needs a tap on the iPhone, so it waits until the user isn't driving.")

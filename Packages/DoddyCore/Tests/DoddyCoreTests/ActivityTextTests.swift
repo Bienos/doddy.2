@@ -46,6 +46,7 @@ final class ActivityTextTests: XCTestCase {
             // ADR-750 U2.
             .textMe(body: "Parcel code 4417"),
             .textContact(name: "Ania", body: "Spóźnię się 10 minut"),
+            .tellByPhone(name: "Marek", message: "Spóźnię się o godzinę"),
             // ADR-754.
             .callMeLater(CallLaterDraft(at: now.addingTimeInterval(3_600), reason: "Cake", timeZoneID: "Europe/Warsaw")),
             .callMeNow,
@@ -99,7 +100,7 @@ final class ActivityTextTests: XCTestCase {
              .draftMessage, .callContact, .draftBlikTransfer, .makePresentation, .readSteps, .readHealthWeek, .findPhotos, .lookAtScreen, .openCamera, .openFoodApp, .controlHome, .cloudTool, .addToList, .readList, .checkOff, .removeFromList, .createList,
              .changeCalendarEvent, .changeReminder, .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
              .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .makeSomething, .findDeals,
-             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews, .textMe, .textContact, .callMeLater, .callMeNow, .callPlaces,
+             .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews, .textMe, .textContact, .tellByPhone, .callMeLater, .callMeNow, .callPlaces,
              .callMeEveryMorning, .stopMorningCalls,
              .startFocus, .stopFocus, .checkFocus, .startWindDown, .stopWindDown, .whereAmI,
              .changeNote, .deleteNote, .cancelNoteReminder, .renameList, .deleteList, .clearTicked, .cancelTask, .unfollowNews,
@@ -117,7 +118,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 73, "text_contact (decision 2026-11-27-voice-first-doddy, step 4); change_setting and eight tools for Doddy's own notes, lists, tasks and follows (decision 2026-11-27-voice-first-doddy); call_contact (25 Nov 2026); call_me_every_morning and stop_morning_calls (decision 2026-11-14-morning-call); where_am_i (decision 2026-11-14-approximate-location-by-voice); open_food_app (decision 2026-11-12-food-by-voice); the focus timer and the wind-down, five tools (decision 2026-11-10-timers-by-voice); look_at_screen (decision 2026-11-09-doddy-looks-at-the-screen); follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); plus the BLIK draft (ADR-510, restored 7 Nov 2026), make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754), call_places (decision 2026-11-09-restaurant-calls-one-tap), call_me_now (decision 2026-11-10-call-me-now-by-voice)")
+        XCTAssertEqual(kinds.count, 74, "tell_by_phone (decision 2026-11-27-voice-first-doddy, step 4, second part); text_contact (decision 2026-11-27-voice-first-doddy, step 4); change_setting and eight tools for Doddy's own notes, lists, tasks and follows (decision 2026-11-27-voice-first-doddy); call_contact (25 Nov 2026); call_me_every_morning and stop_morning_calls (decision 2026-11-14-morning-call); where_am_i (decision 2026-11-14-approximate-location-by-voice); open_food_app (decision 2026-11-12-food-by-voice); the focus timer and the wind-down, five tools (decision 2026-11-10-timers-by-voice); look_at_screen (decision 2026-11-09-doddy-looks-at-the-screen); follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); plus the BLIK draft (ADR-510, restored 7 Nov 2026), make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754), call_places (decision 2026-11-09-restaurant-calls-one-tap), call_me_now (decision 2026-11-10-call-me-now-by-voice)")
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }

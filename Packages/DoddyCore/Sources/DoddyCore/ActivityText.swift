@@ -91,6 +91,7 @@ public enum ActivityText {
         "Call you every morning from Doddy's number": "Telefon do Ciebie co rano z numeru Doddy’ego",
         "Stop the morning calls from Doddy's number": "Koniec porannych telefonów z numeru Doddy’ego",
         "Call places for you from Doddy's number": "Telefony do miejsc w Twoim imieniu z numeru Doddy’ego",
+        "Call a contact with a message from Doddy's number": "Telefon do kontaktu z wiadomością z numeru Doddy’ego",
         // Written before ADR-275 fixed the article; old rows still say it.
         "Draft a email": "Szkic e-maila",
         "Checked email": "Sprawdzono pocztę",

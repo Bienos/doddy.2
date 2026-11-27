@@ -3757,5 +3757,11 @@
   "Couldn't confirm Doddy's server set up the morning call. The switch shows what the server says now. If it's off, setting up the same time and days again is safe: the server sets it up at most once.": "Nie udało się potwierdzić, że serwer Doddy’ego ustawił poranny telefon. Przełącznik pokazuje to, co serwer mówi teraz. Jeśli jest wyłączony, ponowne ustawienie tej samej godziny i dni jest bezpieczne: serwer ustawi go najwyżej raz.",
   "Off. Turn it on to choose the time and days, or ask Doddy, for example “Call me every day at 8 with the plan of the day.”": "Wyłączony. Włącz go, żeby wybrać godzinę i dni, albo poproś Doddy’ego, na przykład „Dzwoń do mnie codziennie o 8 z planem dnia”.",
   "Doddy couldn't reach %@.": "Doddy nie dodzwonił się: %@.",
-  "See what happened.": "Zobacz, co się stało."
+  "See what happened.": "Zobacz, co się stało.",
+  "Call and pass on your message?": "Zadzwonić i przekazać Twoją wiadomość?",
+  "Number from your Contacts.": "Numer z Twoich Kontaktów.",
+  "What Doddy passes on": "Co Doddy przekaże",
+  "Then Doddy says, word for word:": "Potem Doddy mówi, słowo w słowo:",
+  "Call and pass it on": "Zadzwoń i przekaż",
+  "Doddy listens to one short reply and tells you. He agrees to nothing.": "Doddy wysłucha jednej krótkiej odpowiedzi i Ci ją przekaże. Na nic się nie zgadza."
 }

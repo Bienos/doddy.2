@@ -33,7 +33,7 @@ public enum ConfirmationTiers {
     /// Bookings and orders (decision 2026-11-27-voice-first-doddy, step 3): a tap, or the person's own words naming the
     /// action (`StrongSpokenYes`); never a plain yes. `call_places` books a table, orders food (paid on delivery) or asks
     /// one question by phone (`strongAction(for:)` says which); `book_flight` books and pays for a flight.
-    public static let strongYes: Set<String> = ["book_flight", "call_places"]
+    public static let strongYes: Set<String> = ["book_flight", "call_places", "tell_by_phone"]
     /// A tap only. Paying for a page (ADR-736) asks for Face ID after the tap, so the person is looking at the iPhone
     /// anyway, and the page it pays for is text from outside: a spoken phrase would save nothing and open a way in.
     public static let tapOnly: Set<String> = ["pay_for_page"]
@@ -110,6 +110,7 @@ public enum ConfirmationTiers {
     public static func strongAction(for request: VoiceToolRequest, toolName: String) -> StrongSpokenYes.Action? {
         switch toolName {
         case "pay_for_page": return .pay
+        case VoiceToolName.tellByPhone: return .call
         case "book_flight": return .book
         case VoiceToolName.callPlaces:
             guard case .callPlaces(let draft) = request else { return .call }

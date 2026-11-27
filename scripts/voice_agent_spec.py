@@ -65,7 +65,7 @@ ASK = {"yes_or_tap", "strong_yes_or_tap", "tap", "runs_now"}
 TAP_ONLY = {"pay_for_page"}
 # Bookings and orders take a tap or the user's own words naming the action ("tak, zarezerwuj"), never a plain yes
 # (decision 2026-11-27-voice-first-doddy, step 3; ConfirmationTiers.strongYes and StrongSpokenYes in DoddyCore).
-STRONG_YES = {"book_flight", "call_places"}
+STRONG_YES = {"book_flight", "call_places", "tell_by_phone"}
 # Read nothing of the user's and change nothing (AskFirst.publicLookups in DoddyCore must match).
 # research_now (14 Nov 2026): Claude on Doddy's server searches the web and reads two or three pages; a look-up like web_search.
 # plan_trip (14 Nov 2026): the trip screen's planner by voice; Claude on Doddy's server reads the trip, Kiwi.com is searched.
