@@ -7,7 +7,7 @@ import type { Db } from "../db.js";
 import type { TaskTelephony, TaskVoice } from "../providers/taskCalls.js";
 import type { PushSender } from "../providers/types.js";
 import { checkAgentSafety, type AgentProblem } from "./agentSafety.js";
-import { TASK_AGENT_SPEC, TASK_BOOK_AGENT_SPEC, TASK_ORDER_AGENT_SPEC, type TaskAgentSpec } from "./agentSpec.js";
+import { TASK_AGENT_SPEC, TASK_BOOK_AGENT_SPEC, TASK_ORDER_AGENT_SPEC, TASK_TELL_AGENT_SPEC, type TaskAgentSpec } from "./agentSpec.js";
 import type { BriefDrafter } from "./draft.js";
 import { caseKeys, type CaseKeys } from "./payload.js";
 import type { SayVoice } from "./twiml.js";
@@ -58,9 +58,9 @@ export interface TaskCallContext {
   /** The ask agent's safety check. */
   drift: DriftCache;
   /** The safety check of the agent for a call's kind; the booking agent's fails closed while it isn't configured. */
-  driftFor(kind: "ask" | "book" | "order"): DriftCache;
-  /** The ElevenLabs agent that talks on a call of this kind; undefined for "book" and "order" while they aren't configured. */
-  agentIdFor(kind: "ask" | "book" | "order"): string | undefined;
+  driftFor(kind: "ask" | "book" | "order" | "tell"): DriftCache;
+  /** The ElevenLabs agent that talks on a call of this kind; undefined for "book", "order" and "tell" while they aren't configured. */
+  agentIdFor(kind: "ask" | "book" | "order" | "tell"): string | undefined;
   log: (msg: string, extra?: object) => void;
 }
 
@@ -75,13 +75,15 @@ export function taskCallContext(
   const bookDrift = bookAgentId ? new DriftCache(deps.voice, bookAgentId, now, log, TASK_BOOK_AGENT_SPEC) : DriftCache.notConfigured(deps.voice, now, log);
   const orderAgentId = deps.config.orderAgentId;
   const orderDrift = orderAgentId ? new DriftCache(deps.voice, orderAgentId, now, log, TASK_ORDER_AGENT_SPEC) : DriftCache.notConfigured(deps.voice, now, log);
+  const tellAgentId = deps.config.tellAgentId;
+  const tellDrift = tellAgentId ? new DriftCache(deps.voice, tellAgentId, now, log, TASK_TELL_AGENT_SPEC) : DriftCache.notConfigured(deps.voice, now, log);
   return {
     db, cipher, keys: caseKeys(cipher), telephony: deps.telephony, voice: deps.voice, config: deps.config,
     settings: deps.settings, publicBaseUrl, push, writer: deps.writer, drafter: deps.drafter, liveActivity: deps.liveActivity, smsCaps: deps.smsCaps, now,
     say: { voice: deps.settings.sayVoice, language: "pl-PL" },
     drift,
-    driftFor: (kind) => (kind === "order" ? orderDrift : kind === "book" ? bookDrift : drift),
-    agentIdFor: (kind) => (kind === "order" ? orderAgentId : kind === "book" ? bookAgentId : deps.config.agentId),
+    driftFor: (kind) => (kind === "tell" ? tellDrift : kind === "order" ? orderDrift : kind === "book" ? bookDrift : drift),
+    agentIdFor: (kind) => (kind === "tell" ? tellAgentId : kind === "order" ? orderAgentId : kind === "book" ? bookAgentId : deps.config.agentId),
     log,
   };
 }
@@ -100,8 +102,8 @@ export class DriftCache {
     private readonly log: (msg: string, extra?: object) => void, private readonly spec: TaskAgentSpec = TASK_AGENT_SPEC) {}
 
   /** Which agent this cache reads, for the log: the ask, booking or order agent. */
-  private get agent(): "ask" | "book" | "order" {
-    return this.spec === TASK_AGENT_SPEC ? "ask" : this.spec === TASK_ORDER_AGENT_SPEC ? "order" : "book";
+  private get agent(): "ask" | "book" | "order" | "tell" {
+    return this.spec === TASK_AGENT_SPEC ? "ask" : this.spec === TASK_ORDER_AGENT_SPEC ? "order" : this.spec === TASK_TELL_AGENT_SPEC ? "tell" : "book";
   }
 
   /** For an agent that isn't set up: always a problem, never a network call. */

@@ -4,6 +4,7 @@ import { z } from "zod";
 import { bookingQuestion, bookingSchema } from "./booking.js";
 import { clean } from "./clean.js";
 import { orderQuestion, orderSchema } from "./order.js";
+import { messageSchema, tellQuestion } from "./tell.js";
 
 export const FACT_KINDS = ["general", "reference", "date", "device", "contact", "pesel", "address"] as const;
 export type FactKind = (typeof FACT_KINDS)[number];
@@ -15,10 +16,11 @@ const text = (max: number, min = 1) => z.string().min(min).max(max * 2).transfor
  * Strict: an unknown field is a 400, never silently ignored. "ask" calls only ask (ADR-500); "book"
  * calls may accept exactly the booking on the card (decision 2026-11-12-book-agent), and "order" calls
  * exactly the food order on the card (decision 2026-11-12-food-by-phone); their question is built from
- * it here, never written by the model.
+ * it here, never written by the model. "tell" calls pass on exactly the message on the card and take one short reply
+ * (decision 2026-11-27-voice-first-doddy, step 4); their question is the server's own sentence too.
  */
 export const briefSchema = z.strictObject({
-  kind: z.enum(["ask", "book", "order"]).default("ask"),
+  kind: z.enum(["ask", "book", "order", "tell"]).default("ask"),
   callee: z.strictObject({
     name: text(80),
     phone: z.string().min(3).max(40),
@@ -36,6 +38,8 @@ export const briefSchema = z.strictObject({
   question: text(200, 5).optional(),
   booking: bookingSchema.optional(),
   order: orderSchema.optional(),
+  /** "tell" only: the user's message, word for word as the card shows it. */
+  message: messageSchema.optional(),
   facts: z.array(z.strictObject({ kind: z.enum(FACT_KINDS), text: text(160) })).max(5),
   maxDurationSecs: z.number().int().min(60).max(300).default(240),
 }).superRefine((b, ctx) => {
@@ -44,11 +48,14 @@ export const briefSchema = z.strictObject({
   if (b.kind === "book" && b.booking === undefined) ctx.addIssue({ code: "custom", path: ["booking"], message: "required" });
   if (b.kind !== "order" && b.order !== undefined) ctx.addIssue({ code: "custom", path: ["order"], message: "only_an_order_has_one" });
   if (b.kind === "order" && b.order === undefined) ctx.addIssue({ code: "custom", path: ["order"], message: "required" });
-  // A booking's or order's question is the server's own sentence; one written elsewhere is refused, not ignored.
+  if (b.kind !== "tell" && b.message !== undefined) ctx.addIssue({ code: "custom", path: ["message"], message: "only_a_message_call_has_one" });
+  if (b.kind === "tell" && b.message === undefined) ctx.addIssue({ code: "custom", path: ["message"], message: "required" });
+  // A booking's, order's or message's question is the server's own sentence; one written elsewhere is refused, not ignored.
   if (b.kind !== "ask" && b.question !== undefined) ctx.addIssue({ code: "custom", path: ["question"], message: "built_from_card" });
 }).transform((b) => ({
   ...b,
-  question: b.booking ? bookingQuestion(b.booking) : b.order ? orderQuestion(b.order) : b.question!,
+  question: b.booking ? bookingQuestion(b.booking) : b.order ? orderQuestion(b.order)
+    : b.kind === "tell" ? tellQuestion(b.principal.genitive) : b.question!,
 }));
 
 export type BriefInput = z.input<typeof briefSchema>;
@@ -78,6 +85,8 @@ function fields(b: Brief): { field: string; value: string; factKind?: FactKind }
     { field: "question", value: b.question },
     ...(b.booking ? [{ field: "booking.name", value: b.booking.name }, ...(b.booking.service ? [{ field: "booking.service", value: b.booking.service }] : [])] : []),
     ...(b.order ? orderFields(b.order) : []),
+    // A message gets every check: no braces, PESEL, account or card number, and no address unless one is ticked.
+    ...(b.message ? [{ field: "message", value: b.message }] : []),
     ...b.facts.map((f, i) => ({ field: `facts.${i}`, value: f.text, factKind: f.kind })),
   ];
 }

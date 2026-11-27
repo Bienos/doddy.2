@@ -47,6 +47,8 @@ export async function runTaskCallPasses(ctx: TaskCallContext, state: { lastSweep
     if (ctx.agentIdFor("book")) await run("driftBook", async () => (await ctx.driftFor("book").refresh()).length);
     // And the order agent (decision 2026-11-12-food-by-phone).
     if (ctx.agentIdFor("order")) await run("driftOrder", async () => (await ctx.driftFor("order").refresh()).length);
+    // And the message agent (decision 2026-11-27-voice-first-doddy, step 4).
+    if (ctx.agentIdFor("tell")) await run("driftTell", async () => (await ctx.driftFor("tell").refresh()).length);
   }
   return counts;
 }
@@ -183,7 +185,9 @@ async function buildAndStore(ctx: TaskCallContext, r: ResultRow) {
     }
   }
   // The one sentence that accepts the approved booking or order (decisions 2026-11-12-book-agent, 2026-11-12-food-by-phone).
-  const confirmLine = payload?.agent.variables.doddy_booking_confirm_line ?? payload?.agent.variables.doddy_order_confirm_line;
+  // A message call's line is the one that passes the message on (decision 2026-11-27-voice-first-doddy, step 4).
+  const confirmLine = payload?.agent.variables.doddy_booking_confirm_line ?? payload?.agent.variables.doddy_order_confirm_line
+    ?? payload?.agent.variables.doddy_message_line;
   const result = buildCallResult({
     endReason: (r.end_reason as never) ?? null,
     answered: r.answered_at !== null,
@@ -367,7 +371,7 @@ export async function runDeletions(ctx: Pick<TaskCallContext, "db" | "voice" | "
 export async function sweepOrphans(ctx: TaskCallContext): Promise<number> {
   const now = ctx.now();
   let queued = 0;
-  for (const agentId of [ctx.agentIdFor("ask"), ctx.agentIdFor("book"), ctx.agentIdFor("order")]) {
+  for (const agentId of [ctx.agentIdFor("ask"), ctx.agentIdFor("book"), ctx.agentIdFor("order"), ctx.agentIdFor("tell")]) {
     if (agentId) queued += await sweepAgent(ctx, agentId, now);
   }
   return queued;

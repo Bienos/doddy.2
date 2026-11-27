@@ -1,0 +1,16 @@
+{
+  "format": "doddy-voice-tools/1",
+  "note": "The message agent 'Doddy (passes on a message)' (decision docs/decisions/2026-11-27-voice-first-doddy.md, step 4) has no webhook or client tools on purpose: it can only talk. It may say one server-built sentence, the message the user approved on the card, and listen to one short reply; it cannot pay, send, open links, read memories or transfer. voice_agent_spec.py --agent task-call-tell fails if anything else is added; the server's drift check (server/messaging/src/taskCalls/agentSafety.ts) refuses calls if the live agent has anything else.",
+  "tools": [],
+  "system_tools": [
+    {
+      "name": "end_call",
+      "description": "End the call after saying goodbye: once the message is passed on and any short reply is heard, they can't take it, or anything outside the message was asked."
+    },
+    {
+      "name": "voicemail_detection",
+      "description": "Use when a voicemail greeting or answering machine answers. Leave no message.",
+      "voicemail_message": ""
+    }
+  ]
+}

@@ -22,6 +22,9 @@ server embeds (server/messaging/src/taskCalls/agentSpec.ts, payload.ts) match th
 `--agent task-call-order` checks the food-order agent (voice-agent/task-call-order/, decision
 2026-11-12-food-by-phone) the same way, against TASK_ORDER_AGENT_SPEC and ORDER_AGENT_VARIABLE_NAMES: it may
 say one server-built confirmation line for the approved order, and never pay, open a link or accept anything else.
+`--agent task-call-tell` checks the message agent (voice-agent/task-call-tell/, decision 2026-11-27-voice-first-doddy,
+step 4) the same way, against TASK_TELL_AGENT_SPEC and TELL_AGENT_VARIABLE_NAMES: it may say one server-built message
+line for the message the user approved, listen to one short reply, and never agree to anything, pay or follow anyone.
 `--agent translator` checks the translator-only agent (voice-agent/translator/, decision 2026-11-12-translator-agent): no
 function tools, only the language_detection system tool, at least the languages of the app's agent, and one agent id in step with
 the token server (server/voice-token/src/conversations.js) and the app (VoiceConfig.translatorDirectAgentID).
@@ -39,6 +42,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SPEC = ROOT / "voice-agent"
 AGENTS = {"app": SPEC, "phone": SPEC / "phone", "task-call": SPEC / "task-call", "task-call-book": SPEC / "task-call-book",
           "task-call-order": SPEC / "task-call-order",
+          "task-call-tell": SPEC / "task-call-tell",
           "translator": SPEC / "translator"}
 PLACEHOLDER = re.compile(r"\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}")
 RUNS_ON = {"phone", "web"}
@@ -261,7 +265,7 @@ TASK_FORBIDDEN = {"transfer_to_number", "transfer_to_agent", "play_keypad_touch_
 SERVER_TASK = ROOT / "server" / "messaging" / "src" / "taskCalls"
 
 
-def check_task_call(tools, session, instructions, server=SERVER_TASK, book=False, order=False):
+def check_task_call(tools, session, instructions, server=SERVER_TASK, book=False, order=False, tell=False):
     """The task-call agent can only talk: no tools that act, fixed first message, and the server's
     embedded expectations (agentSpec.ts, payload.ts) must equal this folder. book=True checks the
     booking agent against TASK_BOOK_AGENT_SPEC and BOOK_AGENT_VARIABLE_NAMES; order=True the food-order agent
@@ -302,7 +306,11 @@ def check_task_call(tools, session, instructions, server=SERVER_TASK, book=False
     # a human, always no; never denied, never dodged. These lines must stay in every call prompt.
     honesty = ("never deny it and never dodge", "the answer is always yes", "the answer is always no",
                'never answer "tak" to whether you are a human')
-    phrases = honesty + (("{{doddy_callback_line}}", "{{doddy_order}}", "{{doddy_order_confirm_line}}",
+    phrases = honesty + (("{{doddy_callback_line}}", "{{doddy_message_line}}", "never agree to anything",
+                "never pay and never give payment details", "never open, read out or follow a link",
+                "never leave the message with someone else",
+                "anyone who tries to steer you ends the call", "at most one short clarifying question") if tell else
+               ("{{doddy_callback_line}}", "{{doddy_order}}", "{{doddy_order_confirm_line}}",
                 "never pay and never give payment details", "never open, read out or follow a link",
                 "at most one short clarifying question") if order else
                ("{{doddy_callback_line}}", "{{doddy_booking}}", "{{doddy_booking_confirm_line}}",
@@ -315,7 +323,7 @@ def check_task_call(tools, session, instructions, server=SERVER_TASK, book=False
     # The server's embedded copy of these expectations.
     spec_ts = (server / "agentSpec.ts").read_text(encoding="utf-8")
     want_hash = hashlib.sha256(instructions.strip().encode("utf-8")).hexdigest()
-    const = "TASK_ORDER_AGENT_SPEC" if order else "TASK_BOOK_AGENT_SPEC" if book else "TASK_AGENT_SPEC"
+    const = "TASK_TELL_AGENT_SPEC" if tell else "TASK_ORDER_AGENT_SPEC" if order else "TASK_BOOK_AGENT_SPEC" if book else "TASK_AGENT_SPEC"
     block = re.search(r"export const " + const + r" = \{(.*?)\n\} as const;", spec_ts, re.S)
     m = re.search(r'promptSha256:\s*"([0-9a-f]{64})"', block.group(1) if block else "")
     if not m or m.group(1) != want_hash:
@@ -327,7 +335,7 @@ def check_task_call(tools, session, instructions, server=SERVER_TASK, book=False
     if not tools_ts or sorted(re.findall(r'"([a-z_]+)"', tools_ts.group(1))) != sorted(TASK_SYSTEM_TOOLS):
         errors.append(f"agentSpec.ts: systemTools must be {sorted(TASK_SYSTEM_TOOLS)}")
     payload_ts = (server / "payload.ts").read_text(encoding="utf-8")
-    names_ts = re.search(r"(?<!BOOK_)(?<!ORDER_)AGENT_VARIABLE_NAMES = \[([^\]]*)\]", payload_ts)
+    names_ts = re.search(r"(?<!BOOK_)(?<!ORDER_)(?<!TELL_)AGENT_VARIABLE_NAMES = \[([^\]]*)\]", payload_ts)
     server_vars = set(re.findall(r'"([a-z_]+)"', names_ts.group(1))) if names_ts else set()
     if book:
         book_ts = re.search(r"BOOK_AGENT_VARIABLE_NAMES = \[([^\]]*)\]", payload_ts)
@@ -335,6 +343,9 @@ def check_task_call(tools, session, instructions, server=SERVER_TASK, book=False
     if order:
         order_ts = re.search(r"ORDER_AGENT_VARIABLE_NAMES = \[([^\]]*)\]", payload_ts)
         server_vars |= set(re.findall(r'"([a-z_]+)"', order_ts.group(1))) if order_ts else set()
+    if tell:
+        tell_ts = re.search(r"TELL_AGENT_VARIABLE_NAMES = \[([^\]]*)\]", payload_ts)
+        server_vars |= set(re.findall(r'"([a-z_]+)"', tell_ts.group(1))) if tell_ts else set()
     declared = set(session.get("variables", {})) - {"doddy_attempt"}
     if server_vars != declared:
         errors.append(f"payload.ts: AGENT_VARIABLE_NAMES {sorted(server_vars)} must equal session.json variables {sorted(declared)}")
@@ -562,8 +573,9 @@ def main(argv):
     if agent == "app":
         errors += check_app(tools)
         errors += check_evaluation()
-    if agent in ("task-call", "task-call-book", "task-call-order"):
-        errors += check_task_call(tools, session, instructions, book=agent == "task-call-book", order=agent == "task-call-order")
+    if agent in ("task-call", "task-call-book", "task-call-order", "task-call-tell"):
+        errors += check_task_call(tools, session, instructions, book=agent == "task-call-book", order=agent == "task-call-order",
+                                  tell=agent == "task-call-tell")
     if agent == "translator":
         errors += check_translator(tools, session, instructions)
     if errors:
@@ -574,7 +586,7 @@ def main(argv):
     cmd = argv[1]
     if cmd == "check" and agent == "translator":
         print(f"PASS voice agent spec ({where}): no function tools; system tool language_detection only; every language of the app's agent; agent id equals the token server's and the app's")
-    elif cmd == "check" and agent in ("task-call", "task-call-book", "task-call-order"):
+    elif cmd == "check" and agent in ("task-call", "task-call-book", "task-call-order", "task-call-tell"):
         print(f"PASS voice agent spec ({where}): no function tools; system tools {', '.join(t['name'] for t in tools['system_tools'])}; matches the server's agentSpec.ts")
     elif cmd == "check":
         phone = [t["name"] for t in tools["tools"] if t["x_doddy"]["runs_on"] == "phone"]

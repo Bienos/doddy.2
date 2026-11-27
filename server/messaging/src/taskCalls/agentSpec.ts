@@ -36,6 +36,17 @@ export const TASK_ORDER_AGENT_SPEC = {
 } as const;
 
 /**
+ * The message agent (decision docs/decisions/2026-11-27-voice-first-doddy.md, step 4), from voice-agent/task-call-tell/,
+ * kept in step by `python3 -I scripts/voice_agent_spec.py check --agent task-call-tell`. Same rules as the ask agent;
+ * only its prompt differs, so the same safety check reads it with this hash. A new agent: no older prompt to accept.
+ */
+export const TASK_TELL_AGENT_SPEC = {
+  ...TASK_AGENT_SPEC,
+  /** sha256 of voice-agent/task-call-tell/instructions.md, trimmed, as the setup script sends it. */
+  promptSha256: "10c7643ce6a07aeeb1a287074697ce3399f7ae627655e914302d87524c5bb34b",
+} as const;
+
+/**
  * Prompts the drift check still accepts while the owner hasn't synced a live agent: for a spec's prompt hash, the
  * hashes of the instructions.md it replaced. Only the owner changes the live agents (CLAUDE.md), so without this a
  * deploy of a new prompt would stop every call until the sync. Keyed by the new hash, so another agent's spec never
