@@ -24,11 +24,18 @@ public struct OwnThingPin: Equatable, Sendable {
 }
 
 public enum OwnThingsVoice {
-    /// The tools of this step that show a card (a spoken yes or a tap runs them). `unfollow_news` runs at once.
-    public static let cardTools: Set<String> = [
-        VoiceToolName.changeNote, VoiceToolName.deleteNote, VoiceToolName.cancelNoteReminder,
-        VoiceToolName.renameList, VoiceToolName.deleteList, VoiceToolName.clearTicked, VoiceToolName.cancelTask,
+    /// Run when asked, with no card and no question (owner, 27 Nov 2026, following the rule of 25 Nov: "he should not be
+    /// really asking anything"), and Doddy says what he did. Each is undone in one step (Undo in Memories or on the
+    /// list, renaming back, the note's history keeps the old words), or is a stop the person asked for ("stop the
+    /// research": a stopped task is started again by asking again). `unfollow_news` is in `AskFirst.ownSmallActions`.
+    public static let atOnceTools: Set<String> = [
+        VoiceToolName.changeNote, VoiceToolName.deleteNote, VoiceToolName.renameList, VoiceToolName.deleteList,
+        VoiceToolName.clearTicked, VoiceToolName.cancelTask,
     ]
+
+    /// The one tool of this step that keeps a card: a note's reminder, once off, has to be set up again from scratch.
+    /// A spoken yes or a tap runs it.
+    public static let cardTools: Set<String> = [VoiceToolName.cancelNoteReminder]
 
     // MARK: Reading the call
 
@@ -67,8 +74,7 @@ public enum OwnThingsVoice {
             guard let list = cleaned("list") else { return .invalid(name: name, reason: "missing list") }
             return .clearTicked(list: list)
         case VoiceToolName.cancelTask:
-            guard let about = cleaned("about") else { return .invalid(name: name, reason: "missing about") }
-            return .cancelTask(about: about)
+            return .cancelTask(about: cleaned("about"))
         default:
             guard let follow = cleaned("name") else { return .invalid(name: name, reason: "missing name") }
             return .unfollowNews(name: follow)
@@ -91,11 +97,24 @@ public enum OwnThingsVoice {
         }
     }
 
-    /// The tasks that can still be stopped (handed over and not finished), matched by the words of their title or
-    /// request (`ErrandResultText.matches`). One match runs; several ask which; none says so.
-    public static func task(_ about: String, in errands: [StoredErrand]) -> ListMatchResult<StoredErrand> {
-        let open = errands.filter { [.queued, .running].contains($0.state) }
-        let found = open.filter { ErrandResultText.matches($0, about: about) }
+    /// Everything that can still be stopped: tasks handed over and Studio jobs that aren't finished.
+    public static func stoppable(tasks: [StoredErrand], studio: [StudioItemSummary]) -> [StoppableWork] {
+        tasks.filter { [.queued, .running].contains($0.state) }.map {
+            StoppableWork(id: $0.id, kind: .task, title: $0.draft.title, words: $0.draft.words)
+        } + studio.filter { [.queued, .researching, .making, .checking].contains($0.state) }.map {
+            StoppableWork(id: $0.id, kind: .studio, title: $0.title ?? "", words: "")
+        }
+    }
+
+    /// The one thing to stop. Words from its title or request pick it (`ErrandResultText`'s stem match); with no words,
+    /// or words that match nothing while only one thing is being worked on, that one thing ("stop the research" while
+    /// one task runs). Several ask which; nothing running says so.
+    public static func work(_ about: String?, in open: [StoppableWork]) -> ListMatchResult<StoppableWork> {
+        var found = open
+        if let about, !about.isEmpty {
+            let matching = open.filter { $0.matches(about) }
+            if !matching.isEmpty || open.count != 1 { found = matching }
+        }
         switch found.count {
         case 0: return .none
         case 1: return .one(found[0])
@@ -155,12 +174,6 @@ public enum OwnThingsVoice {
                 lines: ticked, confirmLabel: polish ? "Usuń odhaczone" : "Clear ticked")
     }
 
-    public static func cancelTaskCard(_ title: String, polish: Bool) -> AskCard {
-        AskCard(title: polish ? "Zatrzymać zadanie?" : "Stop this task?",
-                lines: [title, polish ? "Doddy przestanie nad nim pracować." : "Doddy stops working on it."],
-                confirmLabel: polish ? "Zatrzymaj" : "Stop")
-    }
-
     // MARK: Replies (the first word is what the prompt's rules read; the user's words are data)
 
     public static func severalNotes() -> String {
@@ -180,16 +193,16 @@ public enum OwnThingsVoice {
             + ToolData.block([VoiceToolReply.quoted("Name", name)])
     }
 
-    public static func taskNotFound(_ about: String, open: [StoredErrand]) -> String {
+    public static func taskNotFound(_ about: String?, open: [StoppableWork]) -> String {
         let lead = open.isEmpty
-            ? "not found: no task is being worked on now, so nothing was stopped. A finished task can't be stopped."
-            : "not found: no task that is being worked on matches the words below. Nothing was stopped. Ask the user which one; the open tasks follow."
-        return lead + "\n" + ToolData.block([VoiceToolReply.quoted("Asked for", about)] + open.map { "- \"\(ToolData.clean($0.draft.title))\"" })
+            ? "not found: nothing is being worked on now (no task and no Studio job), so nothing was stopped. Something already finished can't be stopped. A file being made in Messages can't be stopped either."
+            : "not found: nothing being worked on matches the words below. Nothing was stopped. Ask the user which one; what is being worked on follows."
+        return lead + "\n" + ToolData.block([about.map { VoiceToolReply.quoted("Asked for", $0) }].compactMap { $0 } + open.map(\.line))
     }
 
-    public static func severalTasks(_ about: String, _ tasks: [StoredErrand]) -> String {
-        "not changed: more than one open task matches. Ask the user which one. The words asked for, then the tasks:\n"
-            + ToolData.block([VoiceToolReply.quoted("Asked for", about)] + tasks.map { "- \"\(ToolData.clean($0.draft.title))\"" })
+    public static func severalTasks(_ about: String?, _ work: [StoppableWork]) -> String {
+        "not changed: more than one thing is being worked on and the words don't pick one. Ask the user which one:\n"
+            + ToolData.block([about.map { VoiceToolReply.quoted("Asked for", $0) }].compactMap { $0 } + work.map(\.line))
     }
 
     public static func followNotFound(_ name: String, follows: [NewsFollow]) -> String {
@@ -233,19 +246,56 @@ public enum OwnThingsVoice {
             + ToolData.block([VoiceToolReply.quoted("List", name)])
     }
 
-    public static func taskStopped(_ title: String) -> String {
-        "stopped: Doddy stopped working on the task below. Its result so far stays in Tasks.\n"
-            + ToolData.block([VoiceToolReply.quoted("Task", title)])
+    public static func taskStopped(_ work: StoppableWork) -> String {
+        let place = work.kind == .studio ? "Studio" : "Tasks"
+        return "stopped: Doddy stopped working on the \(work.kind.spoken) below. It stays in \(place); to do it after all, the user asks again.\n"
+            + ToolData.block([work.line])
     }
 
-    /// The server didn't confirm the stop, or the task's state afterwards isn't "cancelled": never said as stopped.
-    public static func taskNotStopped(_ title: String, reason: String) -> String {
-        "unknown: Doddy couldn't confirm the task stopped (\(ToolData.clean(reason))). Tell the user to check Tasks; don't try again by yourself.\n"
-            + ToolData.block([VoiceToolReply.quoted("Task", title)])
+    /// The server didn't confirm the stop, or the state afterwards isn't "cancelled": never said as stopped.
+    public static func taskNotStopped(_ work: StoppableWork, reason: String) -> String {
+        let place = work.kind == .studio ? "Studio" : "Tasks"
+        return "unknown: Doddy couldn't confirm the \(work.kind.spoken) stopped (\(ToolData.clean(reason))). Tell the user to check \(place); don't try again by yourself.\n"
+            + ToolData.block([work.line])
     }
 
     public static func unfollowed(_ name: String) -> String {
         "changed: the user no longer follows the topic below. It can be followed again any time with follow_news.\n"
             + ToolData.block([VoiceToolReply.quoted("Stopped following", name)])
+    }
+}
+
+/// A task handed over or a Studio job that is still being worked on, for cancel_task.
+public struct StoppableWork: Equatable, Sendable {
+    public enum Kind: String, Sendable {
+        case task, studio
+        var spoken: String { self == .studio ? "Studio job" : "task" }
+    }
+
+    public let id: UUID
+    public let kind: Kind
+    /// A Studio job has no title until its plan step names it; then it is "".
+    public let title: String
+    /// The task's request in the user's words; "" for a Studio job (the list doesn't carry its topic).
+    public let words: String
+
+    public init(id: UUID, kind: Kind, title: String, words: String) {
+        self.id = id
+        self.kind = kind
+        self.title = title
+        self.words = words
+    }
+
+    /// A word of `about` (four letters or more, folded) whose stem appears in the title or words, as for check_errands.
+    func matches(_ about: String) -> Bool {
+        let haystack = PolishText.fold(title + " " + words)
+        let wanted = PolishText.fold(about).components(separatedBy: CharacterSet.alphanumerics.inverted).filter { $0.count >= 4 }
+        return wanted.contains { haystack.contains(String($0.prefix(max(3, $0.count - 2)))) }
+    }
+
+    /// One line for a ToolData block.
+    var line: String {
+        let name = title.isEmpty ? (kind == .studio ? "(a Studio job, not named yet)" : "(a task)") : ToolData.clean(title)
+        return "- \(kind == .studio ? "Studio" : "Task"): \"\(name)\""
     }
 }

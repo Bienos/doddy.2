@@ -2140,7 +2140,7 @@
     {
       "type": "function",
       "name": "change_note",
-      "description": "Propose changing the text of one saved note in Doddy (Memories), when the user asks to correct, update or rewrite a note ('popraw notatkę z kodem: teraz 5678', 'change my note about the parcel code'). First find the note with search_memories, then pass its exact text as note and the whole new text as text, in the user's words and language (numbers, codes and times as digits). The app finds exactly that note and shows the card with the old and the new text; the earlier wording stays in the note's history. The result starts with 'changed', 'declined', 'not found', 'not changed' or 'failed'. Before this tool runs, say in one short line exactly what will happen, as the question, for example 'Zmienić notatkę na: kod 5678?' / 'Change the note to: code 5678?'; the user's own short yes, or a tap on the card, runs it, so don't ask a second time. Never say it was changed unless the result starts with changed. 'not found': search_memories again and use the exact text; if several notes have that text, ask which one.",
+      "description": "Change the text of one saved note in Doddy (Memories), when the user asks to correct, update or rewrite a note ('popraw notatkę z kodem: teraz 5678', 'change my note about the parcel code'). First find the note with search_memories, then pass its exact text as note and the whole new text as text, in the user's words and language (numbers, codes and times as digits). The app finds exactly that note and changes it at once, with no card; the earlier wording stays in the note's history. After an email, a page or the screen was read in this conversation, the app shows a card first; then ask its one short question and wait. The result starts with 'changed', 'not found', 'not changed' or 'failed'. Don't ask first: call it, then say in one short line what the note says now. Never say it was changed unless the result starts with changed. 'not found': search_memories again and use the exact text; if several notes have that text, ask which one.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -2160,17 +2160,17 @@
       },
       "x_doddy": {
         "runs_on": "phone",
-        "confirm_on_screen": true,
-        "ask": "yes_or_tap",
-        "speak_before": "force",
-        "timeout_secs": 90,
+        "confirm_on_screen": false,
+        "ask": "runs_now",
+        "speak_before": "auto",
+        "timeout_secs": 30,
         "elevenlabs_tool_id": "not_synced"
       }
     },
     {
       "type": "function",
       "name": "delete_note",
-      "description": "Propose deleting one saved note in Doddy (Memories), only when the user clearly asks to delete, remove or forget a note ('usuń notatkę o hasłach do wifi', 'delete the note about the gym'). First find it with search_memories, then pass its exact text. The card shows the note; once deleted the user can undo it in Memories for a short while. For a list, use delete_list; for a note's reminder only, use cancel_note_reminder. The result starts with 'deleted', 'declined', 'not found', 'not changed' or 'failed'. Before this tool runs, say in one short line exactly what will happen, as the question, for example 'Usunąć notatkę o wifi?' / 'Delete the note about the wifi?'; the user's own short yes, or a tap on the card, runs it, so don't ask a second time. Never say it was deleted unless the result starts with deleted.",
+      "description": "Delete one saved note in Doddy (Memories) when the user asks to delete, remove or forget a note ('usuń notatkę o hasłach do wifi', 'delete the note about the gym'). First find it with search_memories, then pass its exact text. It is deleted at once, with no card, and the user can undo it in Memories for a short while: say so in the same line. After an email, a page or the screen was read in this conversation, the app shows a card first; then ask its one short question and wait. For a list, use delete_list; for a note's reminder only, use cancel_note_reminder. The result starts with 'deleted', 'not found', 'not changed' or 'failed'. Don't ask first: call it. Never say it was deleted unless the result starts with deleted.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -2185,10 +2185,10 @@
       },
       "x_doddy": {
         "runs_on": "phone",
-        "confirm_on_screen": true,
-        "ask": "yes_or_tap",
-        "speak_before": "force",
-        "timeout_secs": 90,
+        "confirm_on_screen": false,
+        "ask": "runs_now",
+        "speak_before": "auto",
+        "timeout_secs": 30,
         "elevenlabs_tool_id": "not_synced"
       }
     },
@@ -2220,7 +2220,7 @@
     {
       "type": "function",
       "name": "rename_list",
-      "description": "Propose renaming one of the user's lists in Doddy, when they ask ('zmień nazwę listy Zakupy na Biedronka'). Pass the list's current name and the new name in the user's words (at most 60 characters). The result starts with 'changed', 'declined', 'not found', 'not changed' (another list has that name, or several lists match) or 'failed'. Before this tool runs, say in one short line exactly what will happen, as the question, for example 'Zmienić nazwę listy Zakupy na Biedronka?' / 'Rename Shopping to Groceries?'; the user's own short yes, or a tap on the card, runs it, so don't ask a second time. Never say it was renamed unless the result starts with changed.",
+      "description": "Rename one of the user's lists in Doddy when they ask ('zmień nazwę listy Zakupy na Biedronka'). Pass the list's current name and the new name in the user's words (at most 60 characters). It is renamed at once, with no card; renaming it back undoes it. The result starts with 'changed', 'not found', 'not changed' (another list has that name, or several lists match: ask which) or 'failed'. Don't ask first: call it, then say in one short line what was done. Never say it was renamed unless the result starts with changed.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -2240,17 +2240,17 @@
       },
       "x_doddy": {
         "runs_on": "phone",
-        "confirm_on_screen": true,
-        "ask": "yes_or_tap",
-        "speak_before": "force",
-        "timeout_secs": 90,
+        "confirm_on_screen": false,
+        "ask": "runs_now",
+        "speak_before": "auto",
+        "timeout_secs": 30,
         "elevenlabs_tool_id": "not_synced"
       }
     },
     {
       "type": "function",
       "name": "delete_list",
-      "description": "Propose deleting one of the user's lists in Doddy with all its items, only when the user clearly asks to delete or remove the whole list ('usuń listę Prezenty'). To take items off a list use remove_from_list; to take only the ticked ones off, clear_ticked. The card shows the list and how many items it has; a list shared with other people stops being shared first, and the card says what happens to them. The user can undo it in Memories for a short while. The result starts with 'deleted', 'declined', 'not found', 'not changed' or 'failed'. Before this tool runs, say in one short line exactly what will happen, as the question, for example 'Usunąć całą listę Prezenty?' / 'Delete the whole Gifts list?'; the user's own short yes, or a tap on the card, runs it, so don't ask a second time. Never say it was deleted unless the result starts with deleted.",
+      "description": "Delete one of the user's lists in Doddy with all its items when the user asks to delete or remove the whole list ('usuń listę Prezenty'). To take items off a list use remove_from_list; to take only the ticked ones off, clear_ticked. It is deleted at once, with no card, and the user can undo it in Memories for a short while: say so in the same line. A list shared with other people stops being shared first. After an email, a page or the screen was read in this conversation, the app shows a card first unless the user named the list themselves; then ask its one short question and wait. The result starts with 'deleted', 'not found', 'not changed' or 'failed'. Don't ask first: call it. Never say it was deleted unless the result starts with deleted.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -2265,17 +2265,17 @@
       },
       "x_doddy": {
         "runs_on": "phone",
-        "confirm_on_screen": true,
-        "ask": "yes_or_tap",
-        "speak_before": "force",
-        "timeout_secs": 90,
+        "confirm_on_screen": false,
+        "ask": "runs_now",
+        "speak_before": "auto",
+        "timeout_secs": 30,
         "elevenlabs_tool_id": "not_synced"
       }
     },
     {
       "type": "function",
       "name": "clear_ticked",
-      "description": "Propose removing every ticked (done) item from one of the user's lists, when they ask to clear what's done ('wyczyść odhaczone z zakupów', 'clear the ticked items'). The card shows exactly the ticked items; Undo is on the list afterwards. The result starts with 'cleared', 'declined', 'not found', 'not changed' (nothing is ticked) or 'failed'. Before this tool runs, say in one short line exactly what will happen, as the question, for example 'Usunąć 5 odhaczonych z listy Zakupy?' / 'Clear the 5 ticked items from Shopping?'; the user's own short yes, or a tap on the card, runs it, so don't ask a second time. Say how many were removed only from the result.",
+      "description": "Remove every ticked (done) item from one of the user's lists when they ask to clear what's done ('wyczyść odhaczone z zakupów', 'clear the ticked items'). It runs at once, with no card, and Undo is on the list afterwards. After an email, a page or the screen was read in this conversation, the app shows a card first unless the user named the list themselves; then ask its one short question and wait. The result starts with 'cleared', 'not found', 'not changed' (nothing is ticked) or 'failed'. Don't ask first: call it, then say how many were removed, only from the result.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -2290,35 +2290,33 @@
       },
       "x_doddy": {
         "runs_on": "phone",
-        "confirm_on_screen": true,
-        "ask": "yes_or_tap",
-        "speak_before": "force",
-        "timeout_secs": 90,
+        "confirm_on_screen": false,
+        "ask": "runs_now",
+        "speak_before": "auto",
+        "timeout_secs": 30,
         "elevenlabs_tool_id": "not_synced"
       }
     },
     {
       "type": "function",
       "name": "cancel_task",
-      "description": "Propose stopping one task Doddy is still working on in the background (handed over with hand_over_errand), when the user asks to stop or cancel it ('przestań szukać lotów do Rzymu', 'stop the task about headphones'). Pass words from the task's title or request. A finished task can't be stopped. The result starts with 'stopped', 'declined', 'not found', 'not changed' (several tasks match: ask which), 'unknown' (the stop wasn't confirmed: tell the user to check Tasks and don't try again yourself) or 'failed'. Before this tool runs, say in one short line exactly what will happen, as the question, for example 'Zatrzymać zadanie o lotach do Rzymu?' / 'Stop the task about flights to Rome?'; the user's own short yes, or a tap on the card, runs it, so don't ask a second time. Never say it stopped unless the result starts with stopped.",
+      "description": "Stop something Doddy is still working on in the background: a task handed over with hand_over_errand (research, comparisons, a plan) or a Studio job made with make_something (a research brief and infographic). Use it the moment the user says stop ('stop the research', 'przestań szukać lotów do Rzymu', 'zatrzymaj raport', 'stop it'). Pass words from its title or request as about, or leave about out when the user only said 'stop it'. With only one thing being worked on, that one stops whatever the words. It stops at once, with no card; to do it after all, the user asks again. A file being made in Messages can't be stopped. The result starts with 'stopped', 'not found' (nothing is being worked on, or nothing matches: it lists what is), 'not changed' (several match: ask which, once), 'unknown' (the stop wasn't confirmed: tell the user to check Tasks or Studio and don't try again yourself) or 'failed'. Don't ask first: call it. Never say it stopped unless the result starts with stopped.",
       "parameters": {
         "type": "object",
         "properties": {
           "about": {
             "type": "string",
-            "description": "Words from the task's title or request, e.g. 'Rzym'."
+            "description": "Words from its title or request, e.g. 'Rzym' or 'kawa'. Leave out when the user only said 'stop it'."
           }
         },
-        "required": [
-          "about"
-        ]
+        "required": []
       },
       "x_doddy": {
         "runs_on": "phone",
-        "confirm_on_screen": true,
-        "ask": "yes_or_tap",
-        "speak_before": "force",
-        "timeout_secs": 90,
+        "confirm_on_screen": false,
+        "ask": "runs_now",
+        "speak_before": "auto",
+        "timeout_secs": 60,
         "elevenlabs_tool_id": "not_synced"
       }
     },

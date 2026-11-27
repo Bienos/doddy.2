@@ -445,6 +445,8 @@ final class OutsideContentTests: XCTestCase {
         XCTAssertEqual(OutsideContentRule.guardedTools, [
             VoiceToolName.textMe, VoiceToolName.lookAtScreen, VoiceToolName.addToList, VoiceToolName.checkOff,
             CloudToolName.askClaude, CloudToolName.makeDocument,
+            // Decision 2026-11-27-voice-first-doddy.
+            VoiceToolName.changeNote, VoiceToolName.deleteNote, VoiceToolName.deleteList, VoiceToolName.clearTicked,
         ])
         for name in OutsideContentRule.guardedTools {
             let tool = try XCTUnwrap(spec.first { $0.name == name }, name)

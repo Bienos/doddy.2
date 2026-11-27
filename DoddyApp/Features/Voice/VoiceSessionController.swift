@@ -3847,13 +3847,17 @@ final class VoiceSessionController {
     private struct OwnThingTarget {
         /// What the card showed (the thing's id and the words it had), checked again before the change runs.
         let pin: String
-        let card: AskCard
+        /// Nil for the tools that run at once (`OwnThingsVoice.atOnceTools`).
+        var card: AskCard? = nil
         let run: @MainActor () async -> String
     }
 
-    /// unfollow_news runs at once. The others find exactly one thing and show a card with it; after the person's tap or
-    /// own spoken yes the same call comes back through `runAsked`, the ledger lets it run once, and it runs only if the
-    /// app finds the same thing the card showed (`OwnThingPin`). Every reply is read back from the store after the change.
+    /// The app finds exactly one note, list, task or Studio job. The tools in `OwnThingsVoice.atOnceTools` and
+    /// unfollow_news then run at once (owner, 27 Nov 2026); after an email, a page or the screen the outside-content rule
+    /// has already asked before this point (`AskFirst.need(for:in:)`). cancel_note_reminder shows a card with the note and
+    /// its reminder; after the person's tap or own spoken yes the same call comes back through `runAsked`, the ledger
+    /// lets it run once, and it runs only if the app finds the same thing the card showed (`OwnThingPin`). Every reply is
+    /// read back from the store after the change.
     private func handleOwnThing(_ request: VoiceToolRequest, call: ClientToolCallEvent) async {
         let id = call.toolCallId
         if case .unfollowNews(let name) = request {
@@ -3872,11 +3876,15 @@ final class VoiceSessionController {
         }
         guard let target = await ownThingTarget(request, toolCallID: id) else { return }
         guard isCurrent(id) else { return dropStale(id) }
+        guard let card = target.card else {
+            await reply(id, await target.run())
+            return
+        }
         let pin = OwnThingPin(tool: call.toolName, id: target.pin)
         guard askLedger.mayRun(id, request: request, at: Date()) else {
             ownThingPins[id] = pin
             askLedger.asked(id, request: request, needsTap: false, at: Date())
-            propose(.ask(toolCallID: id, card: target.card, needsTap: false, toolName: call.toolName, parameters: call.parametersData),
+            propose(.ask(toolCallID: id, card: card, needsTap: false, toolName: call.toolName, parameters: call.parametersData),
                     toolCallID: id)
             return
         }
@@ -3907,7 +3915,7 @@ final class VoiceSessionController {
             let pin = note.id.uuidString + "|" + note.currentText
             switch request {
             case .changeNote(_, let newText):
-                return OwnThingTarget(pin: pin, card: OwnThingsVoice.changeNoteCard(current: note.currentText, new: newText, polish: polish)) {
+                return OwnThingTarget(pin: pin) {
                     do {
                         let record = try await self.store.correct(id: note.id, text: newText)
                         return OwnThingsVoice.noteChanged(record.currentText)
@@ -3928,7 +3936,7 @@ final class VoiceSessionController {
                         : VoiceToolReply.failed("The reminder is still on.")
                 }
             default:
-                return OwnThingTarget(pin: pin, card: OwnThingsVoice.deleteNoteCard(note.currentText, polish: polish)) {
+                return OwnThingTarget(pin: pin) {
                     do {
                         try await self.store.delete(id: note.id)
                         return self.store.record(id: note.id) == nil
@@ -3946,8 +3954,7 @@ final class VoiceSessionController {
                 await reply(id, OwnThingsVoice.listNameTaken(existing.name))
                 return nil
             }
-            let card = OwnThingsVoice.renameListCard(list.name, to: newName, sharedNote: nil, polish: polish)
-            return OwnThingTarget(pin: list.id.uuidString + "|" + list.name, card: card) {
+            return OwnThingTarget(pin: list.id.uuidString + "|" + list.name) {
                 do {
                     try await self.store.renameList(list.id, to: newName)
                     let now = self.store.lists.first { $0.id == list.id }?.name
@@ -3958,9 +3965,7 @@ final class VoiceSessionController {
             }
         case .deleteList(let name):
             guard let list = await resolveList(name, toolCallID: id) else { return nil }
-            let card = OwnThingsVoice.deleteListCard(list.name, items: list.items.count,
-                                                     sharedWarning: SharedListsController.shared.deleteWarning(list.id), polish: polish)
-            return OwnThingTarget(pin: list.id.uuidString + "|" + list.name, card: card) {
+            return OwnThingTarget(pin: list.id.uuidString + "|" + list.name) {
                 do {
                     try await SharedListsController.shared.stopSharingBeforeDeleting(list.id)
                     try await self.store.delete(id: list.id)
@@ -3979,7 +3984,7 @@ final class VoiceSessionController {
                 return nil
             }
             let pin = list.id.uuidString + "|" + ticked.map(\.id.uuidString).sorted().joined(separator: ",")
-            return OwnThingTarget(pin: pin, card: OwnThingsVoice.clearTickedCard(list.name, ticked: ticked.map(\.text), polish: polish)) {
+            return OwnThingTarget(pin: pin) {
                 do {
                     try await self.store.clearTicked(listID: list.id)
                     let left = self.store.lists.first { $0.id == list.id }?.done.count ?? 0
@@ -3989,18 +3994,31 @@ final class VoiceSessionController {
                 }
             }
         case .cancelTask(let about):
+            // A task handed over and a Studio job both stop as asked ("stop the research"). Each is read back from its
+            // server after the stop: "stopped" only when it says cancelled.
             let errands = ErrandsModel.shared
+            let studio = StudioModel.shared
             await errands.refresh()
-            switch OwnThingsVoice.task(about, in: errands.errands) {
-            case .one(let task):
-                return OwnThingTarget(pin: task.id.uuidString, card: OwnThingsVoice.cancelTaskCard(task.draft.title, polish: polish)) {
-                    errands.message = nil
-                    await errands.cancel(task.id)
-                    if errands.errand(task.id)?.state == .cancelled { return OwnThingsVoice.taskStopped(task.draft.title) }
-                    return OwnThingsVoice.taskNotStopped(task.draft.title, reason: errands.message ?? "the server didn't confirm it")
+            await studio.refresh()
+            let open = OwnThingsVoice.stoppable(tasks: errands.errands, studio: studio.items)
+            switch OwnThingsVoice.work(about, in: open) {
+            case .one(let work):
+                return OwnThingTarget(pin: work.id.uuidString) {
+                    switch work.kind {
+                    case .task:
+                        errands.message = nil
+                        await errands.cancel(work.id)
+                        if errands.errand(work.id)?.state == .cancelled { return OwnThingsVoice.taskStopped(work) }
+                        return OwnThingsVoice.taskNotStopped(work, reason: errands.message ?? "the server didn't confirm it")
+                    case .studio:
+                        studio.message = nil
+                        await studio.cancel(work.id)
+                        if studio.items.first(where: { $0.id == work.id })?.state == .cancelled { return OwnThingsVoice.taskStopped(work) }
+                        return OwnThingsVoice.taskNotStopped(work, reason: studio.message ?? "the server didn't confirm it")
+                    }
                 }
             case .none:
-                await reply(id, OwnThingsVoice.taskNotFound(about, open: errands.errands.filter { [.queued, .running].contains($0.state) }))
+                await reply(id, OwnThingsVoice.taskNotFound(about, open: open))
             case .several(let found):
                 await reply(id, OwnThingsVoice.severalTasks(about, found))
             }

@@ -196,7 +196,7 @@ public enum AskFirst {
     /// `OutsideContentRule.guardedTools` among them can still ask in a conversation (`need(for:in:)`).
     public static func runsAtOnce(_ name: String) -> Bool {
         if publicLookups.contains(name) || ownLooks.contains(name) || ownSmallActions.contains(name) || ownChangesAtOnce.contains(name)
-            || ownPhoneCallsAtOnce.contains(name) {
+            || ownPhoneCallsAtOnce.contains(name) || OwnThingsVoice.atOnceTools.contains(name) {
             return true
         }
         if [VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe].contains(name) { return true }
@@ -233,10 +233,14 @@ public enum AskFirst {
         case .startStopwatch, .stopStopwatch, .startFocus, .stopFocus, .startWindDown, .stopWindDown,
              .addToList, .checkOff, .followNews, .unfollowNews, .openTrainingPlan, .noteCapabilityGap:
             return .runsNow
-        // Doddy's own things by voice (decision 2026-11-27-voice-first-doddy): the tool's own flow finds exactly one
-        // note, list or task and shows a card with what it found and what changes; a tap or the user's own spoken yes
-        // runs exactly that (`OwnThingPin`).
-        case .changeNote, .deleteNote, .cancelNoteReminder, .renameList, .deleteList, .clearTicked, .cancelTask:
+        // Doddy's own things by voice (decision 2026-11-27-voice-first-doddy; owner, 27 Nov 2026): the app finds exactly
+        // one note, list, task or Studio job and changes or stops it at once, with Undo where there is one; Doddy says
+        // what he did, read back from the store.
+        case .changeNote, .deleteNote, .renameList, .deleteList, .clearTicked, .cancelTask:
+            return .runsNow
+        // Turning off a note's reminder can't be undone in one step: the tool's own flow shows a card with the note and
+        // its reminder, and a tap or the user's own spoken yes runs exactly that (`OwnThingPin`).
+        case .cancelNoteReminder:
             return .ownPayloadCard
         // Stopping the morning calls only takes a permission away (decision 2026-11-14-morning-call): at once.
         case .stopMorningCalls:

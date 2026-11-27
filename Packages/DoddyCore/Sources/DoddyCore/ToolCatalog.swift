@@ -136,16 +136,16 @@ public enum ToolCatalog {
         // Follow something in Following (ADR-657): Doddy's own feature on this iPhone.
         .init(VoiceToolName.followNews, .localChange, .runsNow),
         .init(VoiceToolName.unfollowNews, .localChange, .runsNow),
-        // Doddy's own things by voice (decision 2026-11-27-voice-first-doddy): each shows a card with the note, list or
-        // task the app found; a tap or the user's own spoken yes runs exactly that.
-        .init(VoiceToolName.changeNote, .localChange, .card),
-        .init(VoiceToolName.deleteNote, .localChange, .card),
+        // Doddy's own things by voice (decision 2026-11-27-voice-first-doddy): at once, with Undo where there is one
+        // (`OwnThingsVoice.atOnceTools`); a note's reminder keeps a card with the note and the reminder it turns off.
+        .init(VoiceToolName.changeNote, .localChange, .runsNow),
+        .init(VoiceToolName.deleteNote, .localChange, .runsNow),
         .init(VoiceToolName.cancelNoteReminder, .localChange, .card),
-        .init(VoiceToolName.renameList, .localChange, .card),
-        .init(VoiceToolName.deleteList, .localChange, .card),
-        .init(VoiceToolName.clearTicked, .localChange, .card),
-        // Stopping a task on Doddy's server (ADR-570): the card names the task.
-        .init(VoiceToolName.cancelTask, .handoff, .card),
+        .init(VoiceToolName.renameList, .localChange, .runsNow),
+        .init(VoiceToolName.deleteList, .localChange, .runsNow),
+        .init(VoiceToolName.clearTicked, .localChange, .runsNow),
+        // Stopping a task or a Studio job on Doddy's server (ADR-570, ADR-740), as asked.
+        .init(VoiceToolName.cancelTask, .handoff, .runsNow),
         // A stopwatch that counts up (ADR-652): Doddy's own tool, no other app.
         .init(VoiceToolName.startStopwatch, .localChange, .runsNow),
         .init(VoiceToolName.stopStopwatch, .localChange, .runsNow),

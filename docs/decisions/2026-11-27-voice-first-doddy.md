@@ -20,6 +20,13 @@ The order of work, each step a pull request merged on green checks:
 
 Doddy stays male in every language ("Doddy is a he" in the prompt), as decided earlier; the owner's "she" on 27 Nov was not a change of that.
 
+Owner, 27 Nov 2026, on step 1 ("Okay, that's cool … stop the research and stop the task, and he should stop it"): Doddy's
+own things that can be undone run at once with no card, following the rule of `2026-11-25-doddy-acts-without-asking`
+(change and delete a note, rename and delete a list, clear its ticked items, stop following), and "stop" stops a task
+or a Studio job at once. Only turning off a note's reminder keeps a card, since it can't be brought back in one step.
+After an email, a page or the screen, changing or deleting a note, deleting a list or clearing it asks once, unless the
+user named the list themselves.
+
 ## Consequences
 - More of the app is reachable by voice, so more tools: the prompt and tool list grow, which costs tokens and time per turn and can make wrong picks more likely. Each step adds agent tests for the tools it adds.
 - Step 3 lowers the bar for money from a tap to a spoken phrase. The phrase must be the user's own words on their side of the conversation, after the card, within its time limit, with any "no", "wait" or "but" voiding it, as `SpokenYes` already does.
