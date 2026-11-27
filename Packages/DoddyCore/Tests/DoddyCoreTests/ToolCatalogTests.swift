@@ -85,6 +85,7 @@ final class ToolCatalogTests: XCTestCase {
             // Decision 2026-11-27-voice-first-doddy: following less is undone by following again; the owner's own
             // things with Undo and a stop the user asked for run as asked too.
             "unfollow_news", "change_note", "delete_note", "rename_list", "delete_list", "clear_ticked", "cancel_task",
+            "open_screen", "change_setting",
             VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe,
             "save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app", "lost_wallet",
             "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation", "set_timer", "set_alarm",
@@ -93,7 +94,7 @@ final class ToolCatalogTests: XCTestCase {
             "call_me_now", "call_me_later",
         ])
         XCTAssertEqual(withoutCard, AskFirst.ownSmallActions.union(AskFirst.ownChangesAtOnce).union(AskFirst.ownPhoneCallsAtOnce)
-            .union(OwnThingsVoice.atOnceTools)
+            .union(OwnThingsVoice.atOnceTools).union(AppControlVoice.atOnceTools)
             .union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe]))
         for name in withoutCard { XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .runsNow, name) }
         // What takes something away, reaches past Doddy's own lists and timers, or starts paid
@@ -117,7 +118,7 @@ final class ToolCatalogTests: XCTestCase {
         XCTAssertEqual(runsNow, Set(ToolCatalog.all.map(\.name).filter(AskFirst.runsAtOnce)), "the catalog and AskFirst.runsAtOnce name the same tools")
         XCTAssertEqual(runsNow,
                        AskFirst.publicLookups.union(AskFirst.ownLooks).union(AskFirst.ownSmallActions).union(AskFirst.ownChangesAtOnce)
-                           .union(AskFirst.ownPhoneCallsAtOnce).union(OwnThingsVoice.atOnceTools)
+                           .union(AskFirst.ownPhoneCallsAtOnce).union(OwnThingsVoice.atOnceTools).union(AppControlVoice.atOnceTools)
                            .union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe])
                            .union(CloudToolName.all.subtracting(CloudToolName.writes)),
                        "public lookups, looks at the user's own things, Doddy's own small actions and own changes with Undo or that change nothing (step 2b), every read through Doddy's server, translator start and stop (ADR-619), and text_me to the user's own number (decision 2026-11-09-restaurant-calls-one-tap)")

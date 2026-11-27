@@ -429,6 +429,11 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .web, title: "Stop a task", detail: about.map { "“\($0)”" }, logDetail: nil, isLookup: false)
         case .unfollowNews(let name):
             return ActivityRequest(app: .news, title: "Stop following", detail: "“\(name)”", isLookup: false)
+        case .openScreen:
+            // Navigation only: nothing to keep in What Doddy did.
+            return nil
+        case .changeSetting(let setting, let value):
+            return ActivityRequest(app: .memories, title: "Change a setting", detail: "\(setting.title): \(value)", isLookup: false)
         case .makeSomething(let job):
             // ADR-740: the 30-day log keeps that a Studio job was asked for, not its topic.
             return ActivityRequest(app: .web, title: "Make a research brief", detail: "\u{201C}\(job.topic)\u{201D}", logDetail: nil, isLookup: false)

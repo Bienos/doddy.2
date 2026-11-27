@@ -132,6 +132,7 @@ public enum ActivityText {
         "Clear ticked items": "Usuń odhaczone",
         "Stop a task": "Zatrzymaj zadanie",
         "Stop following": "Przestań obserwować",
+        "Change a setting": "Zmień ustawienie",
         "Start stopwatch": "Włącz stoper",
         "Stop stopwatch": "Zatrzymaj stoper",
         "Read stopwatch": "Odczytano stoper",

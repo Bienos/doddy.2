@@ -94,7 +94,7 @@ public enum CarProfile {
             return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")
         // Decision 2026-11-27-voice-first-doddy: these run at once outside the car; whether they should while driving
         // (read back aloud first, like saving a note) is for when the car profile is built.
-        case .changeNote, .deleteNote, .renameList, .deleteList, .clearTicked, .cancelTask:
+        case .changeNote, .deleteNote, .renameList, .deleteList, .clearTicked, .cancelTask, .openScreen, .changeSetting:
             return .refuse(reason: "This changes the user's notes, lists or tasks, so it waits until the user isn't driving.")
         }
     }

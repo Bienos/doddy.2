@@ -173,6 +173,29 @@ struct HomeView: View {
                 guard link != nil, scope.shows(.priceWatch), !showShopping else { return }
                 showShopping = true
             }
+            // A screen Doddy opened by voice (`open_screen`, decision 2026-11-27-voice-first-doddy). RootView already took
+            // the tabs; Home opens its own sheets. A feature this build hides opens nothing.
+            .onChange(of: router.screenRequest, initial: true) { _, screen in
+                guard let screen, ![.home, .notes, .lists, .settings].contains(screen) else { return }
+                router.screenRequest = nil
+                if let feature = screen.feature, !scope.shows(feature) { return }
+                switch screen {
+                case .today: showToday = true
+                case .tasks: showErrands = true
+                case .messages: showAsk = true
+                case .files: showFiles = true
+                case .radar: showFollowing = true
+                case .calls: showCalls = true
+                case .shopping: showShopping = true
+                case .deals: showDeals = true
+                case .trips: showTrips = true
+                case .food: showFood = true
+                case .myCity: showPolandPack = true
+                case .whatICanDo: showCapabilities = true
+                case .recordings: router.openRecordings()
+                case .home, .notes, .lists, .settings: break
+                }
+            }
             // A finished task's or file's push, tapped: Messages, where Doddy's message about it is.
             .onChange(of: router.isMessagesRequested, initial: true) { _, requested in
                 guard requested else { return }

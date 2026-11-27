@@ -196,7 +196,7 @@ public enum AskFirst {
     /// `OutsideContentRule.guardedTools` among them can still ask in a conversation (`need(for:in:)`).
     public static func runsAtOnce(_ name: String) -> Bool {
         if publicLookups.contains(name) || ownLooks.contains(name) || ownSmallActions.contains(name) || ownChangesAtOnce.contains(name)
-            || ownPhoneCallsAtOnce.contains(name) || OwnThingsVoice.atOnceTools.contains(name) {
+            || ownPhoneCallsAtOnce.contains(name) || OwnThingsVoice.atOnceTools.contains(name) || AppControlVoice.atOnceTools.contains(name) {
             return true
         }
         if [VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe].contains(name) { return true }
@@ -237,6 +237,9 @@ public enum AskFirst {
         // one note, list, task or Studio job and changes or stops it at once, with Undo where there is one; Doddy says
         // what he did, read back from the store.
         case .changeNote, .deleteNote, .renameList, .deleteList, .clearTicked, .cancelTask:
+            return .runsNow
+        // A screen only opens, and a setting from the fixed list is changed back the same way (`AppControlVoice`).
+        case .openScreen, .changeSetting:
             return .runsNow
         // Turning off a note's reminder can't be undone in one step: the tool's own flow shows a card with the note and
         // its reminder, and a tap or the user's own spoken yes runs exactly that (`OwnThingPin`).

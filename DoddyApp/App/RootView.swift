@@ -590,6 +590,7 @@ struct RootView: View {
             voiceDetent = .large
             voiceAsCard = false
             router.showWaitingDraft()
+            router.voiceSheetClosed()
         }) {
             VoiceView(asCard: voiceAsCard, onShowConversation: {
                 voiceAsCard = false
@@ -656,6 +657,23 @@ struct RootView: View {
         // Recordings (ADR-588) is a sheet on Home, so a link or intent from any tab comes back to it.
         .onChange(of: router.isRecordingsPresented) { _, presented in
             if presented { selectedTab = .home }
+        }
+        // A screen Doddy opened by voice (`open_screen`): the tabs and the memory screens here, Home's sheets on Home.
+        .onChange(of: router.screenRequest) { _, screen in
+            guard let screen else { return }
+            switch screen {
+            case .notes, .lists:
+                router.screenRequest = nil
+                openMemories(screen == .notes ? .notes : .lists)
+            case .settings:
+                router.screenRequest = nil
+                selectedTab = .settings
+            case .home:
+                router.screenRequest = nil
+                selectedTab = .home
+            default:
+                selectedTab = .home
+            }
         }
         // On my radar is a sheet on Home too: a radar push tapped on another tab comes back to Home first.
         .onChange(of: router.isRadarRequested) { _, requested in

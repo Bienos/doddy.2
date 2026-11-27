@@ -274,6 +274,31 @@ final class ShortcutRouter {
         isCallRecapsPresented = true
     }
 
+    /// A screen Doddy was asked to open by voice (decision 2026-11-27-voice-first-doddy, `open_screen`). The voice sheet
+    /// goes down first (the conversation itself is on Home, ADR-595, and goes on in the Dynamic Island); once it has gone,
+    /// RootView or Home takes the request once. Navigation only: it starts nothing and sends nothing.
+    var screenRequest: AppScreen?
+    /// Held while the voice sheet goes down: a sheet can't be presented while another is still being dismissed.
+    private var screenAfterVoice: AppScreen?
+
+    func openScreen(_ screen: AppScreen) {
+        guard mayGoAhead(.openNoteSheet, again: { [self] in openScreen(screen) }) else { return }
+        isSetupPresented = false
+        if isVoicePresented {
+            screenAfterVoice = screen
+            isVoicePresented = false
+        } else {
+            screenRequest = screen
+        }
+    }
+
+    /// The voice sheet has gone (RootView's `onDismiss`): a screen asked for while it was up opens now.
+    func voiceSheetClosed() {
+        guard let screen = screenAfterVoice else { return }
+        screenAfterVoice = nil
+        screenRequest = screen
+    }
+
     /// A finished task's or file's push was tapped (owner, 10 Nov 2026): Home opens Messages, where Doddy's
     /// message about it is. Navigation only: it starts nothing and sends nothing. Home takes it once.
     var isMessagesRequested = false

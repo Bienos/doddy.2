@@ -3831,6 +3831,18 @@ final class VoiceSessionController {
             await reply(call.toolCallId, noted ? LearningPrompt.gapNoted : LearningPrompt.gapNotNoted)
         case .changeNote, .deleteNote, .cancelNoteReminder, .renameList, .deleteList, .clearTicked, .cancelTask, .unfollowNews:
             await handleOwnThing(request, call: call)
+        case .openScreen(let screen):
+            // Steering the app by voice (decision 2026-11-27-voice-first-doddy): navigation only. The voice sheet goes
+            // down and the screen opens once it has; the conversation goes on in the Dynamic Island.
+            if let feature = screen.feature, !ReleaseScopeStore.current.shows(feature) {
+                await reply(call.toolCallId, AppControlVoice.hidden(screen))
+                return
+            }
+            guard isCurrent(call.toolCallId) else { return dropStale(call.toolCallId) }
+            ShortcutRouter.shared.openScreen(screen)
+            await reply(call.toolCallId, AppControlVoice.opening(screen))
+        case .changeSetting(let setting, let value):
+            await reply(call.toolCallId, changeSetting(setting, to: value))
         case .unsupported(let name):
             await reply(call.toolCallId, VoiceToolReply.unsupported(name), isError: true)
         case .invalid(_, let reason):
@@ -3840,6 +3852,62 @@ final class VoiceSessionController {
 
     /// The ask cards whose words DoddyCore chooses (ADR-666: leaflets) follow the language the app is shown in.
     private static var cardsInPolish: Bool { NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish }
+
+    // MARK: Doddy's own settings by voice (decision 2026-11-27-voice-first-doddy)
+
+    /// Writes one setting from `VoiceSetting`'s fixed list to the key its Settings screen uses, the way that screen
+    /// stores it (every one is a plain stored value there, with no side effect), then reads it back.
+    private func changeSetting(_ setting: VoiceSetting, to value: String) -> String {
+        let defaults = UserDefaults.standard
+        let on = value == "on"
+        switch setting {
+        case .humour, .replyLength, .tone, .mood, .voiceSpeed, .voiceExpressiveness, .appearance:
+            let key: String
+            let current: String
+            switch setting {
+            case .humour:
+                key = PreferenceKey.personalityHumour
+                current = defaults.string(forKey: key) ?? PersonalitySettings.doddyDefault.humour.rawValue
+            case .replyLength:
+                key = PreferenceKey.personalityLength
+                current = defaults.string(forKey: key) ?? PersonalitySettings.doddyDefault.length.rawValue
+            case .tone:
+                key = PreferenceKey.personalityFormality
+                current = defaults.string(forKey: key) ?? PersonalitySettings.doddyDefault.formality.rawValue
+            case .mood:
+                key = PreferenceKey.personalityMood
+                current = defaults.string(forKey: key) ?? PersonalitySettings.doddyDefault.mood.rawValue
+            case .voiceSpeed:
+                key = PreferenceKey.voiceSpeed
+                current = defaults.string(forKey: key) ?? VoiceStyle.doddyDefault.speed.rawValue
+            case .voiceExpressiveness:
+                key = PreferenceKey.voiceExpressiveness
+                current = defaults.string(forKey: key) ?? VoiceStyle.doddyDefault.expressiveness.rawValue
+            default:
+                key = PreferenceKey.appearance
+                current = defaults.string(forKey: key) ?? AppearancePreference.default.rawValue
+            }
+            guard current != value else { return AppControlVoice.alreadySet(setting, value) }
+            defaults.set(value, forKey: key)
+            return defaults.string(forKey: key) == value ? AppControlVoice.changed(setting, to: value) : AppControlVoice.notChanged(setting)
+        case .characterArt, .noteSavedIsland, .listenOnOpen, .rememberConversations, .suggestNotes:
+            let key: String
+            let stored: Bool
+            let fallback: Bool
+            switch setting {
+            // The stored switch is "Hide character artwork", so "on" (the art shown) stores false.
+            case .characterArt: key = PreferenceKey.hideCharacterArt; stored = !on; fallback = false
+            case .noteSavedIsland: key = PreferenceKey.savedIsland; stored = on; fallback = true
+            case .listenOnOpen: key = PreferenceKey.listenOnOpen; stored = on; fallback = OpeningPreferences.listenOnOpenDefault
+            case .rememberConversations: key = PreferenceKey.rememberConversations; stored = on; fallback = true
+            default: key = PreferenceKey.suggestSavesAfterConversation; stored = on; fallback = true
+            }
+            let current = defaults.object(forKey: key) == nil ? fallback : defaults.bool(forKey: key)
+            guard current != stored else { return AppControlVoice.alreadySet(setting, value) }
+            defaults.set(stored, forKey: key)
+            return defaults.bool(forKey: key) == stored ? AppControlVoice.changed(setting, to: value) : AppControlVoice.notChanged(setting)
+        }
+    }
 
     // MARK: Doddy's own things by voice (decision 2026-11-27-voice-first-doddy, step 1)
 
