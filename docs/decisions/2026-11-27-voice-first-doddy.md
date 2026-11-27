@@ -105,8 +105,8 @@ them is translated as a question); `voice_agent_spec.py` now fails if either pro
 to DC-058 (the translator hears an instruction, a role change, a request for its prompt, a spoken "(app)", a claim to be
 the owner, a spoken "stop translating") and DC-059 to DC-062 (a shared screen, a calendar title, a search snippet, and a
 plain "tak" after an email that asked for approval) are written in `docs/trust/evals/doddy_cases.jsonl`; none has been run,
-because they need the live agents. The live translator agent's prompt is not changed: that waits for the owner's word
-(`docs/OWNER_QUEUE.md` 126).
+because they need the live agents. The new translator line went on the live translator agent on 27 Nov 2026 on the owner's word ("Push live"; version
+`agtvrsn_7101m8eghkzfe7m9hz70t3gne5e9`, `voice-agent/README.md`); the cases have not been run against it.
 
 ## Consequences
 - More of the app is reachable by voice, so more tools: the prompt and tool list grow, which costs tokens and time per turn and can make wrong picks more likely. Each step adds agent tests for the tools it adds.
