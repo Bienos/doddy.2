@@ -55,10 +55,13 @@ EL_INTERRUPTION_MODE = {"allow": "allow", "finish": "disable_during_tool"}
 # (decision docs/decisions/2026-11-14-spoken-yes-and-fewer-cards.md) a card takes the person's own spoken yes or a
 # tap ("yes_or_tap"), except money and bookings, which take a tap only ("tap"). The app also asks for a tap once text
 # from outside is in the conversation; that is per conversation, so it isn't written here.
-ASK = {"yes_or_tap", "tap", "runs_now"}
+ASK = {"yes_or_tap", "strong_yes_or_tap", "tap", "runs_now"}
 # Money and bookings: a tap only. The same set is `ConfirmationTiers.tapOnly` in DoddyCore; ToolCatalogTests keeps
 # tools.json in step with it.
-TAP_ONLY = {"pay_for_page", "book_flight", "call_places"}
+TAP_ONLY = {"pay_for_page"}
+# Bookings and orders take a tap or the user's own words naming the action ("tak, zarezerwuj"), never a plain yes
+# (decision 2026-11-27-voice-first-doddy, step 3; ConfirmationTiers.strongYes and StrongSpokenYes in DoddyCore).
+STRONG_YES = {"book_flight", "call_places"}
 # Read nothing of the user's and change nothing (AskFirst.publicLookups in DoddyCore must match).
 # research_now (14 Nov 2026): Claude on Doddy's server searches the web and reads two or three pages; a look-up like web_search.
 # plan_trip (14 Nov 2026): the trip screen's planner by voice; Claude on Doddy's server reads the trip, Kiwi.com is searched.
@@ -365,8 +368,10 @@ def check_app(tools, sources=APP_SOURCES):
             errors.append(f"tool {name}: ASK-01 needs every tool that asks to run on the phone, where the app asks first; only a runs_now lookup may run on the web")
         if x.get("ask") not in ASK:
             errors.append(f"tool {name}: x_doddy.ask must be one of {sorted(ASK)} (ASK-01)")
-        if (x.get("ask") in ("tap", "yes_or_tap")) != bool(x.get("confirm_on_screen")):
-            errors.append(f"tool {name}: x_doddy.ask 'tap' or 'yes_or_tap' and confirm_on_screen go together (ASK-01)")
+        if (x.get("ask") in ("tap", "yes_or_tap", "strong_yes_or_tap")) != bool(x.get("confirm_on_screen")):
+            errors.append(f"tool {name}: x_doddy.ask 'tap', 'yes_or_tap' or 'strong_yes_or_tap' and confirm_on_screen go together (ASK-01)")
+        if (x.get("ask") == "strong_yes_or_tap") != (name in STRONG_YES):
+            errors.append(f"tool {name}: only bookings and orders ({', '.join(sorted(STRONG_YES))}) are 'strong_yes_or_tap' (decision 2026-11-27-voice-first-doddy)")
         if (x.get("ask") == "tap") != (name in TAP_ONLY):
             errors.append(f"tool {name}: only money and bookings ({', '.join(sorted(TAP_ONLY))}) are 'tap'; every other card is 'yes_or_tap' (decision 2026-11-14-spoken-yes-and-fewer-cards)")
         if runs_now and name not in RUNS_NOW:

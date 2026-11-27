@@ -10,7 +10,11 @@ final class ConfirmationTierTests: XCTestCase {
     func testEveryToolHasATierAndOnlyMoneyAndBookingsNeedATap() {
         XCTAssertEqual(everyTool.count, Set(everyTool).count)
         let tapOnly = Set(everyTool.filter { ConfirmationTiers.tier(for: $0) == .tapOnly })
-        XCTAssertEqual(tapOnly, ["pay_for_page", "book_flight", "call_places"])
+        XCTAssertEqual(tapOnly, ["pay_for_page"])
+        // Bookings and orders take the person's own words naming the action, or a tap (decision 2026-11-27-voice-first-doddy, step 3).
+        let strong = Set(everyTool.filter { ConfirmationTiers.tier(for: $0) == .strongSpokenYes })
+        XCTAssertEqual(strong, ["book_flight", "call_places"])
+        XCTAssertEqual(strong, ConfirmationTiers.strongYes)
     }
 
     func testNothingThatRunsAtOnceTodayStartsAskingAgain() {
@@ -66,7 +70,7 @@ final class ConfirmationTierTests: XCTestCase {
             XCTAssertEqual(ConfirmationTiers.specAsk(for: tool), .runsNow, tool)
         }
         XCTAssertEqual(ConfirmationTiers.tier(for: "call_me_every_morning"), .spokenYes)
-        XCTAssertEqual(ConfirmationTiers.tier(for: "call_places"), .tapOnly, "calling other people for a booking stays a tap")
+        XCTAssertEqual(ConfirmationTiers.tier(for: "call_places"), .strongSpokenYes, "calling other people for a booking: a tap or \"tak, zarezerwuj\" (step 3)")
     }
 
     func testOutsideTextNoLongerMakesDoddysOwnThingsAsk() {
@@ -88,12 +92,17 @@ final class ConfirmationTierTests: XCTestCase {
         for money in ConfirmationTiers.tapOnly {
             XCTAssertEqual(ConfirmationTiers.tier(for: money, outsideContentSeen: true), .tapOnly, money)
         }
+        for booking in ConfirmationTiers.strongYes {
+            XCTAssertEqual(ConfirmationTiers.tier(for: booking, outsideContentSeen: true), .tapOnly, "after outside text a booking is a tap: \(booking)")
+        }
         XCTAssertEqual(ConfirmationTiers.tier(for: "wire_money_somewhere", outsideContentSeen: true), .tapOnly)
     }
 
     func testTheTierSaysWhetherASpokenYesMayRunIt() {
         XCTAssertTrue(ConfirmationTier.spokenYes.acceptsSpokenYes)
         XCTAssertFalse(ConfirmationTier.tapOnly.acceptsSpokenYes)
+        XCTAssertTrue(ConfirmationTier.strongSpokenYes.acceptsSpokenYes, "only its own phrase, StrongSpokenYesTests")
+        XCTAssertTrue(ConfirmationTier.strongSpokenYes.showsCard)
         XCTAssertFalse(ConfirmationTier.atOnce.showsCard)
         XCTAssertTrue(ConfirmationTier.spokenYes.showsCard)
         XCTAssertTrue(ConfirmationTier.tapOnly.showsCard)

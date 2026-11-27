@@ -4594,7 +4594,8 @@ final class VoiceSessionController {
     private func spokenAnswer(_ text: String) async {
         guard let action = pendingAction, let shownAt = pendingShownAt, let tier = confirmationTier(of: action) else { return }
         let now = Date()
-        guard SpokenConfirmation.runs(text, tier: tier, cardShownAt: shownAt, now: now, waitsForAChoice: action.waitsForAChoice) else { return }
+        guard SpokenConfirmation.runs(text, tier: tier, cardShownAt: shownAt, now: now, waitsForAChoice: action.waitsForAChoice,
+                                      action: strongAction(of: action)) else { return }
         switch action {
         case .ask(let id, _, let needsTap, _, _):
             // AskFirst's own card keeps the ledger's contract: one yes, for exactly this request, used once. An ask
@@ -4613,6 +4614,22 @@ final class VoiceSessionController {
             guard pendingAction == action else { return }
             await confirmPendingAction(answeredBy: .userSaid)
         }
+    }
+
+    /// For a booking or an order (decision 2026-11-27-voice-first-doddy, step 3): what the person's words must name
+    /// (`StrongSpokenYes`), from the call as it came in. Nil for every other card.
+    private func strongAction(of action: PendingAction) -> StrongSpokenYes.Action? {
+        guard let call = callsAsReceived[action.toolCallID] else { return nil }
+        let request = VoiceToolRequest.parse(name: call.toolName, parametersJSON: call.parameters)
+        return ConfirmationTiers.strongAction(for: request, toolName: call.toolName)
+    }
+
+    /// The words a booking or order card asks for ("tak, zarezerwuj"), for its header; nil when a plain yes or a tap
+    /// answers the card.
+    var pendingSpokenPhrase: String? {
+        guard pendingTakesSpokenYes, let action = pendingAction, let tier = confirmationTier(of: action),
+              tier == .strongSpokenYes, let strong = strongAction(of: action) else { return nil }
+        return strong.phrase(polish: Self.cardsInPolish)
     }
 
     /// How the card's call is confirmed now, from the call as it came in and what this conversation has seen; nil when

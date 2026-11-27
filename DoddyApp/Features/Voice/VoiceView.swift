@@ -644,9 +644,11 @@ struct VoiceView: View {
         HStack(spacing: 12) {
             VoiceDoddyView(art: screenArt(controller), height: 44)
             Text(controller.pendingAction != nil || controller.accessRequest != nil || controller.accountNeeded != nil
-                 ? (controller.pendingTakesSpokenYes
+                 ? (controller.pendingSpokenPhrase.map {
+                        String(format: NSLocalizedString("Say \u{201C}%@\u{201D}, or tap", comment: "Pop-up card header for a booking or an order: the words that approve it, e.g. tak, zarezerwuj"), $0)
+                    } ?? (controller.pendingTakesSpokenYes
                     ? NSLocalizedString("Say yes, or tap", comment: "Pop-up card header when a spoken yes answers the card")
-                    : NSLocalizedString("Doddy needs your tap", comment: "Pop-up card header"))
+                    : NSLocalizedString("Doddy needs your tap", comment: "Pop-up card header")))
                  : NSLocalizedString("From Doddy", comment: "Pop-up card header"))
                 .font(.headline)
             Spacer(minLength: 0)

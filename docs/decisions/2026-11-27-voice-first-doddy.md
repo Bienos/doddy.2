@@ -3,7 +3,7 @@
 - **Date:** 2026-11-27
 - **Decided by:** owner ("I would like to be able to steer and do almost everything by voice … except translator mode and calling people should have some restrictions and protocol of prompt injection … she should ask questions if not certain or need more info", 27 Nov 2026), with these choices the same day: money and bookings by a **strong spoken yes**; **calls and texts to contacts by voice**; build **the whole app by voice** first.
 - **Status:** accepted; built in steps, one pull request each (below). The live ElevenLabs agents change only on the owner's separate word ("push it live"), as `AGENTS.md` requires.
-- **Replaces:** nothing yet. Step 3 will replace the tap-only rule for `pay_for_page`, `book_flight` and `call_places` (`ConfirmationTiers.tapOnly`, decision `2026-11-14-spoken-yes-and-fewer-cards`). Extends `2026-11-25-doddy-acts-without-asking`: Doddy still never asks for permission to do what was asked; he asks only for what is missing or unclear.
+- **Replaces:** step 3 replaces the tap-only rule for `book_flight` and `call_places` (`ConfirmationTiers.tapOnly`, decision `2026-11-14-spoken-yes-and-fewer-cards`); `pay_for_page` keeps it (below). Extends `2026-11-25-doddy-acts-without-asking`: Doddy still never asks for permission to do what was asked; he asks only for what is missing or unclear.
 
 ## Why
 - Large parts of the app have no voice tool: Settings, editing or deleting a note, cancelling a task, reading Doddy's Messages, price watches, parcels, trips, and moving between screens.
@@ -35,9 +35,22 @@ two before acting, never one the user or a tool already answered; facts and opin
 likelier reading. Cases DC-031 to DC-040 in `docs/trust/evals/doddy_cases.jsonl` (DOD-01) cover both sides: where he
 must ask and where he must not.
 
+Step 3 in the repo (owner, 27 Nov 2026: "Ok do the next one"): a new tier, `ConfirmationTier.strongSpokenYes`, for
+`book_flight` and `call_places` (`ConfirmationTiers.strongYes`). Doddy reads the card out and asks for the phrase; it
+runs on a tap or on the user's own words naming the action, checked by `StrongSpokenYes.isYes`: "tak, zarezerwuj" /
+"yes, book it" for a booking, "tak, zamów" / "yes, order it" for an order, "tak, dzwoń" / "yes, call" for a call that
+only asks something (Polish, English, German, French, Spanish). A plain "tak", the phrase for another action, a "no",
+"wait" or "but", a number, or more than five words runs nothing; the timing and side-of-the-conversation rules of
+`SpokenYes` still apply, and the approval stays bound to the exact card. After an email, a page or the screen a
+booking takes a tap only. The card says "Say “tak, zarezerwuj”, or tap".
+
+**`pay_for_page` stays a tap and Face ID.** Paying already needs Face ID after the tap (and a typed amount above the
+limit, `PaymentApprovalModel`), so a spoken phrase would not save a step; the page being paid for is outside text,
+which would turn the card back into a tap anyway. Money leaving the account keeps the strongest gate.
+
 ## Consequences
 - More of the app is reachable by voice, so more tools: the prompt and tool list grow, which costs tokens and time per turn and can make wrong picks more likely. Each step adds agent tests for the tools it adds.
-- Step 3 lowers the bar for money from a tap to a spoken phrase. The phrase must be the user's own words on their side of the conversation, after the card, within its time limit, with any "no", "wait" or "but" voiding it, as `SpokenYes` already does.
+- Step 3 lowers the bar for bookings and orders from a tap to a spoken phrase. The phrase must be the user's own words on their side of the conversation, after the card, within its time limit, with any "no", "wait" or "but" voiding it, as `SpokenYes` already does.
 - Step 4 lets Doddy reach people other than the user. The constitution's rules for external writes apply: exact payload, approval bound to it, "unknown" is never success.
 
 ## Evidence
