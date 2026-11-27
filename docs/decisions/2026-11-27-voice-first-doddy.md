@@ -27,6 +27,14 @@ or a Studio job at once. Only turning off a note's reminder keeps a card, since 
 After an email, a page or the screen, changing or deleting a note, deleting a list or clearing it asks once, unless the
 user named the list themselves.
 
+Step 2 in the repo (owner, 27 Nov 2026: "Ok do the next one"): the prompt's "# Ask when unsure" section. It keeps the
+rule of 25 Nov (no permission questions, no "shall I?", look things up instead of asking) and adds the cases where a
+guess would do the wrong thing: a missing detail an action needs, two readings that change different things, several
+matches, a name, number or amount heard unclearly, an unclear time. One short question with the real options, at most
+two before acting, never one the user or a tool already answered; facts and opinions are still answered on the
+likelier reading. Cases DC-031 to DC-040 in `docs/trust/evals/doddy_cases.jsonl` (DOD-01) cover both sides: where he
+must ask and where he must not.
+
 ## Consequences
 - More of the app is reachable by voice, so more tools: the prompt and tool list grow, which costs tokens and time per turn and can make wrong picks more likely. Each step adds agent tests for the tools it adds.
 - Step 3 lowers the bar for money from a tap to a spoken phrase. The phrase must be the user's own words on their side of the conversation, after the card, within its time limit, with any "no", "wait" or "but" voiding it, as `SpokenYes` already does.
