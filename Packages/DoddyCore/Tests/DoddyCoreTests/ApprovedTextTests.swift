@@ -117,7 +117,8 @@ final class ApprovedTextTests: XCTestCase {
         XCTAssertEqual(tool.runsOn, .phone)
         XCTAssertFalse(tool.planEligible, "a plan card doesn't show the exact text with its own approval")
         XCTAssertFalse(tool.isCloud)
-        XCTAssertEqual(ToolCatalog.all.filter { $0.effect == .sendText }.map(\.name), [VoiceToolName.textMe])
+        // text_contact sends a text too, to one of the user's contacts after a card (ContactTextVoiceTests).
+        XCTAssertEqual(ToolCatalog.all.filter { $0.effect == .sendText }.map(\.name), [VoiceToolName.textMe, VoiceToolName.textContact])
     }
 
     func testTheSameTextIsNotSentTwiceInARow() {

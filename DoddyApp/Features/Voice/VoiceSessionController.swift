@@ -3737,6 +3737,8 @@ final class VoiceSessionController {
             await handleCloud(cloud, toolCallID: call.toolCallId)
         case .textMe(let body):
             await proposeText(body, toolCallID: call.toolCallId)
+        case .textContact(let name, let body):
+            await textContact(request, name: name, body: body, call: call)
         case .callMeLater(let draft):
             await proposeCallLater(draft, toolCallID: call.toolCallId)
         case .callMeNow:
@@ -4927,6 +4929,120 @@ final class VoiceSessionController {
             }
             return (VoiceToolReply.textResult(status), true)
         }
+    }
+
+    // MARK: Texts to contacts (decisions 2026-11-09-texts-to-contacts, 2026-11-27-voice-first-doddy step 4)
+
+    /// The contact and number each text card showed, by tool call. The person's yes or tap sends to exactly that number
+    /// (`ContactText.approvalHash`, which the server checks again); the ledger has already bound the exact text.
+    private var contactTextPins: [String: ContactText.ContactNumber] = [:]
+
+    /// The model named the person and wrote the text; the app finds the contact in Contacts (Doddy's switch, iOS's
+    /// permission and the search budget, as for draft_message), reads the number from the contact card, and shows a card
+    /// with the name, the number and exactly the text. After the person's tap or own spoken yes the same call comes back
+    /// through `runAsked`, the ledger lets it run once, and it is sent to the number the card showed.
+    private func textContact(_ request: VoiceToolRequest, name: String, body: String, call: ClientToolCallEvent) async {
+        let id = call.toolCallId
+        if askLedger.mayRun(id, request: request, at: Date()) {
+            guard let number = contactTextPins.removeValue(forKey: id) else {
+                await reply(id, ContactTextVoice.changedMeanwhile)
+                return
+            }
+            await sendContactText(body, to: number, toolCallID: id)
+            return
+        }
+        guard let client = Self.messagingClient() else {
+            await reply(id, VoiceToolReply.textNoServer, isError: true)
+            return
+        }
+        // No account yet means no verified number; asking the server would create an account.
+        guard await client.hasAccount() else {
+            await reply(id, ContactTextVoice.refused("phone_not_verified"))
+            return
+        }
+        switch ContactRead.decide(
+            switchOn: isOn(.contacts), iosAllows: devices.access(for: .contacts) == .granted, budget: &contactSearches) {
+        case .switchOff, .notAllowedByIOS:
+            await notConnected(id, .contacts)
+            return
+        case .budgetSpent:
+            await reply(id, VoiceToolReply.contactSearchesSpent, isError: true)
+            return
+        case .search:
+            break
+        }
+        let found: [DeviceConnections.ContactMatch]
+        do {
+            found = try devices.findContacts(named: name)
+        } catch {
+            await reply(id, VoiceToolReply.failed(UserFacingError.message(for: error)), isError: true)
+            return
+        }
+        // Several matches are never guessed between: unless one is exactly the name asked for, the user is asked.
+        switch MessageRecipient.resolve(
+            found.map { (name: $0.name, phoneNumbers: $0.phoneNumbers, emailAddresses: $0.emailAddresses) }, query: name) {
+        case .nobody:
+            await reply(id, ContactTextVoice.notFound(name))
+        case .several(let names):
+            await reply(id, ContactTextVoice.severalContacts(names, query: name))
+        case .contact(let contactName, let phoneNumbers, _):
+            guard let number = ContactTextVoice.number(name: contactName, phoneNumbers: phoneNumbers) else {
+                await reply(id, ContactTextVoice.noNumber(contactName))
+                return
+            }
+            guard isCurrent(id) else { return dropStale(id) }
+            contactTextPins[id] = number
+            askLedger.asked(id, request: request, needsTap: false, at: Date())
+            propose(.ask(toolCallID: id, card: ContactTextVoice.card(to: number, body: body, polish: Self.cardsInPolish),
+                         needsTap: false, toolName: call.toolName, parameters: call.parametersData),
+                    toolCallID: id)
+        }
+    }
+
+    /// Exactly the text and number the card showed, with the approval hash of both, to `POST /v1/texts/contact`; then a
+    /// few seconds of status, so the reply says what is known and no more (DOD-08). `unknown` is never success and is
+    /// never retried on its own: a try again of the same approval reuses its key, so the server sends it at most once.
+    private func sendContactText(_ body: String, to number: ContactText.ContactNumber, toolCallID id: String) async {
+        guard let client = Self.messagingClient() else {
+            await reply(id, VoiceToolReply.textNoServer, isError: true)
+            return
+        }
+        let hash = ContactText.approvalHash(to: number, body: body)
+        guard !TextRepeat.sentMomentsAgo(hash, queued: Self.queuedTexts, now: Date()) else {
+            await reply(id, ContactTextVoice.sentMomentsAgo)
+            return
+        }
+        // On disk before the text leaves, as for a confirmed card: a crash mid-send shows "Not sure" (ADR-321).
+        markStarted(id)
+        textSending = true
+        let result: (reply: String, attempted: Bool)
+        do {
+            switch try await client.sendApprovedText(body, approvalHash: hash, to: number.e164) {
+            case .unknown:
+                Self.unconfirmedTexts.insert(hash)
+                result = (ContactTextVoice.unknown, true)
+            case .refused(let code):
+                result = (ContactTextVoice.refused(code), false)
+            case .queued(let queued):
+                Self.unconfirmedTexts.remove(hash)
+                Self.queuedTexts[hash] = Date()
+                let deadline = Date().addingTimeInterval(6)
+                var status: UpdateStatus?
+                while Date() < deadline {
+                    try? await Task.sleep(for: .seconds(1))
+                    guard let latest = try? await client.updateStatus(queued.id, timeout: 3) else { break }
+                    status = latest
+                    if !latest.isPending { break }
+                }
+                result = (ContactTextVoice.result(status, to: number.name), true)
+            }
+        } catch {
+            // Certainly not queued: offline before it left, or an answer that means it never ran.
+            result = (VoiceToolReply.textNotSent(error as? ServerError), false)
+        }
+        textSending = false
+        writeResults[id] = WriteResult(reply: result.reply, attempted: result.attempted)
+        await reply(id, result.reply)
     }
 
     // MARK: Calls to places (decision 2026-11-09-restaurant-calls-one-tap)

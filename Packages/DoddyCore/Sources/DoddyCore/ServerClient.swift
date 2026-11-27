@@ -350,13 +350,16 @@ public actor DoddyServerClient {
     /// switched off) before it looks for a repeat of the key, so a refusal says nothing about
     /// an earlier try that went unanswered.
     /// Throws `ServerError` when it certainly wasn't sent (offline, account gone, unexpected).
-    public func sendApprovedText(_ body: String, approvalHash: String) async throws -> ApprovedTextOutcome {
+    ///
+    /// With `to`, a text to one of the user's contacts (`POST /v1/texts/contact`, decision 2026-11-09-texts-to-contacts):
+    /// `to` is the number the app read from the contact card, and the approval hash binds that number and the text.
+    public func sendApprovedText(_ body: String, approvalHash: String, to contact: String? = nil) async throws -> ApprovedTextOutcome {
         let key = pendingTextKeys[approvalHash] ?? UUID().uuidString
         pendingTextKeys[approvalHash] = key
-        let request = try Self.json(TextBody(body: body, approvalHash: approvalHash, idempotencyKey: key))
+        let request = try Self.json(TextBody(body: body, approvalHash: approvalHash, idempotencyKey: key, to: contact))
         let response: ServerResponse
         do {
-            response = try await authorized(.post, "/v1/texts", body: request, startsSomething: true)
+            response = try await authorized(.post, contact == nil ? "/v1/texts" : "/v1/texts/contact", body: request, startsSomething: true)
         } catch is OutcomeUnknown {
             return .unknown
         }
@@ -371,6 +374,8 @@ public actor DoddyServerClient {
         case (400, _): return .refused("invalid")
         case (409, _): return .refused(code ?? "status_409")
         case (503, "sms_not_configured"): return .refused("sms_not_configured")
+        // Texts to contacts are switched off on the server (CONTACT_TEXTS_ENABLED): nothing was queued.
+        case (503, "contact_texts_off"): return .refused("contact_texts_off")
         // The route's hourly limit answers without a code; the daily limits name themselves.
         case (429, _): return .refused(code ?? "rate_limited")
         // Any other server error, the hosting proxy's 502 or 504 included, may come after the
@@ -511,7 +516,11 @@ private struct CodeBody: Encodable { let phone: String; let code: String }
 private struct ConsentBody: Encodable { let consent: Bool; let textVersion: String? }
 private struct UpdateBody: Encodable, Hashable { let text: String; let channels: [UpdateChannel]; let idempotencyKey: String }
 private struct QueuedList: Decodable { let messages: [QueuedUpdate] }
-private struct TextBody: Encodable { let body: String; let approvalHash: String; let idempotencyKey: String }
+private struct TextBody: Encodable {
+    let body: String; let approvalHash: String; let idempotencyKey: String
+    /// Only for a text to a contact; left out of the JSON otherwise.
+    let to: String?
+}
 
 /// What happened to an approved text (ADR-750 U2).
 public enum ApprovedTextOutcome: Equatable, Sendable {

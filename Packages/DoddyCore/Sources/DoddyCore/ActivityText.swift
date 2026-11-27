@@ -84,6 +84,7 @@ public enum ActivityText {
         "Draft an email": "Szkic e-maila",
         // ADR-750 U2.
         "Text you from Doddy's number": "SMS do Ciebie z numeru Doddy’ego",
+        "Text a contact from Doddy's number": "SMS do kontaktu z numeru Doddy’ego",
         // ADR-754.
         "Call you later from Doddy's number": "Telefon do Ciebie później z numeru Doddy’ego",
         "Call you now from Doddy's number": "Telefon do Ciebie teraz z numeru Doddy’ego",

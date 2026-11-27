@@ -59,6 +59,9 @@ public enum CarProfile {
             // Leaves the iPhone through Doddy's server and Twilio (ADR-750 U2), so not while driving (owner, 2026-10-11),
             // even though it needs no tap since decision 2026-11-09-restaurant-calls-one-tap.
             return .refuse(reason: "A text from Doddy's number leaves the iPhone, so it waits until the user isn't driving.")
+        case .textContact:
+            // A text to someone else, from Doddy's number: its card shows the number and the exact text to check.
+            return .refuse(reason: "A text to a contact is shown on a card on the iPhone to check, so it waits until the user isn't driving.")
         case .callPlaces:
             // Calls to places in the user's name, approved on a card (decision 2026-11-09-restaurant-calls-one-tap).
             return .refuse(reason: "Calling places for the user needs a tap on the iPhone, so it waits until the user isn't driving.")

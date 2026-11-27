@@ -49,6 +49,8 @@ iPhone app, and whether a voice tool covers it. Built on 27 Nov 2026 from `Doddy
 | Trips, flights | book a flight | voice | `book_flight`; a tap or "tak, zarezerwuj" (step 3) |
 | Trips, flights | find trips in email, forget them | next | |
 | Parcels | add, refresh, remove | next | |
+| Contacts | text a contact from Doddy's number | voice | `text_contact` (step 4): a card with the number and the exact text, then a yes or a tap; the server switch is off until the owner turns it on |
+| Contacts | draft a text or email, open a call | voice | `draft_message`, `call_contact` (the user sends or taps Call) |
 | Messages, files | ask Claude, make a file | voice | `ask_claude`, `make_document` |
 | Messages, files | read Doddy's messages, open a file, delete a conversation | next | |
 | Recordings | start, stop, recap | next | |
