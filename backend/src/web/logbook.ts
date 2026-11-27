@@ -20,7 +20,7 @@ export const LOGBOOK_MAX_BODY_BYTES = 32 * 1024;
 export const LOGBOOK_SCHEMA = "doddy.logbook.day.v1";
 
 /**
- * The voice agent's tool ids (voice-agent/tools.json, 128 with research_now, plan_trip, where_am_i, plan_evening, call_me_every_morning, stop_morning_calls and call_contact). A test reads that file and fails
+ * The voice agent's tool ids (voice-agent/tools.json, 136 with research_now, plan_trip, where_am_i, plan_evening, call_me_every_morning, stop_morning_calls, call_contact and the eight own-things tools of decision 2026-11-27-voice-first-doddy). A test reads that file and fails
  * if this list and the file disagree, so a new tool can't be counted before it is listed here. The iPhone counts
  * every tool its catalog has, and a day naming a tool missing here is refused whole, so a tool joins both together.
  */
@@ -46,6 +46,7 @@ export const LOGBOOK_TOOL_IDS = [
   "start_translator", "stop_translator", "add_to_list", "add_ingredients", "read_list", "check_off",
   "remove_from_list", "create_list", "hand_over_errand", "check_errands", "make_something", "find_deals", "pay_for_page", "note_capability_gap", "ask_claude",
   "make_document", "research_now", "plan_trip",
+  "change_note", "delete_note", "cancel_note_reminder", "rename_list", "delete_list", "clear_ticked", "cancel_task", "unfollow_news",
 ] as const;
 
 const LENGTHS = ["under_1", "1_3", "3_5", "5_10"] as const;

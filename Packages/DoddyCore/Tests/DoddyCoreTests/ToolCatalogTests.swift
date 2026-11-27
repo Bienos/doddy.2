@@ -82,6 +82,8 @@ final class ToolCatalogTests: XCTestCase {
         XCTAssertEqual(withoutCard, [
             "start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",
             "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap", "stop_morning_calls",
+            // Decision 2026-11-27-voice-first-doddy: following less is undone by following again.
+            "unfollow_news",
             VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe,
             "save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app", "lost_wallet",
             "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation", "set_timer", "set_alarm",

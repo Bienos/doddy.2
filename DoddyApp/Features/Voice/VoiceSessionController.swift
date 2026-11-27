@@ -288,6 +288,9 @@ final class VoiceSessionController {
     private var pendingShownAt: Date?
     /// ASK-01 (ADR-483): which calls the user said yes to. Checked right before a tool runs.
     private var askLedger = AskLedger()
+    /// What each card for Doddy's own things showed (decision 2026-11-27-voice-first-doddy), by tool call: the run after
+    /// the person's yes or tap touches exactly that note, list or task, and nothing else (`OwnThingPin`).
+    private var ownThingPins: [String: OwnThingPin] = [:]
     /// DOD-07: a tap on the plan card runs it only while the card is fresh and for the payload it showed; a card that ran
     /// out is shown again and never runs (`PlanApprovalGate`, decision 2026-11-14-plan-card-ran-out).
     private var planApproval = PlanApprovalGate()
@@ -3826,6 +3829,8 @@ final class VoiceSessionController {
             // "Written down" only after the write (ADR-672); no store or a failed write says so.
             let noted = await store.learning?.recordGap(category, requestID: call.toolCallId, sessionID: conversationID) ?? false
             await reply(call.toolCallId, noted ? LearningPrompt.gapNoted : LearningPrompt.gapNotNoted)
+        case .changeNote, .deleteNote, .cancelNoteReminder, .renameList, .deleteList, .clearTicked, .cancelTask, .unfollowNews:
+            await handleOwnThing(request, call: call)
         case .unsupported(let name):
             await reply(call.toolCallId, VoiceToolReply.unsupported(name), isError: true)
         case .invalid(_, let reason):
@@ -3835,6 +3840,175 @@ final class VoiceSessionController {
 
     /// The ask cards whose words DoddyCore chooses (ADR-666: leaflets) follow the language the app is shown in.
     private static var cardsInPolish: Bool { NotificationLanguage.preferred(Bundle.main.preferredLocalizations) == .polish }
+
+    // MARK: Doddy's own things by voice (decision 2026-11-27-voice-first-doddy, step 1)
+
+    /// One note, list or task the app found for a call, what its card shows, and the change itself.
+    private struct OwnThingTarget {
+        /// What the card showed (the thing's id and the words it had), checked again before the change runs.
+        let pin: String
+        let card: AskCard
+        let run: @MainActor () async -> String
+    }
+
+    /// unfollow_news runs at once. The others find exactly one thing and show a card with it; after the person's tap or
+    /// own spoken yes the same call comes back through `runAsked`, the ledger lets it run once, and it runs only if the
+    /// app finds the same thing the card showed (`OwnThingPin`). Every reply is read back from the store after the change.
+    private func handleOwnThing(_ request: VoiceToolRequest, call: ClientToolCallEvent) async {
+        let id = call.toolCallId
+        if case .unfollowNews(let name) = request {
+            let follows = FollowingModel.shared.follows.follows
+            switch OwnThingsVoice.follow(name, in: follows) {
+            case .one(let follow):
+                FollowingModel.shared.remove(id: follow.id)
+                let gone = !FollowingModel.shared.follows.follows.contains { $0.id == follow.id }
+                await reply(id, gone ? OwnThingsVoice.unfollowed(follow.label) : VoiceToolReply.failed("Following didn't change."))
+            case .none:
+                await reply(id, OwnThingsVoice.followNotFound(name, follows: follows))
+            case .several(let found):
+                await reply(id, OwnThingsVoice.severalFollows(name, found))
+            }
+            return
+        }
+        guard let target = await ownThingTarget(request, toolCallID: id) else { return }
+        guard isCurrent(id) else { return dropStale(id) }
+        let pin = OwnThingPin(tool: call.toolName, id: target.pin)
+        guard askLedger.mayRun(id, request: request, at: Date()) else {
+            ownThingPins[id] = pin
+            askLedger.asked(id, request: request, needsTap: false, at: Date())
+            propose(.ask(toolCallID: id, card: target.card, needsTap: false, toolName: call.toolName, parameters: call.parametersData),
+                    toolCallID: id)
+            return
+        }
+        guard ownThingPins.removeValue(forKey: id) == pin else {
+            await reply(id, OwnThingsVoice.changedMeanwhile)
+            return
+        }
+        await reply(id, await target.run())
+    }
+
+    /// Finds the one note, list or task a call names and says what its card shows. Nil after a reply that says why
+    /// nothing was found (none, several, nothing to change); nothing has changed then.
+    private func ownThingTarget(_ request: VoiceToolRequest, toolCallID id: String) async -> OwnThingTarget? {
+        let polish = Self.cardsInPolish
+        switch request {
+        case .changeNote(let quote, _), .deleteNote(let quote), .cancelNoteReminder(let quote):
+            await store.reload()
+            let note: MemoryRecord
+            switch OwnThingsVoice.note(quote, in: store.memories, privateIDs: PrivateNotesStore.current().ids) {
+            case .one(let found): note = found
+            case .none:
+                await reply(id, VoiceToolReply.noteNotFound())
+                return nil
+            case .several:
+                await reply(id, OwnThingsVoice.severalNotes())
+                return nil
+            }
+            let pin = note.id.uuidString + "|" + note.currentText
+            switch request {
+            case .changeNote(_, let newText):
+                return OwnThingTarget(pin: pin, card: OwnThingsVoice.changeNoteCard(current: note.currentText, new: newText, polish: polish)) {
+                    do {
+                        let record = try await self.store.correct(id: note.id, text: newText)
+                        return OwnThingsVoice.noteChanged(record.currentText)
+                    } catch {
+                        return VoiceToolReply.failed(UserFacingError.message(for: error))
+                    }
+                }
+            case .cancelNoteReminder:
+                guard let reminder = store.noteReminders?.reminder(forMemory: note.id) else {
+                    await reply(id, OwnThingsVoice.noReminder(note.currentText))
+                    return nil
+                }
+                let card = OwnThingsVoice.cancelNoteReminderCard(note.currentText, when: ReminderFormat.summary(reminder), polish: polish)
+                return OwnThingTarget(pin: pin + "|" + reminder.id.uuidString, card: card) {
+                    await self.store.noteReminders?.cancel(memoryID: note.id)
+                    return self.store.noteReminders?.reminder(forMemory: note.id) == nil
+                        ? OwnThingsVoice.reminderOff(note.currentText)
+                        : VoiceToolReply.failed("The reminder is still on.")
+                }
+            default:
+                return OwnThingTarget(pin: pin, card: OwnThingsVoice.deleteNoteCard(note.currentText, polish: polish)) {
+                    do {
+                        try await self.store.delete(id: note.id)
+                        return self.store.record(id: note.id) == nil
+                            ? OwnThingsVoice.noteDeleted(note.currentText)
+                            : VoiceToolReply.failed("The note is still there.")
+                    } catch {
+                        return VoiceToolReply.failed(UserFacingError.message(for: error))
+                    }
+                }
+            }
+        case .renameList(let name, let newName):
+            guard let list = await resolveList(name, toolCallID: id) else { return nil }
+            if case .one(let existing) = ListMatch.list(named: newName, in: store.lists), existing.id != list.id,
+               ListMatch.key(existing.name) == ListMatch.key(newName) {
+                await reply(id, OwnThingsVoice.listNameTaken(existing.name))
+                return nil
+            }
+            let card = OwnThingsVoice.renameListCard(list.name, to: newName, sharedNote: nil, polish: polish)
+            return OwnThingTarget(pin: list.id.uuidString + "|" + list.name, card: card) {
+                do {
+                    try await self.store.renameList(list.id, to: newName)
+                    let now = self.store.lists.first { $0.id == list.id }?.name
+                    return now == newName ? OwnThingsVoice.listRenamed(list.name, newName) : VoiceToolReply.failed("The list's name didn't change.")
+                } catch {
+                    return VoiceToolReply.failed(UserFacingError.listMessage(for: error))
+                }
+            }
+        case .deleteList(let name):
+            guard let list = await resolveList(name, toolCallID: id) else { return nil }
+            let card = OwnThingsVoice.deleteListCard(list.name, items: list.items.count,
+                                                     sharedWarning: SharedListsController.shared.deleteWarning(list.id), polish: polish)
+            return OwnThingTarget(pin: list.id.uuidString + "|" + list.name, card: card) {
+                do {
+                    try await SharedListsController.shared.stopSharingBeforeDeleting(list.id)
+                    try await self.store.delete(id: list.id)
+                    return self.store.lists.contains { $0.id == list.id }
+                        ? VoiceToolReply.failed("The list is still there.")
+                        : OwnThingsVoice.listDeleted(list.name)
+                } catch {
+                    return VoiceToolReply.failed(UserFacingError.listMessage(for: error))
+                }
+            }
+        case .clearTicked(let name):
+            guard let list = await resolveList(name, toolCallID: id) else { return nil }
+            let ticked = list.done
+            guard !ticked.isEmpty else {
+                await reply(id, OwnThingsVoice.nothingTicked(list.name))
+                return nil
+            }
+            let pin = list.id.uuidString + "|" + ticked.map(\.id.uuidString).sorted().joined(separator: ",")
+            return OwnThingTarget(pin: pin, card: OwnThingsVoice.clearTickedCard(list.name, ticked: ticked.map(\.text), polish: polish)) {
+                do {
+                    try await self.store.clearTicked(listID: list.id)
+                    let left = self.store.lists.first { $0.id == list.id }?.done.count ?? 0
+                    return left == 0 ? OwnThingsVoice.tickedCleared(list.name, count: ticked.count) : VoiceToolReply.failed("Some ticked items are still on the list.")
+                } catch {
+                    return VoiceToolReply.failed(UserFacingError.listMessage(for: error))
+                }
+            }
+        case .cancelTask(let about):
+            let errands = ErrandsModel.shared
+            await errands.refresh()
+            switch OwnThingsVoice.task(about, in: errands.errands) {
+            case .one(let task):
+                return OwnThingTarget(pin: task.id.uuidString, card: OwnThingsVoice.cancelTaskCard(task.draft.title, polish: polish)) {
+                    errands.message = nil
+                    await errands.cancel(task.id)
+                    if errands.errand(task.id)?.state == .cancelled { return OwnThingsVoice.taskStopped(task.draft.title) }
+                    return OwnThingsVoice.taskNotStopped(task.draft.title, reason: errands.message ?? "the server didn't confirm it")
+                }
+            case .none:
+                await reply(id, OwnThingsVoice.taskNotFound(about, open: errands.errands.filter { [.queued, .running].contains($0.state) }))
+            case .several(let found):
+                await reply(id, OwnThingsVoice.severalTasks(about, found))
+            }
+            return nil
+        default:
+            return nil
+        }
+    }
 
     // MARK: Plan card (ADR-204)
 

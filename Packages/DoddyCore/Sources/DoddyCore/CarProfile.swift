@@ -84,13 +84,14 @@ public enum CarProfile {
         // Since 11 Nov 2026 these run at once outside the car (decision 2026-11-11-asked-for-runs-at-once); in the car
         // they still wait, because each shows something on the iPhone's screen or starts something there. Whether
         // some of them should run while driving is an owner decision; the reason the agent hears says only what is true.
-        case .lookupContact, .followNews, .startStopwatch, .stopStopwatch, .startFocus, .stopFocus, .startWindDown, .stopWindDown,
+        case .lookupContact, .followNews, .unfollowNews, .startStopwatch, .stopStopwatch, .startFocus, .stopFocus, .startWindDown, .stopWindDown,
              .openTrainingPlan, .checkOff:
             return .refuse(reason: "This shows on the iPhone's screen, so it waits until the user isn't driving.")
         case .leaveBy, .createCalendarEvent, .createReminder, .remindAboutNote, .addIngredients, .undoLast,
              .setTimer, .setAlarm, .cancelAlarm, .openMap, .openFoodApp, .runShortcut, .draftMessage, .callContact, .makePresentation, .openCamera, .controlHome, .startTranslator,
              .stopTranslator, .removeFromList, .createList, .changeCalendarEvent, .changeReminder,
-             .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders:
+             .deleteCalendarEvent, .deleteReminder, .deleteCalendarEvents, .moveReminders,
+             .changeNote, .deleteNote, .cancelNoteReminder, .renameList, .deleteList, .clearTicked, .cancelTask:
             return .refuse(reason: "This needs a tap on a card on the iPhone, so it waits until the user isn't driving.")
         }
     }

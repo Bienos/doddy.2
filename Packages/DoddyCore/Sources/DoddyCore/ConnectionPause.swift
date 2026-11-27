@@ -23,6 +23,10 @@ public enum ConnectionPause {
         case .checkErrands:
             // Reads the tasks Doddy keeps for the user (ADR-570); no other app or account.
             false
+        case .changeNote, .deleteNote, .cancelNoteReminder, .renameList, .deleteList, .clearTicked, .unfollowNews, .cancelTask:
+            // Doddy's own notes, lists and follows on this iPhone, and stopping one of Doddy's own tasks (decision
+            // 2026-11-27-voice-first-doddy): no other app or account, and a stop is never held back.
+            false
         case .lostWallet:
             // Doddy's own checklist (ADR-692); a page or a call opens only on the person's tap, like any link.
             false

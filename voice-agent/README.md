@@ -145,7 +145,7 @@ Every tool asks first (ASK-01, `x_doddy.ask`). `runs_now`: looks, reads, public 
 | Sums and conversions | `calculate`, `convert_units`, `convert_currency` | The app |
 | Timers, alarms, stopwatch, focus, wind-down | `set_timer`, `set_alarm`, `list_alarms`, `cancel_alarm`, `start_stopwatch`, `stop_stopwatch`, `check_stopwatch`, `start_focus`, `stop_focus`, `check_focus`, `start_wind_down`, `stop_wind_down` (the last five not on the live agent yet) | The app |
 | Lists | `add_to_list`, `add_ingredients`, `read_list`, `check_off`, `remove_from_list`, `create_list` | The app |
-| The phone itself | `open_map`, `parking_spot`, `run_shortcut`, `open_camera`, `find_photos`, `control_home` (Apple Home), `follow_news` (Doddy's Following feed), `make_presentation` (Keynote only) | The app |
+| The phone itself | `open_map`, `parking_spot`, `run_shortcut`, `open_camera`, `find_photos`, `control_home` (Apple Home), `follow_news` and `unfollow_news` (Doddy's Following feed), `change_note`, `delete_note`, `cancel_note_reminder`, `rename_list`, `delete_list`, `clear_ticked`, `cancel_task` (decision `2026-11-27-voice-first-doddy`; in the repo, not on the live agent until the owner says so), `make_presentation` (Keynote only) | The app |
 | Health and sport | `read_steps`, `read_health_week`, `open_training_plan` | The app |
 | Translator | `start_translator`, `stop_translator` | The app |
 | Tasks and leaflets | `hand_over_errand`, `check_errands`, `find_deals` | The app asks; the messaging server (`doddy-messaging`) does the work |

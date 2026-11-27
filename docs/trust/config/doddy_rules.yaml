@@ -79,7 +79,10 @@ action_policy:
     # person's rough area (district, town, a position rounded to two decimals), read once when asked; iOS's own location
     # question (While Using the App) is the consent, as Calendar's is for read_calendar. See privacy_policy for what is kept.
     own_looks_run_at_once: [search_memories, read_list, read_calendar, find_free_time, lookup_contact, upcoming_birthdays, find_photos, look_at_screen, read_steps, read_health_week, list_alarms, check_stopwatch, check_focus, check_errands, find_deals, parking_spot_find, where_am_i]
-    own_small_actions_run_at_once: [start_stopwatch, stop_stopwatch, start_focus, stop_focus, start_wind_down, stop_wind_down, add_to_list, check_off, follow_news, open_training_plan, note_capability_gap, stop_morning_calls]
+    # Addition (decision docs/decisions/2026-11-27-voice-first-doddy.md): unfollow_news, undone by following again. The
+    # same decision's change_note, delete_note, cancel_note_reminder, rename_list, delete_list, clear_ticked and cancel_task
+    # keep a card with exactly the note, list or task the app found (OwnThingsVoice, OwnThingPin), answered by a tap or a spoken yes.
+    own_small_actions_run_at_once: [start_stopwatch, stop_stopwatch, start_focus, stop_focus, start_wind_down, stop_wind_down, add_to_list, check_off, follow_news, open_training_plan, note_capability_gap, stop_morning_calls, unfollow_news]
     # Change (owner, 2026-11-14; decision docs/decisions/2026-11-14-spoken-yes-and-fewer-cards.md, step 2b): Doddy's own changes
     # that have Undo in "What Doddy did", and the drafts and hand-overs that change nothing anywhere, run when asked with no
     # card (AskFirst.ownChangesAtOnce). Those that open another app or the camera do so only while Doddy is on screen;

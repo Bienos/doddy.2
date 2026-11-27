@@ -30,6 +30,17 @@ public enum VoiceToolName {
     public static let handOverErrand = "hand_over_errand"
     /// What Doddy found for the tasks handed over, as saved on this iPhone.
     public static let checkErrands = "check_errands"
+    /// Doddy's own things by voice (decision 2026-11-27-voice-first-doddy, step 1). Each names the thing in the user's
+    /// words; the app finds exactly one, shows a card with what changes and runs it on a tap or the user's own yes.
+    public static let changeNote = "change_note"
+    public static let deleteNote = "delete_note"
+    public static let cancelNoteReminder = "cancel_note_reminder"
+    public static let renameList = "rename_list"
+    public static let deleteList = "delete_list"
+    public static let clearTicked = "clear_ticked"
+    public static let cancelTask = "cancel_task"
+    /// Stops following one thing in Following (the opposite of follow_news); runs at once, like following.
+    public static let unfollowNews = "unfollow_news"
     /// "Research X": a research brief and an infographic made in the background (ADR-740, Studio.swift).
     public static let makeSomething = "make_something"
     /// This week's leaflets, read on Doddy's server on request (SHOPPING.md, Deals.swift).
@@ -343,6 +354,17 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case handOverErrand(ErrandDraft)
     /// The tasks handed over, as saved on this iPhone; `about` is which one, in the agent's words.
     case checkErrands(about: String?)
+    /// Doddy's own things by voice (decision 2026-11-27-voice-first-doddy, step 1). `quote` is the note's exact text
+    /// (from search_memories); the app matches it exactly (`NoteQuoteMatch`) and the card shows the note it found.
+    case changeNote(quote: String, newText: String)
+    case deleteNote(quote: String)
+    case cancelNoteReminder(quote: String)
+    case renameList(list: String, newName: String)
+    case deleteList(list: String)
+    case clearTicked(list: String)
+    /// `about`: words from the task's title, as for check_errands.
+    case cancelTask(about: String)
+    case unfollowNews(name: String)
     /// A Studio job (ADR-740): one yes covers its web look-ups (capped on the server) and making its
     /// files in Anthropic's container, nothing else; nothing is published or sent.
     case makeSomething(StudioJob)
@@ -515,6 +537,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseList(args, name: name)
         case VoiceToolName.handOverErrand:
             return parseHandOverErrand(args, name: name)
+        case VoiceToolName.changeNote, VoiceToolName.deleteNote, VoiceToolName.cancelNoteReminder,
+             VoiceToolName.renameList, VoiceToolName.deleteList, VoiceToolName.clearTicked,
+             VoiceToolName.cancelTask, VoiceToolName.unfollowNews:
+            return OwnThingsVoice.parse(args, name: name)
         case VoiceToolName.checkErrands:
             return parseCheckErrands(args)
         case VoiceToolName.makeSomething:

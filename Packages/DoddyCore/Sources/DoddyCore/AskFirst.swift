@@ -184,6 +184,8 @@ public enum AskFirst {
         VoiceToolName.startStopwatch, VoiceToolName.stopStopwatch, VoiceToolName.startFocus, VoiceToolName.stopFocus,
         VoiceToolName.startWindDown, VoiceToolName.stopWindDown, VoiceToolName.addToList, VoiceToolName.checkOff,
         VoiceToolName.followNews, VoiceToolName.openTrainingPlan, VoiceToolName.noteCapabilityGap,
+        // Following less (decision 2026-11-27-voice-first-doddy): undone by following it again, like follow_news.
+        VoiceToolName.unfollowNews,
         // Taking away the standing permission for morning calls (decision 2026-11-14-morning-call): it only stops calls.
         VoiceToolName.stopMorningCalls,
     ]
@@ -229,8 +231,13 @@ public enum AskFirst {
             return .runsNow
         // Doddy's own timers, lists and follows: started, ticked or added at once; each is undone in one step.
         case .startStopwatch, .stopStopwatch, .startFocus, .stopFocus, .startWindDown, .stopWindDown,
-             .addToList, .checkOff, .followNews, .openTrainingPlan, .noteCapabilityGap:
+             .addToList, .checkOff, .followNews, .unfollowNews, .openTrainingPlan, .noteCapabilityGap:
             return .runsNow
+        // Doddy's own things by voice (decision 2026-11-27-voice-first-doddy): the tool's own flow finds exactly one
+        // note, list or task and shows a card with what it found and what changes; a tap or the user's own spoken yes
+        // runs exactly that (`OwnThingPin`).
+        case .changeNote, .deleteNote, .cancelNoteReminder, .renameList, .deleteList, .clearTicked, .cancelTask:
+            return .ownPayloadCard
         // Stopping the morning calls only takes a permission away (decision 2026-11-14-morning-call): at once.
         case .stopMorningCalls:
             return .runsNow
