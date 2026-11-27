@@ -2347,6 +2347,92 @@
     },
     {
       "type": "function",
+      "name": "pause_resume",
+      "description": "Pause or resume Doddy's own stopwatch or focus timer when the user asks ('wstrzymaj stoper', 'pause the focus timer', 'wznów skupienie', 'resume the stopwatch'). It is the same clock the screen's pause button drives. It runs at once, with no card. After an email, a page or the screen was read in this conversation, the app asks one short question first; then ask it and wait. The result starts with 'changed' (it says the time so far or the time left: read it from the result, never guess it), 'not changed' (it was already in that state) or 'failed' (there is no such clock, or it is over). Don't ask first: call it, then say in one short line what was done. Never say it is paused or running again unless the result starts with changed. To stop it for good use stop_stopwatch or stop_focus.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "what": {
+            "type": "string",
+            "enum": [
+              "stopwatch",
+              "focus"
+            ],
+            "description": "Which clock: 'stopwatch' (counts up) or 'focus' (the focus timer that counts down)."
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "pause",
+              "resume"
+            ],
+            "description": "'pause' to hold it, 'resume' to let it go on."
+          }
+        },
+        "required": [
+          "what",
+          "action"
+        ]
+      },
+      "x_doddy": {
+        "runs_on": "phone",
+        "confirm_on_screen": false,
+        "ask": "runs_now",
+        "speak_before": "auto",
+        "timeout_secs": 30,
+        "elevenlabs_tool_id": "not_synced"
+      }
+    },
+    {
+      "type": "function",
+      "name": "untick_all",
+      "description": "Untick every ticked item on one of the user's lists when they ask to start the list over ('odznacz wszystko na liście zakupów', 'untick everything on the packing list'). The items stay on the list, only the ticks go. It runs at once, with no card, and Undo is on the list afterwards. The result starts with 'changed' (it says how many), 'not found', 'not changed' (nothing is ticked) or 'failed'. Don't ask first: call it, then say how many were unticked, only from the result. To remove the ticked items instead use clear_ticked.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "string",
+            "description": "The list's name as under the user's lists, e.g. 'Zakupy'."
+          }
+        },
+        "required": [
+          "list"
+        ]
+      },
+      "x_doddy": {
+        "runs_on": "phone",
+        "confirm_on_screen": false,
+        "ask": "runs_now",
+        "speak_before": "auto",
+        "timeout_secs": 30,
+        "elevenlabs_tool_id": "not_synced"
+      }
+    },
+    {
+      "type": "function",
+      "name": "delete_task",
+      "description": "Delete one finished task for good (done, failed or stopped) when the user asks to delete or remove it from Tasks ('usuń zadanie o Rzymie', 'delete the Lisbon task'). The task and its result are gone on this iPhone and on Doddy's server, and nothing brings them back, so this always shows a card with the task it found. Pass words from its title or request as about; leave about out only when the user means the one finished task. A task still being worked on is stopped first with cancel_task. A Studio job can't be deleted by voice yet. The result starts with 'deleted', 'declined', 'not found' (it lists the finished tasks), 'not changed' (several match: ask which, once), 'unknown' (the delete wasn't confirmed: tell the user to check Tasks and don't try again yourself) or 'failed'. Before this tool runs, say in one short line exactly what will go, as the question, for example 'Usunąć zadanie o Rzymie?' / 'Delete the task about Rome?'; the user's own short yes, or a tap on the card, runs it, so don't ask a second time. Never say it is deleted unless the result starts with deleted.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "about": {
+            "type": "string",
+            "description": "Words from its title or request, e.g. 'Rzym' or 'hotele'. Leave out only when the user means the one finished task."
+          }
+        },
+        "required": []
+      },
+      "x_doddy": {
+        "runs_on": "phone",
+        "confirm_on_screen": true,
+        "ask": "yes_or_tap",
+        "speak_before": "force",
+        "timeout_secs": 90,
+        "elevenlabs_tool_id": "not_synced"
+      }
+    },
+    {
+      "type": "function",
       "name": "open_screen",
       "description": "Open one of Doddy's own screens in the app when the user asks to see or open it ('pokaż moje zadania', 'otwórz ustawienia', 'show my lists', 'open On my radar'). Pass screen, one of: home, notes, lists, settings, today, tasks, messages, files, radar (On my radar), calls (Phone calls), shopping, deals (this week's leaflets), trips, food, my_city, what_i_can_do, recordings. The voice screen goes down to the Dynamic Island and the conversation goes on, so the user can look and keep talking. It opens at once, with no card. For a note or a list's items, read them with search_memories or read_list instead; for Maps, a food app or the camera use open_map, open_food_app or open_camera; Doddy can't open other apps' screens or iOS Settings. The result starts with 'opened' or 'not available' (not in this build). Don't ask first: call it, then say in a few words that it is on screen.",
       "parameters": {

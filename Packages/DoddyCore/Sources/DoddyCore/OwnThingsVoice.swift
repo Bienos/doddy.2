@@ -30,12 +30,13 @@ public enum OwnThingsVoice {
     /// research": a stopped task is started again by asking again). `unfollow_news` is in `AskFirst.ownSmallActions`.
     public static let atOnceTools: Set<String> = [
         VoiceToolName.changeNote, VoiceToolName.deleteNote, VoiceToolName.renameList, VoiceToolName.deleteList,
-        VoiceToolName.clearTicked, VoiceToolName.cancelTask,
+        VoiceToolName.clearTicked, VoiceToolName.cancelTask, VoiceToolName.untickAll,
     ]
 
     /// The one tool of this step that keeps a card: a note's reminder, once off, has to be set up again from scratch.
     /// A spoken yes or a tap runs it.
-    public static let cardTools: Set<String> = [VoiceToolName.cancelNoteReminder]
+    /// A deleted task, with its result, can't be brought back either, so delete_task keeps a card too.
+    public static let cardTools: Set<String> = [VoiceToolName.cancelNoteReminder, VoiceToolName.deleteTask]
 
     // MARK: Reading the call
 
@@ -75,6 +76,11 @@ public enum OwnThingsVoice {
             return .clearTicked(list: list)
         case VoiceToolName.cancelTask:
             return .cancelTask(about: cleaned("about"))
+        case VoiceToolName.deleteTask:
+            return .deleteTask(about: cleaned("about"))
+        case VoiceToolName.untickAll:
+            guard let list = cleaned("list") else { return .invalid(name: name, reason: "missing list") }
+            return .untickAll(list: list)
         default:
             guard let follow = cleaned("name") else { return .invalid(name: name, reason: "missing name") }
             return .unfollowNews(name: follow)
@@ -114,6 +120,28 @@ public enum OwnThingsVoice {
         if let about, !about.isEmpty {
             let matching = open.filter { $0.matches(about) }
             if !matching.isEmpty || open.count != 1 { found = matching }
+        }
+        switch found.count {
+        case 0: return .none
+        case 1: return .one(found[0])
+        default: return .several(found)
+        }
+    }
+
+    /// Everything that can be deleted: tasks handed over that have finished (done, failed or stopped). One still being
+    /// worked on is stopped first (cancel_task); a state this version doesn't know is never deleted by voice.
+    public static func deletable(tasks: [StoredErrand]) -> [StoppableWork] {
+        tasks.filter { $0.state.isFinished }.map { StoppableWork(id: $0.id, kind: .task, title: $0.draft.title, words: $0.draft.words) }
+    }
+
+    /// The one task to delete. Unlike `work`, words that match nothing never fall back to the only task: a delete
+    /// names what it takes away. With no words, the only finished task, if there is exactly one.
+    public static func deletableWork(_ about: String?, in finished: [StoppableWork]) -> ListMatchResult<StoppableWork> {
+        let found: [StoppableWork]
+        if let about, !about.isEmpty {
+            found = finished.filter { $0.matches(about) }
+        } else {
+            found = finished
         }
         switch found.count {
         case 0: return .none
@@ -174,7 +202,46 @@ public enum OwnThingsVoice {
                 lines: ticked, confirmLabel: polish ? "Usuń odhaczone" : "Clear ticked")
     }
 
+    public static func deleteTaskCard(_ work: StoppableWork, polish: Bool) -> AskCard {
+        AskCard(title: polish ? "Usunąć zadanie?" : "Delete this task?",
+                lines: [work.title.isEmpty ? (polish ? "(zadanie bez tytułu)" : "(a task without a title)") : work.title,
+                        polish ? "Zadanie i jego wynik znikną. Tego nie da się cofnąć." : "The task and its result are gone. This can't be undone."],
+                confirmLabel: polish ? "Usuń" : "Delete")
+    }
+
     // MARK: Replies (the first word is what the prompt's rules read; the user's words are data)
+
+    public static func nothingToUntick(_ list: String) -> String {
+        "not changed: nothing is ticked on this list, so nothing was unticked.\n" + ToolData.block([VoiceToolReply.quoted("List", list)])
+    }
+
+    public static func allUnticked(_ name: String, count: Int) -> String {
+        "changed: \(count) item\(count == 1 ? " was" : "s were") unticked on the list below; Undo is on the list.\n"
+            + ToolData.block([VoiceToolReply.quoted("List", name)])
+    }
+
+    public static func noTaskToDelete(_ about: String?, finished: [StoppableWork]) -> String {
+        let lead = finished.isEmpty
+            ? "not found: no task has finished yet (done, failed or stopped), so nothing was deleted. One still being worked on is stopped first with cancel_task. A Studio job can't be deleted by voice yet."
+            : "not found: no finished task matches the words below. Nothing was deleted. Ask the user which one; the finished tasks follow."
+        return lead + "\n" + ToolData.block([about.map { VoiceToolReply.quoted("Asked for", $0) }].compactMap { $0 } + finished.map(\.line))
+    }
+
+    public static func severalDeletable(_ about: String?, _ work: [StoppableWork]) -> String {
+        "not changed: more than one finished task fits and the words don't pick one. Ask the user which one. Nothing was deleted.\n"
+            + ToolData.block([about.map { VoiceToolReply.quoted("Asked for", $0) }].compactMap { $0 } + work.map(\.line))
+    }
+
+    public static func taskDeleted(_ work: StoppableWork) -> String {
+        "deleted: the task below and its result are deleted, on this iPhone and on Doddy's server. This can't be undone.\n"
+            + ToolData.block([work.line])
+    }
+
+    /// The server or the phone didn't confirm: never said as deleted.
+    public static func taskNotDeleted(_ work: StoppableWork, reason: String) -> String {
+        "unknown: Doddy couldn't confirm the task was deleted (\(ToolData.clean(reason))). Tell the user to check Tasks; don't try again by yourself.\n"
+            + ToolData.block([work.line])
+    }
 
     public static func severalNotes() -> String {
         "not changed: more than one note has exactly this text. Ask the user which one (for example when it was saved). Nothing changed."

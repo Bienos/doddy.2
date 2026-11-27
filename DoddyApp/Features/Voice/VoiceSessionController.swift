@@ -3833,8 +3833,13 @@ final class VoiceSessionController {
             // "Written down" only after the write (ADR-672); no store or a failed write says so.
             let noted = await store.learning?.recordGap(category, requestID: call.toolCallId, sessionID: conversationID) ?? false
             await reply(call.toolCallId, noted ? LearningPrompt.gapNoted : LearningPrompt.gapNotNoted)
-        case .changeNote, .deleteNote, .cancelNoteReminder, .renameList, .deleteList, .clearTicked, .cancelTask, .unfollowNews:
+        case .changeNote, .deleteNote, .cancelNoteReminder, .renameList, .deleteList, .clearTicked, .cancelTask, .unfollowNews,
+             .untickAll, .deleteTask:
             await handleOwnThing(request, call: call)
+        case .pauseResume(let clock, let resume):
+            // Doddy's own stopwatch or focus timer (decision 2026-11-27-voice-first-doddy): at once, and every reply is
+            // read back from the clock after the change.
+            await reply(call.toolCallId, pauseResume(clock: clock, resume: resume))
         case .openScreen(let screen):
             // Steering the app by voice (decision 2026-11-27-voice-first-doddy): navigation only. The voice sheet goes
             // down and the screen opens once it has; the conversation goes on in the Dynamic Island.
@@ -3910,6 +3915,41 @@ final class VoiceSessionController {
             guard current != stored else { return AppControlVoice.alreadySet(setting, value) }
             defaults.set(stored, forKey: key)
             return defaults.bool(forKey: key) == stored ? AppControlVoice.changed(setting, to: value) : AppControlVoice.notChanged(setting)
+        }
+    }
+
+    // MARK: Pausing and resuming Doddy's own clocks by voice
+
+    /// Reads the clock's real state, lets `ClockPauseVoice.decide` say whether anything changes, toggles it only for a real
+    /// change and reads it back. The controllers only toggle, so the state is checked first: "pause" on a paused
+    /// stopwatch must never resume it.
+    private func pauseResume(clock: PausableClock, resume: Bool) -> String {
+        func state() -> (ClockPauseState, String) {
+            let now = Date()
+            switch clock {
+            case .stopwatch:
+                StopwatchController.shared.refresh()
+                guard let watch = StopwatchController.shared.watch else { return (.none, "") }
+                let current: ClockPauseState = watch.isOver ? .over : (watch.isPaused ? .paused : .running)
+                return (current, Stopwatch.spoken(watch.elapsed(at: watch.stoppedAt ?? now), polish: false))
+            case .focus:
+                FocusController.shared.refresh()
+                guard let session = FocusController.shared.session else { return (.none, "") }
+                let current: ClockPauseState = session.isOver ? .over : (session.isPaused ? .paused : .running)
+                return (current, Stopwatch.spoken(session.remaining(at: now), polish: false))
+            }
+        }
+        let (before, _) = state()
+        switch ClockPauseVoice.decide(clock: clock, resume: resume, state: before) {
+        case .reply(let text):
+            return text
+        case .change:
+            switch clock {
+            case .stopwatch: StopwatchController.shared.togglePause()
+            case .focus: FocusController.shared.togglePause()
+            }
+            let (after, reading) = state()
+            return ClockPauseVoice.result(clock: clock, resume: resume, after: after, reading: reading)
         }
     }
 
@@ -4065,6 +4105,44 @@ final class VoiceSessionController {
                     return VoiceToolReply.failed(UserFacingError.listMessage(for: error))
                 }
             }
+        case .untickAll(let name):
+            guard let list = await resolveList(name, toolCallID: id) else { return nil }
+            let ticked = list.done
+            guard !ticked.isEmpty else {
+                await reply(id, OwnThingsVoice.nothingToUntick(list.name))
+                return nil
+            }
+            let pin = list.id.uuidString + "|" + ticked.map(\.id.uuidString).sorted().joined(separator: ",")
+            return OwnThingTarget(pin: pin) {
+                do {
+                    try await self.store.untickAll(listID: list.id)
+                    let left = self.store.lists.first { $0.id == list.id }?.done.count ?? 0
+                    return left == 0 ? OwnThingsVoice.allUnticked(list.name, count: ticked.count) : VoiceToolReply.failed("Some items are still ticked.")
+                } catch {
+                    return VoiceToolReply.failed(UserFacingError.listMessage(for: error))
+                }
+            }
+        case .deleteTask(let about):
+            // Only a finished task (done, failed or stopped), named by its words; its card shows the task found. Deleted
+            // on the server first and then here (`ErrandsModel.delete`); "deleted" only when it is gone from the list.
+            let errands = ErrandsModel.shared
+            await errands.refresh()
+            let finished = OwnThingsVoice.deletable(tasks: errands.errands)
+            switch OwnThingsVoice.deletableWork(about, in: finished) {
+            case .one(let work):
+                let card = OwnThingsVoice.deleteTaskCard(work, polish: polish)
+                return OwnThingTarget(pin: work.id.uuidString + "|" + work.title, card: card) {
+                    errands.message = nil
+                    let removed = await errands.delete(work.id)
+                    if removed, errands.errand(work.id) == nil { return OwnThingsVoice.taskDeleted(work) }
+                    return OwnThingsVoice.taskNotDeleted(work, reason: errands.message ?? "the server didn't confirm it")
+                }
+            case .none:
+                await reply(id, OwnThingsVoice.noTaskToDelete(about, finished: finished))
+            case .several(let found):
+                await reply(id, OwnThingsVoice.severalDeletable(about, found))
+            }
+            return nil
         case .cancelTask(let about):
             // A task handed over and a Studio job both stop as asked ("stop the research"). Each is read back from its
             // server after the stop: "stopped" only when it says cancelled.

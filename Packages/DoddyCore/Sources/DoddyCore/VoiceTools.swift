@@ -45,6 +45,11 @@ public enum VoiceToolName {
     public static let deleteList = "delete_list"
     public static let clearTicked = "clear_ticked"
     public static let cancelTask = "cancel_task"
+    /// The next batch of own things (decision 2026-11-27-voice-first-doddy): pause or resume the stopwatch or the focus
+    /// timer, untick everything on a list, delete a finished task.
+    public static let pauseResume = "pause_resume"
+    public static let untickAll = "untick_all"
+    public static let deleteTask = "delete_task"
     /// Stops following one thing in Following (the opposite of follow_news); runs at once, like following.
     public static let unfollowNews = "unfollow_news"
     /// Steering the app by voice (decision 2026-11-27-voice-first-doddy): open one of Doddy's screens, change one of
@@ -381,6 +386,13 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// Stops a task handed over or a Studio job that is still being worked on. `about`: words from its title, as for
     /// check_errands; nil when the user only said "stop it" (then the one thing being worked on, if there is just one).
     case cancelTask(about: String?)
+    /// Pauses or resumes Doddy's own stopwatch or focus timer (`ClockPauseVoice`).
+    case pauseResume(clock: PausableClock, resume: Bool)
+    /// Unticks every ticked item on one list; Undo is on the list.
+    case untickAll(list: String)
+    /// Deletes one finished task (done, failed or stopped) handed over earlier; `about` as for check_errands. Shows a
+    /// card: a deleted task and its result are gone.
+    case deleteTask(about: String?)
     case unfollowNews(name: String)
     /// Opens one of Doddy's screens; the conversation goes on in the Dynamic Island.
     case openScreen(AppScreen)
@@ -560,8 +572,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return parseHandOverErrand(args, name: name)
         case VoiceToolName.changeNote, VoiceToolName.deleteNote, VoiceToolName.cancelNoteReminder,
              VoiceToolName.renameList, VoiceToolName.deleteList, VoiceToolName.clearTicked,
-             VoiceToolName.cancelTask, VoiceToolName.unfollowNews:
+             VoiceToolName.cancelTask, VoiceToolName.unfollowNews, VoiceToolName.untickAll, VoiceToolName.deleteTask:
             return OwnThingsVoice.parse(args, name: name)
+        case VoiceToolName.pauseResume:
+            return ClockPauseVoice.parse(args, name: name)
         case VoiceToolName.openScreen, VoiceToolName.changeSetting:
             return AppControlVoice.parse(args, name: name)
         case VoiceToolName.textContact:

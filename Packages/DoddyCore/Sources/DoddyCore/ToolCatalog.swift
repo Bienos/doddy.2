@@ -144,14 +144,19 @@ public enum ToolCatalog {
         .init(VoiceToolName.renameList, .localChange, .runsNow),
         .init(VoiceToolName.deleteList, .localChange, .runsNow),
         .init(VoiceToolName.clearTicked, .localChange, .runsNow),
+        .init(VoiceToolName.untickAll, .localChange, .runsNow),
         // Stopping a task or a Studio job on Doddy's server (ADR-570, ADR-740), as asked.
         .init(VoiceToolName.cancelTask, .handoff, .runsNow),
+        // Deleting a finished task: Doddy's server keeps a copy, so it is a handoff; a card, as nothing brings it back.
+        .init(VoiceToolName.deleteTask, .handoff, .card),
         // Steering the app by voice (`AppControlVoice`): one of Doddy's own screens, one of his own settings.
         .init(VoiceToolName.openScreen, .session, .runsNow),
         .init(VoiceToolName.changeSetting, .localChange, .runsNow),
         // A stopwatch that counts up (ADR-652): Doddy's own tool, no other app.
         .init(VoiceToolName.startStopwatch, .localChange, .runsNow),
         .init(VoiceToolName.stopStopwatch, .localChange, .runsNow),
+        // Pause or resume the stopwatch or the focus timer: the same clocks, the opposite undoes it.
+        .init(VoiceToolName.pauseResume, .localChange, .runsNow),
         .init(VoiceToolName.checkStopwatch, .lookup, .runsNow),
         // The focus timer and the wind-down (decision 2026-11-10-timers-by-voice): Doddy's own timers, like the stopwatch.
         .init(VoiceToolName.startFocus, .localChange, .runsNow),
