@@ -26,6 +26,9 @@ public enum VoiceToolName {
     public static let noteCapabilityGap = "note_capability_gap"
     /// A text from Doddy's own number to the user's verified number, after a card (ADR-750 U2).
     public static let textMe = "text_me"
+    /// A text from Doddy's own number to one of the user's contacts, after a card with the number and the exact text
+    /// (decisions 2026-11-09-texts-to-contacts, 2026-11-27-voice-first-doddy step 4).
+    public static let textContact = "text_contact"
     /// Hand a task over: Doddy's server researches it in the background (ADR-570, Errand.swift).
     public static let handOverErrand = "hand_over_errand"
     /// What Doddy found for the tasks handed over, as saved on this iPhone.
@@ -115,7 +118,7 @@ public enum VoiceConnection: String, CaseIterable, Sendable {
              VoiceToolName.deleteCalendarEvent, VoiceToolName.deleteCalendarEvents: .calendar
         case VoiceToolName.createReminder, VoiceToolName.changeReminder, VoiceToolName.deleteReminder,
              VoiceToolName.moveReminders: .reminders
-        case VoiceToolName.lookupContact, VoiceToolName.upcomingBirthdays, VoiceToolName.callContact: .contacts
+        case VoiceToolName.lookupContact, VoiceToolName.upcomingBirthdays, VoiceToolName.callContact, VoiceToolName.textContact: .contacts
         case VoiceToolName.setTimer, VoiceToolName.setAlarm, VoiceToolName.listAlarms, VoiceToolName.cancelAlarm: .timers
         case VoiceToolName.openMap, VoiceToolName.remindWhenToLeave: .maps
         case VoiceToolName.runShortcut: .shortcuts
@@ -287,6 +290,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// A text from Doddy's number to the user's own verified number (ADR-750 U2). Shown on a card
     /// with the exact text; sent only on the user's tap, bound to that text by `ApprovalHash`.
     case textMe(body: String)
+    /// A text from Doddy's number to one of the user's contacts (`ContactTextVoice`). The model names the person; the app
+    /// reads the number from Contacts and shows a card with it and exactly the text.
+    case textContact(name: String, body: String)
     /// A call from Doddy's number to the user's verified number at a later time (ADR-754). Shown
     /// on a card with the time and the exact reason; booked only on the user's tap.
     case callMeLater(CallLaterDraft)
@@ -552,6 +558,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return OwnThingsVoice.parse(args, name: name)
         case VoiceToolName.openScreen, VoiceToolName.changeSetting:
             return AppControlVoice.parse(args, name: name)
+        case VoiceToolName.textContact:
+            return ContactTextVoice.parse(args, name: name)
         case VoiceToolName.checkErrands:
             return parseCheckErrands(args)
         case VoiceToolName.makeSomething:

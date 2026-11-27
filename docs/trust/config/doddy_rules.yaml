@@ -190,6 +190,12 @@ contact_policy:
   # until the server route lands, text_recipients above is still what the server enforces.
   contact_text_recipients: iphone_contacts_number_read_by_app
   contact_text_approval: tap_on_card_with_contact_number_and_exact_text
+  # Change (2026-11-27; decision docs/decisions/2026-11-27-voice-first-doddy.md, step 4; DOD-07, DOD-08): steps 3 and 4
+  # of the texts decision in the repo. The voice tool text_contact names the person and the text, never a number; the
+  # app reads the number from Contacts and shows the card, and the person's tap or own spoken yes sends exactly that
+  # (ContactTextVoice, VoiceSessionController.textContact). Several matching contacts are asked about, never guessed.
+  # The server route stays off until the owner sets CONTACT_TEXTS_ENABLED.
+  contact_text_by_voice: {tool: text_contact, number_from: iphone_contacts_only, model_gives_number: never, approval: spoken_yes_or_tap_on_card_with_contact_number_and_exact_text, several_matches: ask_full_name}
   contact_text_signature: none
   contact_texts_per_account_day: 50
   call_recipients: allowlist_only

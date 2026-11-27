@@ -185,6 +185,8 @@ public enum ToolCatalog {
         // Decision 2026-11-09-restaurant-calls-one-tap (owner, 9 Nov 2026): to the user's own verified number only,
         // at once while Texts from Doddy is on, no card; never the same text twice in a row (`TextRepeat`).
         .init(VoiceToolName.textMe, .sendText, .runsNow),
+        // To one of the user's contacts, from Doddy's number: a card with the number and exactly the text.
+        .init(VoiceToolName.textContact, .sendText, .card),
         // The card shows the time and the exact reason Doddy will say; the server checks the same
         // approval hash when it books the call and again when it places it (ADR-754).
         // Rings only the user's own verified number, as asked (owner, 25 Nov 2026, `AskFirst.ownPhoneCallsAtOnce`).

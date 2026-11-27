@@ -143,7 +143,7 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .photosAndCamera: [VoiceToolName.findPhotos, VoiceToolName.openCamera]
         // Doddy's own phone number (ADR-750 to 755): a text to the person's own number goes with the
         // texts, a call now or booked for later with the calls.
-        case .updates: [VoiceToolName.textMe]
+        case .updates: [VoiceToolName.textMe, VoiceToolName.textContact]
         case .phoneCalls: [VoiceToolName.callMeLater, VoiceToolName.callMeNow, VoiceToolName.callMeEveryMorning, VoiceToolName.stopMorningCalls]
         case .invoices: [VoiceToolName.draftInvoice]
         case .studio: [VoiceToolName.makeSomething]

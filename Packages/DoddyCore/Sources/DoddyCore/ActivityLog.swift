@@ -255,6 +255,9 @@ public struct ActivityRequest: Equatable, Sendable {
         case .textMe:
             // The card shows the text; the log keeps none of it (review C2).
             return ActivityRequest(app: .messages, title: "Text you from Doddy's number", detail: nil, isLookup: false)
+        case .textContact(let name, _):
+            // Who, as the user named them; never the number or the text (the card showed both).
+            return ActivityRequest(app: .messages, title: "Text a contact from Doddy's number", detail: "to \(name)", isLookup: false)
         case .callMeLater(let draft):
             // The time, never the reason (ADR-754): the log is kept on the iPhone longer than the call.
             var local = calendar

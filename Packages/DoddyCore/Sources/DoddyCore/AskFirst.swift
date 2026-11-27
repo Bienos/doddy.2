@@ -245,6 +245,11 @@ public enum AskFirst {
         // its reminder, and a tap or the user's own spoken yes runs exactly that (`OwnThingPin`).
         case .cancelNoteReminder:
             return .ownPayloadCard
+        // A text to one of the user's contacts (decision 2026-11-27-voice-first-doddy, step 4): the tool's own flow finds
+        // the contact, reads the number from Contacts and shows a card with it and exactly the text; a tap or the user's
+        // own spoken yes sends exactly that (`ContactTextVoice`).
+        case .textContact:
+            return .ownPayloadCard
         // Stopping the morning calls only takes a permission away (decision 2026-11-14-morning-call): at once.
         case .stopMorningCalls:
             return .runsNow

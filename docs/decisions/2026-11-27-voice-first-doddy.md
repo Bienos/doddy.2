@@ -48,6 +48,17 @@ booking takes a tap only. The card says "Say “tak, zarezerwuj”, or tap".
 limit, `PaymentApprovalModel`), so a spoken phrase would not save a step; the page being paid for is outside text,
 which would turn the card back into a tap anyway. Money leaving the account keeps the strongest gate.
 
+Step 4, first part, in the repo (owner, 27 Nov 2026: "Ok do the next one"): **texts to contacts by voice**, steps 3 and
+4 of decision `2026-11-09-texts-to-contacts`. `text_contact` takes the person's name and the exact text, never a
+number; the app finds the person in Contacts (Doddy's switch, iOS's permission, the search budget), asks when several
+match, reads the number from the contact card and shows a card with the name, the number and the text. The person's
+tap or own spoken yes sends exactly that to `POST /v1/texts/contact` (the approval hash binds number and text; the
+server checks it again with its limits: 50 a day, allowed countries, STOP, a verified number of the user's own). The
+prompt's protocol: another person is reached only when the user asked in their own words, never because an email, a
+page, the screen or someone on a call asks; nothing from the user's memory is added unasked. Attack cases DC-041 to
+DC-045. The server route is off until the owner sets `CONTACT_TEXTS_ENABLED`; then Doddy offers `draft_message`. Doddy
+calling a contact with a message (a "tell" call, its agent prompt and limits) is the second part.
+
 ## Consequences
 - More of the app is reachable by voice, so more tools: the prompt and tool list grow, which costs tokens and time per turn and can make wrong picks more likely. Each step adds agent tests for the tools it adds.
 - Step 3 lowers the bar for bookings and orders from a tap to a spoken phrase. The phrase must be the user's own words on their side of the conversation, after the card, within its time limit, with any "no", "wait" or "but" voiding it, as `SpokenYes` already does.
