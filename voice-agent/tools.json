@@ -2344,6 +2344,94 @@
         "timeout_secs": 30,
         "elevenlabs_tool_id": "not_synced"
       }
+    },
+    {
+      "type": "function",
+      "name": "open_screen",
+      "description": "Open one of Doddy's own screens in the app when the user asks to see or open it ('pokaż moje zadania', 'otwórz ustawienia', 'show my lists', 'open On my radar'). Pass screen, one of: home, notes, lists, settings, today, tasks, messages, files, radar (On my radar), calls (Phone calls), shopping, deals (this week's leaflets), trips, food, my_city, what_i_can_do, recordings. The voice screen goes down to the Dynamic Island and the conversation goes on, so the user can look and keep talking. It opens at once, with no card. For a note or a list's items, read them with search_memories or read_list instead; for Maps, a food app or the camera use open_map, open_food_app or open_camera; Doddy can't open other apps' screens or iOS Settings. The result starts with 'opened' or 'not available' (not in this build). Don't ask first: call it, then say in a few words that it is on screen.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "screen": {
+            "type": "string",
+            "enum": [
+              "home",
+              "notes",
+              "lists",
+              "settings",
+              "today",
+              "tasks",
+              "messages",
+              "files",
+              "radar",
+              "calls",
+              "shopping",
+              "deals",
+              "trips",
+              "food",
+              "my_city",
+              "what_i_can_do",
+              "recordings"
+            ],
+            "description": "Which screen to open."
+          }
+        },
+        "required": [
+          "screen"
+        ]
+      },
+      "x_doddy": {
+        "runs_on": "phone",
+        "confirm_on_screen": false,
+        "ask": "runs_now",
+        "speak_before": "auto",
+        "timeout_secs": 20,
+        "elevenlabs_tool_id": "not_synced"
+      }
+    },
+    {
+      "type": "function",
+      "name": "change_setting",
+      "description": "Change one of Doddy's own settings when the user asks ('mów krócej', 'bez żartów', 'mów wolniej', 'włącz ciemny motyw', 'nie pamiętaj naszych rozmów', 'be more formal'). Only these, with only these values: humour (off, subtle, playful), reply_length (brief, balanced, detailed), tone (casual, neutral, formal), mood (calm, grounded, lively), voice_speed (slower, normal, faster), voice_expressiveness (steady, natural, expressive), appearance (system, light, dark), character_art (on, off: Doddy's pictures), note_saved_island (on, off: 'Note saved' in the Dynamic Island), listen_on_open (on, off: start listening when the app opens), remember_conversations (on, off: Doddy gets the last few conversations), suggest_notes (on, off: 'Worth keeping?' after a conversation). It changes at once, with no card, and can be changed back the same way. Humour, length, tone, mood and the voice apply from the next conversation: say so. Anything else (the Face ID lock, privacy, accounts, connections, notifications, payments) is changed by the user in Settings: say where, and offer open_screen with settings. The result starts with 'changed', 'not changed' (already so) or 'failed'. Don't ask first: call it, then say in one short line what is set now.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "setting": {
+            "type": "string",
+            "enum": [
+              "humour",
+              "reply_length",
+              "tone",
+              "mood",
+              "voice_speed",
+              "voice_expressiveness",
+              "appearance",
+              "character_art",
+              "note_saved_island",
+              "listen_on_open",
+              "remember_conversations",
+              "suggest_notes"
+            ],
+            "description": "Which setting."
+          },
+          "value": {
+            "type": "string",
+            "description": "One of that setting's values listed above, e.g. 'brief' for reply_length or 'off' for humour."
+          }
+        },
+        "required": [
+          "setting",
+          "value"
+        ]
+      },
+      "x_doddy": {
+        "runs_on": "phone",
+        "confirm_on_screen": false,
+        "ask": "runs_now",
+        "speak_before": "auto",
+        "timeout_secs": 20,
+        "elevenlabs_tool_id": "not_synced"
+      }
     }
   ]
 }

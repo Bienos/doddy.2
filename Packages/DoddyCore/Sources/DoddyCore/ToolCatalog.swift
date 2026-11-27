@@ -146,6 +146,9 @@ public enum ToolCatalog {
         .init(VoiceToolName.clearTicked, .localChange, .runsNow),
         // Stopping a task or a Studio job on Doddy's server (ADR-570, ADR-740), as asked.
         .init(VoiceToolName.cancelTask, .handoff, .runsNow),
+        // Steering the app by voice (`AppControlVoice`): one of Doddy's own screens, one of his own settings.
+        .init(VoiceToolName.openScreen, .session, .runsNow),
+        .init(VoiceToolName.changeSetting, .localChange, .runsNow),
         // A stopwatch that counts up (ADR-652): Doddy's own tool, no other app.
         .init(VoiceToolName.startStopwatch, .localChange, .runsNow),
         .init(VoiceToolName.stopStopwatch, .localChange, .runsNow),

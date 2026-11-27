@@ -83,7 +83,10 @@ action_policy:
     # decision (owner, 27 Nov 2026) runs change_note, delete_note, rename_list, delete_list, clear_ticked and cancel_task at
     # once too (OwnThingsVoice.atOnceTools): each is undone in one step or is a stop the user asked for. After outside text
     # the first four ask once unless the user named the list (OutsideContentRule.guardedTools). cancel_note_reminder keeps
-    # a card with the note and its reminder (OwnThingPin), answered by a tap or a spoken yes.
+    # a card with the note and its reminder (OwnThingPin), answered by a tap or a spoken yes. open_screen and
+    # change_setting (AppControlVoice) run at once too: a screen only opens, and a setting comes from a fixed list of
+    # Doddy's own (style, voice, appearance, his pictures, the island note, listening on open, remembering conversations,
+    # suggesting notes); privacy, the Face ID lock, accounts, connections and payments stay in Settings, by hand.
     own_small_actions_run_at_once: [start_stopwatch, stop_stopwatch, start_focus, stop_focus, start_wind_down, stop_wind_down, add_to_list, check_off, follow_news, open_training_plan, note_capability_gap, stop_morning_calls, unfollow_news]
     # Change (owner, 2026-11-14; decision docs/decisions/2026-11-14-spoken-yes-and-fewer-cards.md, step 2b): Doddy's own changes
     # that have Undo in "What Doddy did", and the drafts and hand-overs that change nothing anywhere, run when asked with no

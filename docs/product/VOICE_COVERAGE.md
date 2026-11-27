@@ -54,8 +54,9 @@ iPhone app, and whether a voice tool covers it. Built on 27 Nov 2026 from `Doddy
 | Sport, Health | training plan, steps, health week | voice | `open_training_plan`, `read_steps`, `read_health_week` |
 | Sport, Health | training log | next | |
 | Sport, Health | turn Apple Health on | tap | Apple's own consent sheet |
-| Settings | Doddy's style, switches, routines, connections | next | `change_setting` with a fixed list; each switch's side effect is run too |
-| Settings | open any screen | next | `open_screen`; needs a choice of what happens to the conversation |
+| Settings | Doddy's style and voice, appearance, his pictures, the island note, listen on open, remember conversations, suggest notes | new | `change_setting`, at once, from a fixed list |
+| Settings | routines, notifications, connections | next | each needs its side effect run too |
+| Settings | open any of Doddy's screens | new | `open_screen`, at once; the conversation goes on in the Dynamic Island |
 | Online accounts | connect, disconnect | tap | Apple and Google require a tap to sign in |
 | Online accounts | disconnect | next | |
 | Privacy, account | Face ID lock, erase everything, sign out, delete the account | tap | protects everything else; asks Face ID or confirms on screen |

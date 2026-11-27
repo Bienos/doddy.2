@@ -102,7 +102,9 @@ RUNS_NOW_OWN_CHANGES = {"save_memory", "create_reminder", "add_ingredients", "op
                         "set_timer", "set_alarm",
                         # Doddy's own notes and lists with Undo, and a stop the user asked for (owner, 27 Nov 2026,
                         # decision 2026-11-27-voice-first-doddy; OwnThingsVoice.atOnceTools in DoddyCore).
-                        "change_note", "delete_note", "rename_list", "delete_list", "clear_ticked", "cancel_task"}
+                        "change_note", "delete_note", "rename_list", "delete_list", "clear_ticked", "cancel_task",
+                        # Steering the app (AppControlVoice): one of Doddy's own screens, one of his own settings.
+                        "open_screen", "change_setting"}
 # Calls to the user's own verified number run as asked (owner, 25 Nov 2026, decision 2026-11-25-doddy-acts-without-asking;
 # AskFirst.ownPhoneCallsAtOnce in DoddyCore). The server checks consent, the number and its limits again.
 RUNS_NOW_OWN_PHONE_CALLS = {"call_me_now", "call_me_later"}

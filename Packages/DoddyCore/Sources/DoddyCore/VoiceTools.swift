@@ -41,6 +41,10 @@ public enum VoiceToolName {
     public static let cancelTask = "cancel_task"
     /// Stops following one thing in Following (the opposite of follow_news); runs at once, like following.
     public static let unfollowNews = "unfollow_news"
+    /// Steering the app by voice (decision 2026-11-27-voice-first-doddy): open one of Doddy's screens, change one of
+    /// Doddy's own settings from a fixed list (`AppControlVoice`).
+    public static let openScreen = "open_screen"
+    public static let changeSetting = "change_setting"
     /// "Research X": a research brief and an infographic made in the background (ADR-740, Studio.swift).
     public static let makeSomething = "make_something"
     /// This week's leaflets, read on Doddy's server on request (SHOPPING.md, Deals.swift).
@@ -366,6 +370,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// check_errands; nil when the user only said "stop it" (then the one thing being worked on, if there is just one).
     case cancelTask(about: String?)
     case unfollowNews(name: String)
+    /// Opens one of Doddy's screens; the conversation goes on in the Dynamic Island.
+    case openScreen(AppScreen)
+    /// One of Doddy's own settings, to one of its own values (`VoiceSetting.values`).
+    case changeSetting(VoiceSetting, value: String)
     /// A Studio job (ADR-740): one yes covers its web look-ups (capped on the server) and making its
     /// files in Anthropic's container, nothing else; nothing is published or sent.
     case makeSomething(StudioJob)
@@ -542,6 +550,8 @@ public enum VoiceToolRequest: Equatable, Sendable {
              VoiceToolName.renameList, VoiceToolName.deleteList, VoiceToolName.clearTicked,
              VoiceToolName.cancelTask, VoiceToolName.unfollowNews:
             return OwnThingsVoice.parse(args, name: name)
+        case VoiceToolName.openScreen, VoiceToolName.changeSetting:
+            return AppControlVoice.parse(args, name: name)
         case VoiceToolName.checkErrands:
             return parseCheckErrands(args)
         case VoiceToolName.makeSomething:
