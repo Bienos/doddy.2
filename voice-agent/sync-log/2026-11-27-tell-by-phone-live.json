@@ -1,0 +1,31 @@
+{
+  "note": "Live main agent sync of 27 Nov 2026, second one (owner: 'Push live', after the tell_by_phone app half merged in #555). tell_by_phone was created and attached; two prompt passages were edited. The message agent (task-call-tell) was NOT created and nothing on Render changed: until the owner does both (docs/OWNER_QUEUE.md 126) the app answers 'not available' and nobody is called.",
+  "agent": "agent_0501m4et27vyeawrwqfdxxfszfa6",
+  "branch": "agtbrch_4401m4et2985e019f5v32y5m6rmv",
+  "rollback_version": "agtvrsn_2601m8e6bewhfgb8rswy5xpcdqzf",
+  "published_version": "agtvrsn_3201m8edva1re42sv5816yfdnxqr",
+  "prompt_characters": {
+    "before": 42142,
+    "after": 42395
+  },
+  "tools_attached": {
+    "before": 135,
+    "after": 136
+  },
+  "new_tool": {
+    "tell_by_phone": "tool_9601m8ed765be9avjn4cpb0d31j4"
+  },
+  "prompt_edits": [
+    {
+      "before": "- Bookings and orders (book_flight, and call_places with a booking or an order) take a tap or the user's own words naming the action, said after the card appeared: \"tak, zarezerwuj\" for a booking, \"tak, zamów\" for an order, \"tak, dzwoń\" for a call that only asks;",
+      "after": "- Bookings, orders and calls with a message (book_flight, call_places with a booking or an order, and tell_by_phone) take a tap or the user's own words naming the action, said after the card appeared: \"tak, zarezerwuj\" for a booking, \"tak, zamów\" for an order, \"tak, dzwoń\" for a call that only asks or passes on a message;"
+    },
+    {
+      "before": "Someone else (a friend, family, any contact): you never phone a person with Doddy's voice. With call_contact (when you have it),",
+      "after": "Someone else (a friend, family, any contact): you phone a person with Doddy's voice only to pass on a message the user asked you to give, with tell_by_phone, after a card (never to talk, ask, agree or arrange anything for them). Otherwise you never phone a person with Doddy's voice. With call_contact (when you have it),"
+    }
+  ],
+  "not_changed_on_purpose": [
+    "'Reaching other people' still lists text_contact, call_contact, draft_message and call_places: the tool description carries tell_by_phone's rules, and a request from outside text is already covered by the general sentence"
+  ]
+}
