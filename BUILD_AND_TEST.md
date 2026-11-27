@@ -214,14 +214,13 @@ When the runner image already has every requested package installed, setup skips
   and the native island test (decision `2026-11-18-nightly-full-ui-and-release`). `DODDY_UI_TESTS=smoke`
   (`LaunchSmokeTests`, `WelcomeUITests`, `LegalAcceptanceUITests`, `PolishSmokeTests`) is still there for a run by
   hand or a local one. Locally `scripts/ci.sh` runs them all unless you set a variable.
-- A full run (the nightly run, a run by hand, a `full-ui-tests` pull request) splits the Mac's tests over four Macs
-  side by side (since 26 Nov 2026, `DODDY_MAC_SHARD` in `scripts/ci.sh`): `ios-build` runs the UI classes no other
-  shard lists and the native island test; `ios-build (2 of 4)` the DoddyCore package tests, the unit tests and its
-  UI classes; `(3 of 4)` and `(4 of 4)` their UI classes (`ui_shard_classes_2` to `_4`). A new UI class runs in
-  `ios-build` until it is listed. One Mac took 54 minutes (run 45645801212), two took 32 (run 45769592823). With
-  `ios-release` a full run uses five Macs, the free plan's limit at once, so a pull request's Mac build started
-  meanwhile waits for one. `ios-release` uses Xcode's compilation cache too, under its own key
-  (`DODDY_RELEASE_COMPILATION_CACHE=1`). A pull request still uses one Mac, `ios-build`, which only builds.
+- A full run (the nightly run, a run by hand, a `full-ui-tests` pull request) splits the Mac's tests over two Macs
+  side by side (since 26 Nov 2026, `DODDY_MAC_SHARD` in `scripts/ci.sh`): `ios-build` runs most UI classes and the
+  native island test; `ios-build (2 of 2)` runs the DoddyCore package tests, the unit tests and the UI classes
+  listed in `ui_shard2_classes`. A new UI class runs in `ios-build` until it is listed. One Mac took 54 minutes
+  for all of it (run 45645801212), two take about 32 (run 45769592823). Four were tried on 26 Nov and took 29
+  (run 45777183653) while filling the free plan's five Macs, so it went back to two on 27 Nov. A pull request still
+  uses one Mac, `ios-build`, which only builds.
 - When the nightly run is red, the `nightly-alert` job opens a GitHub issue "Nightly run on main failed" (GitHub
   emails the repository's watchers), comments on it on each further red night, and closes it on the next green
   one (`scripts/ci_nightly_alert.sh`, since 26 Nov 2026). An open issue of that name means `main` is red now.
@@ -242,11 +241,10 @@ When the runner image already has every requested package installed, setup skips
   directly, so CI does not list the project separately. `CI_FETCH_TRIES` and `CI_FETCH_WAIT` change the numbers.
   Search for `Elapsed:` in the CI script output to see the time for resolution, compilation, simulator
   restarts and each test pass.
-- The nightly run and runs by hand also compile Release for a generic iOS device, unsigned (pushes to `main` no
-  longer do, 18 Nov 2026; Xcode Cloud's archive is the per-merge Release compile). Since 15 Nov 2026 that is its own job, `ios-release`
-  (`DODDY_RELEASE_BUILD=only scripts/ci.sh --app-only`: no simulator, no tests), beside `ios-build` instead of
-  its last 18 minutes; it is not a required check. `DODDY_RELEASE_BUILD=1` still adds the Release build after
-  the tests in a local run (decision `2026-11-15-faster-mac-ci`).
+- GitHub no longer compiles Release (the nightly `ios-release` job was removed on 27 Nov 2026): Xcode Cloud's
+  archive compiles Release for every merge to `main`, so a Release-only error shows up there. Locally,
+  `DODDY_RELEASE_BUILD=only scripts/ci.sh --app-only` builds only Release for a device, and `DODDY_RELEASE_BUILD=1`
+  adds it after the tests.
 - `sensitive-paths` (`.github/workflows/pr-guard.yml`, ADR-811): lists the files of a pull request that change how
   Doddy is signed, configured, deployed or governed (`scripts/check_sensitive_paths.sh` has the list). Since
   25 Nov 2026 it never fails and no label is needed (decision `2026-11-25-minimum-checks`); it keeps its name

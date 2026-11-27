@@ -21,8 +21,8 @@ on:
   # merge is the code its pull request just checked, Xcode Cloud builds `main` for TestFlight, and the
   # nightly run below runs every test on `main`.
   pull_request:
-  # Nightly (decision 2026-11-18-nightly-full-ui-and-release): the whole UI suite, the native island
-  # test and the Release compile for devices run here and by hand, no longer on every push to `main`.
+  # Nightly (decision 2026-11-18-nightly-full-ui-and-release): the whole UI suite and the native island
+  # test run here and by hand, no longer on every push to `main` (the Release compile is Xcode Cloud's, 27 Nov).
   # A scheduled run uses the default branch, `main`.
   schedule:
     - cron: "17 2 * * *"
@@ -94,24 +94,22 @@ jobs:
   # together, in a pull request of their own.
   ios-build:
     # Pull requests: one Mac, named `ios-build` (the required check). The nightly run, runs by hand and a pull
-    # request labelled `full-ui-tests` split the tests over four Macs side by side (26 Nov 2026, DODDY_MAC_SHARD in
-    # scripts/ci.sh, which lists the classes): `ios-build` runs the UI classes no other shard lists and the native
-    # island test; `ios-build (2 of 4)` the Swift package tests, the unit tests and its UI classes; 3 and 4 their
-    # UI classes. One Mac took 54 minutes (run 45645801212), two took 32 (run 45769592823); four are about 12.5
-    # minutes of tests each, plus a cached build each. With ios-release that is five Macs, the free plan's limit
-    # at once: a pull request's Mac build started meanwhile waits for one.
-    name: ${{ matrix.shard >= 2 && format('ios-build ({0} of 4)', matrix.shard) || 'ios-build' }}
+    # request labelled `full-ui-tests` split the tests over two Macs side by side (26 Nov 2026, DODDY_MAC_SHARD in
+    # scripts/ci.sh): `ios-build` runs most UI classes and the native island test, `ios-build (2 of 2)` the
+    # Swift package tests, the unit tests and the other UI classes. On run 45645801212 one Mac took 54 minutes
+    # for all of it; the two halves are about 27 minutes of tests each, plus a build each.
+    name: ${{ matrix.shard == 2 && 'ios-build (2 of 2)' || 'ios-build' }}
     needs: [changes]
     if: needs.changes.outputs.mac == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
     runs-on: macos-26
     strategy:
       fail-fast: false
       matrix:
-        shard: ${{ fromJSON((github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'full-ui-tests')) && '[0]' || '[1, 2, 3, 4]') }}
+        shard: ${{ fromJSON((github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'full-ui-tests')) && '[0]' || '[1, 2]') }}
     # The nightly run and a run by hand run the whole UI suite and the native island test: 70 to 75
     # minutes on 8 Nov 2026 with the Release build (runs 42408593703, 42481741193), against a limit of
-    # 75; run 42479036099 was cancelled after 75 minutes. Since 15 Nov the Release build is the
-    # ios-release job, about 18 minutes less here. Pull requests only build since 25 Nov 2026: the
+    # 75; run 42479036099 was cancelled after 75 minutes. Since 15 Nov the Release build is not in this
+    # job (since 27 Nov it is Xcode Cloud's only). Pull requests only build since 25 Nov 2026: the
     # build step took 5.8 of the 26 minutes of pull request run 44473265852 (not yet measured alone).
     timeout-minutes: 100
     steps:
@@ -170,26 +168,25 @@ jobs:
         id: ci
         env:
           DODDY_COMPILATION_CACHE: "1"
-          # Unset on pull requests (one Mac, no tests); 1 to 4 on the four Macs of a full run.
+          # Unset on pull requests (one Mac, no tests); 1 and 2 on the two Macs of a full run.
           DODDY_MAC_SHARD: ${{ matrix.shard != 0 && matrix.shard || '' }}
           # Pull requests build the app and both test targets and run no test (DODDY_MAC_TESTS=none,
           # decision 2026-11-25-minimum-checks); one labelled `full-ui-tests` (read when the run starts)
           # runs every test. The nightly run and runs by hand run every unit and UI test.
           DODDY_MAC_TESTS: ${{ (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'full-ui-tests')) && 'none' || 'all' }}
           DODDY_UI_TESTS: all
-          # The Release build for devices runs in its own job, ios-release, beside this one (decision
-          # 2026-11-15-faster-mac-ci): it took 18.5 of this job's 70 minutes on 15 Nov 2026 (run 43715540139).
+          # No Release build here: Xcode Cloud's archive builds Release for every merge (27 Nov 2026).
           DODDY_RELEASE_BUILD: "0"
           # Pull requests leave the Swift package tests to the Linux `swift` job, which runs them at the
           # same time (about 3 minutes saved here); the nightly run and runs by hand still run them on
           # Apple's Foundation (ADR-680).
-          # In a full run shard 2 runs them; the other Macs leave them out.
-          DODDY_SKIP_PACKAGE_TESTS: ${{ (github.event_name == 'pull_request' || (matrix.shard != 0 && matrix.shard != 2)) && '1' || '0' }}
+          # In a full run the second Mac runs them; the first leaves them out.
+          DODDY_SKIP_PACKAGE_TESTS: ${{ (github.event_name == 'pull_request' || matrix.shard == 1) && '1' || '0' }}
         run: scripts/ci.sh --app-only
 
       # Saved by one Mac only: both would save the same key, and a key can't be saved twice.
       - name: Save Xcode's compilation cache
-        if: always() && matrix.shard <= 1 && steps.ci.outcome != 'cancelled' && (github.event_name != 'pull_request' || steps.compile-cache.outputs.cache-matched-key == '') && hashFiles('build/packages-ok') != ''
+        if: always() && matrix.shard != 2 && steps.ci.outcome != 'cancelled' && (github.event_name != 'pull_request' || steps.compile-cache.outputs.cache-matched-key == '') && hashFiles('build/packages-ok') != ''
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex
@@ -200,7 +197,7 @@ jobs:
         run: du -sh ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex 2>/dev/null || echo "No compilation cache folder (Xcode wrote none)."
 
       - name: Save the app's Swift packages
-        if: always() && matrix.shard <= 1 && steps.packages-cache.outputs.cache-hit != 'true' && hashFiles('build/packages-ok') != ''
+        if: always() && matrix.shard != 2 && steps.packages-cache.outputs.cache-hit != 'true' && hashFiles('build/packages-ok') != ''
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/Library/Developer/Xcode/DerivedData/Doddy-*/SourcePackages
@@ -209,7 +206,7 @@ jobs:
       # What this run resolved for the app's packages: the file to commit as Config/Package.resolved
       # when pinning or moving versions (`make update-packages` does the same on a Mac).
       - name: Keep the resolved package versions
-        if: always() && matrix.shard <= 1
+        if: always() && matrix.shard != 2
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: app-package-resolved
@@ -224,7 +221,7 @@ jobs:
         if: failure() || cancelled() || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: xcode-test-results${{ matrix.shard >= 2 && format('-{0}', matrix.shard) || '' }}
+          name: xcode-test-results${{ matrix.shard == 2 && '-2' || '' }}
           path: ~/Library/Developer/Xcode/DerivedData/**/Logs/Test/*.xcresult
           if-no-files-found: ignore
           retention-days: 7
@@ -235,69 +232,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: island-screenshots${{ matrix.shard >= 2 && format('-{0}', matrix.shard) || '' }}
+          name: island-screenshots${{ matrix.shard == 2 && '-2' || '' }}
           path: build/island-screenshots/
           if-no-files-found: ignore
           retention-days: 14
 
-  # Release for a generic iOS device, unsigned, so a Release-only error fails here instead of in Xcode
-  # Cloud's archive. Pushes to main and full runs by hand only, like before; since 15 Nov 2026 a job of its
-  # own beside ios-build instead of the last 18.5 minutes of it (decision 2026-11-15-faster-mac-ci). Not a
-  # required check: pull requests and pushes to `main` never run it, the nightly run and runs by hand do
-  # (decision 2026-11-18-nightly-full-ui-and-release). Same runner image and Xcode as ios-build (ADR-811).
-  ios-release:
-    name: ios-release
-    needs: [changes]
-    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && needs.changes.outputs.mac == 'true' && inputs.only != 'island' && inputs.only != 'screens' && inputs.only != 'fixtures'
-    runs-on: macos-26
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Select Xcode 26.6
-        uses: maxim-lobanov/setup-xcode@ed7a3b1fda3918c0306d1b724322adc0b8cc0a90 # v1.7.0
-        with:
-          xcode-version: "26.6"
-
-      - name: Install XcodeGen (pinned)
-        run: scripts/install_xcodegen.sh
-
-      # Only restored here: ios-build saves the cache, once its own resolve worked.
-      - name: Restore the app's Swift packages
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData/Doddy-*/SourcePackages
-          key: app-packages-${{ runner.os }}-${{ hashFiles('project.yml', 'Config/Package.resolved') }}
-          restore-keys: |
-            app-packages-${{ runner.os }}-
-
-      # Xcode 26's compilation cache for the Release build (26 Nov 2026): its own key, since Release compiles
-      # differently from ios-build's Debug simulator builds. The compile was 16 of this job's 17 minutes on run
-      # 45769592823. Restored, then saved under this commit (a key is saved once; restore takes the newest).
-      - name: Restore the Release build's compilation cache
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex
-          key: xcode-cas-release-26.6-${{ hashFiles('project.yml', 'Config/Package.resolved') }}-${{ github.sha }}
-          restore-keys: |
-            xcode-cas-release-26.6-${{ hashFiles('project.yml', 'Config/Package.resolved') }}-
-            xcode-cas-release-26.6-
-
-      - name: scripts/ci.sh --app-only (Release build only)
-        id: ci
-        env:
-          DODDY_RELEASE_BUILD: only
-          DODDY_RELEASE_COMPILATION_CACHE: "1"
-          DODDY_SKIP_PACKAGE_TESTS: "1"
-        run: scripts/ci.sh --app-only
-
-      - name: Save the Release build's compilation cache
-        if: always() && steps.ci.outcome != 'cancelled' && hashFiles('build/packages-ok') != ''
-        continue-on-error: true
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex
-          key: xcode-cas-release-26.6-${{ hashFiles('project.yml', 'Config/Package.resolved') }}-${{ github.sha }}
+  # No Release build here since 27 Nov 2026 (the ios-release job is gone): Xcode Cloud's archive compiles
+  # Release for every merge to `main`, so a Release-only error shows up there, on that merge. Locally,
+  # DODDY_RELEASE_BUILD=only (or =1) in scripts/ci.sh still builds it.
 
   # ---- The Linux groups (ADR-137, ADR-684). Each runs one `scripts/ci.sh --only <group>`, in
   # parallel; a group is skipped when `changes` says no changed file can reach it.
@@ -514,7 +456,7 @@ jobs:
   # issue ("Nightly run on main failed"; GitHub emails the repository's watchers), a further red night comments
   # on it, and the next green night closes it. Scheduled runs only. scripts/ci_nightly_alert.sh.
   nightly-alert:
-    needs: [core, ios-build, ios-release]
+    needs: [core, ios-build]
     if: always() && github.event_name == 'schedule'
     runs-on: ubuntu-24.04
     timeout-minutes: 5

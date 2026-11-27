@@ -98,7 +98,7 @@ not_called "a failed resolve does not start compilation" "build-for-testing"
 not_called "a failed resolve does not start tests" "test-without-building"
 has "the failed phase is still in the summary" "FAIL     Resolve the app's packages (exit 74)"
 
-# The ios-release job: Release for a device, nothing else, no simulator.
+# DODDY_RELEASE_BUILD=only (by hand): Release for a device, nothing else, no simulator.
 run_ci "DODDY_RELEASE_BUILD=only" 0 "--only ios" DODDY_RELEASE_BUILD=only
 called "Release is built for a generic device" "-configuration Release -destination generic/platform=iOS"
 not_called "no build for testing" "build-for-testing"
@@ -137,50 +137,30 @@ called "the full run's build uses it too" "COMPILATION_CACHE_ENABLE_CACHING=YES"
 run_ci "the Release build is left alone" 0 "--only ios" DODDY_RELEASE_BUILD=only DODDY_COMPILATION_CACHE=1
 not_called "Release has no compilation cache setting" "COMPILATION_CACHE_ENABLE_CACHING"
 
-# The nightly run splits the tests over four Macs (DODDY_MAC_SHARD, 26 Nov 2026). Shard 1: every UI class no other
-# shard lists, and the native island test. Shard 2: the unit tests and its UI classes. Shards 3 and 4: their UI
-# classes only. Only shard 1 runs the island test; only shard 2 the unit tests.
+# The nightly run splits the tests over two Macs (DODDY_MAC_SHARD, 26 Nov 2026). Shard 1: no unit tests, every UI
+# class but shard 2's, and the native island test. Shard 2: the unit tests and its UI classes, no island test.
 island='DoddyUITests/MemoryBaselineTests/testNativeIslandOfflineFixtureCanStartMuteAndEnd'
 run_ci "DODDY_MAC_SHARD=1" 0 "--only ios" DODDY_UI_TESTS=all DODDY_MAC_SHARD=1
 not_called "shard 1 runs no unit tests" "-only-testing:DoddyTests"
 called "shard 1 runs the UI tests" "-only-testing:DoddyUITests -skip-testing:$island"
 called "shard 1 leaves out shard 2's classes" "-skip-testing:DoddyUITests/MotionHopTests"
-called "shard 1 leaves out shard 3's classes" "-skip-testing:DoddyUITests/DoddyArtTests"
-called "shard 1 leaves out shard 4's classes" "-skip-testing:DoddyUITests/MotionRideTests"
 called "shard 1 runs the native island test" "-only-testing:$island"
-has "the summary says shard 2 runs the unit tests" "SKIPPED  xcodebuild test: unit tests (DODDY_MAC_SHARD=1: shard 2 runs them)"
+has "the summary says shard 2 runs the unit tests" "SKIPPED  xcodebuild test: unit tests (DODDY_MAC_SHARD=1: the second Mac (shard 2) runs them)"
 run_ci "DODDY_MAC_SHARD=2" 0 "--only ios" DODDY_UI_TESTS=all DODDY_MAC_SHARD=2
 called "shard 2 runs the unit tests" "-only-testing:DoddyTests"
 called "shard 2 runs its UI classes" "-only-testing:DoddyUITests/MotionHopTests"
-not_called "shard 2 runs no other shard's class" "-only-testing:DoddyUITests/DoddyArtTests"
-not_called "shard 2 runs no unlisted UI class" "-only-testing:DoddyUITests -skip"
+not_called "shard 2 runs no other UI class" "-only-testing:DoddyUITests -skip"
 not_called "shard 2 doesn't run the island test" "-only-testing:$island"
-has "the summary says shard 1 runs the island test" "SKIPPED  xcodebuild test: native island test (DODDY_MAC_SHARD=2: shard 1 runs it)"
-for n in 3 4; do
-  run_ci "DODDY_MAC_SHARD=$n" 0 "--only ios" DODDY_UI_TESTS=all DODDY_MAC_SHARD=$n
-  not_called "shard $n runs no unit tests" "-only-testing:DoddyTests"
-  not_called "shard $n runs no unlisted UI class" "-only-testing:DoddyUITests -skip"
-  not_called "shard $n doesn't run the island test" "-only-testing:$island"
+has "the summary says shard 1 runs the island test" "SKIPPED  xcodebuild test: native island test (DODDY_MAC_SHARD=2: the first Mac (shard 1) runs it)"
+run_ci "a bad DODDY_MAC_SHARD fails" 1 "--only ios" DODDY_UI_TESTS=all DODDY_MAC_SHARD=3
+has "the summary names it" "FAIL     DODDY_MAC_SHARD is 1, 2 or unset (got 3; every test runs instead)"
+# Every class named for shard 2 is a UI test class: a renamed one would otherwise run in shard 1 and look moved.
+shard2=$(sed -n '/ui_shard2_classes="/,/"$/p' "$ci_script" | sed 's/.*ui_shard2_classes="//; s/"//g')
+[ "$(wc -w <<<"$shard2" | tr -d ' ')" -ge 10 ] || { echo "FAIL  found no shard-2 class list in ci.sh"; failures=$((failures + 1)); }
+for c in $shard2; do
+  grep -qE "class $c\b" "$repo"/DoddyUITests/*.swift || { echo "FAIL  shard 2 names $c, which is no class in DoddyUITests"; failures=$((failures + 1)); }
 done
-called "shard 4 runs its UI classes" "-only-testing:DoddyUITests/MotionRideTests"
-run_ci "DODDY_MAC_SHARD=3 again" 0 "--only ios" DODDY_UI_TESTS=all DODDY_MAC_SHARD=3
-called "shard 3 runs its UI classes" "-only-testing:DoddyUITests/MemoryJourneyTests"
-run_ci "a bad DODDY_MAC_SHARD fails" 1 "--only ios" DODDY_UI_TESTS=all DODDY_MAC_SHARD=5
-has "the summary names it" "FAIL     DODDY_MAC_SHARD is 1 to 4, or unset (got 5; every test runs instead)"
-# Every class a shard lists is a UI test class, and no class is in two shards: a renamed one would otherwise run in
-# shard 1 and look moved, and a doubled one would run twice.
-listed=$(sed -n '/ui_shard_classes_[234]="/,/"$/p' "$ci_script" | sed 's/.*ui_shard_classes_[234]="//; s/"//g')
-[ "$(wc -w <<<"$listed" | tr -d ' ')" -ge 14 ] || { echo "FAIL  found no shard class lists in ci.sh"; failures=$((failures + 1)); }
-for c in $listed; do
-  grep -qE "class $c\b" "$repo"/DoddyUITests/*.swift || { echo "FAIL  a shard names $c, which is no class in DoddyUITests"; failures=$((failures + 1)); }
-done
-dupes=$(tr -s ' \n' '\n' <<<"$listed" | grep . | sort | uniq -d)
-[ -z "$dupes" ] || { echo "FAIL  in two shards: $dupes"; failures=$((failures + 1)); }
-echo "ok    every listed class is a DoddyUITests class, in one shard only"
-
-# The ios-release job's compilation cache: only with DODDY_RELEASE_COMPILATION_CACHE=1.
-run_ci "Release with DODDY_RELEASE_COMPILATION_CACHE=1" 0 "--only ios" DODDY_RELEASE_BUILD=only DODDY_RELEASE_COMPILATION_CACHE=1
-called "Release uses the compilation cache when asked" "-configuration Release -destination generic/platform=iOS CODE_SIGNING_ALLOWED=NO -IDEBuildingContinueBuildingAfterErrors=YES COMPILATION_CACHE_ENABLE_CACHING=YES"
+echo "ok    every shard-2 class is in DoddyUITests"
 
 if [ "$failures" -ne 0 ]; then echo "$failures check(s) failed"; exit 1; fi
 echo "all Mac phase cases passed"

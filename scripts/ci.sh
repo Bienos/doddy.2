@@ -12,8 +12,8 @@
 #                              (hosted pull requests since 25 Nov 2026; the nightly run runs them all)
 #                              DODDY_SKIP_PACKAGE_TESTS=1 leaves out the Swift package tests (hosted pull
 #                              requests: the Linux swift job runs them); DODDY_RELEASE_BUILD=only builds
-#                              only Release for a device, no simulator (the ios-release job);
-#                              DODDY_MAC_SHARD=1..4 splits the unit and UI tests over four Macs (nightly)
+#                              only Release for a device, no simulator (hosted CI no longer does, 27 Nov 2026);
+#                              DODDY_MAC_SHARD=1|2 splits the unit and UI tests over two Macs (nightly)
 #   scripts/ci.sh --only a,b   only these groups (hosted Linux jobs run one group each, in parallel):
 #                              checks swift backend node messaging ios
 #                              `ios` is the Xcode build and tests; --only never includes it unless listed.
@@ -429,7 +429,7 @@ else
   # generated project before anything resolves, and checked once Xcode has resolved (check_package_pins).
   run_step "Install the pinned package versions" scripts/install_package_resolved.sh Doddy.xcodeproj || finish
   pins_checked=0
-  # DODDY_RELEASE_BUILD=only (the ios-release job, decision 2026-11-15-faster-mac-ci): only the Release
+  # DODDY_RELEASE_BUILD=only (decision 2026-11-15-faster-mac-ci; by hand since 27 Nov 2026): only the Release
   # build for a device below, beside the ios-build job instead of after its tests; no simulator.
   release_only=0
   if [ "${DODDY_RELEASE_BUILD:-0}" = "only" ]; then release_only=1; fi
@@ -486,26 +486,21 @@ else
       # up the job (on 2 Nov one waited 49 minutes for the app to close, run 41368047283). The
       # longest UI test takes about 290 s, so 600 s only ends a test that is stuck.
       test_limits="-test-timeouts-enabled YES -default-test-execution-time-allowance 600"
-      # DODDY_MAC_SHARD=1..4 (the nightly run and runs by hand, 26 Nov 2026): the tests are split over four
-      # Macs that run side by side, each with its own build. Shard 2 runs the unit tests and its UI classes;
-      # shards 3 and 4 run only their UI classes; shard 1 runs every UI class no other shard lists, and the
-      # native island test, so a new UI class lands in shard 1 and nothing is left out. Unset: one Mac runs
-      # everything, as before. Seconds on run 45645801212 (one Mac, 54 min): package tests 268, unit tests
-      # 275, island test 245; UI classes LaunchSmoke 453, DoddyArt 390, MemoryJourney 374, MotionRide 211,
-      # MotionHop 208, MotionEvidence 110, MotionSurface 107, the rest under 70 each. Each shard is about
-      # 12.5 minutes of tests (shard 2 counts the package tests the workflow gives it).
+      # DODDY_MAC_SHARD=1 or 2 (the nightly run and runs by hand, 26 Nov 2026): the tests are split over two
+      # Macs that run side by side, each with its own build. Shard 2 runs the unit tests and the UI classes
+      # in ui_shard2_classes; shard 1 runs every other UI class and the native island test, so a new UI
+      # class lands in shard 1 and nothing is left out. Unset: one Mac runs everything, as before. On run
+      # 45645801212 the one Mac took 54 minutes (unit tests 275 s, UI tests 2305 s, island test 205 s).
       mac_shard=${DODDY_MAC_SHARD:-}
       case "$mac_shard" in
-        ""|1|2|3|4) ;;
-        *) record "DODDY_MAC_SHARD is 1 to 4, or unset" FAIL "got $mac_shard; every test runs instead"; failed=1; mac_shard="" ;;
+        ""|1|2) ;;
+        *) record "DODDY_MAC_SHARD is 1, 2 or unset" FAIL "got $mac_shard; every test runs instead"; failed=1; mac_shard="" ;;
       esac
-      ui_shard_classes_2="MotionHopTests"
-      ui_shard_classes_3="DoddyArtTests MemoryJourneyTests"
-      ui_shard_classes_4="LegalAcceptanceUITests MemoryBaselineTests MotionBehaviourUITests MotionEvidenceTests
-        MotionRideTests MotionSurfaceTests PolishSmokeTests ScreenAtlasTests ScreenFixtureTests TrainingPlanUITests
-        WelcomeUITests"
-      if [ -n "$mac_shard" ] && [ "$mac_shard" != "2" ]; then
-        record "xcodebuild test: unit tests" "SKIPPED" "DODDY_MAC_SHARD=$mac_shard: shard 2 runs them"
+      ui_shard2_classes="LegalAcceptanceUITests MemoryBaselineTests MotionBehaviourUITests MotionEvidenceTests
+        MotionHopTests MotionRideTests MotionSurfaceTests PolishSmokeTests ScreenAtlasTests ScreenFixtureTests
+        TrainingPlanUITests WelcomeUITests"
+      if [ "$mac_shard" = "1" ]; then
+        record "xcodebuild test: unit tests" "SKIPPED" "DODDY_MAC_SHARD=1: the second Mac (shard 2) runs them"
       else
         # shellcheck disable=SC2086
         run_step "xcodebuild test: unit tests" xcodebuild test-without-building -project Doddy.xcodeproj -scheme Doddy \
@@ -535,16 +530,13 @@ else
         ui_tests="-only-testing:DoddyUITests -skip-testing:$island_test"
         ui_label="UI tests"
         if [ "$mac_shard" = "1" ]; then
-          for c in $ui_shard_classes_2 $ui_shard_classes_3 $ui_shard_classes_4; do
-            ui_tests="$ui_tests -skip-testing:DoddyUITests/$c"
-          done
-          ui_label="UI tests, shard 1 of 4"
-        elif [ -n "$mac_shard" ]; then
+          for c in $ui_shard2_classes; do ui_tests="$ui_tests -skip-testing:DoddyUITests/$c"; done
+          ui_label="UI tests, shard 1 of 2"
+        elif [ "$mac_shard" = "2" ]; then
           ui_tests=""
-          eval "shard_classes=\$ui_shard_classes_$mac_shard"
-          for c in $shard_classes; do ui_tests="$ui_tests -only-testing:DoddyUITests/$c"; done
+          for c in $ui_shard2_classes; do ui_tests="$ui_tests -only-testing:DoddyUITests/$c"; done
           ui_tests="$ui_tests -skip-testing:$island_test"
-          ui_label="UI tests, shard $mac_shard of 4"
+          ui_label="UI tests, shard 2 of 2"
         fi
       fi
       # DODDY_UI_TEST_WORKERS > 1 (ADR-680): xcodebuild clones the simulator and hands each clone
@@ -566,8 +558,8 @@ else
       fi
       if [ "$ui_scope" = "smoke" ]; then
         record "xcodebuild test: native island test" "SKIPPED" "UI smoke run (DODDY_UI_TESTS=smoke); the nightly run and runs by hand run it"
-      elif [ -n "$mac_shard" ] && [ "$mac_shard" != "1" ]; then
-        record "xcodebuild test: native island test" "SKIPPED" "DODDY_MAC_SHARD=$mac_shard: shard 1 runs it"
+      elif [ "$mac_shard" = "2" ]; then
+        record "xcodebuild test: native island test" "SKIPPED" "DODDY_MAC_SHARD=2: the first Mac (shard 1) runs it"
       else
         if [ -n "${sim_id:-}" ]; then
           run_step "Restart the simulator before the native island test" restart_simulator "$sim_id"
@@ -588,16 +580,9 @@ else
     # archive was the first Release compile, where a failure costs build hours and a TestFlight build.
     # DODDY_RELEASE_BUILD=only: the same build, on its own (see release_only above).
     if [ "${DODDY_RELEASE_BUILD:-0}" = "1" ] || [ "$release_only" -eq 1 ]; then
-      # DODDY_RELEASE_COMPILATION_CACHE=1 (the hosted ios-release job, 26 Nov 2026): Xcode 26's compilation cache
-      # for this build too, in the same DerivedData folder the job saves and restores under its own key. It
-      # reuses a compiler output only when every input is the same, so it changes how long the build takes,
-      # not what it checks. It took 16 of the job's 17 minutes on run 45769592823. Xcode Cloud doesn't set it.
-      release_settings=""
-      if [ "${DODDY_RELEASE_COMPILATION_CACHE:-0}" = "1" ]; then release_settings="COMPILATION_CACHE_ENABLE_CACHING=YES"; fi
-      # shellcheck disable=SC2086
       run_step "xcodebuild build: Release, generic iOS device, unsigned" xcodebuild build -project Doddy.xcodeproj \
         -scheme Doddy -configuration Release -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO \
-        -IDEBuildingContinueBuildingAfterErrors=YES $release_settings
+        -IDEBuildingContinueBuildingAfterErrors=YES
     fi
   fi
 fi
