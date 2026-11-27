@@ -135,6 +135,17 @@ public enum ToolCatalog {
         .init(VoiceToolName.cancelAlarm, .localChange, .card),
         // Follow something in Following (ADR-657): Doddy's own feature on this iPhone.
         .init(VoiceToolName.followNews, .localChange, .runsNow),
+        .init(VoiceToolName.unfollowNews, .localChange, .runsNow),
+        // Doddy's own things by voice (decision 2026-11-27-voice-first-doddy): each shows a card with the note, list or
+        // task the app found; a tap or the user's own spoken yes runs exactly that.
+        .init(VoiceToolName.changeNote, .localChange, .card),
+        .init(VoiceToolName.deleteNote, .localChange, .card),
+        .init(VoiceToolName.cancelNoteReminder, .localChange, .card),
+        .init(VoiceToolName.renameList, .localChange, .card),
+        .init(VoiceToolName.deleteList, .localChange, .card),
+        .init(VoiceToolName.clearTicked, .localChange, .card),
+        // Stopping a task on Doddy's server (ADR-570): the card names the task.
+        .init(VoiceToolName.cancelTask, .handoff, .card),
         // A stopwatch that counts up (ADR-652): Doddy's own tool, no other app.
         .init(VoiceToolName.startStopwatch, .localChange, .runsNow),
         .init(VoiceToolName.stopStopwatch, .localChange, .runsNow),

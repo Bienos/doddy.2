@@ -133,8 +133,8 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         case .flights: CloudToolName.flightTools
         case .claudeDocuments: [CloudToolName.askClaude, CloudToolName.makeDocument, CloudToolName.researchNow]
         case .deals: [VoiceToolName.findDeals]
-        case .errands: [VoiceToolName.handOverErrand, VoiceToolName.checkErrands]
-        case .following: [VoiceToolName.followNews]
+        case .errands: [VoiceToolName.handOverErrand, VoiceToolName.checkErrands, VoiceToolName.cancelTask]
+        case .following: [VoiceToolName.followNews, VoiceToolName.unfollowNews]
         case .health: [VoiceToolName.readHealthWeek]
         case .trainingPlan: [VoiceToolName.openTrainingPlan]
         case .homeKit: [VoiceToolName.controlHome]
@@ -271,6 +271,9 @@ public struct ReleaseScope: Equatable, Sendable {
         VoiceToolName.searchMemories, VoiceToolName.saveMemory, VoiceToolName.remindAboutNote,
         VoiceToolName.readList, VoiceToolName.addToList, VoiceToolName.checkOff, VoiceToolName.removeFromList,
         VoiceToolName.createList, VoiceToolName.addIngredients,
+        // Notes and lists by voice (decision 2026-11-27-voice-first-doddy).
+        VoiceToolName.changeNote, VoiceToolName.deleteNote, VoiceToolName.cancelNoteReminder,
+        VoiceToolName.renameList, VoiceToolName.deleteList, VoiceToolName.clearTicked,
         VoiceToolName.readCalendar, VoiceToolName.findFreeTime, VoiceToolName.createCalendarEvent,
         VoiceToolName.changeCalendarEvent, VoiceToolName.deleteCalendarEvent, VoiceToolName.deleteCalendarEvents,
         VoiceToolName.createReminder, VoiceToolName.changeReminder, VoiceToolName.deleteReminder,

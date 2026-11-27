@@ -411,6 +411,24 @@ public struct ActivityRequest: Equatable, Sendable {
             return ActivityRequest(app: .web, title: "Hand over a task", detail: "“\(draft.title)”", logDetail: nil, isLookup: false)
         case .checkErrands:
             return ActivityRequest(app: .web, title: "Checked your tasks", detail: nil, isLookup: true)
+        // Doddy's own things by voice (decision 2026-11-27-voice-first-doddy). Like saving a note, the 30-day log keeps
+        // only what was done, never the note's text or the task's words.
+        case .changeNote(let quote, _):
+            return ActivityRequest(app: .memories, title: "Change a note", detail: "“\(quote)”", logDetail: nil, isLookup: false)
+        case .deleteNote(let quote):
+            return ActivityRequest(app: .memories, title: "Delete a note", detail: "“\(quote)”", logDetail: nil, isLookup: false)
+        case .cancelNoteReminder(let quote):
+            return ActivityRequest(app: .memories, title: "Turn off a note's reminder", detail: "“\(quote)”", logDetail: nil, isLookup: false)
+        case .renameList(let list, let newName):
+            return ActivityRequest(app: .memories, title: "Rename list", detail: "“\(list)” → “\(newName)”", logDetail: nil, isLookup: false)
+        case .deleteList(let list):
+            return ActivityRequest(app: .memories, title: "Delete list", detail: "“\(list)”", logDetail: nil, isLookup: false)
+        case .clearTicked(let list):
+            return ActivityRequest(app: .memories, title: "Clear ticked items", detail: "“\(list)”", logDetail: nil, isLookup: false)
+        case .cancelTask(let about):
+            return ActivityRequest(app: .web, title: "Stop a task", detail: "“\(about)”", logDetail: nil, isLookup: false)
+        case .unfollowNews(let name):
+            return ActivityRequest(app: .news, title: "Stop following", detail: "“\(name)”", isLookup: false)
         case .makeSomething(let job):
             // ADR-740: the 30-day log keeps that a Studio job was asked for, not its topic.
             return ActivityRequest(app: .web, title: "Make a research brief", detail: "\u{201C}\(job.topic)\u{201D}", logDetail: nil, isLookup: false)

@@ -77,6 +77,10 @@ final class ActivityTextTests: XCTestCase {
             // SHOPPING.md.
             .findDeals(DealsRequest(items: ["masło"], chains: [.biedronka])),
             .followNews(.words(name: "CPK", keywords: ["CPK"])),
+            // Decision 2026-11-27-voice-first-doddy.
+            .changeNote(quote: "Kod 1234", newText: "Kod 5678"), .deleteNote(quote: "Kod 1234"), .cancelNoteReminder(quote: "Leki"),
+            .renameList(list: "Zakupy", newName: "Biedronka"), .deleteList(list: "Zakupy"), .clearTicked(list: "Zakupy"),
+            .cancelTask(about: "Rzym"), .unfollowNews(name: "CPK"),
             .lookAtScreen(question: "Co to jest?"),
             // Decision 2026-11-14-approximate-location-by-voice.
             .whereAmI,
@@ -96,7 +100,8 @@ final class ActivityTextTests: XCTestCase {
              .convertCurrency, .parkingSpot, .addIngredients, .findFreeTime, .leaveBy, .handOverErrand, .checkErrands, .makeSomething, .findDeals,
              .startStopwatch, .stopStopwatch, .checkStopwatch, .openTrainingPlan, .followNews, .textMe, .callMeLater, .callMeNow, .callPlaces,
              .callMeEveryMorning, .stopMorningCalls,
-             .startFocus, .stopFocus, .checkFocus, .startWindDown, .stopWindDown, .whereAmI:
+             .startFocus, .stopFocus, .checkFocus, .startWindDown, .stopWindDown, .whereAmI,
+             .changeNote, .deleteNote, .cancelNoteReminder, .renameList, .deleteList, .clearTicked, .cancelTask, .unfollowNews:
             true
         case .needsClarification, .calculate, .convertUnits, .undoLast, .startTranslator, .stopTranslator, .unsupported, .invalid,
              .noteCapabilityGap, .lostWallet, .draftInvoice:
@@ -110,7 +115,7 @@ final class ActivityTextTests: XCTestCase {
         XCTAssertTrue(everyKind.allSatisfy(getsARow))
         // One of each kind that gets a row (cloud tools count once each, drafts twice).
         let kinds = Set(everyKind.map { String(describing: $0).prefix { $0 != "(" } })
-        XCTAssertEqual(kinds.count, 63, "call_contact (25 Nov 2026); call_me_every_morning and stop_morning_calls (decision 2026-11-14-morning-call); where_am_i (decision 2026-11-14-approximate-location-by-voice); open_food_app (decision 2026-11-12-food-by-voice); the focus timer and the wind-down, five tools (decision 2026-11-10-timers-by-voice); look_at_screen (decision 2026-11-09-doddy-looks-at-the-screen); follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); plus the BLIK draft (ADR-510, restored 7 Nov 2026), make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754), call_places (decision 2026-11-09-restaurant-calls-one-tap), call_me_now (decision 2026-11-10-call-me-now-by-voice)")
+        XCTAssertEqual(kinds.count, 71, "eight tools for Doddy's own notes, lists, tasks and follows (decision 2026-11-27-voice-first-doddy); call_contact (25 Nov 2026); call_me_every_morning and stop_morning_calls (decision 2026-11-14-morning-call); where_am_i (decision 2026-11-14-approximate-location-by-voice); open_food_app (decision 2026-11-12-food-by-voice); the focus timer and the wind-down, five tools (decision 2026-11-10-timers-by-voice); look_at_screen (decision 2026-11-09-doddy-looks-at-the-screen); follow_news (ADR-657 on its branch, 669 here) and control_home (ADR-658); plus the BLIK draft (ADR-510, restored 7 Nov 2026), make_something (ADR-740), text_me and call_me_later (ADR-752, ADR-754), call_places (decision 2026-11-09-restaurant-calls-one-tap), call_me_now (decision 2026-11-10-call-me-now-by-voice)")
         XCTAssertNil(ActivityRequest.describe(.undoLast, calendar: calendar))
         XCTAssertNil(ActivityRequest.describe(.calculate(expression: "1+1"), calendar: calendar))
     }

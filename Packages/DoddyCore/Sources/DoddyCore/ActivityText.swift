@@ -123,6 +123,15 @@ public enum ActivityText {
         // Rows kept before 13 Nov 2026 say "Follow in Following"; the screen is On my radar now (decision 2026-11-13-radar-fixes).
         "Follow in Following": "Dodaj do radaru",
         "Add to radar": "Dodaj do radaru",
+        // Decision 2026-11-27-voice-first-doddy.
+        "Change a note": "Zmień notatkę",
+        "Delete a note": "Usuń notatkę",
+        "Turn off a note's reminder": "Wyłącz przypomnienie o notatce",
+        "Rename list": "Zmień nazwę listy",
+        "Delete list": "Usuń listę",
+        "Clear ticked items": "Usuń odhaczone",
+        "Stop a task": "Zatrzymaj zadanie",
+        "Stop following": "Przestań obserwować",
         "Start stopwatch": "Włącz stoper",
         "Stop stopwatch": "Zatrzymaj stoper",
         "Read stopwatch": "Odczytano stoper",
