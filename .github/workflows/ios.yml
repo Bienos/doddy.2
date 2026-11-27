@@ -279,8 +279,11 @@ jobs:
       - name: Content-based file times for DoddyCore
         run: scripts/ci_content_mtimes.sh Packages/DoddyCore
 
-      # Cache SwiftPM's checkouts and build products. The key's `cm2` marks caches built from content-based
-      # times; older ones (built from checkout times) are never restored. Restored on every run; saved by
+      # Cache SwiftPM's checkouts and build products. The key's `cm3` marks caches built from content-based
+      # times; older ones (built from checkout times) are never restored. Raise it (cm4, …) in a pull request that
+      # changes the stored fields of a public struct that another module holds inside its own (CallPreview inside
+      # StoredCallCase, 27 Nov 2026, run 45988519525): SwiftPM's incremental build doesn't recompile the module that
+      # holds it, so a restored cache runs the old layout and the package tests crash with signal 11. Restored on every run; saved by
       # the nightly run and runs by hand, and by a pull request only when it found none (a pull request's
       # cache is visible only to that pull request; saving costs about 55 s, job 135387721209).
       - name: Restore SwiftPM's build products
@@ -288,9 +291,9 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: Packages/DoddyCore/.build
-          key: swiftpm-6.1-cm2-${{ hashFiles('Packages/DoddyCore/Package.swift', 'Packages/DoddyCore/Package.resolved') }}-${{ github.sha }}
+          key: swiftpm-6.1-cm3-${{ hashFiles('Packages/DoddyCore/Package.swift', 'Packages/DoddyCore/Package.resolved') }}-${{ github.sha }}
           restore-keys: |
-            swiftpm-6.1-cm2-${{ hashFiles('Packages/DoddyCore/Package.swift', 'Packages/DoddyCore/Package.resolved') }}-
+            swiftpm-6.1-cm3-${{ hashFiles('Packages/DoddyCore/Package.swift', 'Packages/DoddyCore/Package.resolved') }}-
 
       - name: SQLite headers and Python for the checks
         run: scripts/ci_install_ubuntu_packages.sh libsqlite3-dev python3 python3-yaml
@@ -311,7 +314,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: Packages/DoddyCore/.build
-          key: swiftpm-6.1-cm2-${{ hashFiles('Packages/DoddyCore/Package.swift', 'Packages/DoddyCore/Package.resolved') }}-${{ github.sha }}
+          key: swiftpm-6.1-cm3-${{ hashFiles('Packages/DoddyCore/Package.swift', 'Packages/DoddyCore/Package.resolved') }}-${{ github.sha }}
 
   # The backend's type-check and tests. The longest Linux group (868 s of tests in 303 s on one runner,
   # run 44473265852), so its test files run as three shares side by side (25 Nov 2026): each job runs
