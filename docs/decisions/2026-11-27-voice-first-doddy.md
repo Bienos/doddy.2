@@ -2,7 +2,7 @@
 
 - **Date:** 2026-11-27
 - **Decided by:** owner ("I would like to be able to steer and do almost everything by voice … except translator mode and calling people should have some restrictions and protocol of prompt injection … she should ask questions if not certain or need more info", 27 Nov 2026), with these choices the same day: money and bookings by a **strong spoken yes**; **calls and texts to contacts by voice**; build **the whole app by voice** first.
-- **Status:** accepted; built in steps, one pull request each (below). The live ElevenLabs agents change only on the owner's separate word ("push it live"), as `AGENTS.md` requires.
+- **Status:** accepted; built in steps, one pull request each (below). The live main agent was synced on 27 Nov 2026 on the owner's word ("Push live"; log in `voice-agent/README.md`); the live ElevenLabs agents otherwise change only on the owner's separate word, as `AGENTS.md` requires.
 - **Replaces:** step 3 replaces the tap-only rule for `book_flight` and `call_places` (`ConfirmationTiers.tapOnly`, decision `2026-11-14-spoken-yes-and-fewer-cards`); `pay_for_page` keeps it (below). Extends `2026-11-25-doddy-acts-without-asking`: Doddy still never asks for permission to do what was asked; he asks only for what is missing or unclear.
 
 ## Why
