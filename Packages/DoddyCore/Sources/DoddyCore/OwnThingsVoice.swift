@@ -31,6 +31,8 @@ public enum OwnThingsVoice {
     public static let atOnceTools: Set<String> = [
         VoiceToolName.changeNote, VoiceToolName.deleteNote, VoiceToolName.renameList, VoiceToolName.deleteList,
         VoiceToolName.clearTicked, VoiceToolName.cancelTask, VoiceToolName.untickAll,
+        // A pin is a display preference the opposite undoes; a snooze moves a reminder by an hour (`NoteTouchVoice`).
+        VoiceToolName.pinNote, VoiceToolName.snoozeNoteReminder,
     ]
 
     /// The one tool of this step that keeps a card: a note's reminder, once off, has to be set up again from scratch.

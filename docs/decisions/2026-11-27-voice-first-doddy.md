@@ -119,6 +119,15 @@ to the one task there is, and a task still running is stopped first). A Studio j
 other rows stay "next". Compiled and tested in DoddyCore only; the app half compiles in CI. The tools are in
 `voice-agent/tools.json`; they went on the live main agent on 27 Nov 2026 on the owner's word ("Push live"; version `agtvrsn_5501m8ekp7wve2ms1ea7b02g6dn2`, `voice-agent/README.md`). No conversation with the changed agent has been held.
 
+Second batch of own things, in the repo (owner, 27 Nov 2026: "Ok do the next one"; two tools, from the rows still marked
+"next"): **`pin_note`** (pin a saved note to the top of Memories, or unpin it: a display preference the opposite undoes;
+the stored pins are read first and "pinned" is said only when they read back pinned; ten at most) and
+**`snooze_note_reminder`** (a note's time reminder by one hour, with no argument for the length: the app reads the
+reminder first, a place reminder has no time to move, and "moved" is said only when the reminder's time really changed).
+Both run at once through the same note lookup as `change_note`. **Undo a delete** stays a tap (its window is 10
+seconds, shorter than a voice turn) and **done** on a reminder stays "next" (it ends a one-off for good, so it needs a
+card). In `voice-agent/tools.json` as `not_synced`: not on the live agent, which changes only on the owner's word.
+
 ## Consequences
 - More of the app is reachable by voice, so more tools: the prompt and tool list grow, which costs tokens and time per turn and can make wrong picks more likely. Each step adds agent tests for the tools it adds.
 - Step 3 lowers the bar for bookings and orders from a tap to a spoken phrase. The phrase must be the user's own words on their side of the conversation, after the card, within its time limit, with any "no", "wait" or "but" voiding it, as `SpokenYes` already does.

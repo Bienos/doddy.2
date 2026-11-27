@@ -274,6 +274,7 @@ public struct ReleaseScope: Equatable, Sendable {
         // Notes and lists by voice (decision 2026-11-27-voice-first-doddy).
         VoiceToolName.changeNote, VoiceToolName.deleteNote, VoiceToolName.cancelNoteReminder,
         VoiceToolName.renameList, VoiceToolName.deleteList, VoiceToolName.clearTicked, VoiceToolName.untickAll,
+        VoiceToolName.pinNote, VoiceToolName.snoozeNoteReminder,
         // Steering the app by voice (`AppControlVoice`); a screen this build hides doesn't open.
         VoiceToolName.openScreen, VoiceToolName.changeSetting,
         VoiceToolName.readCalendar, VoiceToolName.findFreeTime, VoiceToolName.createCalendarEvent,

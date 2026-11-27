@@ -3834,7 +3834,7 @@ final class VoiceSessionController {
             let noted = await store.learning?.recordGap(category, requestID: call.toolCallId, sessionID: conversationID) ?? false
             await reply(call.toolCallId, noted ? LearningPrompt.gapNoted : LearningPrompt.gapNotNoted)
         case .changeNote, .deleteNote, .cancelNoteReminder, .renameList, .deleteList, .clearTicked, .cancelTask, .unfollowNews,
-             .untickAll, .deleteTask:
+             .untickAll, .deleteTask, .pinNote, .snoozeNoteReminder:
             await handleOwnThing(request, call: call)
         case .pauseResume(let clock, let resume):
             // Doddy's own stopwatch or focus timer (decision 2026-11-27-voice-first-doddy): at once, and every reply is
@@ -4012,7 +4012,8 @@ final class VoiceSessionController {
     private func ownThingTarget(_ request: VoiceToolRequest, toolCallID id: String) async -> OwnThingTarget? {
         let polish = Self.cardsInPolish
         switch request {
-        case .changeNote(let quote, _), .deleteNote(let quote), .cancelNoteReminder(let quote):
+        case .changeNote(let quote, _), .deleteNote(let quote), .cancelNoteReminder(let quote), .pinNote(let quote, _),
+             .snoozeNoteReminder(let quote):
             await store.reload()
             let note: MemoryRecord
             switch OwnThingsVoice.note(quote, in: store.memories, privateIDs: PrivateNotesStore.current().ids) {
@@ -4034,6 +4035,46 @@ final class VoiceSessionController {
                     } catch {
                         return VoiceToolReply.failed(UserFacingError.message(for: error))
                     }
+                }
+            case .pinNote(_, let wantPin):
+                // A pin is a display preference (`PreferenceKey.pinnedNotes`, ADR-187). The stored pins are read first, so
+                // "pin" on a pinned note changes nothing, and "pinned" is said only when they read back pinned.
+                let key = PreferenceKey.pinnedNotes
+                let defaults = UserDefaults.standard
+                switch NoteTouchVoice.decidePin(pin: wantPin, isPinned: PinnedNotes(stored: defaults.string(forKey: key)).isPinned(note.id)) {
+                case .reply(let text):
+                    await reply(id, text)
+                    return nil
+                case .change:
+                    break
+                }
+                return OwnThingTarget(pin: pin) {
+                    var stored = defaults.string(forKey: key) ?? "[]"
+                    if PinnedNotes.toggle(note.id, stored: &stored, existing: self.store.memories) == .full {
+                        return NoteTouchVoice.pinFull
+                    }
+                    defaults.set(stored, forKey: key)
+                    let now = PinnedNotes(stored: defaults.string(forKey: key)).isPinned(note.id)
+                    return NoteTouchVoice.pinResult(pin: wantPin, nowPinned: now, text: note.currentText)
+                }
+            case .snoozeNoteReminder:
+                // One hour, from the app's own clock (`NoteReminderStore.snoozeForAnHour`); the time is read back, and
+                // "moved" only when the reminder's time or snooze really changed.
+                guard let reminder = store.noteReminders?.reminder(forMemory: note.id) else {
+                    await reply(id, OwnThingsVoice.noReminder(note.currentText))
+                    return nil
+                }
+                guard reminder.fireAt != nil else {
+                    await reply(id, NoteTouchVoice.notATimeReminder(note.currentText))
+                    return nil
+                }
+                return OwnThingTarget(pin: pin + "|" + reminder.id.uuidString) {
+                    await self.store.noteReminders?.snoozeForAnHour(reminderID: reminder.id)
+                    guard let after = self.store.noteReminders?.reminder(forMemory: note.id),
+                          after.snoozedUntil != reminder.snoozedUntil || after.fireAt != reminder.fireAt else {
+                        return NoteTouchVoice.snoozeFailed(note.currentText)
+                    }
+                    return NoteTouchVoice.snoozed(note.currentText, when: ReminderFormat.summary(after))
                 }
             case .cancelNoteReminder:
                 guard let reminder = store.noteReminders?.reminder(forMemory: note.id) else {

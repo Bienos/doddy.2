@@ -238,7 +238,8 @@ public enum AskFirst {
         // Doddy's own things by voice (decision 2026-11-27-voice-first-doddy; owner, 27 Nov 2026): the app finds exactly
         // one note, list, task or Studio job and changes or stops it at once, with Undo where there is one; Doddy says
         // what he did, read back from the store.
-        case .changeNote, .deleteNote, .renameList, .deleteList, .clearTicked, .cancelTask, .untickAll:
+        case .changeNote, .deleteNote, .renameList, .deleteList, .clearTicked, .cancelTask, .untickAll,
+             .pinNote, .snoozeNoteReminder:
             return .runsNow
         // A screen only opens, and a setting from the fixed list is changed back the same way (`AppControlVoice`).
         case .openScreen, .changeSetting:
