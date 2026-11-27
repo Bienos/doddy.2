@@ -1,0 +1,37 @@
+{
+  "applied": "2026-11-27, about 14:00 UTC",
+  "owner_word": "Push live",
+  "decision": "docs/decisions/2026-11-27-voice-first-doddy.md (next batch of own things)",
+  "agent": "agent_0501m4et27vyeawrwqfdxxfszfa6 (main agent)",
+  "branch": "agtbrch_4401m4et2985e019f5v32y5m6rmv",
+  "rollback_version": "agtvrsn_3201m8edva1re42sv5816yfdnxqr",
+  "published_version": "agtvrsn_5501m8ekp7wve2ms1ea7b02g6dn2",
+  "tools": {
+    "count": {
+      "before": 136,
+      "after": 139
+    },
+    "created_and_attached": {
+      "pause_resume": "tool_4801m8ekjsdverk95vm3pb7qy0zw",
+      "untick_all": "tool_0001m8ekjtenfgz90v3qzwk49cpt",
+      "delete_task": "tool_5301m8ekjv1eevkr4h179avg98wd"
+    }
+  },
+  "prompt_characters": {
+    "before": 42395,
+    "after": 42726
+  },
+  "prompt_changes": [
+    {
+      "where": "the bullet \"Your own things that can be undone ...\"",
+      "change": "untick_all and pause_resume join the tools that run at once; the sentence on what Doddy says now covers unticking a whole list and pausing or resuming the stopwatch or the focus timer (say only the time or the count the result gives)."
+    },
+    {
+      "where": "the bullet \"Everything else that changes, sends, deletes ... shows a card\"",
+      "change": "delete_task joins the card list, with a note that a task still running is stopped first with cancel_task."
+    }
+  ],
+  "read_back": "published version id; 139 tool ids with the three new ids last; first message {{opening_line}} and model gpt-6-luna unchanged",
+  "not_changed": "every other tool and setting, the translator, the task-call agents; the live prompt is the owner's own rewrite and was edited in its wording, not pasted from instructions.md (the \"Run at once\" list and the Limits paragraph don't name the three tools)",
+  "not_run": "No conversation with the changed agent and no test call; the app that answers these tools may not be on a phone yet, so until it is the agent calls them and the app says they are unsupported"
+}
