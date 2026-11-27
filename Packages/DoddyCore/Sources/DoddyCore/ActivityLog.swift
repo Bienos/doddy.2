@@ -436,6 +436,10 @@ public struct ActivityRequest: Equatable, Sendable {
         case .pauseResume(let clock, let resume):
             let title = "\(resume ? "Resume" : "Pause") \(clock == .stopwatch ? "stopwatch" : "focus timer")"
             return ActivityRequest(app: .memories, title: title, detail: nil, isLookup: false)
+        case .pinNote(let quote, let pin):
+            return ActivityRequest(app: .memories, title: pin ? "Pin a note" : "Unpin a note", detail: "“\(quote)”", logDetail: nil, isLookup: false)
+        case .snoozeNoteReminder(let quote):
+            return ActivityRequest(app: .memories, title: "Snooze a note's reminder", detail: "“\(quote)”", logDetail: nil, isLookup: false)
         case .untickAll(let list):
             return ActivityRequest(app: .memories, title: "Untick all items", detail: "“\(list)”", logDetail: nil, isLookup: false)
         case .deleteTask(let about):

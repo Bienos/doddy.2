@@ -50,6 +50,9 @@ public enum VoiceToolName {
     public static let pauseResume = "pause_resume"
     public static let untickAll = "untick_all"
     public static let deleteTask = "delete_task"
+    /// Pin or unpin one saved note; snooze one note's reminder by an hour (decision 2026-11-27-voice-first-doddy).
+    public static let pinNote = "pin_note"
+    public static let snoozeNoteReminder = "snooze_note_reminder"
     /// Stops following one thing in Following (the opposite of follow_news); runs at once, like following.
     public static let unfollowNews = "unfollow_news"
     /// Steering the app by voice (decision 2026-11-27-voice-first-doddy): open one of Doddy's screens, change one of
@@ -393,6 +396,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
     /// Deletes one finished task (done, failed or stopped) handed over earlier; `about` as for check_errands. Shows a
     /// card: a deleted task and its result are gone.
     case deleteTask(about: String?)
+    /// Pins or unpins the note whose exact text is `quote` at the top of Memories (`NoteTouchVoice`).
+    case pinNote(quote: String, pin: Bool)
+    /// Moves the time reminder of the note whose exact text is `quote` by an hour.
+    case snoozeNoteReminder(quote: String)
     case unfollowNews(name: String)
     /// Opens one of Doddy's screens; the conversation goes on in the Dynamic Island.
     case openScreen(AppScreen)
@@ -576,6 +583,10 @@ public enum VoiceToolRequest: Equatable, Sendable {
             return OwnThingsVoice.parse(args, name: name)
         case VoiceToolName.pauseResume:
             return ClockPauseVoice.parse(args, name: name)
+        case VoiceToolName.pinNote:
+            return NoteTouchVoice.parsePin(args, name: name)
+        case VoiceToolName.snoozeNoteReminder:
+            return NoteTouchVoice.parseSnooze(args, name: name)
         case VoiceToolName.openScreen, VoiceToolName.changeSetting:
             return AppControlVoice.parse(args, name: name)
         case VoiceToolName.textContact:

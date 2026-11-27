@@ -15,11 +15,14 @@ iPhone app, and whether a voice tool covers it. Built on 27 Nov 2026 from `Doddy
 | Memories | save, find a note | voice | `save_memory`, `search_memories` |
 | Memories | change a note's text | new | `change_note`, at once (the note's history keeps the old words) |
 | Memories | delete a note | new | `delete_note`, at once (Undo in Memories) |
-| Memories | undo a delete, pin, make private, change type, read aloud | next | |
+| Memories | pin or unpin a note | new | `pin_note`, at once (the opposite undoes it) |
+| Memories | undo a delete | tap | the undo window is 10 seconds, shorter than a voice turn: Memories' Undo bar stays the way |
+| Memories | make private, change type, read aloud | next | |
 | Memories | delete all notes | tap | wipes everything; Settings only |
 | Note reminders | set one | voice | `remind_me_about_note` |
 | Note reminders | turn one off | new | `cancel_note_reminder`, after a card (it can't be brought back in one step) |
-| Note reminders | done or snooze a due reminder | next | |
+| Note reminders | snooze a due reminder | new | `snooze_note_reminder`, at once (by one hour) |
+| Note reminders | done | next | ends a one-off for good: a card, like `cancel_note_reminder` |
 | Lists | create, add, tick, remove, read | voice | `create_list`, `add_to_list`, `check_off`, `remove_from_list`, `read_list` |
 | Lists | rename, delete, clear ticked | new | `rename_list`, `delete_list`, `clear_ticked`, at once (Undo) |
 | Lists | untick all | new | `untick_all`, at once (Undo) |

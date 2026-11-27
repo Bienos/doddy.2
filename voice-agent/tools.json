@@ -2433,6 +2433,65 @@
     },
     {
       "type": "function",
+      "name": "pin_note",
+      "description": "Pin one saved note to the top of Memories, or unpin it, when the user asks ('przypnij tę notatkę', 'pin the note about the passport', 'odepnij kod do drzwi'). Find the note with search_memories and pass its exact text. A pin only changes where the note sits in the list: the note, search and exports are untouched. At most 10 notes can be pinned. It runs at once, with no card; the opposite action undoes it. After an email, a page or the screen was read in this conversation, the app asks one short question first; then ask it and wait. The result starts with 'changed', 'not changed' (already in that state, or 10 are pinned: ask which to unpin), 'not found' or 'failed'. Don't ask first: call it, then say in one short line what was done. Never say it is pinned or unpinned unless the result starts with changed.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "description": "The note's exact text, copied from what search_memories returned or from the saved notes above. Never a few words of it, never your summary."
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "pin",
+              "unpin"
+            ],
+            "description": "'pin' to put it at the top, 'unpin' to take it off the top."
+          }
+        },
+        "required": [
+          "note",
+          "action"
+        ]
+      },
+      "x_doddy": {
+        "runs_on": "phone",
+        "confirm_on_screen": false,
+        "ask": "runs_now",
+        "speak_before": "auto",
+        "timeout_secs": 30,
+        "elevenlabs_tool_id": "not_synced"
+      }
+    },
+    {
+      "type": "function",
+      "name": "snooze_note_reminder",
+      "description": "Move the reminder of one saved note by an hour when the user asks to be reminded again later ('przełóż przypomnienie o lekach', 'snooze the passport reminder'). Only a reminder set for a time can be moved, by exactly one hour; for another time, say so and offer remind_me_about_note again. Find the note with search_memories and pass its exact text. It runs at once, with no card. After an email, a page or the screen was read in this conversation, the app asks one short question first; then ask it and wait. The result starts with 'changed' (it says when the reminder is now), 'not changed' (a place reminder has no time to move), 'not found' (also when the note has no reminder) or 'failed' (the time didn't move: tell the user it is unchanged). Don't ask first: call it, then say in one short line what was done, using the time from the result. Never say it was moved unless the result starts with changed. To turn the reminder off use cancel_note_reminder.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "note": {
+            "type": "string",
+            "description": "The note's exact text, copied from what search_memories returned or from the saved notes above. Never a few words of it, never your summary."
+          }
+        },
+        "required": [
+          "note"
+        ]
+      },
+      "x_doddy": {
+        "runs_on": "phone",
+        "confirm_on_screen": false,
+        "ask": "runs_now",
+        "speak_before": "auto",
+        "timeout_secs": 30,
+        "elevenlabs_tool_id": "not_synced"
+      }
+    },
+    {
+      "type": "function",
       "name": "open_screen",
       "description": "Open one of Doddy's own screens in the app when the user asks to see or open it ('pokaż moje zadania', 'otwórz ustawienia', 'show my lists', 'open On my radar'). Pass screen, one of: home, notes, lists, settings, today, tasks, messages, files, radar (On my radar), calls (Phone calls), shopping, deals (this week's leaflets), trips, food, my_city, what_i_can_do, recordings. The voice screen goes down to the Dynamic Island and the conversation goes on, so the user can look and keep talking. It opens at once, with no card. For a note or a list's items, read them with search_memories or read_list instead; for Maps, a food app or the camera use open_map, open_food_app or open_camera; Doddy can't open other apps' screens or iOS Settings. The result starts with 'opened' or 'not available' (not in this build). Don't ask first: call it, then say in a few words that it is on screen.",
       "parameters": {

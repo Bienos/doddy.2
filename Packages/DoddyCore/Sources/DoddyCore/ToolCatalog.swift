@@ -145,6 +145,8 @@ public enum ToolCatalog {
         .init(VoiceToolName.deleteList, .localChange, .runsNow),
         .init(VoiceToolName.clearTicked, .localChange, .runsNow),
         .init(VoiceToolName.untickAll, .localChange, .runsNow),
+        .init(VoiceToolName.pinNote, .localChange, .runsNow),
+        .init(VoiceToolName.snoozeNoteReminder, .localChange, .runsNow),
         // Stopping a task or a Studio job on Doddy's server (ADR-570, ADR-740), as asked.
         .init(VoiceToolName.cancelTask, .handoff, .runsNow),
         // Deleting a finished task: Doddy's server keeps a copy, so it is a handoff; a card, as nothing brings it back.

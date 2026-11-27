@@ -87,7 +87,7 @@ final class ToolCatalogTests: XCTestCase {
             // things with Undo and a stop the user asked for run as asked too.
             "unfollow_news", "change_note", "delete_note", "rename_list", "delete_list", "clear_ticked", "cancel_task",
             // The next batch: untick all has Undo on the list; pausing a clock is undone by resuming it.
-            "untick_all", "pause_resume",
+            "untick_all", "pause_resume", "pin_note", "snooze_note_reminder",
             "open_screen", "change_setting",
             VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe,
             "save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app", "lost_wallet",
