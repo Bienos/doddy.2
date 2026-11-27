@@ -250,6 +250,11 @@ public enum AskFirst {
         // own spoken yes sends exactly that (`ContactTextVoice`).
         case .textContact:
             return .ownPayloadCard
+        // A call to one of the user's contacts with their message (decision 2026-11-27-voice-first-doddy, step 4): the
+        // tool's own flow creates the task on Doddy's server and shows its card (the number, exactly what Doddy says);
+        // a tap or the user's own "tak, dzwoń" approves exactly that (`StrongSpokenYes`).
+        case .tellByPhone:
+            return .ownPayloadCard
         // Stopping the morning calls only takes a permission away (decision 2026-11-14-morning-call): at once.
         case .stopMorningCalls:
             return .runsNow

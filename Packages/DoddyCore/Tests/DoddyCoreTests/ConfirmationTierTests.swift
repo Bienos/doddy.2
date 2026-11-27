@@ -13,7 +13,7 @@ final class ConfirmationTierTests: XCTestCase {
         XCTAssertEqual(tapOnly, ["pay_for_page"])
         // Bookings and orders take the person's own words naming the action, or a tap (decision 2026-11-27-voice-first-doddy, step 3).
         let strong = Set(everyTool.filter { ConfirmationTiers.tier(for: $0) == .strongSpokenYes })
-        XCTAssertEqual(strong, ["book_flight", "call_places"])
+        XCTAssertEqual(strong, ["book_flight", "call_places", "tell_by_phone"])
         XCTAssertEqual(strong, ConfirmationTiers.strongYes)
     }
 

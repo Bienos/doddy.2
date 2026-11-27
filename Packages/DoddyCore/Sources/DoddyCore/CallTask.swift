@@ -133,15 +133,19 @@ public struct CallTaskDraft: Equatable, Sendable {
     public let booking: CallTaskBooking?
     /// Set for a call that orders food (decision 2026-11-12-food-by-phone); one place only.
     public let order: CallTaskOrder?
+    /// Set for a call that passes on the user's message (decision 2026-11-27-voice-first-doddy, step 4); one person
+    /// only, from the user's Contacts. The server builds the question and the one sentence that says it.
+    public let message: String?
 
     public init(places: [CallTaskPlace], question: String, goal: String, textResult: Bool,
-                booking: CallTaskBooking? = nil, order: CallTaskOrder? = nil) {
+                booking: CallTaskBooking? = nil, order: CallTaskOrder? = nil, message: String? = nil) {
         self.places = places
         self.question = question
         self.goal = goal
         self.textResult = textResult
         self.booking = booking
         self.order = order
+        self.message = message
     }
 
     /// The body of `POST /v1/call-tasks` (the server's strict schema). Every number is marked as
@@ -149,11 +153,13 @@ public struct CallTaskDraft: Equatable, Sendable {
     public func body(principalName: String, principalGenitive: String? = nil,
                      maxDurationSecs: Int = CallBriefDraft.defaultMaxDuration, source: CallNumberSource = .places) -> CallTaskBody {
         CallTaskBody(
-            kind: order != nil ? "order" : (booking == nil ? "ask" : "book"),
-            places: places.map { .init(name: $0.name, phone: $0.phone, source: source, sourceLabel: nil) },
+            kind: message != nil ? "tell" : (order != nil ? "order" : (booking == nil ? "ask" : "book")),
+            // A message goes to a person from Contacts: the card says so, with the name as it is saved there.
+            places: places.map { .init(name: $0.name, phone: $0.phone, source: message != nil ? .contacts : source,
+                                       sourceLabel: message != nil ? "Kontakty: \($0.name)" : nil) },
             principal: .init(name: principalName, genitive: principalGenitive ?? PolishGenitive.suggest(principalName)),
-            goal: goal, question: (booking == nil && order == nil) ? question : nil, booking: booking, order: order, facts: [],
-            maxDurationSecs: maxDurationSecs, textResult: textResult)
+            goal: goal, question: (booking == nil && order == nil && message == nil) ? question : nil, booking: booking, order: order,
+            message: message, facts: [], maxDurationSecs: maxDurationSecs, textResult: textResult)
     }
 }
 
@@ -167,6 +173,7 @@ public struct CallTaskBody: Encodable, Equatable, Sendable {
     public let question: String?
     public let booking: CallTaskBooking?
     public let order: CallTaskOrder?
+    public let message: String?
     public let facts: [CallBriefBody.Fact]
     public let maxDurationSecs: Int
     public let textResult: Bool
@@ -189,6 +196,8 @@ public struct CallTaskPreview: Decodable, Equatable, Sendable {
 
     public var isBooking: Bool { kind == "book" }
     public var isOrder: Bool { kind == "order" }
+    /// A call that passes on the user's message (decision 2026-11-27-voice-first-doddy, step 4).
+    public var isMessage: Bool { kind == "tell" }
 }
 
 extension VoiceToolRequest {
@@ -417,7 +426,11 @@ extension VoiceToolReply {
     // "started" means the first call is being dialled, never that anyone answered: the result comes
     // later by notification (and a text, if chosen), and the agent never hears it.
 
-    public static func callTaskStarted(first: String, count: Int, textResult: Bool, booking: Bool = false, order: Bool = false) -> String {
+    public static func callTaskStarted(first: String, count: Int, textResult: Bool, booking: Bool = false, order: Bool = false,
+                                       message: Bool = false) -> String {
+        if message {
+            return "started: Doddy is calling \(first) to pass on the message. The result comes back as a notification when Doddy is done; it isn't known yet, so don't say the message was passed on or that anyone answered."
+        }
         let rest = count > 1
             ? (booking ? " If they can't book exactly that, Doddy calls the next place, one at a time, and stops at the first booking."
                        : " If they don't say yes, Doddy calls the next place, one at a time, and stops at the first yes.")
@@ -478,6 +491,8 @@ extension VoiceToolReply {
             return callTaskBookingOff
         case .orderNotConfigured?:
             return callTaskOrderOff
+        case .tellNotConfigured?:
+            return TellByPhoneVoice.off
         case .server(.offline)?:
             return "failed: Doddy couldn't reach its server. Nobody was called."
         default:

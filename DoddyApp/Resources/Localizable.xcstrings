@@ -11188,6 +11188,28 @@
         }
       }
     },
+    "Call and pass it on": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwoń i przekaż"
+          }
+        }
+      }
+    },
+    "Call and pass on your message?": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zadzwonić i przekazać Twoją wiadomość?"
+          }
+        }
+      }
+    },
     "Call at %@": {
       "extractionState": "manual",
       "localizations": {
@@ -24080,6 +24102,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Doddy pominął coś, co nie może trafić na kartę rozmowy. Sprawdź pola poniżej."
+          }
+        }
+      }
+    },
+    "Doddy listens to one short reply and tells you. He agrees to nothing.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doddy wysłucha jednej krótkiej odpowiedzi i Ci ją przekaże. Na nic się nie zgadza."
           }
         }
       }
@@ -55188,6 +55221,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Numer z notatki: %@"
+          }
+        }
+      }
+    },
+    "Number from your Contacts.": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Numer z Twoich Kontaktów."
           }
         }
       }
@@ -90596,6 +90640,17 @@
         }
       }
     },
+    "Then Doddy says, word for word:": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Potem Doddy mówi, słowo w słowo:"
+          }
+        }
+      }
+    },
     "Then come back here": {
       "extractionState": "manual",
       "localizations": {
@@ -102099,6 +102154,17 @@
           "stringUnit": {
             "state": "translated",
             "value": "Co Doddy może powiedzieć"
+          }
+        }
+      }
+    },
+    "What Doddy passes on": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Co Doddy przekaże"
           }
         }
       }

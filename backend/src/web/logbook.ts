@@ -32,7 +32,7 @@ export const LOGBOOK_TOOL_IDS = [
   "check_stopwatch", "start_focus", "stop_focus", "check_focus", "start_wind_down", "stop_wind_down",
   "follow_news", "list_alarms", "cancel_alarm",
   "propose_plan", "open_map", "open_food_app", "parking_spot", "remind_when_to_leave", "where_am_i", "run_shortcut", "draft_message",
-  "draft_blik_transfer", "draft_invoice", "text_me", "text_contact", "call_me_later", "call_me_now", "call_contact", "call_me_every_morning", "stop_morning_calls", "call_places", "make_presentation", "read_steps", "read_health_week", "open_training_plan", "find_photos", "look_at_screen", "control_home", "open_camera", "lost_wallet", "check_email",
+  "draft_blik_transfer", "draft_invoice", "text_me", "text_contact", "tell_by_phone", "call_me_later", "call_me_now", "call_contact", "call_me_every_morning", "stop_morning_calls", "call_places", "make_presentation", "read_steps", "read_health_week", "open_training_plan", "find_photos", "look_at_screen", "control_home", "open_camera", "lost_wallet", "check_email",
   "read_email", "draft_email", "draft_email_reply", "send_email", "reply_to_email", "forward_email", "change_email",
   "trash_email", "find_drive_file", "create_drive_doc", "search_notion", "read_notion_page", "create_notion_page",
   "append_notion_page", "trash_notion_page", "check_outlook_email", "read_outlook_email", "draft_outlook_email",

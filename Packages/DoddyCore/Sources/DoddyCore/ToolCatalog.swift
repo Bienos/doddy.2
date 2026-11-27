@@ -200,6 +200,8 @@ public enum ToolCatalog {
         // Stops them at once: it only takes the permission away.
         .init(VoiceToolName.stopMorningCalls, .placeCall, .runsNow),
         .init(VoiceToolName.callPlaces, .placeCall, .card),
+        // To one of the user's contacts with their message: a card with the number and exactly what Doddy says.
+        .init(VoiceToolName.tellByPhone, .placeCall, .card),
         // A file made on the iPhone when asked (step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards), then the share sheet to Keynote or Files (ADR-567).
         .init(VoiceToolName.makePresentation, .handoff, .runsNow),
         // Doddy's camera opens when asked while Doddy is on screen, otherwise its card waits (step 2b of decision 2026-11-14-spoken-yes-and-fewer-cards);

@@ -187,7 +187,7 @@ final class AskFirstTests: XCTestCase {
         XCTAssertEqual(Set(spec.compactMap(\.ask)), [.runsNow, .tap, .yesOrTap, .strongYesOrTap])
         XCTAssertEqual(spec.filter { $0.ask == nil }.map(\.name), [])
         XCTAssertEqual(Set(spec.filter { $0.ask == .tap }.map(\.name)), ["pay_for_page"])
-        XCTAssertEqual(Set(spec.filter { $0.ask == .strongYesOrTap }.map(\.name)), ["book_flight", "call_places"])
+        XCTAssertEqual(Set(spec.filter { $0.ask == .strongYesOrTap }.map(\.name)), ["book_flight", "call_places", "tell_by_phone"])
         let specRunsNow = Set(spec.filter { $0.ask == .runsNow }.map(\.name))
         XCTAssertEqual(
             specRunsNow,

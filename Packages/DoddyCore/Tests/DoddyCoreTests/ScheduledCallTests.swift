@@ -366,7 +366,7 @@ final class ScheduledCallTests: XCTestCase {
         // morning call books calls on chosen days and its stop ends them (decision 2026-11-14-morning-call).
         XCTAssertEqual(ToolCatalog.all.filter { $0.effect == .placeCall }.map(\.name),
                        [VoiceToolName.callMeLater, VoiceToolName.callMeNow, VoiceToolName.callMeEveryMorning,
-                        VoiceToolName.stopMorningCalls, VoiceToolName.callPlaces])
+                        VoiceToolName.stopMorningCalls, VoiceToolName.callPlaces, VoiceToolName.tellByPhone])
         let request = VoiceToolRequest.callMeLater(draft)
         guard case .refuse = CarProfile.decision(for: request) else { return XCTFail("car") }
         XCTAssertTrue(ConnectionPause.applies(to: request))

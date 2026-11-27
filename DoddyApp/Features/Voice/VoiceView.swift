@@ -1315,8 +1315,9 @@ struct VoiceView: View {
         case .callNow: (NSLocalizedString("Call me", comment: ""), NSLocalizedString("Don't call", comment: ""))
         case .morningCall: (NSLocalizedString("Call me every morning", comment: ""), NSLocalizedString("Not now", comment: ""))
         case .callTask(_, let preview):
-            preview.isOrder ? (NSLocalizedString("Call and order", comment: ""), NSLocalizedString("Don't order", comment: ""))
-                            : (NSLocalizedString("Call them", comment: ""), NSLocalizedString("Don't call", comment: ""))
+            preview.isMessage ? (NSLocalizedString("Call and pass it on", comment: "Button on the card for a call that passes on the user's message"), NSLocalizedString("Don't call", comment: ""))
+            : preview.isOrder ? (NSLocalizedString("Call and order", comment: ""), NSLocalizedString("Don't order", comment: ""))
+                              : (NSLocalizedString("Call them", comment: ""), NSLocalizedString("Don't call", comment: ""))
         // A card may name its own other button ("Not now" on a Studio job, ADR-740).
         case .ask(_, let card, _, _, _): (card.confirmLabel, card.declineLabel ?? NSLocalizedString("No", comment: ""))
         case .cloudRead(_, _, let preview, _, _): (preview.confirmLabel, NSLocalizedString("No", comment: ""))
@@ -1343,7 +1344,10 @@ struct VoiceView: View {
     /// comes back. The one tap approves exactly this.
     @ViewBuilder
     private func callTaskContent(_ preview: CallTaskPreview) -> some View {
-        if preview.isOrder {
+        if preview.isMessage {
+            Text("Call and pass on your message?")
+                .font(.headline)
+        } else if preview.isOrder {
             Text("Order from this place for you?")
                 .font(.headline)
         } else if preview.isBooking {
@@ -1366,9 +1370,42 @@ struct VoiceView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityElement(children: .combine)
         }
-        Text("Numbers from Doddy's place search.")
-            .font(.footnote)
-            .foregroundStyle(Theme.secondaryText)
+        if preview.isMessage {
+            Text("Number from your Contacts.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        } else {
+            Text("Numbers from Doddy's place search.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
+        // A message (decision 2026-11-27-voice-first-doddy, step 4): exactly what Doddy passes on, and the one sentence
+        // the server built that says it. He listens to one short reply and agrees to nothing.
+        if let first = preview.places.first, let message = first.message {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("What Doddy passes on")
+                    .font(.footnote.weight(.semibold))
+                Text(verbatim: message)
+                    .font(.body)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("voice.callTask.message")
+            if let line = first.messageLine {
+                Text("Then Doddy says, word for word:")
+                    .font(.footnote.weight(.semibold))
+                Text(verbatim: line)
+                    .font(.body)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(10)
+                    .background(Theme.canvas, in: RoundedRectangle(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Theme.separator, lineWidth: 1))
+                    .accessibilityIdentifier("voice.callTask.messageLine")
+            }
+            Text("Doddy listens to one short reply and tells you. He agrees to nothing.")
+                .font(.footnote)
+                .foregroundStyle(Theme.secondaryText)
+        }
         // A booking (decision 2026-11-12-book-agent): exactly what may be booked, and the one sentence that accepts it.
         if let first = preview.places.first, let booking = first.booking {
             VStack(alignment: .leading, spacing: 2) {

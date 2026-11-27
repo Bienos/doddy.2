@@ -157,7 +157,7 @@ public enum Feature: String, CaseIterable, Sendable, Codable {
         // (decision 2026-11-09-doddy-looks-at-the-screen), so it comes and goes with Messages.
         case .messages: [VoiceToolName.lookAtScreen]
         // Calls Doddy makes for the user, started from a conversation (decision 2026-11-09-restaurant-calls-one-tap).
-        case .callCases: [VoiceToolName.callPlaces]
+        case .callCases: [VoiceToolName.callPlaces, VoiceToolName.tellByPhone]
         }
     }
 
