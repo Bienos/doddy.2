@@ -88,8 +88,9 @@ text only a tap works); the approval is the server's task digest, so a changed m
 message agent on the server (`tell` false in the availability answer) nobody is called and Doddy offers `text_contact`.
 Attack cases DC-046 to DC-052 cover the call itself (a callee who tries to steer, asks for an address, asks him to agree to
 something, asks to leave the message with someone else, or asks not to be called again) and an email asking for a call.
-They are written, not run: they need the live message agent. Nothing is on the live agents: the tool and the agent need
-the owner's word ("push it live") and the setup of `docs/OWNER_QUEUE.md` 126.
+They are written, not run: they need the live message agent. The tool went on the live main agent on 27 Nov 2026 on the
+owner's word ("Push live"; `voice-agent/README.md`); the message agent itself does not exist yet (`docs/OWNER_QUEUE.md` 126),
+so the app answers "not available" and nobody is called.
 
 ## Consequences
 - More of the app is reachable by voice, so more tools: the prompt and tool list grow, which costs tokens and time per turn and can make wrong picks more likely. Each step adds agent tests for the tools it adds.
