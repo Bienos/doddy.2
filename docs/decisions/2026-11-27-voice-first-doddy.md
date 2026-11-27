@@ -117,7 +117,7 @@ clock reads back paused), **`untick_all`** (every tick off one list, at once, Un
 phone and nothing brings them back, so it keeps a card like `cancel_note_reminder`; words that match nothing never fall back
 to the one task there is, and a task still running is stopped first). A Studio job still can't be deleted by voice. The
 other rows stay "next". Compiled and tested in DoddyCore only; the app half compiles in CI. The tools are in
-`voice-agent/tools.json` as `not_synced`: they are not on the live agent, which changes only on the owner's word.
+`voice-agent/tools.json`; they went on the live main agent on 27 Nov 2026 on the owner's word ("Push live"; version `agtvrsn_5501m8ekp7wve2ms1ea7b02g6dn2`, `voice-agent/README.md`). No conversation with the changed agent has been held.
 
 ## Consequences
 - More of the app is reachable by voice, so more tools: the prompt and tool list grow, which costs tokens and time per turn and can make wrong picks more likely. Each step adds agent tests for the tools it adds.

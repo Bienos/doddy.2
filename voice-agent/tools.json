@@ -2380,7 +2380,7 @@
         "ask": "runs_now",
         "speak_before": "auto",
         "timeout_secs": 30,
-        "elevenlabs_tool_id": "not_synced"
+        "elevenlabs_tool_id": "tool_4801m8ekjsdverk95vm3pb7qy0zw"
       }
     },
     {
@@ -2405,7 +2405,7 @@
         "ask": "runs_now",
         "speak_before": "auto",
         "timeout_secs": 30,
-        "elevenlabs_tool_id": "not_synced"
+        "elevenlabs_tool_id": "tool_0001m8ekjtenfgz90v3qzwk49cpt"
       }
     },
     {
@@ -2428,7 +2428,7 @@
         "ask": "yes_or_tap",
         "speak_before": "force",
         "timeout_secs": 90,
-        "elevenlabs_tool_id": "not_synced"
+        "elevenlabs_tool_id": "tool_5301m8ekjv1eevkr4h179avg98wd"
       }
     },
     {
