@@ -54,6 +54,7 @@ final class RealtimeVoiceTests: XCTestCase {
         // and only money and bookings take a tap only.
         XCTAssertEqual(Set(tools.filter { $0.ask == .runsNow }.map(\.name)), Set(tools.map(\.name).filter(AskFirst.runsAtOnce)))
         XCTAssertEqual(Set(tools.filter { $0.ask == .tap }.map(\.name)), ConfirmationTiers.tapOnly)
+        XCTAssertEqual(Set(tools.filter { $0.ask == .strongYesOrTap }.map(\.name)), ConfirmationTiers.strongYes)
         XCTAssertEqual(Set(tools.filter { $0.ask != .runsNow }.map(\.name)), Set(tools.filter(\.confirmOnScreen).map(\.name)))
         let save = try XCTUnwrap(tools.first { $0.name == VoiceToolName.saveMemory })
         XCTAssertEqual(save.runsOn, .phone)

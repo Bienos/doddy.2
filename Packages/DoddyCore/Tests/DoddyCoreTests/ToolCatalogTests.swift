@@ -45,7 +45,8 @@ final class ToolCatalogTests: XCTestCase {
             XCTAssertEqual(tool.ask == .runsNow, !tap, tool.name)
             XCTAssertEqual(tool.ask == .runsNow, AskFirst.runsAtOnce(tool.name), tool.name)
         }
-        XCTAssertEqual(Set(try spec().filter { $0.ask == .tap }.map(\.name)), ConfirmationTiers.tapOnly, "a tap only for money and bookings")
+        XCTAssertEqual(Set(try spec().filter { $0.ask == .tap }.map(\.name)), ConfirmationTiers.tapOnly, "a tap only for money")
+        XCTAssertEqual(Set(try spec().filter { $0.ask == .strongYesOrTap }.map(\.name)), ConfirmationTiers.strongYes, "bookings: their own words or a tap")
     }
 
     func testACardHasTimeToBeTapped() throws {

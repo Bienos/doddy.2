@@ -161,7 +161,10 @@ public struct RealtimeToolSpec: Equatable, Sendable, Decodable {
         /// every change but money and bookings. The app asks for a tap instead once text from outside is in the
         /// conversation.
         case yesOrTap = "yes_or_tap"
-        /// Only a tap on the card: money and bookings (`ConfirmationTiers.tapOnly`).
+        /// Money and bookings (`ConfirmationTiers.strongYes`): a tap, or the user's own words naming the action
+        /// ("tak, zapłać"); a plain yes never. A tap only once text from outside is in the conversation.
+        case strongYesOrTap = "strong_yes_or_tap"
+        /// Only a tap on the card. No tool in the spec uses it since 27 Nov 2026; the app keeps it for unclassified tools.
         case tap
         /// A public lookup (web, news, places, sums, conversions): runs at once (ADR-575).
         case runsNow = "runs_now"

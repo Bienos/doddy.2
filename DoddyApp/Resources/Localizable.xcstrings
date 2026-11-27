@@ -72883,6 +72883,17 @@
         }
       }
     },
+    "Say “%@”, or tap": {
+      "extractionState": "manual",
+      "localizations": {
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Powiedz „%@” albo stuknij"
+          }
+        }
+      }
+    },
     "Say “Hey Siri, Talk to Doddy”. Nothing to set up.": {
       "extractionState": "manual",
       "localizations": {

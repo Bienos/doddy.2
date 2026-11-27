@@ -38,7 +38,7 @@ iPhone app, and whether a voice tool covers it. Built on 27 Nov 2026 from `Doddy
 | Calls | call me now, later, every morning; stop morning calls | voice | `call_me_now`, `call_me_later`, `call_me_every_morning`, `stop_morning_calls` |
 | Calls | cancel a booked call, the call switches, keep a call note | next | the switches with `change_setting` |
 | Calls | set the call PIN | tap | a secret is typed, never said aloud |
-| Call cases | ask places, book, order | voice | `call_places` |
+| Call cases | ask places, book, order | voice | `call_places`; a tap or "tak, zarezerwuj" / "tak, zamów" (step 3) |
 | Call cases | call now, cancel, end or take over a live call | next | step 4 (calls protocol) |
 | On my radar | follow | voice | `follow_news` |
 | On my radar | stop following | new | `unfollow_news` |
@@ -46,6 +46,7 @@ iPhone app, and whether a voice tool covers it. Built on 27 Nov 2026 from `Doddy
 | Shopping | find deals | voice | `find_deals` |
 | Shopping | price watches and price alerts | next | |
 | Trips, flights | plan, find flights | voice | `plan_trip`, `find_flights` |
+| Trips, flights | book a flight | voice | `book_flight`; a tap or "tak, zarezerwuj" (step 3) |
 | Trips, flights | find trips in email, forget them | next | |
 | Parcels | add, refresh, remove | next | |
 | Messages, files | ask Claude, make a file | voice | `ask_claude`, `make_document` |
@@ -60,6 +61,6 @@ iPhone app, and whether a voice tool covers it. Built on 27 Nov 2026 from `Doddy
 | Online accounts | connect, disconnect | tap | Apple and Google require a tap to sign in |
 | Online accounts | disconnect | next | |
 | Privacy, account | Face ID lock, erase everything, sign out, delete the account | tap | protects everything else; asks Face ID or confirms on screen |
-| Payments, invoices | pay for a page | voice | `pay_for_page`; a tap now, a strong spoken yes in step 3 |
+| Payments, invoices | pay for a page | voice | `pay_for_page`; a tap and Face ID (step 3 kept it: Face ID follows anyway) |
 | Payments, invoices | the inFakt key | tap | a secret is typed, never said aloud |
 | Backup | make, restore | tap | needs Files and a password |

@@ -126,7 +126,13 @@ action_policy:
     changes: card_with_exact_payload_then_a_tap_or_the_users_spoken_yes
     # Since 2026-11-15 (option 2) a change after outside text takes a spoken yes, and Doddy's own at-once things ask
     # once first (outside_content_asks_first above); any_change_after_outside_text left this list.
-    tap_only: [pay_for_page, book_flight, call_places, unclassified_tool, card_waiting_for_a_choice]
+    # Change (2026-11-27; decision docs/decisions/2026-11-27-voice-first-doddy.md, step 3; DOD-07, DOD-08): a flight
+    # booking and a call that books or orders (book_flight, call_places) take a tap or the user's own phrase naming the
+    # action ("tak, zarezerwuj", "tak, zamów", "yes, book it"), never a plain yes; after outside text a tap only
+    # (StrongSpokenYes, Packages/DoddyCore/Sources/DoddyCore/ConfirmationTier.swift). Paying for a page stays a tap and
+    # Face ID.
+    tap_only: [pay_for_page, unclassified_tool, card_waiting_for_a_choice, booking_after_outside_text]
+    strong_spoken_yes: {tools: [book_flight, call_places], phrase_names_the_action: true, plain_yes_counts: false, max_words: 5, numbers_or_changes_void_it: true}
     spoken_yes_counts: {said_by: the_user, earliest_after_card_seconds: 1, latest_after_card_seconds: 120, strict_phrases_with_vetoes: true}
     one_yes_covers: one_action
     # Change (2026-11-14; decision docs/decisions/2026-11-14-plan-card-ran-out.md; DOD-07, DOD-08): the plan card

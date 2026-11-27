@@ -81,7 +81,7 @@ final class SpokenConfirmationTests: XCTestCase {
         }
         XCTAssertFalse(runs("tak", afterEmail, after: 0.5), "not while the card has only just appeared")
         // Money and bookings keep their tap after outside text too.
-        for tool in ConfirmationTiers.tapOnly {
+        for tool in ConfirmationTiers.tapOnly.union(ConfirmationTiers.strongYes) {
             XCTAssertFalse(runs("tak", ConfirmationTiers.tier(for: tool, outsideContentSeen: true)), tool)
         }
     }
@@ -105,7 +105,7 @@ final class SpokenConfirmationTests: XCTestCase {
         XCTAssertEqual(ConfirmationTiers.specAsk(for: "set_timer"), .runsNow, "runs at once since it has Undo (step 2c)")
         XCTAssertEqual(ConfirmationTiers.specAsk(for: "create_list"), .yesOrTap, "still shows its card until it runs at once")
         XCTAssertEqual(ConfirmationTiers.specAsk(for: "pay_for_page"), .tap)
-        XCTAssertEqual(ConfirmationTiers.specAsk(for: "call_places"), .tap)
+        XCTAssertEqual(ConfirmationTiers.specAsk(for: "call_places"), .strongYesOrTap)
         XCTAssertEqual(ConfirmationTiers.specAsk(for: "no_such_tool"), .tap, "unknown fails safe")
     }
 

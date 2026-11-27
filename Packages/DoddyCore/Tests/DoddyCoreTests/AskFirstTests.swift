@@ -184,9 +184,10 @@ final class AskFirstTests: XCTestCase {
             XCTAssertEqual(tool.ask == .runsNow, !tool.confirmOnScreen, "\(tool.name): runs_now and confirm_on_screen")
             XCTAssertEqual(tool.ask, ConfirmationTiers.specAsk(for: tool.name), tool.name)
         }
-        XCTAssertEqual(Set(spec.compactMap(\.ask)), [.runsNow, .tap, .yesOrTap])
+        XCTAssertEqual(Set(spec.compactMap(\.ask)), [.runsNow, .tap, .yesOrTap, .strongYesOrTap])
         XCTAssertEqual(spec.filter { $0.ask == nil }.map(\.name), [])
-        XCTAssertEqual(Set(spec.filter { $0.ask == .tap }.map(\.name)), ["pay_for_page", "book_flight", "call_places"])
+        XCTAssertEqual(Set(spec.filter { $0.ask == .tap }.map(\.name)), ["pay_for_page"])
+        XCTAssertEqual(Set(spec.filter { $0.ask == .strongYesOrTap }.map(\.name)), ["book_flight", "call_places"])
         let specRunsNow = Set(spec.filter { $0.ask == .runsNow }.map(\.name))
         XCTAssertEqual(
             specRunsNow,
@@ -219,7 +220,7 @@ final class AskFirstTests: XCTestCase {
                      "make_something", "call_places", "remove_from_list"] {
             XCTAssertNotNil(ToolCatalog.descriptor(name), "\(name) is a tool the app has")
             XCTAssertFalse(AskFirst.runsAtOnce(name), "\(name) still shows its card")
-            XCTAssertEqual(spec.first { $0.name == name }?.ask, name == "call_places" ? .tap : .yesOrTap, name)
+            XCTAssertEqual(spec.first { $0.name == name }?.ask, name == "call_places" ? .strongYesOrTap : .yesOrTap, name)
             XCTAssertNotEqual(ToolCatalog.descriptor(name)?.approval, .runsNow, name)
         }
     }
