@@ -82,8 +82,9 @@ final class ToolCatalogTests: XCTestCase {
         XCTAssertEqual(withoutCard, [
             "start_stopwatch", "stop_stopwatch", "start_focus", "stop_focus", "start_wind_down", "stop_wind_down",
             "add_to_list", "check_off", "follow_news", "open_training_plan", "note_capability_gap", "stop_morning_calls",
-            // Decision 2026-11-27-voice-first-doddy: following less is undone by following again.
-            "unfollow_news",
+            // Decision 2026-11-27-voice-first-doddy: following less is undone by following again; the owner's own
+            // things with Undo and a stop the user asked for run as asked too.
+            "unfollow_news", "change_note", "delete_note", "rename_list", "delete_list", "clear_ticked", "cancel_task",
             VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe,
             "save_memory", "create_reminder", "add_ingredients", "open_map", "open_camera", "open_food_app", "lost_wallet",
             "draft_message", "draft_blik_transfer", "draft_invoice", "make_presentation", "set_timer", "set_alarm",
@@ -92,6 +93,7 @@ final class ToolCatalogTests: XCTestCase {
             "call_me_now", "call_me_later",
         ])
         XCTAssertEqual(withoutCard, AskFirst.ownSmallActions.union(AskFirst.ownChangesAtOnce).union(AskFirst.ownPhoneCallsAtOnce)
+            .union(OwnThingsVoice.atOnceTools)
             .union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe]))
         for name in withoutCard { XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .runsNow, name) }
         // What takes something away, reaches past Doddy's own lists and timers, or starts paid
@@ -115,7 +117,7 @@ final class ToolCatalogTests: XCTestCase {
         XCTAssertEqual(runsNow, Set(ToolCatalog.all.map(\.name).filter(AskFirst.runsAtOnce)), "the catalog and AskFirst.runsAtOnce name the same tools")
         XCTAssertEqual(runsNow,
                        AskFirst.publicLookups.union(AskFirst.ownLooks).union(AskFirst.ownSmallActions).union(AskFirst.ownChangesAtOnce)
-                           .union(AskFirst.ownPhoneCallsAtOnce)
+                           .union(AskFirst.ownPhoneCallsAtOnce).union(OwnThingsVoice.atOnceTools)
                            .union([VoiceToolName.startTranslator, VoiceToolName.stopTranslator, VoiceToolName.textMe])
                            .union(CloudToolName.all.subtracting(CloudToolName.writes)),
                        "public lookups, looks at the user's own things, Doddy's own small actions and own changes with Undo or that change nothing (step 2b), every read through Doddy's server, translator start and stop (ADR-619), and text_me to the user's own number (decision 2026-11-09-restaurant-calls-one-tap)")
@@ -162,13 +164,14 @@ final class ToolCatalogTests: XCTestCase {
         // `open_training_plan` only opens Doddy's own screen (since 11 Nov 2026, `AskFirst.ownSmallActions`), and since
         // 14 Nov 2026 the drafts and hand-overs that change nothing anywhere (`AskFirst.ownChangesAtOnce`, step 2b).
         let handoffs = ToolCatalog.all.filter { $0.effect == .handoff }
-        let atOnce: Set<String> = AskFirst.ownChangesAtOnce.union([VoiceToolName.openTrainingPlan])
+        // And stopping a task or Studio job the user asked to stop (owner, 27 Nov 2026, decision 2026-11-27-voice-first-doddy).
+        let atOnce: Set<String> = AskFirst.ownChangesAtOnce.union([VoiceToolName.openTrainingPlan, VoiceToolName.cancelTask])
         for tool in handoffs {
             XCTAssertEqual(tool.approval, atOnce.contains(tool.name) ? .runsNow : .card, tool.name)
         }
         XCTAssertEqual(Set(handoffs.filter { $0.approval == .runsNow }.map(\.name)),
                        [VoiceToolName.openTrainingPlan, "open_map", "open_food_app", "draft_message", "draft_blik_transfer",
-                        "make_presentation", "open_camera", "lost_wallet", "call_contact"])
+                        "make_presentation", "open_camera", "lost_wallet", "call_contact", "cancel_task"])
         for name in [VoiceToolName.handOverErrand, VoiceToolName.makeSomething] {
             XCTAssertEqual(ToolCatalog.descriptor(name)?.effect, .handoff, name)
             XCTAssertEqual(ToolCatalog.descriptor(name)?.approval, .card, name)

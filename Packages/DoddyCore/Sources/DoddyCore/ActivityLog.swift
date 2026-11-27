@@ -426,7 +426,7 @@ public struct ActivityRequest: Equatable, Sendable {
         case .clearTicked(let list):
             return ActivityRequest(app: .memories, title: "Clear ticked items", detail: "“\(list)”", logDetail: nil, isLookup: false)
         case .cancelTask(let about):
-            return ActivityRequest(app: .web, title: "Stop a task", detail: "“\(about)”", logDetail: nil, isLookup: false)
+            return ActivityRequest(app: .web, title: "Stop a task", detail: about.map { "“\($0)”" }, logDetail: nil, isLookup: false)
         case .unfollowNews(let name):
             return ActivityRequest(app: .news, title: "Stop following", detail: "“\(name)”", isLookup: false)
         case .makeSomething(let job):

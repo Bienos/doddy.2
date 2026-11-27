@@ -362,8 +362,9 @@ public enum VoiceToolRequest: Equatable, Sendable {
     case renameList(list: String, newName: String)
     case deleteList(list: String)
     case clearTicked(list: String)
-    /// `about`: words from the task's title, as for check_errands.
-    case cancelTask(about: String)
+    /// Stops a task handed over or a Studio job that is still being worked on. `about`: words from its title, as for
+    /// check_errands; nil when the user only said "stop it" (then the one thing being worked on, if there is just one).
+    case cancelTask(about: String?)
     case unfollowNews(name: String)
     /// A Studio job (ADR-740): one yes covers its web look-ups (capped on the server) and making its
     /// files in Anthropic's container, nothing else; nothing is published or sent.

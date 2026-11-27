@@ -13,15 +13,15 @@ iPhone app, and whether a voice tool covers it. Built on 27 Nov 2026 from `Doddy
 | Screen | Action | Status | Tool or reason |
 |---|---|---|---|
 | Memories | save, find a note | voice | `save_memory`, `search_memories` |
-| Memories | change a note's text | new | `change_note` |
-| Memories | delete a note | new | `delete_note` (Undo in Memories) |
+| Memories | change a note's text | new | `change_note`, at once (the note's history keeps the old words) |
+| Memories | delete a note | new | `delete_note`, at once (Undo in Memories) |
 | Memories | undo a delete, pin, make private, change type, read aloud | next | |
 | Memories | delete all notes | tap | wipes everything; Settings only |
 | Note reminders | set one | voice | `remind_me_about_note` |
-| Note reminders | turn one off | new | `cancel_note_reminder` |
+| Note reminders | turn one off | new | `cancel_note_reminder`, after a card (it can't be brought back in one step) |
 | Note reminders | done or snooze a due reminder | next | |
 | Lists | create, add, tick, remove, read | voice | `create_list`, `add_to_list`, `check_off`, `remove_from_list`, `read_list` |
-| Lists | rename, delete, clear ticked | new | `rename_list`, `delete_list`, `clear_ticked` |
+| Lists | rename, delete, clear ticked | new | `rename_list`, `delete_list`, `clear_ticked`, at once (Undo) |
 | Lists | untick all, templates, shopping mode, undo a change | next | |
 | Sharing | share a list, stop, join, leave | tap | iCloud's own sharing sheet |
 | Today | reminders: add, finish, change, delete | voice | `create_reminder`, `change_reminder`, `delete_reminder` |
@@ -30,10 +30,11 @@ iPhone app, and whether a voice tool covers it. Built on 27 Nov 2026 from `Doddy
 | Focus, stopwatch | start, stop, check | voice | `start_focus`, `stop_focus`, `check_focus`, `start_stopwatch`, `stop_stopwatch`, `check_stopwatch` |
 | Focus, stopwatch | pause and resume | next | |
 | Tasks | hand over, read results | voice | `hand_over_errand`, `check_errands` |
-| Tasks | stop a task | new | `cancel_task` |
+| Tasks | stop a task | new | `cancel_task`, at once ("stop the research") |
 | Tasks | delete a task | next | |
 | Studio | make a brief | voice | `make_something` |
-| Studio | stop or delete one | next | |
+| Studio | stop one | new | `cancel_task`, at once |
+| Studio | delete one | next | |
 | Calls | call me now, later, every morning; stop morning calls | voice | `call_me_now`, `call_me_later`, `call_me_every_morning`, `stop_morning_calls` |
 | Calls | cancel a booked call, the call switches, keep a call note | next | the switches with `change_setting` |
 | Calls | set the call PIN | tap | a secret is typed, never said aloud |

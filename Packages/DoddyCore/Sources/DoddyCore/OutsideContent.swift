@@ -90,6 +90,9 @@ public enum OutsideContentRule {
     public static let guardedTools: Set<String> = [
         VoiceToolName.textMe, VoiceToolName.lookAtScreen, VoiceToolName.addToList, VoiceToolName.checkOff,
         CloudToolName.askClaude, CloudToolName.makeDocument,
+        // Decision 2026-11-27-voice-first-doddy: what takes something away (a note's words, a note, a list, its ticked
+        // items) asks once after outside text, unless the user named the list in their own words.
+        VoiceToolName.changeNote, VoiceToolName.deleteNote, VoiceToolName.deleteList, VoiceToolName.clearTicked,
     ]
 }
 
@@ -138,6 +141,27 @@ extension AskFirst {
             let adding: Bool
             if case .addToList = request { adding = true } else { adding = false }
             return .yesFirst(OutsideContentAsk.sharedListCard(list, adding: adding, polish: polish))
+        // Decision 2026-11-27-voice-first-doddy: after an email, a page or the screen, words there could ask Doddy to
+        // delete or rewrite the user's things. A note's words, a note, a list or its ticked items then go only on the
+        // user's own yes or tap, unless the user named the list themselves just now. The note's text on the card is the
+        // exact text the app matches (`NoteQuoteMatch`), so it shows the note that would change.
+        case .changeNote(let quote, let newText):
+            guard session.outsideContentSeen else { return baseline }
+            return .yesFirst(OwnThingsVoice.changeNoteCard(current: quote, new: newText, polish: polish))
+        case .deleteNote(let quote):
+            guard session.outsideContentSeen else { return baseline }
+            return .yesFirst(OwnThingsVoice.deleteNoteCard(quote, polish: polish))
+        case .deleteList(let list), .clearTicked(let list):
+            guard session.outsideContentSeen, !session.userSaidAll([list]) else { return baseline }
+            let card: AskCard
+            if case .deleteList = request {
+                card = AskCard(title: polish ? "Usunąć listę „\(list)”?" : "Delete the list \(list)?",
+                               lines: [polish ? "Cała lista z pozycjami." : "The whole list with its items."],
+                               confirmLabel: polish ? "Usuń listę" : "Delete list")
+            } else {
+                card = OwnThingsVoice.clearTickedCard(list, ticked: [], polish: polish)
+            }
+            return .yesFirst(card)
         default:
             return baseline
         }
